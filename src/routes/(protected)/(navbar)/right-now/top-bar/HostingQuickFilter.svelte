@@ -60,7 +60,7 @@
 			</div>
 			<Drawer.Title>Hosting Status</Drawer.Title>
 			<div class="flex-1 flex justify-end">
-				<Switch id="positions-filter-enabled" bind:checked={enabled} />
+				<Switch id="hosting-filter-enabled" bind:checked={enabled} />
 			</div>
 		</Drawer.Header>
 		<div class="px-4 flex flex-col gap-1.5 mb-2">

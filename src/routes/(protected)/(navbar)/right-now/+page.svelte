@@ -4,6 +4,10 @@
     import TopBar from "./top-bar/TopBar.svelte";
     import RightNowFeed from "./RightNowFeed.svelte";
 
+    let { data }: import("./$types").PageProps = $props();
+
+	const ourProfileId = $derived(data.ourProfileId);
+
     let feedContainer: HTMLElement | null = $state(null);
 </script>
 
@@ -12,7 +16,7 @@
 >
     <TopBar />
     <div
-        class="@container/photo-grid flex flex-col"
+        class="flex flex-col items-center"
         bind:this={feedContainer}
     >
         {#if !rightNowState.loading && !rightNowState.error}
@@ -26,6 +30,6 @@
                 onclick={() => void rightNowState.reload()}
             />
         {/if}
-        <RightNowFeed />
+        <RightNowFeed {ourProfileId}/>
     </div>
 </main>

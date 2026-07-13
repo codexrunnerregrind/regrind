@@ -9,6 +9,12 @@
     import DistanceFormatted from "$lib/components/profile/DistanceFormatted.svelte";
     import { ClockIcon, NavigationArrowIcon, HouseIcon, ChatIcon } from "phosphor-svelte";
 
+    let {
+		ourProfileId,
+	}: {
+		ourProfileId: number;
+	} = $props();
+
     $effect.pre(() => {
 		rightNowState.load();
 	});
@@ -37,7 +43,7 @@
 	});
 </script>
 
-<div class="px-8 flex flex-1 flex-col gap-4">
+<div class="px-8 flex flex-col gap-6 max-w-5xl">
     {#if rightNowState.loading}
         <div>TODO: Loading SKeleton</div>
 	{:else if rightNowState.error}
@@ -51,14 +57,16 @@
     {:else}
         {#each rightNowState.posts as post}
             <div class="flex w-full gap-4 text-gray-400">
-                <Avatar.Root class="size-20">
-                    <UserAvatar
-                        mediaHash={post.mediaHash}
-                        class="size-20 rounded-full bg-neutral-700 *:rounded-full"
-                    />
-                    <!-- TODO: ONLINE INDICATOR -->
-                    <!-- TODO: CLICK TO OPEN PROFILE-->
-                </Avatar.Root>
+                <a href="/profile/{post.profileId}">
+                    <Avatar.Root class="size-20">
+                        <UserAvatar
+                            mediaHash={post.mediaHash}
+                            class="size-20 rounded-full bg-neutral-700 *:rounded-full"
+                        />
+                        <!-- TODO: ONLINE INDICATOR -->
+                        <!-- TODO: CLICK TO OPEN PROFILE-->
+                    </Avatar.Root>
+                </a>
                 <div class="w-full">
                     <div class={["font-bold mt-1", {"text-white": post.text}]}>
                         {post.text ? post.text : post.displayName ? `${post.displayName} joined` : 'Joined'}
@@ -87,8 +95,9 @@
                             {/if}
                         </div>
                         <div>
-                            <!-- TODO: CLICK TO OPEN CHAT-->
-                            <ChatIcon class="size-4 inline-block"/>
+                            <a href="/chat/{[post.profileId, ourProfileId].toSorted((a, b) => a - b).join(":")}">
+                                <ChatIcon class="size-4 inline-block"/>
+                            </a>
                         </div>
                     </div>
                 </div>
