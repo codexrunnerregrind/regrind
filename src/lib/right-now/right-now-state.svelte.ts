@@ -1,10 +1,7 @@
 import z from "zod";
 
-import type { rightNowV4QuerySchema } from "$lib/model/right-now/feed/query/v4"
-import {
-    getPosts,
-    type FeedPost
-} from './posts';
+import type { rightNowV4QuerySchema } from "$lib/model/right-now/feed/query/v4";
+import { getPosts, type FeedPost } from "./posts";
 import { RightNowSearchFiltersState } from "./right-now-filters-state.svelte";
 
 class RightNowState {
@@ -61,18 +58,18 @@ class RightNowState {
 			await this.filters.ready;
 			const filters = this.filters.value;
 			const query = {
-                sort: filters?.sort || "DISTANCE",
-                ...(filters?.hostingEnabled && {
-					hosting: filters?.hosting
+				sort: filters?.sort || "DISTANCE",
+				...(filters?.hostingEnabled && {
+					hosting: filters?.hosting,
 				}),
-	            ...(filters?.positionEnabled && {
+				...(filters?.positionEnabled && {
 					sexualPositions: filters?.positions,
 				}),
-                ...(filters?.ageEnabled && {
+				...(filters?.ageEnabled && {
 					ageMin: filters?.age[0],
 					ageMax: filters?.age[1],
 				}),
-	            ...(filters?.hostingEnabled && {
+				...(filters?.hostingEnabled && {
 					hosting: filters?.hosting,
 				}),
 			} satisfies z.infer<typeof rightNowV4QuerySchema>;
@@ -81,7 +78,7 @@ class RightNowState {
 			this.error = null;
 			this.loading = false;
 		} catch (err) {
-            this.error =
+			this.error =
 				err instanceof Error
 					? err
 					: new Error("Failed to fetch Right Now feed", { cause: err });

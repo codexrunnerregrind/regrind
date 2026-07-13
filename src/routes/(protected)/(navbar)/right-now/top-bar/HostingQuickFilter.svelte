@@ -18,7 +18,9 @@
 		open: boolean;
 	} = $props();
 
-	let filters = $derived({ ...(rightNowState.filters.value ?? defaultRightNowFilters) });
+	let filters = $derived({
+		...(rightNowState.filters.value ?? defaultRightNowFilters),
+	});
 	let { hostingEnabled: enabled, hosting: value } = $derived(filters);
 
 	$effect(() => {
@@ -44,10 +46,10 @@
 <Drawer.Root bind:open>
 	<Drawer.Content
 		preventOverflowTextSelection={false}
-		class="max-w-160 mx-auto"
+		class="mx-auto max-w-160"
 	>
-		<Drawer.Header class="flex flex-row justify-between items-center">
-			<div class="flex-1 flex justify-start">
+		<Drawer.Header class="flex flex-row items-center justify-between">
+			<div class="flex flex-1 justify-start">
 				<Button
 					variant="link"
 					class="cursor-pointer"
@@ -59,11 +61,11 @@
 				</Button>
 			</div>
 			<Drawer.Title>Hosting Status</Drawer.Title>
-			<div class="flex-1 flex justify-end">
+			<div class="flex flex-1 justify-end">
 				<Switch id="hosting-filter-enabled" bind:checked={enabled} />
 			</div>
 		</Drawer.Header>
-		<div class="px-4 flex flex-col gap-1.5 mb-2">
+		<div class="mb-2 flex flex-col gap-1.5 px-4">
 			<HostingFilterToggle
 				bind:value={
 					() => value,

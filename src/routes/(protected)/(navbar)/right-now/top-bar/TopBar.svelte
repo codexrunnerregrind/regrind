@@ -5,7 +5,7 @@
 	let openFilters = $state({
 		age: false,
 		position: false,
-        hosting: false,
+		hosting: false,
 	});
 </script>
 
@@ -21,4 +21,3 @@
 	</div>
 </ProgressiveBlur>
 <div class="h-9"></div>
-
