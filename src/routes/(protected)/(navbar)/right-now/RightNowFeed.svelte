@@ -4,15 +4,7 @@
 	import ZoomableImage from "./ZoomableImage.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
-	import RightNowAvatar from "./RightNowAvatar.svelte";
-	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
-	import DistanceFormatted from "$lib/components/profile/DistanceFormatted.svelte";
-	import {
-		ClockIcon,
-		NavigationArrowIcon,
-		HouseIcon,
-		ChatIcon,
-	} from "phosphor-svelte";
+	import RightNowPost from "./RightNowPost.svelte";
 
 	let {
 		ourProfileId,
@@ -47,12 +39,12 @@
 		}
 	});
 
-	let lightboxOpen = $state(false);
+	let isImageOverlayOpen = $state(false);
 	let activeImageUrl = $state("");
 
 	function openImage(url: string) {
 		activeImageUrl = url;
-		lightboxOpen = true;
+		isImageOverlayOpen = true;
 	}
 </script>
 
@@ -67,62 +59,13 @@
 				class="m-auto"
 			/>
 		</div>
+	{:else if !rightNowState.loading && !rightNowState.posts.length}
+		<div>TODO: No results found</div>
 	{:else}
 		{#each rightNowState.posts as post}
-			<div class="flex w-full gap-4 text-gray-400">
-				<div>
-					<RightNowAvatar
-						profileId={post.profileId}
-						mediaHash={post.mediaHash}
-						onlineUntil={post.onlineUntil}
-					/>
-				</div>
-				<div class="w-full">
-					<div class={["mt-1 font-bold", { "text-white": post.text }]}>
-						{post.text
-							? post.text
-							: post.displayName
-								? `${post.displayName} joined`
-								: "Joined"}
-					</div>
-					{#if post.media.length}
-						<div class="mt-2">
-							{#each post.media as image}
-								<button onclick={() => openImage(image.fullImageUrl)}>
-									<img src={image.thumbnailUrl} alt="" class="rounded-lg" />
-								</button>
-							{/each}
-						</div>
-					{/if}
-					<div class="mt-2 flex justify-between">
-						<div class="flex items-center gap-2">
-							<ClockIcon class="inline-block size-4" />
-							<RelativeTimeDynamic date={post.posted} />
-							{#if post.distance}
-								<NavigationArrowIcon class="inline-block size-4 -scale-x-100" />
-								<DistanceFormatted distance={post.distance} />
-							{/if}
-							{#if post.hosting}
-								<HouseIcon
-									class="inline-block size-4 text-fuchsia-700"
-									weight="fill"
-								/>
-							{/if}
-						</div>
-						<div>
-							<a
-								href="/chat/{[post.profileId, ourProfileId]
-									.toSorted((a, b) => a - b)
-									.join(':')}"
-							>
-								<ChatIcon class="inline-block size-4" />
-							</a>
-						</div>
-					</div>
-				</div>
-			</div>
+			<RightNowPost {...post} {ourProfileId} onImageClick={openImage} />
 		{/each}
 	{/if}
 </div>
 
-<ZoomableImage bind:open={lightboxOpen} src={activeImageUrl} />
+<ZoomableImage bind:open={isImageOverlayOpen} src={activeImageUrl} />
