@@ -3,6 +3,7 @@
 	import QuickFilters from "./QuickFilters.svelte";
 
 	let openFilters = $state({
+		sort: false,
 		age: false,
 		position: false,
 		hosting: false,
