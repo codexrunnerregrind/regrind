@@ -17,7 +17,10 @@
 	</Empty.Header>
 	<Empty.Content>
 		<div class="flex gap-2">
-			<Button variant="outline" onclick={rightNowState.filters.resetFilters}>
+			<Button
+				variant="outline"
+				onclick={() => rightNowState.filters.resetFilters()}
+			>
 				Reset filters
 			</Button>
 		</div>
