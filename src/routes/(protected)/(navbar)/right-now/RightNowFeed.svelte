@@ -5,6 +5,7 @@
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
 	import RightNowPost from "./RightNowPost.svelte";
+	import RightNowEmptyFeed from "./RightNowEmptyFeed.svelte";
 
 	let {
 		ourProfileId,
@@ -59,8 +60,8 @@
 				class="m-auto"
 			/>
 		</div>
-	{:else if !rightNowState.loading && !rightNowState.posts.length}
-		<div>TODO: No results found</div>
+	{:else if !rightNowState.posts.length}
+		<RightNowEmptyFeed />
 	{:else}
 		{#each rightNowState.posts as post}
 			<RightNowPost {...post} {ourProfileId} onImageClick={openImage} />

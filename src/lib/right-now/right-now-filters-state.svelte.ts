@@ -34,7 +34,7 @@ export class RightNowSearchFiltersState {
 	}
 
 	resetFilters() {
-		this.value = { ...defaultRightNowFilters };
+		this.set(defaultRightNowFilters);
 		void this.#save();
 	}
 
