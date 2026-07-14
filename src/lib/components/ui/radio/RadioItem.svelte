@@ -22,11 +22,7 @@
 	}
 
 	function handleClick(e: Event) {
-		console.log(context.allowDeselect);
-		if (context.allowDeselect === false) {
-			return;
-		}
-		if (context.value !== itemValue) {
+		if (context.allowDeselect === false || context.value !== itemValue) {
 			return;
 		}
 		const target = e.target as HTMLInputElement;
@@ -38,16 +34,12 @@
 	}
 
 	function handleKeyPress(e: KeyboardEvent) {
-		if (context.allowDeselect === false) {
-			return;
-		}
-		if (context.value !== itemValue) {
+		if (context.allowDeselect === false || context.value !== itemValue) {
 			return;
 		}
 
 		const target = e.target as HTMLInputElement;
 		if (target.tagName != "INPUT") {
-			console.log("not input");
 			return;
 		}
 
