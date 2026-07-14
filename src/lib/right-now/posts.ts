@@ -8,6 +8,7 @@ export type FeedPost = {
 	id: number;
 	media: FeedPostMedia[]; //TODO
 	mediaHash: string | null;
+	onlineUntil: number | null;
 	posted: number;
 	profileId: number;
 	recentlyChatted: boolean;
@@ -43,6 +44,7 @@ export async function getPosts(query: Parameters<typeof getRightNowFeedV4>[0]) {
 				fullImageUrl: m.data.fullImageUrl,
 			})),
 			mediaHash: post.mediaHash ?? null,
+			onlineUntil: post.onlineUntil ?? null,
 			posted: post.posted,
 			profileId: post.profileId,
 			recentlyChatted: post.recentlyChatted,

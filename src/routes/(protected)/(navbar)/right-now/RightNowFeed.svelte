@@ -4,8 +4,7 @@
 	import ZoomableImage from "./ZoomableImage.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
-	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
-	import * as Avatar from "$lib/components/ui/avatar";
+	import RightNowAvatar from "./RightNowAvatar.svelte";
 	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
 	import DistanceFormatted from "$lib/components/profile/DistanceFormatted.svelte";
 	import {
@@ -71,15 +70,13 @@
 	{:else}
 		{#each rightNowState.posts as post}
 			<div class="flex w-full gap-4 text-gray-400">
-				<a href="/profile/{post.profileId}">
-					<Avatar.Root class="size-20">
-						<UserAvatar
-							mediaHash={post.mediaHash}
-							class="size-20 rounded-full bg-neutral-700 *:rounded-full"
-						/>
-						<!-- TODO: ONLINE INDICATOR -->
-					</Avatar.Root>
-				</a>
+				<div>
+					<RightNowAvatar
+						profileId={post.profileId}
+						mediaHash={post.mediaHash}
+						onlineUntil={post.onlineUntil}
+					/>
+				</div>
 				<div class="w-full">
 					<div class={["mt-1 font-bold", { "text-white": post.text }]}>
 						{post.text
