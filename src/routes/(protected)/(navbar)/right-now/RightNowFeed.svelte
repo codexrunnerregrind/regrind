@@ -49,9 +49,11 @@
 	}
 </script>
 
-<div class="flex max-w-5xl flex-col gap-6 px-8">
+<div class="flex w-full max-w-5xl flex-col gap-6 px-8">
 	{#if rightNowState.loading}
-		<div>TODO: Loading SKeleton</div>
+		{#each Array.from({ length: 10 })}
+			<div class="h-20 w-full animate-pulse rounded-md bg-stone-700"></div>
+		{/each}
 	{:else if rightNowState.error}
 		<div class="col-span-full flex p-4">
 			<ApiErrorDisplay
