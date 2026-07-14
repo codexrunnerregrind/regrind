@@ -5,8 +5,8 @@
 		defaultRightNowFilters,
 		filterHostingSchema,
 	} from "$lib/components/filters/filters";
-	import HostingFilterToggle from "$lib/components/filters/hosting/HostingFilterToggle.svelte";
-	import { Button, buttonVariants } from "$lib/components/ui/button";
+	import HostingFilter from "$lib/components/filters/HostingFilter.svelte";
+	import { buttonVariants } from "$lib/components/ui/button";
 	import * as Drawer from "$lib/components/ui/drawer";
 	import { Switch } from "$lib/components/ui/switch";
 	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
@@ -49,24 +49,14 @@
 		class="mx-auto max-w-160"
 	>
 		<Drawer.Header class="flex flex-row items-center justify-between">
-			<div class="flex flex-1 justify-start">
-				<Button
-					variant="link"
-					class="cursor-pointer"
-					onclick={() => {
-						value = defaultRightNowFilters.hosting;
-					}}
-				>
-					Reset
-				</Button>
-			</div>
+			<div class="flex flex-1 justify-start"></div>
 			<Drawer.Title>Hosting Status</Drawer.Title>
 			<div class="flex flex-1 justify-end">
 				<Switch id="hosting-filter-enabled" bind:checked={enabled} />
 			</div>
 		</Drawer.Header>
 		<div class="mb-2 flex flex-col gap-1.5 px-4">
-			<HostingFilterToggle
+			<HostingFilter
 				bind:value={
 					() => value,
 					(v: z.infer<typeof filterHostingSchema>) => {

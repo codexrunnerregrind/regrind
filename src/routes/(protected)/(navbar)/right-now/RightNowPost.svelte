@@ -52,7 +52,10 @@
 		{#if media.length}
 			<div class="mt-2">
 				{#each media as image}
-					<button onclick={() => onImageClick(image.fullImageUrl)}>
+					<button
+						onclick={() => onImageClick(image.fullImageUrl)}
+						class="cursor-pointer"
+					>
 						<img src={image.thumbnailUrl} alt="" class="rounded-lg" />
 					</button>
 				{/each}

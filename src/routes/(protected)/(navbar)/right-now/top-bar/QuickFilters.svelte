@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { defaultRightNowFilters } from "$lib/components/filters/filters";
-	import { Button, buttonVariants } from "$lib/components/ui/button";
+	import { Button } from "$lib/components/ui/button";
 	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
 	import AgeQuickFilter from "./AgeQuickFilter.svelte";
 	import PositionQuickFilter from "./PositionQuickFilter.svelte";
