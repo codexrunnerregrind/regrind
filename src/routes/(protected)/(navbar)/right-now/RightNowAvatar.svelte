@@ -22,7 +22,7 @@
 	<Avatar.Root class="size-20 *:rounded-full">
 		<UserAvatar
 			{mediaHash}
-			class="size-20 rounded-full bg-neutral-700 *:rounded-full"
+			class="size-20 overflow-hidden rounded-full bg-neutral-700 *:rounded-full"
 		/>
 		{#if online}
 			<Avatar.Badge class="bg-green-500"></Avatar.Badge>

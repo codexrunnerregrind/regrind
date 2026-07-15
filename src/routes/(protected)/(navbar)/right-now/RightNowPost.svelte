@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { env } from "$env/dynamic/public";
 	import type { FeedPostMedia } from "$lib/right-now/posts";
 	import RightNowAvatar from "./RightNowAvatar.svelte";
 	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
@@ -54,9 +55,18 @@
 				{#each media as image}
 					<button
 						onclick={() => onImageClick(image.fullImageUrl)}
-						class="cursor-pointer"
+						class="cursor-pointer overflow-hidden"
 					>
-						<img src={image.thumbnailUrl} alt="" class="rounded-lg" />
+						<img
+							src={image.thumbnailUrl}
+							alt=""
+							class={[
+								"rounded-lg",
+								{
+									"blur-2xl": env.PUBLIC_ENABLE_BLUR_EFFECTS,
+								},
+							]}
+						/>
 					</button>
 				{/each}
 			</div>

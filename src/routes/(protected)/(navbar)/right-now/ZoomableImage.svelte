@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { env } from "$env/dynamic/public";
 	import { Dialog } from "bits-ui";
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 
@@ -189,7 +190,7 @@
 					onpointerup={handlePointerUp}
 					onpointercancel={handlePointerUp}
 					onwheel={handleWheel}
-					class="relative z-10 cursor-grab touch-none active:cursor-grabbing"
+					class="relative z-10 cursor-grab touch-none overflow-hidden active:cursor-grabbing"
 					style:transform="translate3d({offsetX}px, {offsetY}px, 0) scale({scale})"
 					style:transition={isDragging || activePointers.size === 2
 						? "none"
@@ -198,7 +199,12 @@
 					<img
 						{src}
 						{alt}
-						class="pointer-events-none h-auto max-h-[90vh] w-auto max-w-[90vw] rounded-md object-contain shadow-2xl"
+						class={[
+							"pointer-events-none h-auto max-h-[90vh] w-auto max-w-[90vw] rounded-md object-contain shadow-2xl",
+							{
+								"blur-2xl": env.PUBLIC_ENABLE_BLUR_EFFECTS,
+							},
+						]}
 						draggable="false"
 					/>
 				</div>
