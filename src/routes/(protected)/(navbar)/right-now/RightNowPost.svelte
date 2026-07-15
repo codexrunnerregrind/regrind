@@ -148,7 +148,7 @@
 			</div>
 			<div>
 				<a href="/chat/{conversationId}">
-					<ChatIcon class="inline-block size-4" />
+					<ChatIcon class="inline-block size-4 align-text-top" />
 				</a>
 			</div>
 		</div>
