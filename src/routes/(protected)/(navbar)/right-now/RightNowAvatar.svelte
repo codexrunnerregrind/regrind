@@ -18,7 +18,7 @@
 	const online = $derived(onlineUntil != null && onlineUntil > getNow());
 </script>
 
-<a class="relative inline-block" href="/profile/{profileId}">
+<a class="relative isolate inline-block" href="/profile/{profileId}">
 	<Avatar.Root class="size-20 *:rounded-full">
 		<UserAvatar
 			{mediaHash}
