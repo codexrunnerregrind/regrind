@@ -42,33 +42,40 @@
 	});
 
 	let lightbox: PhotoSwipeLightbox | null = null;
+	let feedContainer = $state<HTMLElement | null>(null);
 
 	$effect(() => {
-		if (!rightNowState.loading && rightNowState.posts.length > 0) {
-			if (lightbox) {
-				lightbox.destroy();
-			}
-
-			lightbox = new PhotoSwipeLightbox({
-				gallery: "#rightnow-feed",
-				children: "a.pswp-trigger",
-				pswpModule: () => import("photoswipe"),
-				counter: false,
-			});
-
-			const onBackGesture = () => {
-				lightbox?.pswp?.close();
-				return false;
-			};
-			lightbox.on("beforeOpen", () => {
-				backGestureEventHandlers.add(onBackGesture);
-			});
-			lightbox.on("close", () => {
-				backGestureEventHandlers.delete(onBackGesture);
-			});
-
-			lightbox.init();
+		if (
+			rightNowState.loading ||
+			rightNowState.posts.length === 0 ||
+			!feedContainer
+		) {
+			return;
 		}
+
+		if (lightbox) {
+			lightbox.destroy();
+		}
+
+		lightbox = new PhotoSwipeLightbox({
+			gallery: feedContainer,
+			children: "a.pswp-trigger",
+			pswpModule: () => import("photoswipe"),
+			counter: false,
+		});
+
+		const onBackGesture = () => {
+			lightbox?.pswp?.close();
+			return false;
+		};
+		lightbox.on("beforeOpen", () => {
+			backGestureEventHandlers.add(onBackGesture);
+		});
+		lightbox.on("close", () => {
+			backGestureEventHandlers.delete(onBackGesture);
+		});
+
+		lightbox.init();
 	});
 
 	onDestroy(() => {
@@ -79,7 +86,10 @@
 	});
 </script>
 
-<div id="rightnow-feed" class="flex w-full max-w-5xl flex-col gap-6 px-8">
+<div
+	bind:this={feedContainer}
+	class="flex w-full max-w-5xl flex-col gap-6 px-8"
+>
 	{#if rightNowState.loading}
 		{#each Array.from({ length: 10 })}
 			<div class="h-20 w-full animate-pulse rounded-md bg-stone-700"></div>
