@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { afterNavigate, beforeNavigate } from "$app/navigation";
-
-	import ZoomableImage from "./ZoomableImage.svelte";
+	import { onDestroy } from "svelte";
+	import PhotoSwipeLightbox from "photoswipe/lightbox";
+	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
 	import RightNowPost from "./RightNowPost.svelte";
@@ -40,16 +41,45 @@
 		}
 	});
 
-	let isImageOverlayOpen = $state(false);
-	let activeImageUrl = $state("");
+	let lightbox: PhotoSwipeLightbox | null = null;
 
-	function openImage(url: string) {
-		activeImageUrl = url;
-		isImageOverlayOpen = true;
-	}
+	$effect(() => {
+		if (!rightNowState.loading && rightNowState.posts.length > 0) {
+			if (lightbox) {
+				lightbox.destroy();
+			}
+
+			lightbox = new PhotoSwipeLightbox({
+				gallery: "#rightnow-feed",
+				children: "a.pswp-trigger",
+				pswpModule: () => import("photoswipe"),
+				counter: false,
+			});
+
+			const onBackGesture = () => {
+				lightbox?.pswp?.close();
+				return false;
+			};
+			lightbox.on("beforeOpen", () => {
+				backGestureEventHandlers.add(onBackGesture);
+			});
+			lightbox.on("close", () => {
+				backGestureEventHandlers.delete(onBackGesture);
+			});
+
+			lightbox.init();
+		}
+	});
+
+	onDestroy(() => {
+		if (lightbox) {
+			lightbox.destroy();
+			lightbox = null;
+		}
+	});
 </script>
 
-<div class="flex w-full max-w-5xl flex-col gap-6 px-8">
+<div id="rightnow-feed" class="flex w-full max-w-5xl flex-col gap-6 px-8">
 	{#if rightNowState.loading}
 		{#each Array.from({ length: 10 })}
 			<div class="h-20 w-full animate-pulse rounded-md bg-stone-700"></div>
@@ -66,9 +96,7 @@
 		<RightNowEmptyFeed />
 	{:else}
 		{#each rightNowState.posts as post}
-			<RightNowPost {...post} {ourProfileId} onImageClick={openImage} />
+			<RightNowPost {...post} {ourProfileId} />
 		{/each}
 	{/if}
 </div>
-
-<ZoomableImage bind:open={isImageOverlayOpen} src={activeImageUrl} />

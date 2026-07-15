@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { env } from "$env/dynamic/public";
+	import { untrack } from "svelte";
 	import type { FeedPostMedia } from "$lib/right-now/posts";
 	import RightNowAvatar from "./RightNowAvatar.svelte";
 	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
@@ -22,7 +23,6 @@
 		distance = null,
 		hosting = false,
 		ourProfileId,
-		onImageClick,
 	}: {
 		profileId: number;
 		mediaHash: string | null;
@@ -34,12 +34,54 @@
 		distance: number | null;
 		hosting: boolean;
 		ourProfileId: number;
-		onImageClick: (url: string) => void;
 	} = $props();
 
 	const conversationId = $derived(
 		[profileId, ourProfileId].toSorted((a, b) => a - b).join(":"),
 	);
+
+	interface ImageState {
+		ref: HTMLImageElement | null;
+		width: number | undefined;
+		height: number | undefined;
+		loaded: boolean;
+	}
+
+	let mediaStates = $state<ImageState[]>(
+		untrack(() =>
+			media.map(() => ({
+				ref: null,
+				width: undefined,
+				height: undefined,
+				loaded: false,
+			})),
+		),
+	);
+
+	$effect(() => {
+		const targetLength = media.length;
+		untrack(() => {
+			if (mediaStates.length !== targetLength) {
+				mediaStates = media.map((_, i) => {
+					return (
+						mediaStates[i] ?? {
+							ref: null,
+							width: undefined,
+							height: undefined,
+							loaded: false,
+						}
+					);
+				});
+			}
+		});
+	});
+
+	function handleLoad(event: Event, imgIndex: number) {
+		const img = event.currentTarget as HTMLImageElement;
+		mediaStates[imgIndex].loaded = true;
+		mediaStates[imgIndex].width = img.naturalWidth;
+		mediaStates[imgIndex].height = img.naturalHeight;
+	}
 </script>
 
 <div class="flex w-full gap-4 text-gray-400">
@@ -51,23 +93,41 @@
 			{text ? text : displayName ? `${displayName} joined` : "Joined"}
 		</div>
 		{#if media.length}
-			<div class="mt-2">
-				{#each media as image}
-					<button
-						onclick={() => onImageClick(image.fullImageUrl)}
-						class="cursor-pointer overflow-hidden"
+			<div class="align-items-start mt-2 flex flex-col items-start gap-1">
+				{#each media as image, imgIndex}
+					<a
+						href={image.fullImageUrl}
+						data-pswp-width={mediaStates[imgIndex].width}
+						data-pswp-height={mediaStates[imgIndex].height}
+						class={[
+							"pswp-trigger overflow-hidden",
+							{
+								"pointer-events-none w-full": !mediaStates[imgIndex].loaded,
+								"cursor-pointer": mediaStates[imgIndex].loaded,
+							},
+						]}
 					>
+						{#if !mediaStates[imgIndex].loaded}
+							<div
+								class="h-64 w-full animate-pulse rounded-lg bg-neutral-200 dark:bg-neutral-800"
+							></div>
+						{/if}
+
 						<img
-							src={image.thumbnailUrl}
+							bind:this={mediaStates[imgIndex].ref}
+							onload={(e) => handleLoad(e, imgIndex)}
+							src={image.fullImageUrl}
 							alt=""
 							class={[
-								"rounded-lg",
+								"max-h-64 w-full rounded-lg object-contain transition-opacity duration-300",
 								{
+									"opacity-0": !mediaStates[imgIndex].loaded,
+									"opacity-100": mediaStates[imgIndex].loaded,
 									"blur-2xl": env.PUBLIC_ENABLE_BLUR_EFFECTS,
 								},
 							]}
 						/>
-					</button>
+					</a>
 				{/each}
 			</div>
 		{/if}
