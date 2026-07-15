@@ -1,8 +1,5 @@
 import z from "zod";
 
-// TODO: Add vX to the name of the models
-
-// 1. PostData Schema
 export const PostDataSchema = z.object({
 	"@type": z.string(),
 	id: z.number().int(),
@@ -13,15 +10,14 @@ export const PostDataSchema = z.object({
 	text: z.string().optional(),
 	distance: z.number().int().optional(),
 	hosting: z.boolean(),
-	posted: z.number().int(), // unix timestamp in milliseconds
-	expiration: z.number().int(), // unix timestamp in milliseconds
-	onlineUntil: z.number().int().optional(), // unix timestamp in milliseconds
+	posted: z.number().int(),
+	expiration: z.number().int(),
+	onlineUntil: z.number().int().optional(),
 	mpuScore: z.number().optional(),
 	recentlyChatted: z.boolean(),
 	favorite: z.boolean(),
 });
 
-// 2. RightNowPostMediaItem Schema
 export const RightNowPostMediaItemSchema = z.object({
 	type: z.string(),
 	data: z.object({
@@ -38,8 +34,7 @@ export const RightNowPostMediaItemSchema = z.object({
 	}),
 });
 
-// 3. Leaf post variations mapped inside the discriminator union
-export const CuratedPostSchema = z.object({
+export const CuratedPostV1Schema = z.object({
 	type: z.literal("curated_post_v1"),
 	data: z.object({
 		"@type": z.string(),
@@ -47,7 +42,7 @@ export const CuratedPostSchema = z.object({
 	}),
 });
 
-export const UpsellInsertSchema = z.object({
+export const UpsellInsertV1Schema = z.object({
 	type: z.literal("upsell_insert_v1"),
 	data: z.object({
 		"@type": z.string(),
@@ -55,30 +50,28 @@ export const UpsellInsertSchema = z.object({
 	}),
 });
 
-export const RightNowPostSchema = z.object({
+export const RightNowV3PostSchema = z.object({
 	type: z.literal("right_now_post_v3"),
 	data: PostDataSchema,
 });
 
-export const LockedPostSchema = z.object({
+export const LockedPostV1Schema = z.object({
 	type: z.literal("locked_post_v1"),
 	data: PostDataSchema,
 });
 
 export const RightNowFeedResponseItemSchema = z.discriminatedUnion("type", [
-	CuratedPostSchema,
-	RightNowPostSchema,
-	LockedPostSchema,
-	UpsellInsertSchema,
+	CuratedPostV1Schema,
+	RightNowV3PostSchema,
+	LockedPostV1Schema,
+	UpsellInsertV1Schema,
 ]);
 
-// 5. Root Entry Schema
 export const RightNowFeedResponseSchema = z.object({
 	items: z.array(RightNowFeedResponseItemSchema),
 	viewerCount: z.number().int(),
 });
 
-// TypeScript Inference Types
 export type PostData = z.infer<typeof PostDataSchema>;
 export type RightNowPostMediaItem = z.infer<typeof RightNowPostMediaItemSchema>;
 export type RightNowFeedResponseItem = z.infer<
