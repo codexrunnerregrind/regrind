@@ -3,7 +3,6 @@ import { getRightNowFeedV4 } from "$lib/api/right-now";
 export type FeedPost = {
 	displayName: string | null;
 	distance: number | null;
-	favorite: boolean;
 	hosting: boolean;
 	id: number;
 	media: FeedPostMedia[]; //TODO
@@ -11,7 +10,6 @@ export type FeedPost = {
 	onlineUntil: number | null;
 	posted: number;
 	profileId: number;
-	recentlyChatted: boolean;
 	text: string | null;
 };
 
@@ -35,7 +33,6 @@ export async function getPosts(query: Parameters<typeof getRightNowFeedV4>[0]) {
 		posts.push({
 			displayName: post.displayName ?? null,
 			distance: post.distance ?? null,
-			favorite: post.favorite,
 			hosting: post.hosting,
 			id: post.id,
 			media: post.media.map((m) => ({
@@ -47,7 +44,6 @@ export async function getPosts(query: Parameters<typeof getRightNowFeedV4>[0]) {
 			onlineUntil: post.onlineUntil ?? null,
 			posted: post.posted,
 			profileId: post.profileId,
-			recentlyChatted: post.recentlyChatted,
 			text: post.text ?? null,
 		});
 	}
