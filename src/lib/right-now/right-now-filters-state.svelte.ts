@@ -33,7 +33,6 @@ export class RightNowSearchFiltersState {
 
 	resetFilters() {
 		this.set(defaultRightNowFilters);
-		void this.#save();
 	}
 
 	reset() {

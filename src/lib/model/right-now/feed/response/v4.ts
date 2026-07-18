@@ -22,8 +22,8 @@ export const RightNowPostMediaItemSchema = z.object({
 	type: z.string(),
 	data: z.object({
 		mediaId: z.number().int(),
-		thumbnailUrl: z.string().url(),
-		fullImageUrl: z.string().url(),
+		thumbnailUrl: z.url(),
+		fullImageUrl: z.url(),
 		contentType: z.string(),
 		state: z.string(),
 		reason: z.string().nullable().optional(),

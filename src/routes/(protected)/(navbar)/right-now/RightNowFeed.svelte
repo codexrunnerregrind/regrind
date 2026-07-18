@@ -19,10 +19,6 @@
 		rightNowState.load();
 	});
 
-	export function refresh() {
-		rightNowState.refresh();
-	}
-
 	beforeNavigate(() => {
 		rightNowState.scrollY = window.scrollY;
 	});

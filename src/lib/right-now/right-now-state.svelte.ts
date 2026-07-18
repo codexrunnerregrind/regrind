@@ -1,5 +1,7 @@
+import { untrack } from "svelte";
 import z from "zod";
 
+import { registerAccountCache } from "$lib/api/account-caches";
 import type { rightNowV4QuerySchema } from "$lib/model/right-now/feed/query/v4";
 import { getPosts, type FeedPost } from "./posts";
 import { RightNowSearchFiltersState } from "./right-now-filters-state.svelte";
@@ -11,13 +13,12 @@ class RightNowState {
 	refreshing = $state(false);
 	error: Error | null = $state(null);
 
-	get errorMessage(): string | null {
-		return this.error?.message ?? null;
-	}
+	#fetchToken = 0;
 
 	scrollY = 0;
 
 	load(): void {
+		if (untrack(() => this.posts.length > 0)) return;
 		this.#reset();
 		this.scrollY = 0;
 		void this.#fetchPosts();
@@ -40,6 +41,7 @@ class RightNowState {
 	}
 
 	#reset(): void {
+		this.#fetchToken += 1;
 		this.posts = [];
 		this.loading = true;
 		this.error = null;
@@ -54,8 +56,10 @@ class RightNowState {
 	}
 
 	async #fetchPosts(): Promise<void> {
+		const token = ++this.#fetchToken;
 		try {
 			await this.filters.ready;
+			if (token !== this.#fetchToken) return;
 			const filters = this.filters.value;
 			const query = {
 				sort: filters?.sort || "DISTANCE",
@@ -71,10 +75,12 @@ class RightNowState {
 				}),
 			} satisfies z.infer<typeof rightNowV4QuerySchema>;
 			const posts = await getPosts(query);
+			if (token !== this.#fetchToken) return;
 			this.posts = posts;
 			this.error = null;
 			this.loading = false;
 		} catch (err) {
+			if (token !== this.#fetchToken) return;
 			this.error =
 				err instanceof Error
 					? err
@@ -85,3 +91,5 @@ class RightNowState {
 }
 
 export const rightNowState = new RightNowState();
+
+registerAccountCache(() => rightNowState.reset());
