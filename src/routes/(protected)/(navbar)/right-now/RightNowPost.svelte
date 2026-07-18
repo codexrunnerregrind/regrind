@@ -41,7 +41,6 @@
 	);
 
 	interface ImageState {
-		ref: HTMLImageElement | null;
 		width: number | undefined;
 		height: number | undefined;
 		loaded: boolean;
@@ -50,7 +49,6 @@
 	let mediaStates = $state<ImageState[]>(
 		untrack(() =>
 			media.map(() => ({
-				ref: null,
 				width: undefined,
 				height: undefined,
 				loaded: false,
@@ -65,7 +63,6 @@
 				mediaStates = media.map((_, i) => {
 					return (
 						mediaStates[i] ?? {
-							ref: null,
 							width: undefined,
 							height: undefined,
 							loaded: false,
@@ -89,12 +86,12 @@
 		<RightNowAvatar {profileId} {mediaHash} {onlineUntil} />
 	</div>
 	<div class="w-full">
-		<div class={["mt-1 font-bold", { "text-white": text }]}>
+		<div class={["mt-1 font-bold wrap-break-word", { "text-white": text }]}>
 			{text ? text : displayName ? `${displayName} joined` : "Joined"}
 		</div>
 		{#if media.length}
-			<div class="align-items-start mt-2 flex flex-col items-start gap-1">
-				{#each media as image, imgIndex}
+			<div class="mt-2 flex flex-col items-start gap-1">
+				{#each media as image, imgIndex (image.fullImageUrl)}
 					<a
 						href={image.fullImageUrl}
 						data-pswp-width={mediaStates[imgIndex].width}
@@ -114,7 +111,6 @@
 						{/if}
 
 						<img
-							bind:this={mediaStates[imgIndex].ref}
 							onload={(e) => handleLoad(e, imgIndex)}
 							src={image.fullImageUrl}
 							alt=""
@@ -135,7 +131,7 @@
 			<div class="flex items-center gap-2">
 				<ClockIcon class="inline-block size-4" />
 				<RelativeTimeDynamic date={posted} />
-				{#if distance}
+				{#if distance !== null}
 					<NavigationArrowIcon class="inline-block size-4 -scale-x-100" />
 					<DistanceFormatted {distance} />
 				{/if}

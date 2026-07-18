@@ -69,9 +69,6 @@ class RightNowState {
 					ageMin: filters?.age[0],
 					ageMax: filters?.age[1],
 				}),
-				...(filters?.hostingEnabled && {
-					hosting: filters?.hosting,
-				}),
 			} satisfies z.infer<typeof rightNowV4QuerySchema>;
 			const posts = await getPosts(query);
 			this.posts = posts;

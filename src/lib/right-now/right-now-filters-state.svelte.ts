@@ -24,8 +24,6 @@ export class RightNowSearchFiltersState {
 		const oldValue = this.value;
 		const newValue = Object.assign({}, oldValue, rightNowFilters);
 
-		//TODO: Changing a filter value whne it's not enabled causes refresh.
-		//      Refresh should happen only when a value for an enabled filter changes
 		if (!isEqual(oldValue, newValue)) {
 			this.value = newValue;
 			void this.#save();

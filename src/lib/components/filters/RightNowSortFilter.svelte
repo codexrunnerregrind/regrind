@@ -13,7 +13,7 @@
 </script>
 
 <RadioGroup
-	name="hosting"
+	name="sort"
 	bind:value={
 		() => value,
 		(v) => {

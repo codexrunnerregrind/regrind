@@ -1,4 +1,5 @@
 <script lang="ts">
+	import "photoswipe/style.css";
 	import { afterNavigate, beforeNavigate } from "$app/navigation";
 	import { onDestroy } from "svelte";
 	import PhotoSwipeLightbox from "photoswipe/lightbox";
@@ -105,7 +106,7 @@
 	{:else if !rightNowState.posts.length}
 		<RightNowEmptyFeed />
 	{:else}
-		{#each rightNowState.posts as post}
+		{#each rightNowState.posts as post (post.id)}
 			<RightNowPost {...post} {ourProfileId} />
 		{/each}
 	{/if}
