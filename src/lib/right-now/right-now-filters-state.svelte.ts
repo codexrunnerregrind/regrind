@@ -32,6 +32,9 @@ export class RightNowSearchFiltersState {
 	}
 
 	resetFilters() {
+		if (isEqual(this.value, defaultRightNowFilters)) {
+			return;
+		}
 		this.set(defaultRightNowFilters);
 	}
 
