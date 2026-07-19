@@ -55,10 +55,13 @@ export const RightNowV3PostSchema = z.object({
 	data: PostDataSchema,
 });
 
+export type RightNowV3Post = z.infer<typeof RightNowV3PostSchema>;
+
 export const LockedPostV1Schema = z.object({
 	type: z.literal("locked_post_v1"),
 	data: PostDataSchema,
 });
+export type LockedPostV1 = z.infer<typeof LockedPostV1Schema>;
 
 export const RightNowFeedResponseItemSchema = z.discriminatedUnion("type", [
 	CuratedPostV1Schema,
