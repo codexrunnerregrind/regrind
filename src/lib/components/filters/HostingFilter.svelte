@@ -13,6 +13,8 @@
 
 <RadioGroup
 	name="hosting"
+	legend="Hosting status"
+	hideLegend={true}
 	bind:value={
 		() => String(value),
 		(v) => {

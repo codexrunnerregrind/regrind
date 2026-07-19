@@ -5,6 +5,9 @@
 	import RightNowAvatar from "./RightNowAvatar.svelte";
 	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
 	import DistanceFormatted from "$lib/components/profile/DistanceFormatted.svelte";
+	import Button from "$lib/components/ui/button/button.svelte";
+	import { formatDistance } from "$lib/util/units";
+	import { getUnitsSnapshot } from "$lib/app-data/preferences.svelte";
 	import {
 		ClockIcon,
 		NavigationArrowIcon,
@@ -79,11 +82,22 @@
 		mediaStates[imgIndex].width = img.naturalWidth;
 		mediaStates[imgIndex].height = img.naturalHeight;
 	}
+
+	const postAriaLabel = $derived.by(() => {
+		let label = `Post by ${displayName ? displayName : "someone"}.`;
+		if (text !== null) {
+			label += `With message.`;
+		}
+		if (distance !== null) {
+			label += `Distance: ${formatDistance(distance, getUnitsSnapshot())}.`;
+		}
+		return label;
+	});
 </script>
 
-<div class="flex w-full gap-4 text-gray-400">
+<article class="flex w-full gap-4 text-gray-400" aria-label={postAriaLabel}>
 	<div>
-		<RightNowAvatar {profileId} {mediaHash} {onlineUntil} />
+		<RightNowAvatar {profileId} {displayName} {mediaHash} {onlineUntil} />
 	</div>
 	<div class="w-full">
 		<div class={["mt-1 font-bold wrap-break-word", { "text-white": text }]}>
@@ -94,6 +108,7 @@
 				{#each media as image, imgIndex (image.fullImageUrl)}
 					<a
 						href={image.fullImageUrl}
+						aria-label="Open image"
 						data-pswp-width={mediaStates[imgIndex].width}
 						data-pswp-height={mediaStates[imgIndex].height}
 						class={[
@@ -129,24 +144,40 @@
 		{/if}
 		<div class="mt-2 flex justify-between">
 			<div class="flex items-center gap-2">
-				<ClockIcon class="inline-block size-4" />
+				<ClockIcon class="inline-block size-4" aria-hidden="true" />
+				<span class="sr-only">Posted:</span>
 				<RelativeTimeDynamic date={posted} />
 				{#if distance !== null}
-					<NavigationArrowIcon class="inline-block size-4 -scale-x-100" />
+					<NavigationArrowIcon
+						class="inline-block size-4 -scale-x-100"
+						aria-hidden="true"
+					/>
+					<span class="sr-only">Distance:</span>
 					<DistanceFormatted {distance} />
 				{/if}
 				{#if hosting}
 					<HouseIcon
 						class="inline-block size-4 text-fuchsia-700"
 						weight="fill"
+						aria-hidden="true"
 					/>
+					<span class="sr-only">Hosting</span>
 				{/if}
 			</div>
 			<div>
-				<a href="/chat/{conversationId}">
-					<ChatIcon class="inline-block size-4 align-text-top" />
-				</a>
+				<Button
+					type="button"
+					variant="ghost"
+					size="icon"
+					href="/chat/{conversationId}"
+					aria-label="Message {displayName ? `${displayName}` : 'someone'}"
+				>
+					<ChatIcon
+						class="inline-block size-4 align-text-top"
+						aria-hidden="true"
+					/>
+				</Button>
 			</div>
 		</div>
 	</div>
-</div>
+</article>

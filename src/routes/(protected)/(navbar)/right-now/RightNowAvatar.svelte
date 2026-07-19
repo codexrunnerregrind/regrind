@@ -5,10 +5,12 @@
 
 	let {
 		profileId,
+		displayName = null,
 		mediaHash = null,
 		onlineUntil = null,
 	}: {
 		profileId: number;
+		displayName: string | null;
 		mediaHash: string | null;
 		onlineUntil: number | null;
 	} = $props();
@@ -19,6 +21,7 @@
 </script>
 
 <a class="relative isolate inline-block" href="/profile/{profileId}">
+	<span class="sr-only">{displayName ? displayName : "Someone"}</span>
 	<Avatar.Root class="size-20 *:rounded-full">
 		<UserAvatar
 			{mediaHash}
@@ -26,6 +29,8 @@
 		/>
 		{#if online}
 			<Avatar.Badge class="bg-green-500"></Avatar.Badge>
+			<span class="sr-only">Online</span>
 		{/if}
+		<span class="sr-only">View profile</span>
 	</Avatar.Root>
 </a>

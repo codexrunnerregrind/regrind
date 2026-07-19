@@ -14,6 +14,8 @@
 
 <RadioGroup
 	name="sort"
+	legend="Sort posts by"
+	hideLegend={true}
 	bind:value={
 		() => value,
 		(v) => {
