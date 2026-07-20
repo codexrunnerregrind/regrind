@@ -57,7 +57,7 @@ export const myAlbumSchema = z.object({
 	albumName: z.string().nullable(),
 	profileId: z.int(),
 	version: z.int(),
-	content: albumContentSchema,
+	content: z.array(albumContentSchema),
 	isShareable: z.boolean(),
 });
 

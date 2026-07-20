@@ -92,7 +92,8 @@
 		<div class="photo-grid">
 			{#each albums as album (album.albumId)}
 				{@const isSelected = selected.has(album.albumId)}
-				{@const cover = album.content.thumbUrl || album.content.coverUrl}
+				{@const cover =
+					album.content[0]?.thumbUrl || album.content[0]?.coverUrl}
 				<button
 					type="button"
 					class="relative aspect-3/4"

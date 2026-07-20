@@ -418,16 +418,18 @@ export function demoMyAlbums() {
 			sharedCount: i,
 			createdAt: localDateTime(NOW - (i + 2) * DAY),
 			updatedAt: localDateTime(NOW - (i + 1) * DAY),
-			content: {
-				contentId: albumId * 100,
-				contentType: "image/jpeg",
-				coverUrl: thumb,
-				statusId: 1,
-				thumbUrl: thumb,
-				url: picsum(`my-album-${albumId}-0`),
-				processing: false,
-				rejectionId: null,
-			},
+			content: [
+				{
+					contentId: albumId * 100,
+					contentType: "image/jpeg",
+					coverUrl: thumb,
+					statusId: 1,
+					thumbUrl: thumb,
+					url: picsum(`my-album-${albumId}-0`),
+					processing: false,
+					rejectionId: null,
+				},
+			],
 		};
 	});
 	return { albums };
