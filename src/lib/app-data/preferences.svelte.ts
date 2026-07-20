@@ -2,7 +2,7 @@ import { decode, encode } from "@msgpack/msgpack";
 import { toast } from "svelte-sonner";
 import z from "zod";
 
-import { gridSearchFiltersSchema } from "$lib/components/filters/filters";
+import { gridSearchFiltersSchema, rightNowFiltersSchema } from "$lib/components/filters/filters";
 import { geohashSchema } from "$lib/model/geohash";
 import { type UnitSystem, unitSystemSchema } from "$lib/util/units";
 import { existsAppDataFile, readAppDataFile, writeAppDataFileAtomic } from ".";
@@ -14,6 +14,7 @@ const preferencesSchema = z.object({
 	revealProfileViews: z.boolean().default(false),
 	units: unitSystemSchema.default("metric"),
 	warnBeforeCopyingErrorDetails: z.boolean().default(true),
+    rightNowFilters: rightNowFiltersSchema.optional(),
 });
 
 type Preferences = z.infer<typeof preferencesSchema>;
