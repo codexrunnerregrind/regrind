@@ -50,6 +50,16 @@ export const UpsellInsertV1Schema = z.object({
 	}),
 });
 
+export const DiscreetRightNowPostV1Schema = z.object({
+	type: z.literal("discreet_right_now_post_v1"),
+	data: z.object({}),
+});
+
+export const DiscreetLockedPostV1Schema = z.object({
+	type: z.literal("discreet_locked_post_v1"),
+	data: z.object({}),
+});
+
 export const RightNowV3PostSchema = z.object({
 	type: z.literal("right_now_post_v3"),
 	data: PostDataSchema,
@@ -68,6 +78,8 @@ export const RightNowFeedResponseItemSchema = z.discriminatedUnion("type", [
 	RightNowV3PostSchema,
 	LockedPostV1Schema,
 	UpsellInsertV1Schema,
+	DiscreetLockedPostV1Schema,
+	DiscreetRightNowPostV1Schema,
 ]);
 
 export const RightNowFeedResponseSchema = z.object({
