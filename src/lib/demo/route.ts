@@ -22,6 +22,7 @@ import {
 import { demoReceivedTaps, demoViews } from "./mock/interest";
 import { meSeed, profileSeed } from "./mock/profiles";
 import { demoGenders, demoPronouns, demoTags } from "./mock/reference";
+import { demoRightNowFeed } from "./mock/right-now";
 
 type DemoResponse = { status: number; body: unknown };
 
@@ -152,6 +153,9 @@ export function demoRoute(
 	}
 	if (method === "GET" && rawPath === "/v3/places/search") {
 		return ok({ places: [] });
+	}
+	if (method === "GET" && rawPath.startsWith("/v4/rightnow/feed")) {
+		return ok(demoRightNowFeed(params));
 	}
 
 	return ok({});
