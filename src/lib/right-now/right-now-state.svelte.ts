@@ -5,6 +5,7 @@ import { registerAccountCache } from "$lib/api/account-caches";
 import type { rightNowV4QuerySchema } from "$lib/model/right-now/feed/query/v4";
 import { getPosts, type FeedPost } from "./posts";
 import { RightNowSearchFiltersState } from "./right-now-filters-state.svelte";
+import { showErrorToast } from "$lib/api/error";
 
 class RightNowState {
 	filters = new RightNowSearchFiltersState({ onRefresh: () => this.refresh() });
@@ -34,7 +35,7 @@ class RightNowState {
 		if (this.refreshing) return;
 		this.refreshing = true;
 		try {
-			await this.#fetchPosts();
+			await this.#fetchPosts(true);
 		} finally {
 			this.refreshing = false;
 		}
@@ -55,7 +56,7 @@ class RightNowState {
 		this.filters.reset();
 	}
 
-	async #fetchPosts(): Promise<void> {
+	async #fetchPosts(silent = false): Promise<void> {
 		const token = ++this.#fetchToken;
 		try {
 			await this.filters.ready;
@@ -81,6 +82,13 @@ class RightNowState {
 			this.loading = false;
 		} catch (err) {
 			if (token !== this.#fetchToken) return;
+			if (silent) {
+				showErrorToast({
+					label: "Failed to refresh  Right Now feed",
+					error: err,
+				});
+				return;
+			}
 			this.error =
 				err instanceof Error
 					? err
