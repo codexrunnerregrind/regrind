@@ -11,20 +11,21 @@
 	let feedContainer: HTMLElement | null = $state(null);
 </script>
 
-<main class="flex min-h-[calc(var(--screen-scroll)+3.5rem)] flex-col gap-4 p-4">
-	<TopBar />
-	<div class="flex flex-col items-center" bind:this={feedContainer}>
-		{#if !rightNowState.loading && !rightNowState.error}
-			<DataRefreshControl
-				container={feedContainer}
-				windowScroll
-				updating={rightNowState.refreshing}
-				position="top"
-				class="mb-3"
-				containerClass="z-1"
-				onclick={() => void rightNowState.reload()}
-			/>
-		{/if}
-		<RightNowFeed {ourProfileId} />
+<main class="screen-nav-host">
+	<div class="pull-scroller" bind:this={feedContainer}>
+		<div class="flex min-h-overscrollable flex-col gap-4 p-4 pb-nav-clear">
+			<TopBar />
+			<div class="flex flex-col items-center">
+				<RightNowFeed {ourProfileId} />
+			</div>
+		</div>
 	</div>
+	{#if !rightNowState.loading && !rightNowState.error}
+		<DataRefreshControl
+			container={feedContainer}
+			updating={rightNowState.refreshing}
+			position="top"
+			onrefresh={() => void rightNowState.reload()}
+		/>
+	{/if}
 </main>
