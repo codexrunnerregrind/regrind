@@ -13,7 +13,5 @@ export async function getRightNowFeedV4(
 			new URLSearchParams(
 				urlSearchParamsCodec(rightNowV4QuerySchema).encode(query),
 			).toString(),
-	)
-		.then((res) => res.json())
-		.then((data) => RightNowFeedResponseSchema.parse(data));
+	).then((res) => res.jsonParsed(RightNowFeedResponseSchema));
 }
