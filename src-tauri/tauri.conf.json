@@ -48,6 +48,9 @@
 			"autoIncrementVersionCode": false,
 			"minSdkVersion": 28,
 			"versionCode": 1020
+		},
+		"iOS": {
+			"developmentTeam": "65BJ8C3N7S"
 		}
 	}
 }
