@@ -5,6 +5,7 @@ import {
 	demoConversations,
 	demoDeleteConversation,
 	demoDrawerMedia,
+	demoMyAlbums,
 	demoSentMessage,
 	demoSetConversationMuted,
 	demoSetConversationPinned,
@@ -109,8 +110,19 @@ export function demoRoute(
 	) {
 		return ok(demoSingleMessage(segments[3], segments[5]));
 	}
+	if (method === "GET" && rawPath === "/v1/albums") {
+		return ok(demoMyAlbums());
+	}
 	if (method === "GET" && segments[0] === "v2" && segments[1] === "albums") {
 		return ok(demoAlbumContent(Number(segments[2])));
+	}
+	if (
+		method === "POST" &&
+		segments[0] === "v4" &&
+		segments[1] === "albums" &&
+		segments[3] === "shares"
+	) {
+		return ok({});
 	}
 	if (method === "POST" && rawPath === "/v4/chat/message/send") {
 		return ok(demoSentMessage(body));

@@ -2,6 +2,7 @@ import { createContext } from "svelte";
 
 import { ApiError } from "$lib/api";
 import { showErrorToast } from "$lib/api/error";
+import { shareAlbum } from "$lib/api/messaging/albums";
 import { markConversationAsRead } from "$lib/api/messaging/conversations";
 import { reactToMessage, sendMessage } from "$lib/api/messaging/messages";
 import { getPreferences } from "$lib/app-data/preferences.svelte";
@@ -362,6 +363,22 @@ export class ConversationState {
 			const latestSent = this.messages.find((m) => m.status === "sent");
 			this.#updatePreview(latestSent);
 		}
+	}
+
+	// Shares the given albums into this conversation. The backend posts each
+	// shared album as a message, so we refresh afterwards to pull them in.
+	async shareAlbums(albumIds: number[]): Promise<void> {
+		if (!this.profile || albumIds.length === 0) return;
+		const profileId = this.profile.profileId;
+		await Promise.all(
+			albumIds.map((albumId) =>
+				shareAlbum({
+					albumId,
+					profiles: [{ profileId, expirationType: "INDEFINITE" }],
+				}),
+			),
+		);
+		await this.refresh();
 	}
 
 	#advanceLastRead(timestamp: number | null): boolean {

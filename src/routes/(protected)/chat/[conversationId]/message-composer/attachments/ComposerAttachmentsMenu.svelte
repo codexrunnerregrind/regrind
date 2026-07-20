@@ -10,10 +10,11 @@
 	import * as Drawer from "$lib/components/ui/drawer";
 	import * as Tabs from "$lib/components/ui/tabs";
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+	import ComposerAlbumsTab from "./ComposerAlbumsTab.svelte";
 	import ComposerMediaTab from "./ComposerMediaTab.svelte";
 	import ComposerUnimplementedTab from "./ComposerUnimplementedTab.svelte";
 
-	const FULLSIZE_TABS: Tab[] = ["media"];
+	const FULLSIZE_TABS: Tab[] = ["media", "albums"];
 
 	let {
 		open = $bindable(),
@@ -30,7 +31,24 @@
 	let sheet = $state<HTMLDivElement | null>(null);
 	let peek = $state<HTMLDivElement | null>(null);
 	let mediaTab = $state<ComposerMediaTab | null>(null);
-	let selectedCount = $state(0);
+	let albumsTab = $state<ComposerAlbumsTab | null>(null);
+	let mediaCount = $state(0);
+	let albumsCount = $state(0);
+
+	// The floating Send button reflects and acts on whichever tab is active, so
+	// each tab keeps its own selection independently.
+	const selectedCount = $derived(
+		selectedTab === "media"
+			? mediaCount
+			: selectedTab === "albums"
+				? albumsCount
+				: 0,
+	);
+
+	function sendSelected() {
+		if (selectedTab === "media") mediaTab?.sendSelected();
+		else if (selectedTab === "albums") albumsTab?.sendSelected();
+	}
 
 	const settleQuietMs = 140;
 	let settleTimer: ReturnType<typeof setTimeout> | null = null;
@@ -126,13 +144,19 @@
 						<ComposerMediaTab
 							bind:this={mediaTab}
 							onSelectionChange={(count) => {
-								selectedCount = count;
+								mediaCount = count;
 							}}
 							onClose={() => (open = false)}
 						/>
 					</Tabs.Content>
 					<Tabs.Content value="albums">
-						<ComposerUnimplementedTab label="Sharing albums" issue={33} />
+						<ComposerAlbumsTab
+							bind:this={albumsTab}
+							onSelectionChange={(count) => {
+								albumsCount = count;
+							}}
+							onClose={() => (open = false)}
+						/>
 					</Tabs.Content>
 					<Tabs.Content value="location">
 						<ComposerUnimplementedTab label="Sharing location" issue={35} />
@@ -149,9 +173,7 @@
 					<Button
 						size="lg"
 						class="pointer-events-auto shadow-lg"
-						onclick={() => {
-							mediaTab?.sendSelected();
-						}}
+						onclick={sendSelected}
 					>
 						Send
 						<Badge

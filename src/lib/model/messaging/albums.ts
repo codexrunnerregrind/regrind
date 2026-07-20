@@ -49,3 +49,32 @@ export const albumContentSchema = albumContentMin.extend({
 	processing: z.boolean().nullable(),
 	rejectionId: z.unknown().nullable(),
 });
+
+// One of the albums returned by GET /v1/albums (the albums we own).
+export const myAlbumSchema = z.object({
+	...albumDetailsSchema.shape,
+	albumId: z.int(),
+	albumName: z.string().nullable(),
+	profileId: z.int(),
+	version: z.int(),
+	content: albumContentSchema,
+	isShareable: z.boolean(),
+});
+
+export type MyAlbum = z.infer<typeof myAlbumSchema>;
+
+export const myAlbumsResponseSchema = z.object({
+	albums: z.array(myAlbumSchema),
+});
+
+// Body for POST /v4/albums/{albumId}/shares.
+export const albumShareProfileSchema = z.object({
+	profileId: z.int(),
+	expirationType: albumExpirationTypeSchema.optional(),
+});
+
+export type AlbumShareProfile = z.infer<typeof albumShareProfileSchema>;
+
+export const albumShareRequestSchema = z.object({
+	profiles: z.array(albumShareProfileSchema),
+});

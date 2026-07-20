@@ -400,6 +400,39 @@ export function demoAlbumContent(albumId: number) {
 	};
 }
 
+// Albums we own, offered in the chat composer's "Albums" tab for sharing.
+export function demoMyAlbums() {
+	const seeds = [
+		{ albumId: 7001, albumName: "Weekend trip" },
+		{ albumId: 7002, albumName: "Gym progress" },
+		{ albumId: 7003, albumName: null },
+	];
+	const albums = seeds.map(({ albumId, albumName }, i) => {
+		const thumb = picsum(`my-album-${albumId}-cover`, 300, 400);
+		return {
+			albumId,
+			albumName,
+			profileId: demoMeProfileId,
+			version: 1,
+			isShareable: true,
+			sharedCount: i,
+			createdAt: localDateTime(NOW - (i + 2) * DAY),
+			updatedAt: localDateTime(NOW - (i + 1) * DAY),
+			content: {
+				contentId: albumId * 100,
+				contentType: "image/jpeg",
+				coverUrl: thumb,
+				statusId: 1,
+				thumbUrl: thumb,
+				url: picsum(`my-album-${albumId}-0`),
+				processing: false,
+				rejectionId: null,
+			},
+		};
+	});
+	return { albums };
+}
+
 let demoSentCounter = 0;
 
 export function demoSentMessage(body: unknown): ApiResponseMessage {

@@ -13,6 +13,7 @@ import {
 	albumContentSchema,
 	albumDetailsSchema,
 	albumMinSchema,
+	myAlbumsResponseSchema,
 } from "$lib/model/messaging/albums";
 import { fullConversationSchema } from "$lib/model/messaging/conversations";
 import {
@@ -178,6 +179,21 @@ describe("demo route data matches the real schemas", () => {
 		expect(expiringImages).toBeGreaterThan(0);
 	});
 
+	it("my albums are shareable and validate", () => {
+		const { albums } = myAlbumsResponseSchema.parse(route("/v1/albums"));
+		expect(albums.length).toBeGreaterThan(0);
+		expect(albums.every((album) => album.isShareable)).toBe(true);
+	});
+
+	it("sharing an album succeeds", () => {
+		const { albums } = myAlbumsResponseSchema.parse(route("/v1/albums"));
+		const albumId = albums[0].albumId;
+		const response = demoRoute(`/v4/albums/${albumId}/shares`, "POST", {
+			profiles: [{ profileId: 100001, expirationType: "INDEFINITE" }],
+		});
+		expect(response.status).toBe(200);
+	});
+
 	it("paginated message requests are empty", () => {
 		const body = route(
 			"/v5/chat/conversation/100000:100001/message?profile=true&pageKey=x",
@@ -240,14 +256,12 @@ describe("demo route data matches the real schemas", () => {
 
 		const after = inbox();
 		expect(
-			after.find(
-				(e) => e.data.conversationId === first.data.conversationId,
-			)?.data.pinned,
+			after.find((e) => e.data.conversationId === first.data.conversationId)
+				?.data.pinned,
 		).toBe(!first.data.pinned);
 		expect(
-			after.find(
-				(e) => e.data.conversationId === second.data.conversationId,
-			)?.data.muted,
+			after.find((e) => e.data.conversationId === second.data.conversationId)
+				?.data.muted,
 		).toBe(!second.data.muted);
 		expect(
 			after.some((e) => e.data.conversationId === third.data.conversationId),
