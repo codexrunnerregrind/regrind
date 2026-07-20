@@ -1,0 +1,16 @@
+{
+	"$schema": "../gen/schemas/mobile-schema.json",
+	"identifier": "android-capability",
+	"description": "Android-only capability (android-fs file access)",
+	"windows": [
+		"main"
+	],
+	"platforms": [
+		"android"
+	],
+	"permissions": [
+		"android-fs:allow-show-open-file-picker",
+		"android-fs:allow-read-file",
+		"android-fs:allow-get-mime-type"
+	]
+}
