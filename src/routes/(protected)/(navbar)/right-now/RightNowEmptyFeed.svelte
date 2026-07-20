@@ -5,7 +5,7 @@
 	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
 </script>
 
-<Empty.Root class="col-span-full">
+<Empty.Root>
 	<Empty.Header>
 		<Empty.Media variant="icon">
 			<DropIcon />

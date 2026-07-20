@@ -92,7 +92,7 @@
 			<div class="h-20 w-full animate-pulse rounded-md bg-stone-700"></div>
 		{/each}
 	{:else if rightNowState.error}
-		<div class="col-span-full flex p-4">
+		<div class="flex p-4">
 			<ApiErrorDisplay
 				error={rightNowState.error}
 				onRetry={() => rightNowState.refresh()}
