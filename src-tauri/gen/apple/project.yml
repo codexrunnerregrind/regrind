@@ -1,6 +1,6 @@
 name: open-grind
 options:
-  bundleIdPrefix: org.opengrind
+  bundleIdPrefix: org.opengrind.tiagogomes
   deploymentTarget:
     iOS: 14.0
 fileGroups: [../../src]
@@ -11,7 +11,7 @@ settingGroups:
   app:
     base:
       PRODUCT_NAME: Open Grind
-      PRODUCT_BUNDLE_IDENTIFIER: org.opengrind
+      PRODUCT_BUNDLE_IDENTIFIER: org.opengrind.tiagogomes
 targetTemplates:
   app:
     type: application
