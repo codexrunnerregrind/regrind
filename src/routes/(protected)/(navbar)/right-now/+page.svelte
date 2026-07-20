@@ -1,20 +1,31 @@
 <script lang="ts">
-	import SmileySadIcon from "phosphor-svelte/lib/SmileySadIcon";
+	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
+	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
+	import TopBar from "./top-bar/TopBar.svelte";
+	import RightNowFeed from "./RightNowFeed.svelte";
 
-	import * as Alert from "$lib/components/ui/alert";
-	import Link from "$lib/components/ui/link/Link.svelte";
+	let { data }: import("./$types").PageProps = $props();
+
+	const ourProfileId = $derived(data.ourProfileId);
+
+	let feedContainer: HTMLElement | null = $state(null);
 </script>
 
-<div class="px-8 flex-1 flex">
-	<Alert.Root class="w-full max-w-sm m-auto">
-		<SmileySadIcon size="2em" color="#ffba20" weight="fill" />
-		<Alert.Title>Unimplemented</Alert.Title>
-		<Alert.Description>
-			"Right now" tab is not implemented yet, tracking in <Link
-				href="https://git.opengrind.org/open-grind/open-grind/issues/43"
-			>
-				#43
-			</Link>.
-		</Alert.Description>
-	</Alert.Root>
-</div>
+<main class="screen-nav-host">
+	<div class="pull-scroller" bind:this={feedContainer}>
+		<div class="flex min-h-overscrollable flex-col gap-4 p-4 pb-nav-clear">
+			<TopBar />
+			<div class="flex flex-col items-center">
+				<RightNowFeed {ourProfileId} />
+			</div>
+		</div>
+	</div>
+	{#if !rightNowState.loading && !rightNowState.error}
+		<DataRefreshControl
+			container={feedContainer}
+			updating={rightNowState.refreshing}
+			position="top"
+			onrefresh={() => void rightNowState.reload()}
+		/>
+	{/if}
+</main>

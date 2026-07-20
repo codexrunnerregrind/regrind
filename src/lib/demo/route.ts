@@ -5,6 +5,7 @@ import {
 	demoConversations,
 	demoDeleteConversation,
 	demoDrawerMedia,
+	demoMyAlbums,
 	demoSentMessage,
 	demoSetConversationMuted,
 	demoSetConversationPinned,
@@ -22,6 +23,7 @@ import {
 import { demoReceivedTaps, demoViews } from "./mock/interest";
 import { meSeed, profileSeed } from "./mock/profiles";
 import { demoGenders, demoPronouns, demoTags } from "./mock/reference";
+import { demoRightNowFeed } from "./mock/right-now";
 
 type DemoResponse = { status: number; body: unknown };
 
@@ -109,8 +111,27 @@ export function demoRoute(
 	) {
 		return ok(demoSingleMessage(segments[3], segments[5]));
 	}
+	if (method === "GET" && rawPath === "/v1/albums") {
+		return ok(demoMyAlbums());
+	}
 	if (method === "GET" && segments[0] === "v2" && segments[1] === "albums") {
 		return ok(demoAlbumContent(Number(segments[2])));
+	}
+	if (
+		method === "POST" &&
+		segments[0] === "v4" &&
+		segments[1] === "albums" &&
+		segments[3] === "shares"
+	) {
+		return ok({});
+	}
+	if (
+		method === "PUT" &&
+		segments[0] === "v1" &&
+		segments[1] === "albums" &&
+		segments[3] === "unshares"
+	) {
+		return ok({});
 	}
 	if (method === "POST" && rawPath === "/v4/chat/message/send") {
 		return ok(demoSentMessage(body));
@@ -152,6 +173,9 @@ export function demoRoute(
 	}
 	if (method === "GET" && rawPath === "/v3/places/search") {
 		return ok({ places: [] });
+	}
+	if (method === "GET" && rawPath.startsWith("/v4/rightnow/feed")) {
+		return ok(demoRightNowFeed(params));
 	}
 
 	return ok({});
