@@ -2,7 +2,7 @@ import { createContext } from "svelte";
 
 import { ApiError } from "$lib/api";
 import { showErrorToast } from "$lib/api/error";
-import { shareAlbum } from "$lib/api/messaging/albums";
+import { shareAlbum, unshareAlbum } from "$lib/api/messaging/albums";
 import { markConversationAsRead } from "$lib/api/messaging/conversations";
 import { reactToMessage, sendMessage } from "$lib/api/messaging/messages";
 import { getPreferences } from "$lib/app-data/preferences.svelte";
@@ -378,6 +378,16 @@ export class ConversationState {
 				}),
 			),
 		);
+		await this.refresh();
+	}
+
+	// Revokes the recipient's access to an album shared into this conversation.
+	async unshareAlbum(albumId: number): Promise<void> {
+		if (!this.profile) return;
+		await unshareAlbum({
+			albumId,
+			profiles: [{ profileId: this.profile.profileId, shareId: 0 }],
+		});
 		await this.refresh();
 	}
 

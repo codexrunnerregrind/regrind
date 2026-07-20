@@ -124,6 +124,14 @@ export function demoRoute(
 	) {
 		return ok({});
 	}
+	if (
+		method === "PUT" &&
+		segments[0] === "v1" &&
+		segments[1] === "albums" &&
+		segments[3] === "unshares"
+	) {
+		return ok({});
+	}
 	if (method === "POST" && rawPath === "/v4/chat/message/send") {
 		return ok(demoSentMessage(body));
 	}

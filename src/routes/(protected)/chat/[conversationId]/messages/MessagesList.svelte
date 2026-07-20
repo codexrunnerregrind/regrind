@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { toast } from "svelte-sonner";
+
 	import { showErrorToast } from "$lib/api/error";
 	import {
 		deleteMessageForMe,
@@ -90,6 +92,24 @@
 							error,
 						});
 						revert?.();
+					}
+				}
+			: undefined}
+		onUnshare={isOut &&
+		!message.unsent &&
+		(message.type === "Album" ||
+			message.type === "ExpiringAlbum" ||
+			message.type === "ExpiringAlbumV2")
+			? async () => {
+					try {
+						await conversationState.unshareAlbum(message.body.albumId);
+						toast.success("Album unshared");
+					} catch (error) {
+						console.error(error);
+						showErrorToast({
+							label: "Failed to unshare album",
+							error,
+						});
 					}
 				}
 			: undefined}

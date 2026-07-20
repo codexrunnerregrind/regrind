@@ -78,3 +78,15 @@ export type AlbumShareProfile = z.infer<typeof albumShareProfileSchema>;
 export const albumShareRequestSchema = z.object({
 	profiles: z.array(albumShareProfileSchema),
 });
+
+// Body for PUT /v1/albums/{albumId}/unshares. shareId may be 0.
+export const albumUnshareProfileSchema = z.object({
+	profileId: z.int(),
+	shareId: z.int(),
+});
+
+export type AlbumUnshareProfile = z.infer<typeof albumUnshareProfileSchema>;
+
+export const albumUnshareRequestSchema = z.object({
+	profiles: z.array(albumUnshareProfileSchema),
+});

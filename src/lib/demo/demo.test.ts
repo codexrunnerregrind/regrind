@@ -194,6 +194,13 @@ describe("demo route data matches the real schemas", () => {
 		expect(response.status).toBe(200);
 	});
 
+	it("unsharing an album succeeds", () => {
+		const response = demoRoute("/v1/albums/294604/unshares", "PUT", {
+			profiles: [{ profileId: 100001, shareId: 0 }],
+		});
+		expect(response.status).toBe(200);
+	});
+
 	it("paginated message requests are empty", () => {
 		const body = route(
 			"/v5/chat/conversation/100000:100001/message?profile=true&pageKey=x",

@@ -6,6 +6,7 @@ import {
 	albumDetailsSchema,
 	albumMinSchema,
 	type AlbumShareProfile,
+	type AlbumUnshareProfile,
 	myAlbumsResponseSchema,
 } from "$lib/model/messaging/albums";
 
@@ -46,6 +47,20 @@ export async function shareAlbum({
 }) {
 	await fetchRest(`/v4/albums/${albumId}/shares`, {
 		method: "POST",
+		body: { profiles },
+	});
+}
+
+// Revokes the given profiles' access to a previously shared album.
+export async function unshareAlbum({
+	albumId,
+	profiles,
+}: {
+	albumId: number;
+	profiles: AlbumUnshareProfile[];
+}) {
+	await fetchRest(`/v1/albums/${albumId}/unshares`, {
+		method: "PUT",
 		body: { profiles },
 	});
 }
