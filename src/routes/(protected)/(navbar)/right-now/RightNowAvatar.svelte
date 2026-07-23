@@ -22,10 +22,10 @@
 
 <a class="relative isolate inline-block" href="/profile/{profileId}">
 	<span class="sr-only">{displayName ? displayName : "Someone"}</span>
-	<Avatar.Root class="size-20 *:rounded-full">
+	<Avatar.Root class="size-16 *:rounded-full">
 		<UserAvatar
 			{mediaHash}
-			class="size-20 overflow-hidden rounded-full bg-neutral-700 *:rounded-full"
+			class="size-16 overflow-hidden rounded-full bg-neutral-700 *:rounded-full"
 		/>
 		{#if online}
 			<Avatar.Badge class="bg-green-500"></Avatar.Badge>

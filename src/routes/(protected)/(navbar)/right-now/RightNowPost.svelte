@@ -95,12 +95,20 @@
 	});
 </script>
 
-<article class="flex w-full gap-4 text-gray-400" aria-label={postAriaLabel}>
+<article
+	class="flex w-full gap-3 border-b border-border/60 py-4 text-sm text-gray-400"
+	aria-label={postAriaLabel}
+>
 	<div>
 		<RightNowAvatar {profileId} {displayName} {mediaHash} {onlineUntil} />
 	</div>
 	<div class="w-full">
-		<div class={["mt-1 font-bold wrap-break-word", { "text-white": text }]}>
+		<div
+			class={[
+				"mt-1 leading-snug font-medium wrap-break-word",
+				{ "text-white": text },
+			]}
+		>
 			{text ? text : displayName ? `${displayName} joined` : "Joined"}
 		</div>
 		{#if media.length}

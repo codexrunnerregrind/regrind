@@ -42,11 +42,11 @@
 </script>
 
 {#snippet avatarNode()}
-	<Item.Media class="relative translate-y-0! rounded-2xl">
+	<Item.Media class="relative translate-y-0! rounded-full">
 		<Avatar.Root class="size-16 after:border-0">
 			<UserAvatar
 				mediaHash={avatar.mediaHash}
-				class="size-16 rounded-2xl bg-neutral-700 *:rounded-2xl"
+				class="size-16 rounded-full bg-neutral-700 *:rounded-full"
 			/>
 		</Avatar.Root>
 		{@render avatar.overlay?.()}

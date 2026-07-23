@@ -85,7 +85,7 @@
 
 <div
 	bind:this={feedContainer}
-	class="flex w-full max-w-5xl flex-col gap-6 px-2"
+	class="flex w-full max-w-5xl flex-col gap-0 px-2"
 >
 	{#if rightNowState.loading}
 		{#each Array.from({ length: 10 })}

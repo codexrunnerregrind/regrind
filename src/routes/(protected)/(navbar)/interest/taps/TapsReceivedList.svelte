@@ -58,7 +58,7 @@
 <div class="screen-nav-host">
 	<div bind:this={container} class="pull-scroller">
 		<div
-			class="mx-auto flex min-h-overscrollable w-full max-w-120 flex-col gap-1 px-4 pt-16 pb-nav-clear"
+			class="mx-auto flex min-h-overscrollable w-full max-w-120 flex-col gap-0 px-0 pt-16 pb-nav-clear"
 		>
 			{#if taps.loading}
 				{#each Array(8)}
