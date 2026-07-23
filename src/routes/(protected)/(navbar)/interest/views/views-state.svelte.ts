@@ -10,6 +10,11 @@ export type ViewGridEntry =
 	| { type: "profile"; key: string; profile: ViewerProfile }
 	| { type: "preview"; key: string; preview: ViewPreview };
 
+// Persists the last-loaded views across navigations so re-entering the tab
+// shows content immediately (refreshed silently in the background) instead of
+// flashing the loading skeletons.
+let cached: { profiles: ViewerProfile[]; previews: ViewPreview[] } | null = null;
+
 export class ViewsState {
 	loading = $state(true);
 	refreshing = $state(false);
@@ -49,7 +54,15 @@ export class ViewsState {
 	#unlistenView: Promise<() => void>;
 
 	constructor() {
-		this.#initial = this.#initialLoad();
+		if (cached !== null) {
+			this.#profiles = cached.profiles;
+			this.#previews = cached.previews;
+			this.loading = false;
+			this.#initial = Promise.resolve();
+			void this.#backgroundRefresh();
+		} else {
+			this.#initial = this.#initialLoad();
+		}
 
 		this.#unsubscribeReconcile = reconciler.subscribe(() => this.#reconcile());
 
@@ -78,8 +91,23 @@ export class ViewsState {
 	destroy(): void {
 		if (this.#destroyed) return;
 		this.#destroyed = true;
+		cached = { profiles: this.#profiles, previews: this.#previews };
 		this.#unsubscribeReconcile();
 		this.#unlistenView.then((unlisten) => unlisten()).catch(console.error);
+	}
+
+	// Refreshes cached data without toggling loading/refreshing, so a revisit
+	// updates in place with no skeleton or refresh indicator.
+	async #backgroundRefresh(): Promise<void> {
+		try {
+			const { profiles, previews } = await getViews();
+			if (this.#destroyed) return;
+			this.#profiles = profiles;
+			this.#previews = previews;
+			cached = { profiles, previews };
+		} catch {
+			// Keep showing cached data on failure.
+		}
 	}
 
 	loadMore(): void {
@@ -118,6 +146,7 @@ export class ViewsState {
 			};
 		}
 		this.#profiles = [next, ...this.#profiles];
+		cached = { profiles: this.#profiles, previews: this.#previews };
 	}
 
 	async #initialLoad(): Promise<void> {
@@ -128,6 +157,7 @@ export class ViewsState {
 			if (this.#destroyed) return;
 			this.#profiles = profiles;
 			this.#previews = previews;
+			cached = { profiles, previews };
 		} catch (err) {
 			if (this.#destroyed) return;
 			this.error = err instanceof Error ? err : new Error(String(err));
@@ -146,6 +176,7 @@ export class ViewsState {
 			if (this.#destroyed) return;
 			this.#profiles = profiles;
 			this.#previews = previews;
+			cached = { profiles, previews };
 			this.error = null;
 		} catch (error) {
 			console.error(error);

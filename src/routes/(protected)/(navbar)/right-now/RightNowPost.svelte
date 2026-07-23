@@ -76,11 +76,17 @@
 		});
 	});
 
-	function handleLoad(event: Event, imgIndex: number) {
-		const img = event.currentTarget as HTMLImageElement;
+	function markLoaded(img: HTMLImageElement, imgIndex: number) {
 		mediaStates[imgIndex].loaded = true;
 		mediaStates[imgIndex].width = img.naturalWidth;
 		mediaStates[imgIndex].height = img.naturalHeight;
+	}
+
+	// When a post re-mounts on tab switch, an already-cached image is complete
+	// immediately — mark it loaded before paint so we never flash the grey
+	// placeholder for images the browser already has.
+	function trackCached(node: HTMLImageElement, imgIndex: number) {
+		if (node.complete && node.naturalWidth > 0) markLoaded(node, imgIndex);
 	}
 
 	const postAriaLabel = $derived.by(() => {
@@ -134,7 +140,9 @@
 						{/if}
 
 						<img
-							onload={(e) => handleLoad(e, imgIndex)}
+							use:trackCached={imgIndex}
+							onload={(e) =>
+								markLoaded(e.currentTarget as HTMLImageElement, imgIndex)}
 							src={image.fullImageUrl}
 							alt=""
 							class={[
