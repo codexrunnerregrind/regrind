@@ -2,8 +2,15 @@
 	import "photoswipe/style.css";
 	import { ImageBrokenIcon, ImagesIcon, VideoIcon } from "phosphor-svelte";
 
+	import { toast } from "svelte-sonner";
+
 	import { showErrorToast } from "$lib/api/error";
-	import { loadAlbum, type LoadedAlbum, openAlbumLightbox } from "$lib/chat/album-viewer";
+	import {
+		AlbumLockedError,
+		loadAlbum,
+		type LoadedAlbum,
+		openAlbumLightbox,
+	} from "$lib/chat/album-viewer";
 	import type { AlbumMessage } from "$lib/model/messaging/messages";
 	import LockedMedia from "./LockedMedia.svelte";
 	import { MessageMediaState } from "./message-media.svelte";
@@ -77,11 +84,15 @@
 				}
 			})
 			.catch((error) => {
-				console.error(error);
-				showErrorToast({
-					label: "Failed to open album",
-					error,
-				});
+				if (error instanceof AlbumLockedError) {
+					toast.info(error.message);
+				} else {
+					console.error(error);
+					showErrorToast({
+						label: "Failed to open album",
+						error,
+					});
+				}
 				albumState = { status: "idle" };
 			});
 		return () => {

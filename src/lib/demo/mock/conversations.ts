@@ -458,7 +458,7 @@ export function demoSharedAlbumsFeed() {
 			coverContent: {
 				id: albumId * 10,
 				contentType: "image/jpeg",
-				coverContent: picsum(`shared-album-${albumId}-cover`, 300, 400),
+				location: picsum(`shared-album-${albumId}-cover`, 300, 400),
 				status: "AVAILABLE",
 			},
 			profile: {

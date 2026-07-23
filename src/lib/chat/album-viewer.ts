@@ -3,6 +3,15 @@ import type PhotoSwipeLightbox from "photoswipe/lightbox";
 import { type AlbumContentResponse, getAlbumContent } from "$lib/api/messaging/albums";
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 
+// Thrown when an album has no viewable content — typically a locked or expired
+// shared album. Callers can catch this to show a friendlier message.
+export class AlbumLockedError extends Error {
+	constructor() {
+		super("This album is locked or has expired.");
+		this.name = "AlbumLockedError";
+	}
+}
+
 // An album whose slides have been measured so PhotoSwipe can size them.
 export type LoadedAlbum = AlbumContentResponse & {
 	content: (AlbumContentResponse["content"][number] & {
@@ -86,6 +95,11 @@ export async function openAlbumLightbox(
 	options: { startIndex?: number; onClosed?: () => void } = {},
 ): Promise<() => void> {
 	const { startIndex = 0, onClosed } = options;
+	// Locked/expired albums come back with no viewable content. PhotoSwipe would
+	// crash trying to lay out zero slides, so surface a clear error instead.
+	if (album.content.length === 0) {
+		throw new AlbumLockedError();
+	}
 	const { default: PhotoSwipeLightboxCtor } = await import(
 		"photoswipe/lightbox"
 	);

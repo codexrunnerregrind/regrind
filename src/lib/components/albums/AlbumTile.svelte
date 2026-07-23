@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ImageBrokenIcon from "phosphor-svelte/lib/ImageBrokenIcon";
+	import LockSimpleIcon from "phosphor-svelte/lib/LockSimpleIcon";
 
 	let {
 		coverUrl,
@@ -7,6 +8,7 @@
 		subtitle,
 		badge,
 		unseen = false,
+		locked = false,
 		loading = false,
 		disabled = false,
 		onclick,
@@ -16,6 +18,7 @@
 		subtitle?: string;
 		badge?: string;
 		unseen?: boolean;
+		locked?: boolean;
 		loading?: boolean;
 		disabled?: boolean;
 		onclick: () => void;
@@ -68,6 +71,14 @@
 			class="pointer-events-none absolute top-1.5 left-1.5 rounded-full bg-primary/90 px-2 py-0.5 text-xs font-medium text-primary-foreground"
 		>
 			{badge}
+		</span>
+	{/if}
+	{#if locked}
+		<span
+			class="pointer-events-none absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-full bg-black/55 text-white"
+			aria-label="Locked"
+		>
+			<LockSimpleIcon weight="fill" class="size-3.5" />
 		</span>
 	{/if}
 </button>

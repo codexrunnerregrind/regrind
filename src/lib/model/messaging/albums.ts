@@ -118,6 +118,9 @@ export const sharedAlbumSchema = z.object({
 		.object({
 			id: z.int().optional(),
 			contentType: z.string().optional(),
+			// The signed CDN URL of the (blurred) cover preview. The backend calls
+			// this field `location`; older payloads used `coverContent`.
+			location: z.string().nullable().optional(),
 			coverContent: z.string().nullable().optional(),
 			status: z.string().optional(),
 		})

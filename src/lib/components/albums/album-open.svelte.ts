@@ -1,5 +1,7 @@
 import { showErrorToast } from "$lib/api/error";
-import { loadAlbum, openAlbumLightbox } from "$lib/chat/album-viewer";
+import { toast } from "svelte-sonner";
+
+import { AlbumLockedError, loadAlbum, openAlbumLightbox } from "$lib/chat/album-viewer";
 import { hapticImpact } from "$lib/platform/haptics";
 
 // Shared "tap an album cover → load its content → open the PhotoSwipe viewer"
@@ -17,8 +19,12 @@ export class AlbumOpener {
 			const album = await loadAlbum(albumId);
 			await openAlbumLightbox(album);
 		} catch (error) {
-			console.error(error);
-			showErrorToast({ label: "Failed to open album", error });
+			if (error instanceof AlbumLockedError) {
+				toast.info(error.message);
+			} else {
+				console.error(error);
+				showErrorToast({ label: "Failed to open album", error });
+			}
 		} finally {
 			this.openingId = null;
 		}
