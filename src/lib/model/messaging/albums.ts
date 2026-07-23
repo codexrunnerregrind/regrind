@@ -2,6 +2,23 @@ import z from "zod";
 
 import { unixTimestampMsSchema } from "$lib/model/types";
 
+/**
+ * Album names are capped at 255 *UTF-8 bytes*, not characters — one emoji can
+ * cost four of them.
+ */
+export const ALBUM_NAME_MAX_BYTES = 255;
+
+export function albumNameByteLength(albumName: string): number {
+	return new TextEncoder().encode(albumName).length;
+}
+
+export const albumNameSchema = z
+	.string()
+	.refine((name) => albumNameByteLength(name) <= ALBUM_NAME_MAX_BYTES, {
+		error: `Album name must be at most ${ALBUM_NAME_MAX_BYTES} bytes`,
+	})
+	.nullable();
+
 export const albumPreviewSchema = z.object({
 	albumId: z.int(),
 	hasUnseenContent: z.boolean(),

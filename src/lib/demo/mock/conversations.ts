@@ -372,9 +372,9 @@ export function demoSingleMessage(conversationId: string, messageId: string) {
 	return { message: message ?? null };
 }
 
-export function demoAlbumContent(albumId: number) {
+function generateAlbumContent(albumId: number) {
 	const count = 3 + (albumId % 3);
-	const content = Array.from({ length: count }, (_, i) => {
+	return Array.from({ length: count }, (_, i) => {
 		const thumb = picsum(`album-${albumId}-${i}`, 300, 400);
 		return {
 			contentId: albumId * 100 + i,
@@ -387,16 +387,21 @@ export function demoAlbumContent(albumId: number) {
 			rejectionId: null,
 		};
 	});
+}
+
+export function demoAlbumContent(albumId: number) {
+	// Prefer the mutable store so edits made in demo mode are visible here.
+	const owned = demoAlbumStore().find((album) => album.albumId === albumId);
 	return {
 		albumId,
 		hasUnseenContent: false,
-		albumName: null,
+		albumName: owned?.albumName ?? null,
 		profileId: demoMeProfileId,
 		albumViewable: true,
-		sharedCount: 1,
+		sharedCount: owned?.sharedCount ?? 1,
 		createdAt: localDateTime(NOW - 3 * DAY),
 		updatedAt: localDateTime(NOW - DAY),
-		content,
+		content: owned?.content ?? generateAlbumContent(albumId),
 	};
 }
 
@@ -443,25 +448,78 @@ export function demoAlbumLimits() {
 }
 
 const DEMO_ALBUM_NAMES = ["Gym", "Beach trip", null];
+const DEMO_FIRST_ALBUM_ID = 9001;
+
+function buildDemoAlbum(
+	albumId: number,
+	albumName: string | null,
+	sharedCount: number,
+	content = generateAlbumContent(albumId),
+) {
+	return {
+		albumId,
+		albumName,
+		profileId: demoMeProfileId,
+		version: 1,
+		content,
+		isShareable: true,
+		sharedCount,
+		createdAt: localDateTime(NOW - 3 * DAY),
+		updatedAt: localDateTime(NOW - DAY),
+	};
+}
+
+let demoAlbums: ReturnType<typeof buildDemoAlbum>[] | null = null;
+let demoNextAlbumId = DEMO_FIRST_ALBUM_ID + DEMO_ALBUM_NAMES.length;
+
+function demoAlbumStore() {
+	demoAlbums ??= DEMO_ALBUM_NAMES.map((albumName, index) =>
+		buildDemoAlbum(DEMO_FIRST_ALBUM_ID + index, albumName, index),
+	);
+	return demoAlbums;
+}
+
+function albumNameFromBody(body: unknown): string | null {
+	return (body as { albumName?: string | null } | null)?.albumName ?? null;
+}
 
 export function demoMyAlbums() {
-	return {
-		albums: DEMO_ALBUM_NAMES.map((albumName, index) => {
-			const albumId = 9001 + index;
-			const { content, createdAt, updatedAt } = demoAlbumContent(albumId);
-			return {
-				albumId,
-				albumName,
-				profileId: demoMeProfileId,
-				version: 1,
-				content,
-				isShareable: true,
-				sharedCount: index,
-				createdAt,
-				updatedAt,
-			};
-		}),
-	};
+	return { albums: demoAlbumStore() };
+}
+
+export function demoCreateAlbum(body: unknown) {
+	const albumName = albumNameFromBody(body);
+	const album = buildDemoAlbum(demoNextAlbumId++, albumName, 0, []);
+	demoAlbumStore().push(album);
+	return { albumId: album.albumId, albumName };
+}
+
+export function demoRenameAlbum(albumId: number, body: unknown) {
+	const albumName = albumNameFromBody(body);
+	const album = demoAlbumStore().find((item) => item.albumId === albumId);
+	if (album) album.albumName = albumName;
+	return { albumId, albumName };
+}
+
+export function demoDeleteAlbum(albumId: number) {
+	const albums = demoAlbumStore();
+	const index = albums.findIndex((item) => item.albumId === albumId);
+	if (index !== -1) albums.splice(index, 1);
+}
+
+export function demoReorderAlbumContent(albumId: number, body: unknown) {
+	const contentIds = (body as { contentIds?: number[] } | null)?.contentIds;
+	const album = demoAlbumStore().find((item) => item.albumId === albumId);
+	if (!album || !contentIds) return;
+	album.content = contentIds
+		.map((id) => album.content.find((item) => item.contentId === id))
+		.filter((item) => item !== undefined);
+}
+
+export function demoDeleteAlbumContent(albumId: number, contentId: number) {
+	const album = demoAlbumStore().find((item) => item.albumId === albumId);
+	if (!album) return;
+	album.content = album.content.filter((item) => item.contentId !== contentId);
 }
 
 let demoSentCounter = 0;

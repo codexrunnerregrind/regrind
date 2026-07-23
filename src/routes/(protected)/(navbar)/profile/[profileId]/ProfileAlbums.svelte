@@ -1,11 +1,17 @@
 <script lang="ts">
+	import { goto } from "$app/navigation";
 	import FolderOpenIcon from "phosphor-svelte/lib/FolderOpenIcon";
+	import PlusIcon from "phosphor-svelte/lib/PlusIcon";
 
+	import { ApiError } from "$lib/api";
+	import { showErrorToast } from "$lib/api/error";
 	import {
+		createAlbum,
 		getAlbumsSharedByProfile,
 		getMyAlbums,
 	} from "$lib/api/messaging/albums";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
+	import { Button } from "$lib/components/ui/button";
 	import { Skeleton } from "$lib/components/ui/skeleton";
 	import type { MyAlbum, SharedAlbum } from "$lib/model/messaging/albums";
 
@@ -68,11 +74,47 @@
 	$effect(() => {
 		void load(profileId, self);
 	});
+
+	let creating = $state(false);
+
+	async function create() {
+		if (creating) return;
+		creating = true;
+		try {
+			const { albumId } = await createAlbum({ albumName: null });
+			await goto(`/albums/${albumId}`);
+		} catch (err) {
+			console.error(err);
+			const status = err instanceof ApiError ? err.response?.status : null;
+			showErrorToast({
+				label:
+					status === 402
+						? "You've reached your album limit"
+						: "Failed to create album",
+				error: err,
+			});
+		} finally {
+			creating = false;
+		}
+	}
 </script>
 
-{#if error !== null || albums === null || albums.length > 0}
+{#if self || error !== null || albums === null || albums.length > 0}
 	<div class="mt-4 flex flex-col gap-2">
-		<span class="text-sm text-muted-foreground uppercase">Albums</span>
+		<div class="flex items-center justify-between gap-2">
+			<span class="text-sm text-muted-foreground uppercase">Albums</span>
+			{#if self}
+				<Button
+					variant="ghost"
+					size="sm"
+					disabled={creating}
+					onclick={() => void create()}
+				>
+					<PlusIcon weight="bold" />
+					New album
+				</Button>
+			{/if}
+		</div>
 		{#if error !== null}
 			<ApiErrorDisplay
 				{error}

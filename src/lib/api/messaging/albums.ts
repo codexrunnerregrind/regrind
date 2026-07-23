@@ -30,6 +30,77 @@ export async function getAlbumContent(albumId: number) {
 
 export type AlbumContentResponse = Awaited<ReturnType<typeof getAlbumContent>>;
 
+const albumNameResponseSchema = z.object({
+	albumId: z.int(),
+	albumName: z.string().nullable(),
+});
+
+/**
+ * Creates an empty album. Throws with a 402 response once the account is at its
+ * {@link getAlbumLimits} album cap.
+ */
+export async function createAlbum({ albumName }: { albumName: string | null }) {
+	const res = await fetchRest("/v2/albums", {
+		method: "POST",
+		body: { albumName },
+	});
+	// Asserted before parsing so the documented 402 surfaces as an HTTP error
+	// rather than a schema-validation failure against the error body.
+	res.assertOk();
+	return res.jsonParsed(albumNameResponseSchema);
+}
+
+export async function renameAlbum({
+	albumId,
+	albumName,
+}: {
+	albumId: number;
+	albumName: string | null;
+}) {
+	const res = await fetchRest(`/v2/albums/${albumId}`, {
+		method: "PUT",
+		body: { albumName },
+	});
+	res.assertOk();
+	return res.jsonParsed(albumNameResponseSchema);
+}
+
+/** Deleting an album that is already gone answers 403, not 404. */
+export async function deleteAlbum({ albumId }: { albumId: number }) {
+	return await fetchRest(`/v1/albums/${albumId}`, {
+		method: "DELETE",
+	}).then((res) => res.assertOk());
+}
+
+/**
+ * Replaces the album's content order. Every existing content id must appear
+ * exactly once, so callers pass the full list rather than a delta.
+ */
+export async function reorderAlbumContent({
+	albumId,
+	contentIds,
+}: {
+	albumId: number;
+	contentIds: number[];
+}) {
+	return await fetchRest(`/v1/albums/${albumId}/content/order`, {
+		method: "POST",
+		body: { contentIds },
+	}).then((res) => res.assertOk());
+}
+
+export async function deleteAlbumContent({
+	albumId,
+	contentId,
+}: {
+	albumId: number;
+	contentId: number;
+}) {
+	return await fetchRest(`/v1/albums/${albumId}/content/${contentId}`, {
+		method: "DELETE",
+	}).then((res) => res.assertOk());
+}
+
 const sharedAlbumsResponseSchema = z.object({
 	albums: z.array(sharedAlbumSchema),
 });

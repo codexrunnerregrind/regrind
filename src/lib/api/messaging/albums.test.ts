@@ -8,9 +8,14 @@ vi.mock("$lib/api", async (importOriginal) => ({
 }));
 
 import {
+	createAlbum,
+	deleteAlbum,
+	deleteAlbumContent,
 	getAlbumLimits,
 	getAlbumsSharedByProfile,
 	getMyAlbums,
+	renameAlbum,
+	reorderAlbumContent,
 	shareAlbum,
 } from "$lib/api/messaging/albums";
 
@@ -135,6 +140,82 @@ describe("getAlbumLimits", () => {
 
 		await expect(getAlbumLimits()).resolves.toEqual(limits);
 		expect(fetchRestMock).toHaveBeenCalledWith("/v1/albums/storage");
+	});
+});
+
+describe("createAlbum", () => {
+	it("posts the name and returns the new album", async () => {
+		fetchRestMock.mockResolvedValue(
+			response({ albumId: 12, albumName: "Gym" }),
+		);
+
+		await expect(createAlbum({ albumName: "Gym" })).resolves.toEqual({
+			albumId: 12,
+			albumName: "Gym",
+		});
+		expect(fetchRestMock).toHaveBeenCalledWith("/v2/albums", {
+			method: "POST",
+			body: { albumName: "Gym" },
+		});
+	});
+
+	it("surfaces the 402 returned at the album cap", async () => {
+		fetchRestMock.mockResolvedValue(response(undefined, 402));
+
+		await expect(createAlbum({ albumName: null })).rejects.toThrow(
+			"mock assertOk rejected status 402",
+		);
+	});
+});
+
+describe("renameAlbum", () => {
+	it("puts the new name", async () => {
+		fetchRestMock.mockResolvedValue(response({ albumId: 12, albumName: null }));
+
+		await expect(
+			renameAlbum({ albumId: 12, albumName: null }),
+		).resolves.toEqual({ albumId: 12, albumName: null });
+		expect(fetchRestMock).toHaveBeenCalledWith("/v2/albums/12", {
+			method: "PUT",
+			body: { albumName: null },
+		});
+	});
+});
+
+describe("deleteAlbum", () => {
+	it("deletes by id", async () => {
+		fetchRestMock.mockResolvedValue(response());
+
+		await deleteAlbum({ albumId: 12 });
+
+		expect(fetchRestMock).toHaveBeenCalledWith("/v1/albums/12", {
+			method: "DELETE",
+		});
+	});
+});
+
+describe("reorderAlbumContent", () => {
+	it("posts the full content order", async () => {
+		fetchRestMock.mockResolvedValue(response());
+
+		await reorderAlbumContent({ albumId: 12, contentIds: [3, 1, 2] });
+
+		expect(fetchRestMock).toHaveBeenCalledWith("/v1/albums/12/content/order", {
+			method: "POST",
+			body: { contentIds: [3, 1, 2] },
+		});
+	});
+});
+
+describe("deleteAlbumContent", () => {
+	it("deletes a single item", async () => {
+		fetchRestMock.mockResolvedValue(response());
+
+		await deleteAlbumContent({ albumId: 12, contentId: 7 });
+
+		expect(fetchRestMock).toHaveBeenCalledWith("/v1/albums/12/content/7", {
+			method: "DELETE",
+		});
 	});
 });
 

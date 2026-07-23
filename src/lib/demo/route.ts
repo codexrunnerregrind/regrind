@@ -5,9 +5,14 @@ import {
 	demoAlbumsSharedByProfile,
 	demoConversationMessages,
 	demoConversations,
+	demoCreateAlbum,
+	demoDeleteAlbum,
+	demoDeleteAlbumContent,
 	demoDeleteConversation,
 	demoDrawerMedia,
 	demoMyAlbums,
+	demoRenameAlbum,
+	demoReorderAlbumContent,
 	demoSentMessage,
 	demoSetConversationMuted,
 	demoSetConversationPinned,
@@ -125,6 +130,47 @@ export function demoRoute(
 	}
 	if (method === "GET" && segments[0] === "v2" && segments[1] === "albums") {
 		return ok(demoAlbumContent(Number(segments[2])));
+	}
+	if (method === "POST" && rawPath === "/v2/albums") {
+		return ok(demoCreateAlbum(body));
+	}
+	if (
+		method === "PUT" &&
+		segments[0] === "v2" &&
+		segments[1] === "albums" &&
+		segments.length === 3
+	) {
+		return ok(demoRenameAlbum(Number(segments[2]), body));
+	}
+	if (
+		method === "DELETE" &&
+		segments[0] === "v1" &&
+		segments[1] === "albums" &&
+		segments.length === 3
+	) {
+		demoDeleteAlbum(Number(segments[2]));
+		return ok({});
+	}
+	if (
+		method === "POST" &&
+		segments[0] === "v1" &&
+		segments[1] === "albums" &&
+		segments[3] === "content" &&
+		segments[4] === "order" &&
+		segments.length === 5
+	) {
+		demoReorderAlbumContent(Number(segments[2]), body);
+		return ok({});
+	}
+	if (
+		method === "DELETE" &&
+		segments[0] === "v1" &&
+		segments[1] === "albums" &&
+		segments[3] === "content" &&
+		segments.length === 5
+	) {
+		demoDeleteAlbumContent(Number(segments[2]), Number(segments[4]));
+		return ok({});
 	}
 	if (method === "GET" && rawPath === "/v1/albums/storage") {
 		return ok(demoAlbumLimits());
