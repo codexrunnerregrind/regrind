@@ -13,6 +13,8 @@ import {
 	deleteProfilePhotos,
 	getMyProfile,
 	getProfile,
+	getProfiles,
+	MAX_PROFILES_PER_REQUEST,
 	patchOwnProfile,
 	ProfileModerationError,
 	type ProfileUpdate,
@@ -301,6 +303,57 @@ describe("deleteProfilePhotos", () => {
 	it("does not send a request when there are no hashes to remove", async () => {
 		await deleteProfilePhotos(PROFILE_ID, []);
 
+		expect(fetchRestMock).not.toHaveBeenCalled();
+	});
+});
+
+describe("getProfiles", () => {
+	it("sends a single request when within the batch limit", async () => {
+		const ids = Array.from({ length: MAX_PROFILES_PER_REQUEST }, (_, i) => i);
+		fetchRestMock.mockResolvedValue(ok({ profiles: [] }));
+
+		await getProfiles(ids);
+
+		expect(fetchRestMock).toHaveBeenCalledTimes(1);
+		expect(fetchRestMock.mock.calls[0]?.[1]?.body).toEqual({
+			targetProfileIds: ids,
+		});
+	});
+
+	it("splits a longer list rather than failing with 'Max profile is 150'", async () => {
+		const ids = Array.from({ length: 361 }, (_, i) => i);
+		fetchRestMock.mockResolvedValue(ok({ profiles: [] }));
+
+		await getProfiles(ids);
+
+		expect(fetchRestMock).toHaveBeenCalledTimes(3);
+		const sent = fetchRestMock.mock.calls.map(
+			(call) =>
+				(call[1] as { body: { targetProfileIds: number[] } }).body
+					.targetProfileIds,
+		);
+		expect(sent.map((batch) => batch.length)).toEqual([150, 150, 61]);
+		// Every id sent exactly once, order preserved.
+		expect(sent.flat()).toEqual(ids);
+	});
+
+	it("concatenates results across batches", async () => {
+		const ids = Array.from({ length: 200 }, (_, i) => i);
+		fetchRestMock
+			.mockResolvedValueOnce(
+				ok({ profiles: [{ ...shortProfile(), profileId: 1 }] }),
+			)
+			.mockResolvedValueOnce(
+				ok({ profiles: [{ ...shortProfile(), profileId: 2 }] }),
+			);
+
+		const profiles = await getProfiles(ids);
+
+		expect(profiles.map((p) => p.profileId)).toEqual([1, 2]);
+	});
+
+	it("sends nothing for an empty list", async () => {
+		await expect(getProfiles([])).resolves.toEqual([]);
 		expect(fetchRestMock).not.toHaveBeenCalled();
 	});
 });

@@ -148,16 +148,30 @@ const getProfilesResponseSchema = z.object({
 	),
 });
 
+/**
+ * The API rejects a larger batch with `400 Max profile is 150`, so longer
+ * lists are split across requests rather than failing.
+ */
+export const MAX_PROFILES_PER_REQUEST = 150;
+
 export async function getProfiles(
 	profileIds: number[],
 ): Promise<z.infer<typeof getProfilesResponseSchema>["profiles"]> {
 	if (profileIds.length === 0) return [];
-	return await fetchRest("/v3/profiles", {
-		method: "POST",
-		body: {
-			targetProfileIds: profileIds,
-		},
-	}).then((res) => res.jsonParsed(getProfilesResponseSchema).profiles);
+
+	const profiles: z.infer<typeof getProfilesResponseSchema>["profiles"] = [];
+	for (let i = 0; i < profileIds.length; i += MAX_PROFILES_PER_REQUEST) {
+		// Sequential on purpose: a long list would otherwise fire a burst of
+		// requests at once and risk being rate limited.
+		const batch = await fetchRest("/v3/profiles", {
+			method: "POST",
+			body: {
+				targetProfileIds: profileIds.slice(i, i + MAX_PROFILES_PER_REQUEST),
+			},
+		}).then((res) => res.jsonParsed(getProfilesResponseSchema).profiles);
+		profiles.push(...batch);
+	}
+	return profiles;
 }
 
 let myProfileCache: {
