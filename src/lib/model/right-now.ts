@@ -6,6 +6,8 @@ export const rightNowStatusSchema = z.enum([
 	"NOT_HOSTING",
 ]);
 
+export type RightNowStatus = z.infer<typeof rightNowStatusSchema>;
+
 export const rightNowAttributionStatusSchema = z.enum([
 	"ACTIVE",
 	"HIDDEN",

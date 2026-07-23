@@ -1,6 +1,7 @@
 import { registerAccountCache } from "$lib/api/account-caches";
 import { getCascadeV4 } from "$lib/api/browse/grid";
 import { getProfiles } from "$lib/api/users/profiles";
+import type { RightNowStatus } from "$lib/model/right-now";
 import { now } from "$lib/util/clock";
 
 function primaryImageHashes(url: string | null | undefined): string[] | null {
@@ -19,6 +20,7 @@ export type RenderedGridProfile = {
 	isFavorite: boolean;
 	isVisiting: boolean;
 	hasChattedInLast24Hrs: boolean;
+	rightNow: RightNowStatus | null;
 };
 
 export type LazyGridProfile = {
@@ -48,6 +50,7 @@ export async function getGrid(query: Parameters<typeof getCascadeV4>[0]) {
 				isFavorite: profile.favorite ?? false,
 				isVisiting: profile.isVisiting,
 				hasChattedInLast24Hrs: profile.chatted ?? false,
+				rightNow: profile.rightNow ?? null,
 			});
 		} else if (
 			item.type === "hidden_profile_v1" ||
@@ -119,5 +122,6 @@ export async function resolveLazyProfile(
 		hasChattedInLast24Hrs:
 			resolved.lastChatTimestamp !== null &&
 			now() - resolved.lastChatTimestamp < 24 * 60 * 60 * 1000,
+		rightNow: resolved.rightNow,
 	};
 }

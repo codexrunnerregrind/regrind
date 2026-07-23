@@ -1,13 +1,14 @@
 import z from "zod";
 
 import { unixTimestampMsSchema } from "$lib/model/types";
+import { rightNowStatusSchema } from "$lib/model/right-now";
 
 export const cascadeResponseProfileSchema = z.object({
 	profileId: z.int().nonnegative(),
 	onlineUntil: unixTimestampMsSchema.nullable(),
 	displayName: z.string().nullable().optional(),
 	distanceMeters: z.int().nonnegative().optional(),
-	rightNow: z.string(),
+	rightNow: rightNowStatusSchema.catch("NOT_ACTIVE"),
 	unreadCount: z.int().nonnegative(),
 	isVisiting: z.boolean(),
 	isPopular: z.boolean(),

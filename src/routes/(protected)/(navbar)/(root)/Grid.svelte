@@ -96,6 +96,7 @@
 					medias={item.profilePhotosHashes?.map((mediaHash) => ({
 						mediaHash,
 					})) ?? []}
+					rightNow={item.rightNow}
 				/>
 			{:else}
 				<div

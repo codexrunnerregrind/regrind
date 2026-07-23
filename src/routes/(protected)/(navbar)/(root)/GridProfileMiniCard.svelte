@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ProfileMiniCard from "$lib/components/profile/ProfileMiniCard.svelte";
+	import type { RightNowStatus } from "$lib/model/right-now";
 
 	let {
 		id,
@@ -12,6 +13,7 @@
 		isFavorite = false,
 		isVisiting = false,
 		hadRecentChat = false,
+		rightNow = null,
 	}: {
 		id: number;
 		displayName?: string | null;
@@ -23,6 +25,7 @@
 		isFavorite?: boolean;
 		isVisiting?: boolean;
 		hadRecentChat?: boolean;
+		rightNow?: RightNowStatus | null;
 	} = $props();
 </script>
 
@@ -36,5 +39,6 @@
 	{isFavorite}
 	{isVisiting}
 	{hadRecentChat}
+	{rightNow}
 	href="/profile/{id}"
 />

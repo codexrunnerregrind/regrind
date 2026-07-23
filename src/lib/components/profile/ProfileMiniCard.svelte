@@ -2,8 +2,11 @@
 	import { ChatIcon, StarIcon } from "phosphor-svelte";
 	import type { Snippet } from "svelte";
 
+	import type { RightNowStatus } from "$lib/model/right-now";
+
 	import DistanceFormatted from "$lib/components/profile/DistanceFormatted.svelte";
 	import ProfileStatusIndicator from "$lib/components/profile/ProfileStatusIndicator.svelte";
+	import ProfileRightNowIndicator from "$lib/components/profile/ProfileRightNowIndicator.svelte";
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
 	import { Badge } from "$lib/components/ui/badge";
 
@@ -19,6 +22,7 @@
 		hadRecentChat = false,
 		href = null,
 		class: className,
+		rightNow = null,
 		overlay,
 	}: {
 		mediaHash?: string | null;
@@ -32,6 +36,7 @@
 		hadRecentChat?: boolean;
 		href?: string | null;
 		class?: import("svelte/elements").ClassValue;
+		rightNow?: RightNowStatus | null;
 		overlay?: Snippet;
 	} = $props();
 </script>
@@ -64,13 +69,15 @@
 			{/if}
 		</div>
 	{/if}
-	{#if displayName !== null || age !== null}
+	{#if displayName !== null || age !== null || isVisiting || (rightNow !== null && rightNow !== "NOT_ACTIVE")}
 		<div class="z-1 flex w-full items-center gap-0.5 p-0.5">
 			<Badge
 				variant="outline"
 				class="max-w-full min-w-0 shrink gap-0 bg-popover/20 backdrop-blur-2xl"
 			>
 				<ProfileStatusIndicator {onlineUntil} {isVisiting} class="me-1" />
+
+				<ProfileRightNowIndicator {rightNow} class="me-1" />
 
 				{#if displayName !== null}
 					<span class="block shrink truncate font-semibold">{displayName}</span>

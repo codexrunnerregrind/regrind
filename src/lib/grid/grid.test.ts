@@ -19,6 +19,7 @@ function rendered(id: number): RenderedGridProfile {
 		isFavorite: false,
 		isVisiting: false,
 		hasChattedInLast24Hrs: false,
+		rightNow: null,
 	};
 }
 
