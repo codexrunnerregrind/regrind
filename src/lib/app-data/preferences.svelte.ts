@@ -27,7 +27,16 @@ export type AccentColor = z.infer<typeof accentColorSchema>;
 
 const preferencesSchema = z.object({
 	accentColor: accentColorSchema.default("green"),
+	// The manually-picked ("mock") location. Preserved across mode switches so
+	// returning from current-location mode restores the last picked spot.
 	geohash: geohashSchema.nullable().default(null),
+	// The last detected live GPS location, used while `usingCurrentLocation` is
+	// true. Kept separate from `geohash` so switching modes never clobbers the
+	// user's mock pick.
+	currentGeohash: geohashSchema.nullable().default(null),
+	// Which of the two locations above is active. When true the grid follows the
+	// device (refresh re-detects); when false it stays on the mock `geohash`.
+	usingCurrentLocation: z.boolean().default(false),
 	gridSearchFilters: gridSearchFiltersSchema.optional(),
 	revealMessageRead: z.boolean().default(false),
 	revealProfileViews: z.boolean().default(false),
@@ -96,6 +105,21 @@ export function getGeohashSnapshot(): string | null {
 	return preferencesSnapshot.geohash;
 }
 
+export function getCurrentGeohashSnapshot(): string | null {
+	return preferencesSnapshot.currentGeohash;
+}
+
+export function getUsingCurrentLocationSnapshot(): boolean {
+	return preferencesSnapshot.usingCurrentLocation;
+}
+
+/** The location the grid should actually use, per the current mode. */
+export function getActiveGeohashSnapshot(): string | null {
+	return preferencesSnapshot.usingCurrentLocation
+		? preferencesSnapshot.currentGeohash
+		: preferencesSnapshot.geohash;
+}
+
 export function getThemeModeSnapshot(): ThemeMode {
 	return preferencesSnapshot.themeMode;
 }
@@ -133,7 +157,12 @@ async function resetToDefaults(): Promise<void> {
 	window.location.reload();
 }
 
-const accountPreferenceKeys = ["geohash", "gridSearchFilters"] as const;
+const accountPreferenceKeys = [
+	"geohash",
+	"currentGeohash",
+	"usingCurrentLocation",
+	"gridSearchFilters",
+] as const;
 
 export async function clearAccountPreferences(): Promise<void> {
 	await enqueueWrite(async () => {

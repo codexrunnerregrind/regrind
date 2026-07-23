@@ -1,7 +1,11 @@
 <script lang="ts">
+	import { fetchCurrentGeohash, geoApiSupported } from "$lib/app-data/location";
 	import {
-		getGeohashSnapshot,
+		getActiveGeohashSnapshot,
+		getCurrentGeohashSnapshot,
+		getUsingCurrentLocationSnapshot,
 		hydratePreferences,
+		setPreferences,
 	} from "$lib/app-data/preferences.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import { gridState } from "$lib/grid/grid-state.svelte";
@@ -10,7 +14,26 @@
 	import TopBar from "./top-bar/TopBar.svelte";
 
 	const preferencesHydrated = hydratePreferences();
-	const geohash = $derived(getGeohashSnapshot());
+	const geohash = $derived(getActiveGeohashSnapshot());
+
+	// Pull-to-refresh. In "current location" mode we first re-detect the device
+	// position (silently — never prompting) so moving physically updates the
+	// grid; if it changed, Grid's effect reloads at the new location and we skip
+	// the redundant reload. In mock mode the location is left untouched.
+	async function refreshGrid() {
+		if (getUsingCurrentLocationSnapshot() && geoApiSupported()) {
+			try {
+				const detected = await fetchCurrentGeohash(false);
+				if (detected !== getCurrentGeohashSnapshot()) {
+					await setPreferences({ currentGeohash: detected });
+					return;
+				}
+			} catch (error) {
+				console.error(error);
+			}
+		}
+		await gridState.reload();
+	}
 
 	let gridContainer: HTMLElement | null = $state(null);
 
@@ -55,7 +78,7 @@
 					container={gridContainer}
 					updating={gridState.refreshing}
 					position="top"
-					onrefresh={() => void gridState.reload()}
+					onrefresh={() => void refreshGrid()}
 				/>
 			{/if}
 		</main>
