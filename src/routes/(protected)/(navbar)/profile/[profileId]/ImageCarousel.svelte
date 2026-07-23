@@ -162,7 +162,7 @@
 		display: none;
 	}
 	:global {
-		.pswp .pswp__button {
+		.pswp .pswp__button:not(.pswp__button--close) {
 			display: none;
 		}
 		.pswp .pswp__created-at-label {
