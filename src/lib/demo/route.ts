@@ -1,7 +1,6 @@
 import { demoMeProfileId } from "./config";
 import {
 	demoAlbumContent,
-	demoAlbumLimits,
 	demoAlbumSharesFor,
 	demoAlbumsSharedByProfile,
 	demoConversationMessages,
@@ -192,9 +191,6 @@ export function demoRoute(
 	) {
 		demoDeleteAlbumContent(Number(segments[2]), Number(segments[4]));
 		return ok({});
-	}
-	if (method === "GET" && rawPath === "/v1/albums/storage") {
-		return ok(demoAlbumLimits());
 	}
 	if (method === "GET" && rawPath === "/v1/albums") {
 		return ok(demoMyAlbums());

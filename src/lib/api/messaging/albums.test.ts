@@ -11,7 +11,6 @@ import {
 	createAlbum,
 	deleteAlbum,
 	deleteAlbumContent,
-	getAlbumLimits,
 	getAlbumShares,
 	getAlbumsSharedByProfile,
 	getMyAlbums,
@@ -119,29 +118,6 @@ describe("getAlbumsSharedByProfile", () => {
 		fetchRestMock.mockResolvedValue(response({ albums: [album] }));
 
 		await expect(getAlbumsSharedByProfile(42)).resolves.toEqual([album]);
-	});
-});
-
-describe("getAlbumLimits", () => {
-	it("parses the storage limits", async () => {
-		const limits = {
-			subscriptionType: "FreeAlbums",
-			maxAlbums: 10,
-			maxContentItemsPerAlbum: 30,
-			maxShares: 100,
-			maxViewableAlbums: 10,
-			maxViewableVideos: 10,
-			maxContentSizeInBytes: 125_829_120,
-			maxContentSizeHumanReadable: "120.00 MB",
-			maxVideoLength: 60,
-			minVideoLength: 1,
-			maxShareableAlbums: 10,
-			maxVideosPerAlbum: 10,
-		};
-		fetchRestMock.mockResolvedValue(response(limits));
-
-		await expect(getAlbumLimits()).resolves.toEqual(limits);
-		expect(fetchRestMock).toHaveBeenCalledWith("/v1/albums/storage");
 	});
 });
 

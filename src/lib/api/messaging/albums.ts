@@ -7,7 +7,6 @@ import {
 	type AlbumExpirationType,
 	albumMinSchema,
 	albumSharesSchema,
-	albumStorageLimitsSchema,
 	myAlbumSchema,
 	sharedAlbumSchema,
 } from "$lib/model/messaging/albums";
@@ -38,7 +37,7 @@ const albumNameResponseSchema = z.object({
 
 /**
  * Creates an empty album. Throws with a 402 response once the account is at its
- * {@link getAlbumLimits} album cap.
+ * album cap.
  */
 export async function createAlbum({ albumName }: { albumName: string | null }) {
 	const res = await fetchRest("/v2/albums", {
@@ -147,12 +146,6 @@ export async function getAlbumsSharedByProfile(profileId: number) {
 		(res) => res.jsonParsed(sharedAlbumsResponseSchema),
 	);
 	return albums;
-}
-
-export async function getAlbumLimits() {
-	return await fetchRest("/v1/albums/storage").then((res) =>
-		res.jsonParsed(albumStorageLimitsSchema),
-	);
 }
 
 const myAlbumsResponseSchema = z.object({

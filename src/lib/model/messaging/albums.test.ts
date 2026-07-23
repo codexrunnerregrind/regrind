@@ -3,7 +3,6 @@ import { describe, expect, it } from "vitest";
 import {
 	ALBUM_NAME_MAX_BYTES,
 	albumNameByteLength,
-	albumNameSchema,
 } from "$lib/model/messaging/albums";
 
 describe("albumNameByteLength", () => {
@@ -17,29 +16,14 @@ describe("albumNameByteLength", () => {
 		expect(albumNameByteLength("🍑")).toBe(4);
 		expect(albumNameByteLength("é")).toBe(2);
 	});
-});
 
-describe("albumNameSchema", () => {
-	it("accepts null and empty names", () => {
-		expect(albumNameSchema.safeParse(null).success).toBe(true);
-		expect(albumNameSchema.safeParse("").success).toBe(true);
-	});
-
-	it("accepts a name exactly at the byte limit", () => {
-		const name = "a".repeat(ALBUM_NAME_MAX_BYTES);
-		expect(albumNameSchema.safeParse(name).success).toBe(true);
-	});
-
-	it("rejects a name one byte over the limit", () => {
-		const name = "a".repeat(ALBUM_NAME_MAX_BYTES + 1);
-		expect(albumNameSchema.safeParse(name).success).toBe(false);
-	});
-
-	it("rejects on bytes rather than characters", () => {
-		// 64 emoji = 256 bytes but only 64 characters, so a character-based
-		// limit would wrongly let this through.
+	it("puts a name of emoji over the limit while under it by characters", () => {
 		const name = "🍑".repeat(64);
+
 		expect(name.length).toBeLessThan(ALBUM_NAME_MAX_BYTES);
-		expect(albumNameSchema.safeParse(name).success).toBe(false);
+		expect(albumNameByteLength(name)).toBeGreaterThan(ALBUM_NAME_MAX_BYTES);
+		expect(albumNameByteLength("a".repeat(ALBUM_NAME_MAX_BYTES))).toBe(
+			ALBUM_NAME_MAX_BYTES,
+		);
 	});
 });

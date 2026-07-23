@@ -12,13 +12,6 @@ export function albumNameByteLength(albumName: string): number {
 	return new TextEncoder().encode(albumName).length;
 }
 
-export const albumNameSchema = z
-	.string()
-	.refine((name) => albumNameByteLength(name) <= ALBUM_NAME_MAX_BYTES, {
-		error: `Album name must be at most ${ALBUM_NAME_MAX_BYTES} bytes`,
-	})
-	.nullable();
-
 export const albumPreviewSchema = z.object({
 	albumId: z.int(),
 	hasUnseenContent: z.boolean(),
@@ -112,20 +105,3 @@ export const albumSharesSchema = z.object({
 	// Tolerated as absent: the spec marks nothing on this body as required.
 	profileIds: z.array(z.int()).nullish(),
 });
-
-export const albumStorageLimitsSchema = z.object({
-	subscriptionType: z.string(),
-	maxAlbums: z.int(),
-	maxContentItemsPerAlbum: z.int(),
-	maxShares: z.int(),
-	maxViewableAlbums: z.int(),
-	maxViewableVideos: z.int(),
-	maxContentSizeInBytes: z.int(),
-	maxContentSizeHumanReadable: z.string(),
-	maxVideoLength: z.int(),
-	minVideoLength: z.int(),
-	maxShareableAlbums: z.int(),
-	maxVideosPerAlbum: z.int(),
-});
-
-export type AlbumStorageLimits = z.infer<typeof albumStorageLimitsSchema>;
