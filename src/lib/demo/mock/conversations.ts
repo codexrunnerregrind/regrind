@@ -20,6 +20,13 @@ type DemoMessage = { fromMe: boolean; reactions?: number } & (
 			unseen?: boolean;
 			coverUrl?: null;
 	  }
+	| {
+			kind: "albumContent";
+			albumId: number;
+			reply?: string;
+			locked?: boolean;
+			expired?: boolean;
+	  }
 	| { kind: "unsent" }
 );
 
@@ -50,6 +57,23 @@ const demoConversationSeeds: DemoConversation[] = [
 			},
 			{ fromMe: false, text: "Sed do eiusmod tempor incididunt?" },
 			{ fromMe: false, kind: "album", albumId: 5001, unseen: true },
+			{
+				fromMe: true,
+				kind: "albumContent",
+				albumId: 5001,
+				reply: "this one's great",
+			},
+			{ fromMe: false, kind: "albumContent", albumId: 5001 },
+			{
+				fromMe: false,
+				kind: "albumContent",
+				albumId: 5001,
+				reply: "can't see it anymore",
+				expired: true,
+			},
+			{ fromMe: false, kind: "albumContent", albumId: 5001, locked: true },
+			// Kept last so this conversation's preview stays an Album, which
+			// demo.test.ts asserts.
 			{
 				fromMe: false,
 				kind: "album",
@@ -263,6 +287,36 @@ function buildMessage(
 					unsent: false,
 				};
 			return { type: "Album", body: albumBody, ...base, unsent: false };
+		}
+		case "albumContent": {
+			const contentBody = {
+				albumId: message.albumId,
+				ownerProfileId: message.fromMe ? conv.withId : demoMeProfileId,
+				albumContentId: message.albumId * 100,
+				previewUrl: message.locked
+					? null
+					: picsum(`album-${message.albumId}-0`, 300, 400),
+				expiresAt: message.expired ? timestamp - HOUR : null,
+				viewable: !message.locked,
+			};
+			if (message.reply === undefined) {
+				return {
+					type: "AlbumContentReaction",
+					body: contentBody,
+					...base,
+					unsent: false,
+				};
+			}
+			return {
+				type: "AlbumContentReply",
+				body: {
+					...contentBody,
+					albumContentReply: message.reply,
+					contentType: "image/jpeg",
+				},
+				...base,
+				unsent: false,
+			};
 		}
 		case "unsent":
 			return { type: "Unsent", body: null, ...base, unsent: true };

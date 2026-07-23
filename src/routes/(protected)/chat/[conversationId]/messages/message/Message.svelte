@@ -4,6 +4,7 @@
 	import { scale } from "svelte/transition";
 
 	import type { ApiResponseMessage } from "$lib/model/messaging/messages";
+	import AlbumContentMessage from "./AlbumContentMessage.svelte";
 	import AlbumMessage from "./AlbumMessage.svelte";
 	import { setMessageContext } from "./context";
 	import ExpiringImageMessage from "./ExpiringImageMessage.svelte";
@@ -179,6 +180,8 @@
 			/>
 		{:else if message.type === "Album" || message.type === "ExpiringAlbum" || message.type === "ExpiringAlbumV2"}
 			<AlbumMessage message={message.body} />
+		{:else if message.type === "AlbumContentReply" || message.type === "AlbumContentReaction"}
+			<AlbumContentMessage message={message.body} />
 		{:else if message.type === "Unsent"}
 			<UnsentMessage />
 		{:else}
