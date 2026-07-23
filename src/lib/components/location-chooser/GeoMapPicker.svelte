@@ -26,8 +26,12 @@
 
 	let {
 		pinPos = $bindable(),
+		atCurrentLocation = $bindable(false),
 	}: {
 		pinPos?: { lat: number; lon: number };
+		// True while the pin sits on the freshly-detected GPS position; reset by
+		// any manual change (map tap, marker drag, place search).
+		atCurrentLocation?: boolean;
 	} = $props();
 
 	let map: LeafletMap | undefined = $state();
@@ -37,6 +41,7 @@
 		if (map) {
 			const onMapClick: LeafletMouseEventHandlerFn = ({ latlng }) => {
 				pinPos = { lat: latlng.lat, lon: latlng.lng };
+				atCurrentLocation = false;
 				map?.panTo(latlng);
 			};
 			map.on("click", onMapClick);
@@ -45,6 +50,53 @@
 			};
 		}
 	});
+
+	// Leaflet measures its container on init; inside an animating drawer/dialog
+	// that size is wrong, leaving tiles half-loaded. Re-measure on every resize.
+	$effect(() => {
+		if (!map) return;
+		const observer = new ResizeObserver(() => map?.invalidateSize());
+		observer.observe(map.getContainer());
+		return () => observer.disconnect();
+	});
+
+	// Detects the device position, drops the pin on it and marks it as the
+	// current location. `silent` suppresses the permission-denied toast (used for
+	// automatic detection on open, vs. an explicit button press).
+	export async function locate({ silent = false } = {}) {
+		if (!gpsAvailable || gpsRequestInProgress) return;
+		gpsRequestInProgress = true;
+		try {
+			let permissions = await checkPermissions();
+			if (
+				permissions.location === "prompt" ||
+				permissions.location === "prompt-with-rationale"
+			) {
+				permissions = await requestPermissions(["location"]);
+			}
+			if (permissions.location !== "granted") {
+				if (!silent) {
+					toast.error(
+						"Location permission denied. Change this in your system settings to use this button.",
+					);
+				}
+				return;
+			}
+			const pos = await getCurrentPosition();
+			const lat = pos.coords.latitude;
+			const lon = pos.coords.longitude;
+			pinPos = { lat, lon };
+			atCurrentLocation = true;
+			centerAt({ lat, lon, zoom: Math.max(map?.getZoom() ?? 0, 16) });
+		} catch (error) {
+			console.error(error);
+			if (!silent) {
+				showErrorToast({ label: "Failed to get current location", error });
+			}
+		} finally {
+			gpsRequestInProgress = false;
+		}
+	}
 
 	let searchQuery = $state("");
 	let showSearchResults = $state(false);
@@ -123,6 +175,7 @@
 				ondragend={(event: DragEndEvent) => {
 					const { lat, lng } = (event.target as LeafletMarker).getLatLng();
 					pinPos = { lat, lon: lng };
+					atCurrentLocation = false;
 				}}
 				options={{
 					draggable: true,
@@ -185,6 +238,7 @@
 								variant="link"
 								onclick={() => {
 									pinPos = { lat: place.lat, lon: place.lon };
+									atCurrentLocation = false;
 									map?.setView([place.lat, place.lon], 17);
 									showSearchResults = false;
 								}}
@@ -214,43 +268,7 @@
 				variant="default"
 				class="cursor-pointer bg-white text-black shadow-sm hover:bg-neutral-100"
 				disabled={gpsRequestInProgress}
-				onclick={async () => {
-					if (map) {
-						gpsRequestInProgress = true;
-						try {
-							let permissions = await checkPermissions();
-							if (
-								permissions.location === "prompt" ||
-								permissions.location === "prompt-with-rationale"
-							) {
-								permissions = await requestPermissions(["location"]);
-							}
-							if (permissions.location === "granted") {
-								const pos = await getCurrentPosition();
-								map.setView(
-									[pos.coords.latitude, pos.coords.longitude],
-									Math.max(map.getZoom(), 16),
-								);
-								pinPos = {
-									lat: pos.coords.latitude,
-									lon: pos.coords.longitude,
-								};
-							} else {
-								toast.error(
-									"Location permission denied. Change this in your system settings to use this button.",
-								);
-							}
-						} catch (error) {
-							console.error(error);
-							showErrorToast({
-								label: "Failed to get current location",
-								error,
-							});
-						} finally {
-							gpsRequestInProgress = false;
-						}
-					}
-				}}
+				onclick={() => void locate()}
 			>
 				<GpsFixIcon weight="fill" class="size-6" />
 			</Button>

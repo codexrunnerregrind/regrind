@@ -16,6 +16,13 @@
 		"haptics:allow-vibrate",
 		"haptics:allow-impact-feedback",
 		"haptics:allow-notification-feedback",
-		"haptics:allow-selection-feedback"
+		"haptics:allow-selection-feedback",
+		{
+			"identifier": "opener:allow-open-url",
+			"allow": [
+				{ "url": "geo:*" },
+				{ "url": "comgooglemaps:*" }
+			]
+		}
 	]
 }

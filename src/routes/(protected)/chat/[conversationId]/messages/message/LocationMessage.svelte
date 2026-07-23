@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { platform } from "@tauri-apps/plugin-os";
 	import { divIcon } from "leaflet";
 	import { Map, Marker, TileLayer } from "sveaflet";
 	import type { Map as LeafletMap } from "leaflet";
@@ -22,10 +23,28 @@
 		map?.setView([message.lat, message.lon], 15);
 	});
 
+	// Deep-link into the native Google Maps app where possible, only falling back
+	// to a web URL (browser) on desktop where no maps app scheme exists.
+	function mapsUrl(): string {
+		const { lat, lon } = message;
+		let os = "";
+		try {
+			os = platform();
+		} catch {
+			os = "";
+		}
+		if (os === "ios") {
+			return `comgooglemaps://?q=${lat},${lon}&center=${lat},${lon}&zoom=16`;
+		}
+		if (os === "android") {
+			return `geo:${lat},${lon}?q=${lat},${lon}`;
+		}
+		return `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+	}
+
 	function openInMaps() {
-		const url = `https://www.openstreetmap.org/?mlat=${message.lat}&mlon=${message.lon}#map=16/${message.lat}/${message.lon}`;
 		void import("@tauri-apps/plugin-opener").then(({ openUrl }) =>
-			openUrl(url),
+			openUrl(mapsUrl()),
 		);
 	}
 </script>
