@@ -53,7 +53,7 @@
 <div class="screen-nav-host">
 	<div bind:this={container} class="pull-scroller">
 		<div
-			class="@container/photo-grid mx-auto flex min-h-overscrollable w-full max-w-120 flex-col gap-3 px-4 pt-16 pb-nav-clear"
+			class="@container/photo-grid flex min-h-overscrollable w-full flex-col gap-3 pt-16 pb-nav-clear"
 		>
 			{#if views.loading}
 				<div class="photo-grid">

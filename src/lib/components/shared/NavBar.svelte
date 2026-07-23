@@ -13,11 +13,18 @@
 	import { Badge } from "$lib/components/ui/badge";
 	import { tabsListVariants } from "$lib/components/ui/tabs";
 	import { hapticSelection } from "$lib/platform/haptics";
+	import { scrollActiveViewToTop } from "$lib/util/scroll";
 	import type { ConversationsState } from "$lib/chat/conversations-state.svelte";
 
-	function onTabSelect(currentTab: boolean) {
-		// Only buzz when actually switching to a different tab.
-		if (!currentTab) hapticSelection();
+	function onTabClick(event: MouseEvent, currentTab: boolean) {
+		if (currentTab) {
+			// Re-tapping the active tab scrolls its view back to the top
+			// instead of navigating.
+			event.preventDefault();
+			scrollActiveViewToTop();
+		} else {
+			hapticSelection();
+		}
 	}
 
 	const myProfilePhotos = $derived(
@@ -49,13 +56,8 @@
 		<a
 			href="/"
 			data-active={page.route.id === "/(protected)/(navbar)/(root)"}
-			onclick={(e) => {
-				const current = page.route.id === "/(protected)/(navbar)/(root)";
-				if (current) {
-					e.preventDefault();
-				}
-				onTabSelect(current);
-			}}
+			onclick={(e) =>
+				onTabClick(e, page.route.id === "/(protected)/(navbar)/(root)")}
 		>
 			<DotsNineIcon weight="fill" />
 			Browse
@@ -63,8 +65,8 @@
 		<a
 			href="/right-now"
 			data-active={page.route.id === "/(protected)/(navbar)/right-now"}
-			onclick={() =>
-				onTabSelect(page.route.id === "/(protected)/(navbar)/right-now")}
+			onclick={(e) =>
+				onTabClick(e, page.route.id === "/(protected)/(navbar)/right-now")}
 		>
 			<DropIcon weight="fill" />
 			Right Now
@@ -72,8 +74,9 @@
 		<a
 			href="/interest"
 			data-active={page.route.id?.startsWith("/(protected)/(navbar)/interest")}
-			onclick={() =>
-				onTabSelect(
+			onclick={(e) =>
+				onTabClick(
+					e,
 					page.route.id?.startsWith("/(protected)/(navbar)/interest") ?? false,
 				)}
 		>
@@ -83,7 +86,7 @@
 		<a
 			href="/chat"
 			data-active={page.route.id === "/(protected)/chat"}
-			onclick={() => onTabSelect(page.route.id === "/(protected)/chat")}
+			onclick={(e) => onTabClick(e, page.route.id === "/(protected)/chat")}
 		>
 			<ChatCircleIcon weight="fill" />
 			Inbox
@@ -94,8 +97,8 @@
 	</div>
 	<a
 		href="/settings"
-		onclick={() =>
-			onTabSelect(page.route.id === "/(protected)/(navbar)/settings/(me)")}
+		onclick={(e) =>
+			onTabClick(e, page.route.id === "/(protected)/(navbar)/settings/(me)")}
 		class={[
 			"flex size-14 shrink-0 rounded-full border bg-muted p-1",
 			{

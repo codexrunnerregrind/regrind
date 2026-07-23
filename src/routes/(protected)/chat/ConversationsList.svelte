@@ -221,6 +221,7 @@
 	{:else}
 		<div
 			bind:this={container}
+			data-scroll-root
 			class={[
 				"flex min-h-0 flex-1 flex-col gap-0 overflow-auto overscroll-contain px-0 pt-2 pb-0",
 				selecting && "pt-(--selection-bar-height)",
