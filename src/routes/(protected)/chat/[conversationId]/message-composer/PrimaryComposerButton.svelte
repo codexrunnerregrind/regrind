@@ -9,5 +9,5 @@
 </script>
 
 <div class="block" transition:fade={{ duration: 400, easing: expoOut }}>
-	<ComposerButton {...props} class={["absolute bottom-0 right-0 rounded-e-2xl", className]} />
+	<ComposerButton {...props} class={["absolute right-0 bottom-0 rounded-e-2xl pe-3.5", className]} />
 </div>

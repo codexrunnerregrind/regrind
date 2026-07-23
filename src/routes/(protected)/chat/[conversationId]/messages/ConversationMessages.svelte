@@ -152,7 +152,7 @@
 
 <div class="relative flex min-h-0 max-w-full flex-1 flex-col bg-chat-background">
 	<div
-		class="flex min-h-0 max-w-full flex-1 flex-col gap-1 overflow-auto overscroll-contain p-2 pt-20 pb-13 *:first:mt-auto"
+		class="flex min-h-0 max-w-full flex-1 flex-col gap-1 overflow-auto overscroll-contain p-2 pt-20 pb-16 *:first:mt-auto"
 		bind:this={container}
 		style:overflow-anchor="none"
 		onscroll={onContainerScroll}

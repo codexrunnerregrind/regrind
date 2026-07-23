@@ -13,8 +13,8 @@
 	} = $props();
 </script>
 
-<a href="/profile/{profile.profileId}" class="flex-1 py-4 ps-0 pe-4">
-	<Card.Header class="flex items-center gap-4 px-0">
+<a href="/profile/{profile.profileId}" class="flex-1 py-4 ps-1 pe-2">
+	<Card.Header class="flex items-center gap-3 px-0">
 		<Avatar.Root class="size-avatar after:rounded-full">
 			<UserAvatar
 				mediaHash={profile.mediaHash ?? null}

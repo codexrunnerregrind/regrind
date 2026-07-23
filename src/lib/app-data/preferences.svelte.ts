@@ -19,6 +19,7 @@ export const accentColors = [
 	"pink",
 	"red",
 	"orange",
+	"yellow",
 	"brown",
 	"slate",
 ] as const;

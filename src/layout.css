@@ -48,6 +48,9 @@
 	--message-bubble-in: oklch(1 0 0);
 	--message-bubble-out: oklch(0.94 0.06 145);
 	--message-bubble-foreground: oklch(0.21 0.02 220);
+	/* Text on the outgoing bubble. Follows the accent (see [data-accent]); this
+	   value is the pre-hydration fallback for the light-green default bubble. */
+	--message-bubble-out-foreground: oklch(0.21 0.02 220);
 }
 
 .dark {
@@ -87,12 +90,13 @@
 	--message-bubble-in: oklch(0.27 0.02 220);
 	--message-bubble-out: oklch(0.45 0.08 165);
 	--message-bubble-foreground: oklch(0.93 0.01 220);
+	--message-bubble-out-foreground: oklch(0.93 0.01 220);
 }
 
 /* Accent presets. theme.svelte.ts sets data-accent on <html>; these override
    the primary/accent/ring family in both light and dark (declared after .dark
-   so they win). Chosen at a lightness that pairs with white foreground. Chat
-   bubbles keep their own green tokens and are intentionally unaffected. */
+   so they win). Chosen at a lightness that pairs with white foreground. The
+   outgoing chat bubble follows the accent too (see the tail of this section). */
 [data-accent] {
 	--primary-foreground: oklch(1 0 0);
 	--accent-foreground: oklch(1 0 0);
@@ -128,12 +132,23 @@
 [data-accent="slate"] {
 	--primary: oklch(0.52 0.03 250);
 }
+/* Grindr yellow (#f5c518-ish). Unlike the others it's light, so its foreground
+   flips to near-black for legible text on primary surfaces and bubbles. */
+[data-accent="yellow"] {
+	--primary: oklch(0.85 0.16 92);
+	--primary-foreground: oklch(0.22 0.02 90);
+	--accent-foreground: oklch(0.22 0.02 90);
+	--sidebar-primary-foreground: oklch(0.22 0.02 90);
+}
 [data-accent] {
 	--accent: var(--primary);
 	--ring: var(--primary);
 	--sidebar-primary: var(--primary);
 	--sidebar-ring: var(--primary);
 	--chart-1: var(--primary);
+	/* Outgoing bubbles adopt the accent, with matching contrast text. */
+	--message-bubble-out: var(--primary);
+	--message-bubble-out-foreground: var(--primary-foreground);
 }
 
 @theme inline {
@@ -173,6 +188,7 @@
 	--color-message-bubble-in: var(--message-bubble-in);
 	--color-message-bubble-out: var(--message-bubble-out);
 	--color-message-bubble-foreground: var(--message-bubble-foreground);
+	--color-message-bubble-out-foreground: var(--message-bubble-out-foreground);
 	--color-chat-background: var(--chat-background);
 	--radius-sm: calc(var(--radius) * 0.6);
 	--radius-md: calc(var(--radius) * 0.8);

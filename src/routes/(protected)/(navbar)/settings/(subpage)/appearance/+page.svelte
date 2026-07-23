@@ -44,6 +44,7 @@
 		pink: "oklch(0.6 0.2 350)",
 		red: "oklch(0.58 0.21 25)",
 		orange: "oklch(0.63 0.17 50)",
+		yellow: "oklch(0.85 0.16 92)",
 		brown: "oklch(0.5 0.08 50)",
 		slate: "oklch(0.52 0.03 250)",
 	};
@@ -97,8 +98,9 @@
 			aria-pressed={accent === color}
 			onclick={() => selectAccent(color)}
 			class={[
-				"flex aspect-square items-center justify-center rounded-full text-white transition",
+				"flex aspect-square items-center justify-center rounded-full transition",
 				"ring-2 ring-offset-2 ring-offset-background",
+				color === "yellow" ? "text-black/80" : "text-white",
 				accent === color
 					? "ring-foreground/70"
 					: "ring-transparent active:scale-95",

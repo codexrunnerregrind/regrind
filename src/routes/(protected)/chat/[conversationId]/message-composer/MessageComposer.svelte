@@ -49,7 +49,7 @@
 </script>
 
 <form
-	class="absolute bottom-0 z-20 flex min-h-9.5 w-full min-w-0 shrink-0 flex-col gap-1 px-2 pb-2"
+	class="absolute bottom-0 z-20 flex min-h-11 w-full min-w-0 shrink-0 flex-col gap-1 px-2 pb-2"
 	onsubmit={(event) => {
 		event.preventDefault();
 		onSubmit().catch((error) => console.error(error));
@@ -58,10 +58,10 @@
 	{#if replyTo}
 		<ComposerReplyPreview message={replyTo} onCancel={onCancelReply} />
 	{/if}
-	<div class="relative h-full w-full rounded-full bg-popover">
+	<div class="relative h-full w-full rounded-[22px] bg-popover">
 		<MessageTextInput bind:value={textContent} />
+		<ComposerAttachments />
 		{#if textContent === ""}
-			<ComposerAttachments />
 			<ComposerVoiceMessage />
 		{:else}
 			<ComposerSubmitButton />

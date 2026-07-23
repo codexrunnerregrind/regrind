@@ -16,11 +16,11 @@
 </script>
 
 <div
-	class={["absolute right-7 bottom-0", { "pointer-events-none": disabled }]}
+	class={["absolute bottom-0 left-0", { "pointer-events-none": disabled }]}
 	transition:scale={{ duration: 400, easing: expoOut, start: 0 }}
 >
 	<ComposerButton
-		class="static right-7 pe-1.5"
+		class="static ps-3.5 pe-1.5"
 		onclick={() => {
 			onClick?.();
 		}}

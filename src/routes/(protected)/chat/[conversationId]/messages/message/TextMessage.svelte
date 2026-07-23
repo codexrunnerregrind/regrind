@@ -73,13 +73,13 @@
 	{/if}
 	<div
 		class={[
-			"relative w-fit max-w-100 shrink-0 overflow-visible rounded-xl px-3 py-2 text-message-bubble-foreground select-text",
+			"relative w-fit max-w-100 shrink-0 overflow-visible rounded-xl px-3 py-2 select-text",
 			{
 				"pointer-coarse:select-none": !clone,
-				"bg-message-bubble-in": !isOut,
+				"bg-message-bubble-in text-message-bubble-foreground": !isOut,
 				"ms-3": !isOut && !clone,
 				"rounded-es-none": lastInStack && !isOut,
-				"bg-message-bubble-out": isOut,
+				"bg-message-bubble-out text-message-bubble-out-foreground": isOut,
 				"me-3": isOut && !clone,
 				"rounded-ee-none": lastInStack && isOut,
 			},

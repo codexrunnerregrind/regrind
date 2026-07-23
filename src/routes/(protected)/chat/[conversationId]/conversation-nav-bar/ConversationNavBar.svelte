@@ -5,6 +5,7 @@
 	import { Skeleton } from "$lib/components/ui/skeleton";
 	import { getConversationState } from "../conversation-state.svelte";
 	import ConversationNavBarProfile from "./ConversationNavBarProfile.svelte";
+	import ConversationSharedAlbums from "./ConversationSharedAlbums.svelte";
 
 	const conversationState = $derived(getConversationState()());
 </script>
@@ -16,11 +17,11 @@
 	contentClass="flex items-center h-full"
 	tag="nav"
 >
-	<a href="/chat" class="flex h-full w-19 items-center justify-center">
-		<ArrowLeftIcon size={32} />
+	<a href="/chat" class="flex h-full items-center py-4 pr-1 pl-3">
+		<ArrowLeftIcon size={26} />
 	</a>
 	{#if conversationState.loading || conversationState.profile === null}
-		<div class="flex flex-1 items-center gap-3 py-4 ps-0">
+		<div class="flex flex-1 items-center gap-3 py-4 ps-1">
 			<Skeleton class="size-avatar rounded-full" />
 			<div class="flex flex-col gap-2">
 				<Skeleton class="h-4 w-20 rounded-md" />
@@ -31,5 +32,9 @@
 		<span class="flex-1">Failed to load conversation</span>
 	{:else}
 		<ConversationNavBarProfile profile={conversationState.profile} />
+		<ConversationSharedAlbums
+			profileId={conversationState.profile.profileId}
+			name={conversationState.profile.name}
+		/>
 	{/if}
 </ProgressiveBlur>
