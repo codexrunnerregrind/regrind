@@ -229,9 +229,12 @@ function buildMessage(
 			const albumBody = {
 				albumId: message.albumId,
 				hasUnseenContent: message.unseen ?? false,
-				expiresAt: message.expiring ? timestamp + DAY : null,
+				// Mirrors the API: expiresAt belongs to the signed media URL and is
+				// short-lived on every album, expiring or not. The share's own
+				// deadline is viewableUntil.
+				expiresAt: NOW + 30 * MINUTE,
 				expirationType: (message.expiring
-					? "ONCE"
+					? "ONE_DAY"
 					: "INDEFINITE") satisfies AlbumExpirationType,
 				coverUrl:
 					message.coverUrl === null

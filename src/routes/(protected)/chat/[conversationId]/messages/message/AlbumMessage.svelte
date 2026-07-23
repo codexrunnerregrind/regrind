@@ -1,18 +1,33 @@
 <script lang="ts">
 	import "photoswipe/style.css";
-	import { ImageBrokenIcon, ImagesIcon, VideoIcon } from "phosphor-svelte";
+	import {
+		ClockIcon,
+		ImageBrokenIcon,
+		ImagesIcon,
+		VideoIcon,
+	} from "phosphor-svelte";
 	import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
 	import { showErrorToast } from "$lib/api/error";
 	import { type AlbumContentResponse, getAlbumContent } from "$lib/api/messaging/albums";
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+	import { getNow, subscribeNow } from "$lib/util/now.svelte";
 	import type { AlbumMessage } from "$lib/model/messaging/messages";
+	import { albumExpiry } from "./album-expiry";
 	import LockedMedia from "./LockedMedia.svelte";
 	import { MessageMediaState } from "./message-media.svelte";
 
 	let { message }: { message: AlbumMessage["body"] } = $props();
 
 	const media = new MessageMediaState();
+
+	const expiry = $derived(albumExpiry(message, getNow()));
+
+	// Only tick the shared clock while an expiring album is on screen.
+	$effect(() => {
+		if (expiry === null) return;
+		return subscribeNow();
+	});
 
 	const className: import("svelte/elements").ClassValue = $derived([
 		"aspect-3/4 h-auto relative",
@@ -242,6 +257,17 @@
 			</div>
 		{/if}
 		<div class={["@container absolute top-0 left-0 size-full", contentClass]}>
+			{#if expiry !== null}
+				<div
+					class={[
+						"absolute top-1.5 left-1.5 flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-white",
+						expiry.expired ? "bg-destructive/80" : "bg-black/60",
+					]}
+				>
+					<ClockIcon weight="fill" class="size-3.5 shrink-0" />
+					<span class="truncate">{expiry.label}</span>
+				</div>
+			{/if}
 			<div
 				class="absolute bottom-1/5 left-1/2 flex -translate-x-1/2 items-center gap-1 px-2 py-0.5 *:aspect-square *:w-[20cqw] *:rounded-full *:bg-card *:p-2"
 			>
