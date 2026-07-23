@@ -536,6 +536,33 @@ function demoAlbumStore() {
 	return demoAlbums;
 }
 
+const demoAlbumShares = new Map<number, number[]>();
+
+function albumShareStore(albumId: number): number[] {
+	let shares = demoAlbumShares.get(albumId);
+	if (shares === undefined) {
+		// Seed from the demo conversations so the list is not empty to start.
+		shares = [100005, 100006];
+		demoAlbumShares.set(albumId, shares);
+	}
+	return shares;
+}
+
+export function demoAlbumSharesFor(albumId: number) {
+	return { profileIds: albumShareStore(albumId) };
+}
+
+export function demoUnshareAlbum(albumId: number, body: unknown) {
+	const profiles = (body as { profiles?: { profileId?: number }[] } | null)
+		?.profiles;
+	if (!profiles) return;
+	const removed = new Set(profiles.map((p) => p.profileId));
+	demoAlbumShares.set(
+		albumId,
+		albumShareStore(albumId).filter((id) => !removed.has(id)),
+	);
+}
+
 function albumNameFromBody(body: unknown): string | null {
 	return (body as { albumName?: string | null } | null)?.albumName ?? null;
 }

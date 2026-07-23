@@ -29,6 +29,7 @@
 		ALBUM_NAME_MAX_BYTES,
 		albumNameByteLength,
 	} from "$lib/model/messaging/albums";
+	import AlbumShares from "./AlbumShares.svelte";
 
 	let { data }: import("./$types").PageProps = $props();
 
@@ -258,6 +259,9 @@
 							</div>
 						{/each}
 					</div>
+				{/if}
+				{#if isMine && album !== null}
+					<AlbumShares {albumId} />
 				{/if}
 			</div>
 		</div>

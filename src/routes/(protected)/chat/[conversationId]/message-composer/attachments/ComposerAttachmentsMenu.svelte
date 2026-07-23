@@ -133,7 +133,13 @@
 						/>
 					</Tabs.Content>
 					<Tabs.Content value="albums">
-						<ComposerAlbumsTab onClose={() => (open = false)} />
+						<!-- Tabs.Content renders regardless of the active tab, so the
+						     tab is told whether it is showing rather than fetching
+						     albums every time the sheet opens. -->
+						<ComposerAlbumsTab
+							active={selectedTab === "albums"}
+							onClose={() => (open = false)}
+						/>
 					</Tabs.Content>
 					<Tabs.Content value="location">
 						<ComposerUnimplementedTab label="Sharing location" issue={35} />

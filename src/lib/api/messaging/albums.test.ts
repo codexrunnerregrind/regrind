@@ -12,11 +12,13 @@ import {
 	deleteAlbum,
 	deleteAlbumContent,
 	getAlbumLimits,
+	getAlbumShares,
 	getAlbumsSharedByProfile,
 	getMyAlbums,
 	renameAlbum,
 	reorderAlbumContent,
 	shareAlbum,
+	unshareAlbum,
 } from "$lib/api/messaging/albums";
 
 function albumContent(contentId = 1) {
@@ -216,6 +218,47 @@ describe("deleteAlbumContent", () => {
 		expect(fetchRestMock).toHaveBeenCalledWith("/v1/albums/12/content/7", {
 			method: "DELETE",
 		});
+	});
+});
+
+describe("getAlbumShares", () => {
+	it("returns the shared-with profile ids", async () => {
+		fetchRestMock.mockResolvedValue(response({ profileIds: [42, 43] }));
+
+		await expect(getAlbumShares(12)).resolves.toEqual([42, 43]);
+		expect(fetchRestMock).toHaveBeenCalledWith("/v1/albums/12/shares");
+	});
+
+	it("treats a missing list as no shares", async () => {
+		fetchRestMock.mockResolvedValue(response({}));
+
+		await expect(getAlbumShares(12)).resolves.toEqual([]);
+	});
+});
+
+describe("unshareAlbum", () => {
+	it("puts one entry per profile with the placeholder share id", async () => {
+		fetchRestMock.mockResolvedValue(response());
+
+		await unshareAlbum({ albumId: 12, profileIds: [42, 43] });
+
+		expect(fetchRestMock).toHaveBeenCalledWith("/v1/albums/12/unshares", {
+			method: "PUT",
+			body: {
+				profiles: [
+					{ profileId: 42, shareId: "0", expiresAt: null },
+					{ profileId: 43, shareId: "0", expiresAt: null },
+				],
+			},
+		});
+	});
+
+	it("propagates a failed response", async () => {
+		fetchRestMock.mockResolvedValue(response(undefined, 403));
+
+		await expect(
+			unshareAlbum({ albumId: 12, profileIds: [42] }),
+		).rejects.toThrow("mock assertOk rejected status 403");
 	});
 });
 

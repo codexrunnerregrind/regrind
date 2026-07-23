@@ -3,7 +3,18 @@
 	import { toast } from "svelte-sonner";
 
 	import { showErrorToast } from "$lib/api/error";
-	import { getMyAlbums, shareAlbum } from "$lib/api/messaging/albums";
+	import {
+		getAlbumShared,
+		markSharesSwept,
+		setAlbumShared,
+		sharesSweptRecently,
+	} from "$lib/api/messaging/album-shares-state.svelte";
+	import {
+		getAlbumShares,
+		getMyAlbums,
+		shareAlbum,
+		unshareAlbum,
+	} from "$lib/api/messaging/albums";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import * as Empty from "$lib/components/ui/empty";
@@ -28,8 +39,11 @@
 	};
 
 	let {
+		active,
 		onClose,
 	}: {
+		/** Whether this tab is the one on screen. */
+		active: boolean;
 		onClose: () => void;
 	} = $props();
 
@@ -42,18 +56,72 @@
 	let expirationType = $state<AlbumExpirationType>("INDEFINITE");
 	let sharing = $state(false);
 
+	/**
+	 * Derived from the shared record rather than kept alongside it, so reopening
+	 * the sheet shows what is already known without waiting on the lookups
+	 * below, and share/unshare only have to write to the record.
+	 */
+	const sharedWith = $derived(
+		new Set(
+			recipientId === null
+				? []
+				: (albums ?? [])
+						.filter(
+							(album) => getAlbumShared(album.albumId, recipientId) === true,
+						)
+						.map((album) => album.albumId),
+		),
+	);
+
+	const selectedIsShared = $derived(
+		selectedAlbumId !== null && sharedWith.has(selectedAlbumId),
+	);
+
 	async function load() {
 		albums = null;
 		error = null;
 		try {
 			albums = await getMyAlbums();
+			void loadSharedWith(albums);
 		} catch (err) {
 			console.error(err);
 			error = err;
 		}
 	}
 
-	void load();
+	/**
+	 * Nothing answers "which of my albums are shared with this profile", so each
+	 * album's share list is checked. The account's album count is capped, so this
+	 * stays a bounded fan-out.
+	 *
+	 * Failures are swallowed: not knowing leaves the album looking unshared,
+	 * which is recoverable, while an error here would block sharing entirely.
+	 *
+	 * Results go into the shared record, which the list derives from — this
+	 * revalidates what was already known rather than replacing it wholesale.
+	 */
+	async function loadSharedWith(list: MyAlbum[]) {
+		const id = recipientId;
+		if (id === null || sharesSweptRecently(id)) return;
+		markSharesSwept(id);
+		await Promise.all(
+			list.map(async (album) => {
+				try {
+					const profileIds = await getAlbumShares(album.albumId);
+					setAlbumShared(album.albumId, id, profileIds.includes(id));
+				} catch (err) {
+					console.error(err);
+				}
+			}),
+		);
+	}
+
+	// Deliberately not loading on mount: Tabs.Content is rendered whether or not
+	// its tab is showing, so mounting would fetch albums every time the
+	// attachments sheet is opened, including to send a photo.
+	$effect(() => {
+		if (active && albums === null && error === null) void load();
+	});
 
 	function albumCover(album: MyAlbum): string | null {
 		const first = album.content[0];
@@ -69,11 +137,31 @@
 				profileIds: [recipientId],
 				expirationType,
 			});
+			setAlbumShared(selectedAlbumId, recipientId, true);
 			onClose();
 			toast.success("Album shared");
 		} catch (err) {
 			console.error(err);
 			showErrorToast({ label: "Failed to share album", error: err });
+		} finally {
+			sharing = false;
+		}
+	}
+
+	async function unshare() {
+		const albumId = selectedAlbumId;
+		if (albumId === null || recipientId === null || sharing) return;
+		sharing = true;
+		try {
+			await unshareAlbum({ albumId, profileIds: [recipientId] });
+			// Stays open: unsharing is a correction, and closing would hide the
+			// result of it. The list derives from the record, so this is all the
+			// update it needs.
+			setAlbumShared(albumId, recipientId, false);
+			toast.success("Album unshared");
+		} catch (err) {
+			console.error(err);
+			showErrorToast({ label: "Failed to unshare album", error: err });
 		} finally {
 			sharing = false;
 		}
@@ -146,6 +234,8 @@
 							{album.content.length === 1 ? "item" : "items"}
 							{#if !album.isShareable}
 								&middot; can't be shared
+							{:else if sharedWith.has(album.albumId)}
+								&middot; already shared
 							{/if}
 						</span>
 					</div>
@@ -153,7 +243,8 @@
 			{/each}
 		</div>
 
-		<div class="flex flex-col gap-2">
+		<!-- Meaningless while the action is unsharing. -->
+		<div class={["flex flex-col gap-2", { hidden: selectedIsShared }]}>
 			<span class="text-sm font-medium text-muted-foreground">Viewable for</span
 			>
 			<ToggleGroup.Root
@@ -178,12 +269,23 @@
 			</ToggleGroup.Root>
 		</div>
 
-		<Button
-			size="lg"
-			disabled={selectedAlbumId === null || recipientId === null || sharing}
-			onclick={() => void share()}
-		>
-			{sharing ? "Sharing…" : "Share album"}
-		</Button>
+		{#if selectedIsShared}
+			<Button
+				size="lg"
+				variant="outline"
+				disabled={recipientId === null || sharing}
+				onclick={() => void unshare()}
+			>
+				{sharing ? "Unsharing…" : "Unshare album"}
+			</Button>
+		{:else}
+			<Button
+				size="lg"
+				disabled={selectedAlbumId === null || recipientId === null || sharing}
+				onclick={() => void share()}
+			>
+				{sharing ? "Sharing…" : "Share album"}
+			</Button>
+		{/if}
 	{/if}
 </div>

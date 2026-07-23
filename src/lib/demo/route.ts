@@ -2,6 +2,7 @@ import { demoMeProfileId } from "./config";
 import {
 	demoAlbumContent,
 	demoAlbumLimits,
+	demoAlbumSharesFor,
 	demoAlbumsSharedByProfile,
 	demoConversationMessages,
 	demoConversations,
@@ -17,6 +18,7 @@ import {
 	demoSetConversationMuted,
 	demoSetConversationPinned,
 	demoSingleMessage,
+	demoUnshareAlbum,
 } from "./mock/conversations";
 import {
 	buildFullProfile,
@@ -149,6 +151,25 @@ export function demoRoute(
 		segments.length === 3
 	) {
 		demoDeleteAlbum(Number(segments[2]));
+		return ok({});
+	}
+	if (
+		method === "GET" &&
+		segments[0] === "v1" &&
+		segments[1] === "albums" &&
+		segments[3] === "shares" &&
+		segments.length === 4
+	) {
+		return ok(demoAlbumSharesFor(Number(segments[2])));
+	}
+	if (
+		method === "PUT" &&
+		segments[0] === "v1" &&
+		segments[1] === "albums" &&
+		segments[3] === "unshares" &&
+		segments.length === 4
+	) {
+		demoUnshareAlbum(Number(segments[2]), body);
 		return ok({});
 	}
 	if (

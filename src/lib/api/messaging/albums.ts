@@ -6,6 +6,7 @@ import {
 	albumDetailsSchema,
 	type AlbumExpirationType,
 	albumMinSchema,
+	albumSharesSchema,
 	albumStorageLimitsSchema,
 	myAlbumSchema,
 	sharedAlbumSchema,
@@ -98,6 +99,41 @@ export async function deleteAlbumContent({
 }) {
 	return await fetchRest(`/v1/albums/${albumId}/content/${contentId}`, {
 		method: "DELETE",
+	}).then((res) => res.assertOk());
+}
+
+/** The profiles an album is currently shared with. */
+export async function getAlbumShares(albumId: number) {
+	const { profileIds } = await fetchRest(`/v1/albums/${albumId}/shares`).then(
+		(res) => res.jsonParsed(albumSharesSchema),
+	);
+	return profileIds ?? [];
+}
+
+/**
+ * Revokes an album share.
+ *
+ * `shareId` and `expiresAt` are optional per the spec, but the official client
+ * appears to send them, so they go along with the documented placeholder
+ * `shareId` of `"0"` rather than being omitted. `GET .../shares` returns only
+ * profile ids, so there is no per-share id to echo back.
+ */
+export async function unshareAlbum({
+	albumId,
+	profileIds,
+}: {
+	albumId: number;
+	profileIds: number[];
+}) {
+	return await fetchRest(`/v1/albums/${albumId}/unshares`, {
+		method: "PUT",
+		body: {
+			profiles: profileIds.map((profileId) => ({
+				profileId,
+				shareId: "0",
+				expiresAt: null,
+			})),
+		},
 	}).then((res) => res.assertOk());
 }
 

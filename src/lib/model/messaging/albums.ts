@@ -108,6 +108,11 @@ export const sharedAlbumSchema = z.object({
 
 export type SharedAlbum = z.infer<typeof sharedAlbumSchema>;
 
+export const albumSharesSchema = z.object({
+	// Tolerated as absent: the spec marks nothing on this body as required.
+	profileIds: z.array(z.int()).nullish(),
+});
+
 export const albumStorageLimitsSchema = z.object({
 	subscriptionType: z.string(),
 	maxAlbums: z.int(),

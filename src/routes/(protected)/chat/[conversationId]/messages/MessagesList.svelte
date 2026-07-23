@@ -1,9 +1,17 @@
 <script lang="ts">
+	import { toast } from "svelte-sonner";
+
 	import { showErrorToast } from "$lib/api/error";
+	import {
+		getAlbumShared,
+		setAlbumShared,
+	} from "$lib/api/messaging/album-shares-state.svelte";
+	import { unshareAlbum } from "$lib/api/messaging/albums";
 	import {
 		deleteMessageForMe,
 		unsendMessage,
 	} from "$lib/api/messaging/messages";
+	import type { ApiResponseMessage } from "$lib/model/messaging/messages";
 	import { getConversationState } from "../conversation-state.svelte";
 	import { processMessages } from "../messages";
 	import Message from "./message/Message.svelte";
@@ -15,6 +23,37 @@
 	} = $props();
 
 	const conversationState = $derived(getConversationState()());
+
+	const ALBUM_MESSAGE_TYPES = ["Album", "ExpiringAlbum", "ExpiringAlbumV2"];
+
+	/**
+	 * The album to offer unsharing for, or null when the message isn't an album
+	 * we own. Keyed off ownerProfileId rather than who sent the message: a
+	 * forwarded album is not ours to unshare.
+	 */
+	function albumIdToUnshare(message: ApiResponseMessage): number | null {
+		if (!ALBUM_MESSAGE_TYPES.includes(message.type)) return null;
+		const body = message.body as {
+			albumId?: number;
+			ownerProfileId?: number | null;
+		};
+		if (body.ownerProfileId !== conversationState.ourProfileId) return null;
+		const albumId = body.albumId;
+		if (albumId === undefined) return null;
+
+		// The message is a snapshot from when it was sent and does not change when
+		// the share is revoked, so drop the action once we know it is gone.
+		// Unknown still offers it: the API tolerates unsharing what isn't shared,
+		// and hiding it on a guess would strand a share that is still live.
+		const profileId = conversationState.profile?.profileId;
+		if (
+			profileId !== undefined &&
+			getAlbumShared(albumId, profileId) === false
+		) {
+			return null;
+		}
+		return albumId;
+	}
 
 	const messages = $derived(
 		processMessages({
@@ -90,6 +129,24 @@
 							error,
 						});
 						revert?.();
+					}
+				}
+			: undefined}
+		onUnshareAlbum={albumIdToUnshare(message) !== null
+			? async () => {
+					const albumId = albumIdToUnshare(message);
+					const profileId = conversationState.profile?.profileId;
+					if (albumId === null || profileId === undefined) return;
+					try {
+						await unshareAlbum({ albumId, profileIds: [profileId] });
+						setAlbumShared(albumId, profileId, false);
+						toast.success("Album unshared");
+					} catch (error) {
+						console.error(error);
+						showErrorToast({
+							label: "Failed to unshare album",
+							error,
+						});
 					}
 				}
 			: undefined}

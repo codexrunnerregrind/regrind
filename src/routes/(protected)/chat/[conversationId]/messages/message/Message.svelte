@@ -30,6 +30,7 @@
 		onDelete,
 		onVisible,
 		onUnsend,
+		onUnshareAlbum,
 	}: {
 		message: ApiResponseMessage;
 		isOut: boolean;
@@ -42,6 +43,7 @@
 		onDelete?: () => void;
 		onVisible?: () => void;
 		onUnsend?: () => void;
+		onUnshareAlbum?: () => void;
 	} = $props();
 
 	const firstInStack = $derived(indexInStack === 0);
@@ -275,5 +277,6 @@
 		reactionAvailable={message.reactions.length === 0 && !isOut}
 		{onDelete}
 		{onUnsend}
+		{onUnshareAlbum}
 	/>
 {/if}
