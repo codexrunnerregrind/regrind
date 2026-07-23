@@ -1,13 +1,27 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+const { getAlbumSharesMock } = vi.hoisted(() => ({
+	getAlbumSharesMock: vi.fn(),
+}));
+
+vi.mock("$lib/api/messaging/albums", async (importOriginal) => ({
+	...(await importOriginal<typeof import("$lib/api/messaging/albums")>()),
+	getAlbumShares: getAlbumSharesMock,
+}));
 
 import {
 	clearAlbumShareState,
+	ensureAlbumSharesSwept,
 	getAlbumShared,
-	markSharesSwept,
 	setAlbumShared,
-	sharesSweptRecently,
 } from "$lib/api/messaging/album-shares-state.svelte";
 import { resetNowForTesting, setNowForTesting } from "$lib/util/clock";
+
+const ALBUMS = [{ albumId: 1 }, { albumId: 2 }];
+
+beforeEach(() => {
+	getAlbumSharesMock.mockReset();
+});
 
 afterEach(() => {
 	clearAlbumShareState();
@@ -34,30 +48,79 @@ describe("album share state", () => {
 	});
 });
 
-describe("sweep TTL", () => {
-	it("is not recent before a sweep is recorded", () => {
-		expect(sharesSweptRecently(42)).toBe(false);
+describe("ensureAlbumSharesSwept", () => {
+	it("records which albums are shared with the profile", async () => {
+		getAlbumSharesMock.mockImplementation((albumId: number) =>
+			Promise.resolve(albumId === 1 ? [42, 43] : [43]),
+		);
+
+		await ensureAlbumSharesSwept(42, ALBUMS);
+
+		expect(getAlbumShared(1, 42)).toBe(true);
+		expect(getAlbumShared(2, 42)).toBe(false);
 	});
 
-	it("stays recent within the TTL and lapses after it", () => {
+	it("does not sweep again within the TTL, and does after it", async () => {
 		let clock = 1_000;
 		setNowForTesting(() => clock);
+		getAlbumSharesMock.mockResolvedValue([]);
 
-		markSharesSwept(42);
-		expect(sharesSweptRecently(42)).toBe(true);
+		await ensureAlbumSharesSwept(42, ALBUMS);
+		expect(getAlbumSharesMock).toHaveBeenCalledTimes(2);
 
-		clock += 59_999;
-		expect(sharesSweptRecently(42)).toBe(true);
+		await ensureAlbumSharesSwept(42, ALBUMS);
+		expect(getAlbumSharesMock).toHaveBeenCalledTimes(2);
 
-		clock += 1;
-		expect(sharesSweptRecently(42)).toBe(false);
+		clock += 60_000;
+		await ensureAlbumSharesSwept(42, ALBUMS);
+		expect(getAlbumSharesMock).toHaveBeenCalledTimes(4);
 	});
 
-	it("tracks profiles separately", () => {
-		setNowForTesting(() => 1_000);
-		markSharesSwept(42);
+	it("shares one sweep between concurrent callers", async () => {
+		getAlbumSharesMock.mockResolvedValue([]);
 
-		expect(sharesSweptRecently(42)).toBe(true);
-		expect(sharesSweptRecently(43)).toBe(false);
+		await Promise.all([
+			ensureAlbumSharesSwept(42, ALBUMS),
+			ensureAlbumSharesSwept(42, ALBUMS),
+			ensureAlbumSharesSwept(42, ALBUMS),
+		]);
+
+		expect(getAlbumSharesMock).toHaveBeenCalledTimes(ALBUMS.length);
+	});
+
+	it("keeps going when one album's lookup fails", async () => {
+		getAlbumSharesMock.mockImplementation((albumId: number) =>
+			albumId === 1 ? Promise.reject(new Error("nope")) : Promise.resolve([42]),
+		);
+
+		await ensureAlbumSharesSwept(42, ALBUMS);
+
+		expect(getAlbumShared(1, 42)).toBeUndefined();
+		expect(getAlbumShared(2, 42)).toBe(true);
+	});
+
+	it("retries after a wholesale failure instead of caching it as checked", async () => {
+		setNowForTesting(() => 1_000);
+		getAlbumSharesMock.mockRejectedValue(new Error("offline"));
+
+		await ensureAlbumSharesSwept(42, ALBUMS);
+		expect(getAlbumSharesMock).toHaveBeenCalledTimes(2);
+
+		// Still within the TTL, but nothing landed, so it must try again.
+		getAlbumSharesMock.mockResolvedValue([42]);
+		await ensureAlbumSharesSwept(42, ALBUMS);
+
+		expect(getAlbumSharesMock).toHaveBeenCalledTimes(4);
+		expect(getAlbumShared(1, 42)).toBe(true);
+	});
+
+	it("tracks profiles separately", async () => {
+		setNowForTesting(() => 1_000);
+		getAlbumSharesMock.mockResolvedValue([]);
+
+		await ensureAlbumSharesSwept(42, ALBUMS);
+		await ensureAlbumSharesSwept(43, ALBUMS);
+
+		expect(getAlbumSharesMock).toHaveBeenCalledTimes(4);
 	});
 });

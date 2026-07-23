@@ -4,13 +4,11 @@
 
 	import { showErrorToast } from "$lib/api/error";
 	import {
+		ensureAlbumSharesSwept,
 		getAlbumShared,
-		markSharesSwept,
 		setAlbumShared,
-		sharesSweptRecently,
 	} from "$lib/api/messaging/album-shares-state.svelte";
 	import {
-		getAlbumShares,
 		getMyAlbums,
 		shareAlbum,
 		unshareAlbum,
@@ -81,39 +79,13 @@
 		albums = null;
 		error = null;
 		try {
-			albums = await getMyAlbums();
-			void loadSharedWith(albums);
+			const list = await getMyAlbums();
+			albums = list;
+			if (recipientId !== null) void ensureAlbumSharesSwept(recipientId, list);
 		} catch (err) {
 			console.error(err);
 			error = err;
 		}
-	}
-
-	/**
-	 * Nothing answers "which of my albums are shared with this profile", so each
-	 * album's share list is checked. The account's album count is capped, so this
-	 * stays a bounded fan-out.
-	 *
-	 * Failures are swallowed: not knowing leaves the album looking unshared,
-	 * which is recoverable, while an error here would block sharing entirely.
-	 *
-	 * Results go into the shared record, which the list derives from — this
-	 * revalidates what was already known rather than replacing it wholesale.
-	 */
-	async function loadSharedWith(list: MyAlbum[]) {
-		const id = recipientId;
-		if (id === null || sharesSweptRecently(id)) return;
-		markSharesSwept(id);
-		await Promise.all(
-			list.map(async (album) => {
-				try {
-					const profileIds = await getAlbumShares(album.albumId);
-					setAlbumShared(album.albumId, id, profileIds.includes(id));
-				} catch (err) {
-					console.error(err);
-				}
-			}),
-		);
 	}
 
 	// Deliberately not loading on mount: Tabs.Content is rendered whether or not
