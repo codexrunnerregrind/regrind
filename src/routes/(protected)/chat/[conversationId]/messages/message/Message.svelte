@@ -1,9 +1,11 @@
 <script lang="ts">
-	import { tick } from "svelte";
+	import { ArrowBendUpLeftIcon } from "phosphor-svelte";
+	import { tick, untrack } from "svelte";
 	import { expoOut } from "svelte/easing";
 	import { scale } from "svelte/transition";
 
 	import { longPressHandlers } from "$lib/util/long-press";
+	import { SwipeToReply } from "$lib/util/swipe-to-reply.svelte";
 	import type { ApiResponseMessage } from "$lib/model/messaging/messages";
 	import AlbumMessage from "./AlbumMessage.svelte";
 	import { setMessageContext } from "./context";
@@ -32,6 +34,7 @@
 		onVisible,
 		onUnsend,
 		onUnshare,
+		onReply,
 	}: {
 		message: ApiResponseMessage;
 		isOut: boolean;
@@ -45,7 +48,12 @@
 		onVisible?: () => void;
 		onUnsend?: () => void;
 		onUnshare?: () => void;
+		onReply?: () => void;
 	} = $props();
+
+	const swipe = untrack(() =>
+		onReply ? new SwipeToReply(isOut ? "left" : "right", () => onReply?.()) : null,
+	);
 
 	const firstInStack = $derived(indexInStack === 0);
 	const lastInStack = $derived(indexInStack === stackLength - 1);
@@ -67,6 +75,10 @@
 				height: number;
 		  } = $state(false);
 	let messageElement: HTMLElement | null = $state(null);
+	const bubbleCenterY = $derived.by(() => {
+		const el = messageElement;
+		return el ? el.offsetTop + el.offsetHeight / 2 : null;
+	});
 
 	function setRef(el: HTMLElement | null) {
 		messageElement = el ?? null;
@@ -178,7 +190,7 @@
 {#snippet content(clone?: boolean)}
 	<MessageWrapper {clone} {setRef} {adornments}>
 		{#if message.type === "Text"}
-			<TextMessage message={message.body} />
+			<TextMessage message={message.body} replyTo={message.replyToMessage} />
 		{:else if message.type === "Image"}
 			<ImageMessage message={message.body} />
 		{:else if message.type === "ExpiringImage"}
@@ -210,42 +222,58 @@
 	{#if firstInStack && dayStart !== undefined}
 		<MessageDateGroup {dayStart} />
 	{/if}
-	<div
-		class={[
-			"[-webkit-touch-callout:none] **:[-webkit-touch-callout:none]",
-			{
-				"*:me-auto *:float-start pe-3": !isOut,
-				"*:ms-auto *:float-end ps-3": isOut,
-			},
-		]}
-		role="button"
-		tabindex="0"
-		aria-label="Message"
-		{...longPress}
-		ondblclick={(event) => {
-			const selection = window.getSelection();
-			if (
-				selection &&
-				!selection.isCollapsed &&
-				messageElement?.contains(selection.anchorNode)
-			)
-				return;
-			if (!isOut && onReact) {
-				event.preventDefault();
-				onReact(1);
-				selection?.removeAllRanges();
-			}
-		}}
-		onkeydown={(event) => {
-			if (event.key === "Enter" || event.key === " ") {
-				if (event.key === " ") event.preventDefault();
-				onContextMenu();
-			}
-		}}
-		style:visibility={contextMenuOpen ? "hidden" : undefined}
-		use:observeRead
-	>
-		{@render content()}
+	<div class="relative" {...swipe?.handlers}>
+		{#if swipe}
+			<div
+				class={[
+					"pointer-events-none absolute flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground",
+					isOut ? "right-0" : "left-0",
+				]}
+				style:top={bubbleCenterY !== null ? `${bubbleCenterY}px` : "50%"}
+				style:opacity={swipe.progress}
+				style:transform={`translateY(-50%) scale(${swipe.armed ? 1 : 0.6 + swipe.progress * 0.4})`}
+			>
+				<ArrowBendUpLeftIcon size={16} />
+			</div>
+		{/if}
+		<div
+			class={[
+				"[-webkit-touch-callout:none] **:[-webkit-touch-callout:none]",
+				{
+					"*:me-auto *:float-start pe-3": !isOut,
+					"*:ms-auto *:float-end ps-3": isOut,
+				},
+			]}
+			role="button"
+			tabindex="0"
+			aria-label="Message"
+			{...longPress}
+			ondblclick={(event) => {
+				const selection = window.getSelection();
+				if (
+					selection &&
+					!selection.isCollapsed &&
+					messageElement?.contains(selection.anchorNode)
+				)
+					return;
+				if (!isOut && onReact) {
+					event.preventDefault();
+					onReact(1);
+					selection?.removeAllRanges();
+				}
+			}}
+			onkeydown={(event) => {
+				if (event.key === "Enter" || event.key === " ") {
+					if (event.key === " ") event.preventDefault();
+					onContextMenu();
+				}
+			}}
+			style:visibility={contextMenuOpen ? "hidden" : undefined}
+			style:transform={swipe?.deltaX ? `translateX(${swipe.deltaX}px)` : undefined}
+			use:observeRead
+		>
+			{@render content()}
+		</div>
 	</div>
 	{#if lastInStack}
 		<span
@@ -285,5 +313,6 @@
 		{onDelete}
 		{onUnsend}
 		{onUnshare}
+		{onReply}
 	/>
 {/if}

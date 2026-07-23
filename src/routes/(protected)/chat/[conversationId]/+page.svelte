@@ -65,5 +65,7 @@
 	<MessageComposer
 		onSend={(message: Message) => conversationState.send(message)}
 		disabled={conversationState.loading || conversationState.error !== null}
+		replyTo={conversationState.replyTo}
+		onCancelReply={() => conversationState.clearReplyTo()}
 	/>
 </Card.Content>

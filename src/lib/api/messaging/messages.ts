@@ -7,6 +7,7 @@ import {
 	messageSchema,
 } from "$lib/model/messaging/messages";
 import { unixTimestampMsSchema } from "$lib/model/types";
+import { ws } from "$lib/ws.svelte";
 import type { Conversation } from "$lib/model/messaging/conversations";
 
 const conversationMessagesSchema = z.object({
@@ -64,20 +65,33 @@ function toOutboundBody(message: z.infer<typeof messageSchema>): unknown {
 export async function sendMessage({
 	toUserId,
 	message,
+	replyToMessageId,
 }: {
 	toUserId: number;
 	message: z.infer<typeof messageSchema>;
+	replyToMessageId?: string;
 }) {
+	const body = {
+		type: message.type,
+		target: {
+			type: "Direct",
+			targetId: toUserId,
+		},
+		body: toOutboundBody(message),
+		...(replyToMessageId !== undefined ? { replyToMessageId } : {}),
+	};
+	// The HTTP endpoint 400s when `replyToMessageId` is set — it's only
+	// accepted by the websocket command variant of this same request.
+	if (replyToMessageId !== undefined) {
+		return await ws.sendCommand(
+			"chat.v1.message.send",
+			body,
+			apiResponseMessageSchema,
+		);
+	}
 	return await fetchRest("/v4/chat/message/send", {
 		method: "POST",
-		body: {
-			type: message.type,
-			target: {
-				type: "Direct",
-				targetId: toUserId,
-			},
-			body: toOutboundBody(message),
-		},
+		body,
 	}).then((res) => res.jsonParsed(apiResponseMessageSchema));
 }
 

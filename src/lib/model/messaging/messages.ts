@@ -12,7 +12,7 @@ const messageBaseSchema = z.object({
 	body: z.unknown(),
 });
 
-export const apiResponseMessageOverlaySchema = z.object({
+const apiResponseMessageOverlayBaseSchema = z.object({
 	messageId: z.string(),
 	conversationId: z.string(),
 	senderId: z.int().nonnegative(),
@@ -24,11 +24,19 @@ export const apiResponseMessageOverlaySchema = z.object({
 			reactionType: z.int().nonnegative(),
 		}),
 	),
-	// replyToMessage: z.unknown().nullable(),
 	// dynamic: z.boolean(),
 	// chat1Type: z.string(),
 	// replyPreview: z.unknown().nullable(),
 });
+
+export type ApiResponseMessageOverlay = z.infer<
+	typeof apiResponseMessageOverlayBaseSchema
+> & { replyToMessage?: ApiResponseMessage | null };
+
+export const apiResponseMessageOverlaySchema: z.ZodType<ApiResponseMessageOverlay> =
+	apiResponseMessageOverlayBaseSchema.extend({
+		replyToMessage: z.lazy(() => apiResponseMessageSchema).nullish(),
+	});
 
 export const albumMessageSchema = messageBaseSchema.safeExtend({
 	type: z.literal("Album"),
@@ -292,7 +300,15 @@ export const messageSchema = z.discriminatedUnion("type", [
 	videoMessageSchema,
 ]);
 
-export const unsentMessageSchema = z.intersection(
+export type Message = z.infer<typeof messageSchema>;
+
+export type UnsentMessage = ApiResponseMessageOverlay & {
+	type: "Unsent";
+	unsent: true;
+	body: null;
+};
+
+export const unsentMessageSchema: z.ZodType<UnsentMessage> = z.intersection(
 	messageBaseSchema.safeExtend({
 		type: z.string().transform((): "Unsent" => "Unsent"),
 		unsent: z.literal(true),
@@ -301,14 +317,13 @@ export const unsentMessageSchema = z.intersection(
 	apiResponseMessageOverlaySchema,
 );
 
-export type UnsentMessage = z.infer<typeof unsentMessageSchema>;
+export type ApiResponseMessage =
+	| (Message & ApiResponseMessageOverlay)
+	| UnsentMessage;
 
-export const apiResponseMessageSchema = z
+export const apiResponseMessageSchema: z.ZodType<ApiResponseMessage> = z
 	.intersection(messageSchema, apiResponseMessageOverlaySchema)
 	.or(unsentMessageSchema);
-
-export type Message = z.infer<typeof messageSchema>;
-export type ApiResponseMessage = z.infer<typeof apiResponseMessageSchema>;
 
 export type MessagePreview = {
 	type: string;
