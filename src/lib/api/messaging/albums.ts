@@ -6,7 +6,9 @@ import {
 	albumDetailsSchema,
 	type AlbumExpirationType,
 	albumMinSchema,
+	albumStorageLimitsSchema,
 	myAlbumSchema,
+	sharedAlbumSchema,
 } from "$lib/model/messaging/albums";
 
 const albumResponseSchema = z.object({
@@ -27,6 +29,24 @@ export async function getAlbumContent(albumId: number) {
 }
 
 export type AlbumContentResponse = Awaited<ReturnType<typeof getAlbumContent>>;
+
+const sharedAlbumsResponseSchema = z.object({
+	albums: z.array(sharedAlbumSchema),
+});
+
+/** Albums the given profile has shared with us. */
+export async function getAlbumsSharedByProfile(profileId: number) {
+	const { albums } = await fetchRest(`/v2/albums/shares/${profileId}`).then(
+		(res) => res.jsonParsed(sharedAlbumsResponseSchema),
+	);
+	return albums;
+}
+
+export async function getAlbumLimits() {
+	return await fetchRest("/v1/albums/storage").then((res) =>
+		res.jsonParsed(albumStorageLimitsSchema),
+	);
+}
 
 const myAlbumsResponseSchema = z.object({
 	albums: z.array(myAlbumSchema),

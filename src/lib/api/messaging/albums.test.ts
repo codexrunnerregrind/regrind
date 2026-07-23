@@ -7,7 +7,12 @@ vi.mock("$lib/api", async (importOriginal) => ({
 	fetchRest: fetchRestMock,
 }));
 
-import { getMyAlbums, shareAlbum } from "$lib/api/messaging/albums";
+import {
+	getAlbumLimits,
+	getAlbumsSharedByProfile,
+	getMyAlbums,
+	shareAlbum,
+} from "$lib/api/messaging/albums";
 
 function albumContent(contentId = 1) {
 	return {
@@ -67,6 +72,69 @@ describe("getMyAlbums", () => {
 		fetchRestMock.mockResolvedValue(response({ albums: [album] }));
 
 		await expect(getMyAlbums()).resolves.toEqual([album]);
+	});
+});
+
+describe("getAlbumsSharedByProfile", () => {
+	it("requests the profile's shared albums and unwraps them", async () => {
+		const album = {
+			albumId: 5,
+			hasUnseenContent: true,
+			albumName: "Shared",
+			profileId: 42,
+			albumViewable: true,
+			expiresAt: null,
+			expirationType: "INDEFINITE",
+			content: {
+				contentId: 500,
+				contentType: "image/jpeg",
+				coverUrl: "https://example.com/cover.jpg",
+				statusId: 1,
+			},
+			contentCount: { imageCount: 3, videoCount: 1 },
+		};
+		fetchRestMock.mockResolvedValue(response({ albums: [album] }));
+
+		await expect(getAlbumsSharedByProfile(42)).resolves.toEqual([album]);
+		expect(fetchRestMock).toHaveBeenCalledWith("/v2/albums/shares/42");
+	});
+
+	it("tolerates a missing preview and counts", async () => {
+		const album = {
+			albumId: 5,
+			hasUnseenContent: false,
+			albumName: null,
+			profileId: 42,
+			albumViewable: false,
+			expiresAt: null,
+			expirationType: null,
+		};
+		fetchRestMock.mockResolvedValue(response({ albums: [album] }));
+
+		await expect(getAlbumsSharedByProfile(42)).resolves.toEqual([album]);
+	});
+});
+
+describe("getAlbumLimits", () => {
+	it("parses the storage limits", async () => {
+		const limits = {
+			subscriptionType: "FreeAlbums",
+			maxAlbums: 10,
+			maxContentItemsPerAlbum: 30,
+			maxShares: 100,
+			maxViewableAlbums: 10,
+			maxViewableVideos: 10,
+			maxContentSizeInBytes: 125_829_120,
+			maxContentSizeHumanReadable: "120.00 MB",
+			maxVideoLength: 60,
+			minVideoLength: 1,
+			maxShareableAlbums: 10,
+			maxVideosPerAlbum: 10,
+		};
+		fetchRestMock.mockResolvedValue(response(limits));
+
+		await expect(getAlbumLimits()).resolves.toEqual(limits);
+		expect(fetchRestMock).toHaveBeenCalledWith("/v1/albums/storage");
 	});
 });
 

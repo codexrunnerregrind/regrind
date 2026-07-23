@@ -34,6 +34,7 @@
 	import Height from "./HeightWeightBodyType.svelte";
 	import ImageCarousel from "./ImageCarousel.svelte";
 	import OnlineStatus from "./OnlineStatus.svelte";
+	import ProfileAlbums from "./ProfileAlbums.svelte";
 	import ProfileTags from "./ProfileTags.svelte";
 	import SexualPosition from "./SexualPosition.svelte";
 	import ProfileTopNavBar from "./top-nav/ProfileTopNavBar.svelte";
@@ -268,6 +269,7 @@
 							<NSFWPics nsfwPics={nsfw} />
 						</div>
 					{/if}
+					<ProfileAlbums {profileId} self={ourProfile} />
 					{#if hivStatus !== null || lastTestedDateValue !== null || (sexualHealthValue && sexualHealthValue.length > 0)}
 						<div class="mt-4 flex flex-col gap-2">
 							<span class="text-sm text-muted-foreground uppercase">

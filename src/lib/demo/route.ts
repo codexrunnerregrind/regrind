@@ -1,6 +1,8 @@
 import { demoMeProfileId } from "./config";
 import {
 	demoAlbumContent,
+	demoAlbumLimits,
+	demoAlbumsSharedByProfile,
 	demoConversationMessages,
 	demoConversations,
 	demoDeleteConversation,
@@ -110,8 +112,22 @@ export function demoRoute(
 	) {
 		return ok(demoSingleMessage(segments[3], segments[5]));
 	}
+	// Must precede the `/v2/albums/{albumId}` rule below, which only matches on
+	// the first two segments and would otherwise swallow this path.
+	if (
+		method === "GET" &&
+		segments[0] === "v2" &&
+		segments[1] === "albums" &&
+		segments[2] === "shares" &&
+		segments.length === 4
+	) {
+		return ok(demoAlbumsSharedByProfile(Number(segments[3])));
+	}
 	if (method === "GET" && segments[0] === "v2" && segments[1] === "albums") {
 		return ok(demoAlbumContent(Number(segments[2])));
+	}
+	if (method === "GET" && rawPath === "/v1/albums/storage") {
+		return ok(demoAlbumLimits());
 	}
 	if (method === "GET" && rawPath === "/v1/albums") {
 		return ok(demoMyAlbums());

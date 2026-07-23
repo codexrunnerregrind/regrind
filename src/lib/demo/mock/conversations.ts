@@ -400,6 +400,48 @@ export function demoAlbumContent(albumId: number) {
 	};
 }
 
+export function demoAlbumsSharedByProfile(profileId: number) {
+	return {
+		albums: [0, 1].map((index) => {
+			const albumId = 8001 + index;
+			const thumb = picsum(`album-${albumId}-0`, 300, 400);
+			return {
+				albumId,
+				hasUnseenContent: index === 0,
+				albumName: index === 0 ? "Shared with you" : null,
+				profileId,
+				albumViewable: true,
+				expiresAt: null,
+				expirationType: "INDEFINITE",
+				content: {
+					contentId: albumId * 100,
+					contentType: "image/jpeg",
+					coverUrl: thumb,
+					statusId: 1,
+				},
+				contentCount: { imageCount: 3 + index, videoCount: index },
+			};
+		}),
+	};
+}
+
+export function demoAlbumLimits() {
+	return {
+		subscriptionType: "FreeAlbums",
+		maxAlbums: 10,
+		maxContentItemsPerAlbum: 30,
+		maxShares: 100,
+		maxViewableAlbums: 10,
+		maxViewableVideos: 10,
+		maxContentSizeInBytes: 125_829_120,
+		maxContentSizeHumanReadable: "120.00 MB",
+		maxVideoLength: 60,
+		minVideoLength: 1,
+		maxShareableAlbums: 10,
+		maxVideosPerAlbum: 10,
+	};
+}
+
 const DEMO_ALBUM_NAMES = ["Gym", "Beach trip", null];
 
 export function demoMyAlbums() {

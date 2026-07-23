@@ -12,6 +12,7 @@
 	import {
 		AlbumExpiration,
 		type AlbumExpirationType,
+		albumExpirationTypeSchema,
 		type MyAlbum,
 	} from "$lib/model/messaging/albums";
 	import { getConversationState } from "../../conversation-state.svelte";
@@ -162,7 +163,10 @@
 				bind:value={
 					() => expirationType,
 					(next: string) => {
-						expirationType = next || "INDEFINITE";
+						// Deselecting sends "", and the value is a plain string either
+						// way, so fall back rather than trusting it.
+						const parsed = albumExpirationTypeSchema.safeParse(next);
+						expirationType = parsed.success ? parsed.data : "INDEFINITE";
 					}
 				}
 			>
