@@ -435,6 +435,50 @@ export function demoMyAlbums() {
 	return { albums };
 }
 
+// Albums other profiles have shared with us, shown in the inbox "Albums" tab.
+export function demoSharedAlbumsFeed() {
+	const seeds = [
+		{ albumId: 8001, ownerProfileId: 100001, name: "Beach day" },
+		{ albumId: 8002, ownerProfileId: 100004, name: null },
+		{ albumId: 8003, ownerProfileId: 100005, name: "Night out" },
+		{ albumId: 8004, ownerProfileId: 100007, name: "Trip" },
+	];
+	const sharedAlbums = seeds.map(({ albumId, ownerProfileId, name }, i) => {
+		const owner = profileSeed(ownerProfileId);
+		return {
+			albumId,
+			albumNumber: i + 1,
+			totalAlbumsShared: seeds.length,
+			hasUnseenContent: i % 2 === 0,
+			albumViewable: true,
+			name,
+			ownerProfileId,
+			imageCount: 2 + (albumId % 3),
+			videoCount: albumId % 2,
+			coverContent: {
+				id: albumId * 10,
+				contentType: "image/jpeg",
+				coverContent: picsum(`shared-album-${albumId}-cover`, 300, 400),
+				status: "AVAILABLE",
+			},
+			profile: {
+				profileId: ownerProfileId,
+				name: owner.name ?? "",
+				profileUrl: null,
+				onlineUntil: null,
+				distanceKm: null,
+			},
+		};
+	});
+	return {
+		profileFeeds: [],
+		sharedAlbums,
+		experimentStatus: 0,
+		nonEmptyPersonalAlbumCount: 3,
+		emptyAlbumId: null,
+	};
+}
+
 let demoSentCounter = 0;
 
 export function demoSentMessage(body: unknown): ApiResponseMessage {

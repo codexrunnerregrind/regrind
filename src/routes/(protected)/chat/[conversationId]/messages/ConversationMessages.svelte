@@ -3,6 +3,7 @@
 
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import { Spinner } from "$lib/components/ui/spinner";
+	import { hapticImpact } from "$lib/platform/haptics";
 	import { getConversationState } from "../conversation-state.svelte";
 	import ConversationError from "./ConversationError.svelte";
 	import ConversationPaginationSentinel from "./ConversationPaginationSentinel.svelte";
@@ -149,7 +150,7 @@
 	}
 </script>
 
-<div class="relative flex min-h-0 max-w-full flex-1 flex-col">
+<div class="relative flex min-h-0 max-w-full flex-1 flex-col bg-chat-background">
 	<div
 		class="flex min-h-0 max-w-full flex-1 flex-col gap-1 overflow-auto overscroll-contain p-2 pt-20 pb-13 *:first:mt-auto"
 		bind:this={container}
@@ -183,7 +184,10 @@
 			containerClass="bottom-11.5"
 			hintOffset={8}
 			position="bottom"
-			onrefresh={() => void conversationState.refresh()}
+			onrefresh={() => {
+				hapticImpact("light");
+				void conversationState.refresh();
+			}}
 		/>
 		{#if !atFloor}
 			<ScrollToBottomButton

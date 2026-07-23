@@ -7,10 +7,13 @@
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
+	import * as Tabs from "$lib/components/ui/tabs";
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+	import { hapticImpact, hapticSelection } from "$lib/platform/haptics";
 	import { below } from "$lib/util/breakpoints.svelte";
 	import { SelectionSet } from "$lib/util/selection.svelte";
 	import type { ConversationsState } from "$lib/chat/conversations-state.svelte";
+	import AlbumsTab from "./AlbumsTab.svelte";
 	import Conversation from "./Conversation.svelte";
 	import ConversationsSelectionBar from "./ConversationsSelectionBar.svelte";
 	import DeleteConversationsDialog from "./DeleteConversationsDialog.svelte";
@@ -50,6 +53,8 @@
 		class?: import("svelte/elements").ClassValue;
 	} = $props();
 
+	let activeTab = $state("inbox");
+
 	const selection = new SelectionSet<string>();
 	let selecting = $state(false);
 	let deleteDialogOpen = $state(false);
@@ -85,6 +90,7 @@
 	function enterSelection(conversationId: string) {
 		if (!selecting) {
 			selecting = true;
+			hapticImpact("medium");
 			void compensateScroll();
 		}
 		selection.add(conversationId);
@@ -150,6 +156,7 @@
 	}
 
 	async function confirmDelete() {
+		hapticImpact("medium");
 		exitSelection();
 		if (deleteIds.some((id) => id === page.params.conversationId)) {
 			await goto("/chat");
@@ -197,22 +204,37 @@
 />
 
 <div class="relative flex h-full w-full min-w-list-rail flex-col">
-	<div
-		bind:this={container}
-		class={[
-			"flex min-h-0 flex-1 flex-col gap-1 overflow-auto overscroll-contain p-4 pb-0",
-			selecting && "pt-(--selection-bar-height)",
-			className,
-		]}
-		onscroll={() => (conversations.listScrollY = container?.scrollTop ?? 0)}
+	<Tabs.Root
+		bind:value={activeTab}
+		onValueChange={(value) => {
+			if (value !== activeTab) hapticSelection();
+		}}
+		class="shrink-0 items-center px-3 pt-1 pb-2"
 	>
+		<Tabs.List>
+			<Tabs.Trigger value="inbox">Inbox</Tabs.Trigger>
+			<Tabs.Trigger value="albums">Albums</Tabs.Trigger>
+		</Tabs.List>
+	</Tabs.Root>
+	{#if activeTab === "albums"}
+		<AlbumsTab class={className} />
+	{:else}
+		<div
+			bind:this={container}
+			class={[
+				"flex min-h-0 flex-1 flex-col gap-0 overflow-auto overscroll-contain px-0 pt-2 pb-0",
+				selecting && "pt-(--selection-bar-height)",
+				className,
+			]}
+			onscroll={() => (conversations.listScrollY = container?.scrollTop ?? 0)}
+		>
 		{#await conversations.initial}
 			{#each Array(8)}
-				<Skeleton class="h-24.5 w-full shrink-0" />
+				<Skeleton class="mx-3 my-1 h-20 shrink-0 rounded-xl" />
 			{/each}
 		{:then}
 			<div
-				class="flex min-h-overscrollable shrink-0 flex-col gap-1 pb-nav-clear"
+				class="flex min-h-overscrollable shrink-0 flex-col gap-0 pb-nav-clear"
 			>
 				{#each conversations.entries as conversation, i (conversation.data.conversationId)}
 					{@const conversationId = conversation.data.conversationId}
@@ -240,7 +262,7 @@
 				{/each}
 				{#if conversations.loadingMore}
 					{#each Array(6)}
-						<Skeleton class="h-24.5 w-full shrink-0" />
+						<Skeleton class="mx-3 my-1 h-20 shrink-0 rounded-xl" />
 					{/each}
 				{/if}
 				{#if conversations.nextPage !== null}
@@ -256,14 +278,18 @@
 				/>
 			</div>
 		{/await}
-	</div>
-	{#await conversations.initial then}
-		<DataRefreshControl
-			{container}
-			updating={conversations.refreshing}
-			position="top"
-			hintOffset={12}
-			onrefresh={() => void conversations.refresh()}
-		/>
-	{/await}
+		</div>
+		{#await conversations.initial then}
+			<DataRefreshControl
+				{container}
+				updating={conversations.refreshing}
+				position="top"
+				hintOffset={12}
+				onrefresh={() => {
+					hapticImpact("light");
+					void conversations.refresh();
+				}}
+			/>
+		{/await}
+	{/if}
 </div>

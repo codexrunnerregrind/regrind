@@ -3,11 +3,13 @@
 	import { expoOut } from "svelte/easing";
 	import { scale } from "svelte/transition";
 
+	import { longPressHandlers } from "$lib/util/long-press";
 	import type { ApiResponseMessage } from "$lib/model/messaging/messages";
 	import AlbumMessage from "./AlbumMessage.svelte";
 	import { setMessageContext } from "./context";
 	import ExpiringImageMessage from "./ExpiringImageMessage.svelte";
 	import ImageMessage from "./ImageMessage.svelte";
+	import LocationMessage from "./LocationMessage.svelte";
 	import MessageContextMenu from "./MessageContextMenu.svelte";
 	import MessageDateGroup from "./MessageDateGroup.svelte";
 	import MessageTime from "./MessageTime.svelte";
@@ -120,6 +122,12 @@
 
 	let contextMenu: HTMLDialogElement | null = $state(null);
 
+	// iOS WebKit never fires `contextmenu` on a touch long-press, so the native
+	// oncontextmenu handler alone leaves the menu unreachable on iOS. These
+	// pointer-based handlers synthesize the long-press (and still forward a real
+	// right-click via their own oncontextmenu).
+	const longPress = longPressHandlers(onContextMenu);
+
 	function observeRead(node: HTMLElement) {
 		if (!onVisible) return {};
 		const observer = new IntersectionObserver(
@@ -181,6 +189,8 @@
 			/>
 		{:else if message.type === "Album" || message.type === "ExpiringAlbum" || message.type === "ExpiringAlbumV2"}
 			<AlbumMessage message={message.body} />
+		{:else if message.type === "Location"}
+			<LocationMessage message={message.body} />
 		{:else if message.type === "Unsent"}
 			<UnsentMessage />
 		{:else}
@@ -201,13 +211,17 @@
 		<MessageDateGroup {dayStart} />
 	{/if}
 	<div
-		class={{
-			"*:me-auto *:float-start pe-3": !isOut,
-			"*:ms-auto *:float-end ps-3": isOut,
-		}}
+		class={[
+			"[-webkit-touch-callout:none] **:[-webkit-touch-callout:none]",
+			{
+				"*:me-auto *:float-start pe-3": !isOut,
+				"*:ms-auto *:float-end ps-3": isOut,
+			},
+		]}
 		role="button"
 		tabindex="0"
 		aria-label="Message"
+		{...longPress}
 		ondblclick={(event) => {
 			const selection = window.getSelection();
 			if (
@@ -227,10 +241,6 @@
 				if (event.key === " ") event.preventDefault();
 				onContextMenu();
 			}
-		}}
-		oncontextmenu={(event) => {
-			event.preventDefault();
-			onContextMenu();
 		}}
 		style:visibility={contextMenuOpen ? "hidden" : undefined}
 		use:observeRead

@@ -90,7 +90,7 @@
 		{#snippet description()}
 			<Item.Description
 				class={{
-					"font-medium text-white":
+					"font-medium text-foreground":
 						conversation.data.unreadCount > 0 && !conversation.data.muted,
 				}}
 			>

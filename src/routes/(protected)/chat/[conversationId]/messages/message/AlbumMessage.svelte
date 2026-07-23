@@ -1,11 +1,9 @@
 <script lang="ts">
 	import "photoswipe/style.css";
 	import { ImageBrokenIcon, ImagesIcon, VideoIcon } from "phosphor-svelte";
-	import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
 	import { showErrorToast } from "$lib/api/error";
-	import { type AlbumContentResponse, getAlbumContent } from "$lib/api/messaging/albums";
-	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+	import { loadAlbum, type LoadedAlbum, openAlbumLightbox } from "$lib/chat/album-viewer";
 	import type { AlbumMessage } from "$lib/model/messaging/messages";
 	import LockedMedia from "./LockedMedia.svelte";
 	import { MessageMediaState } from "./message-media.svelte";
@@ -28,13 +26,6 @@
 		media.cornerClass,
 	]);
 
-	type LoadedAlbum = AlbumContentResponse & {
-		content: (AlbumContentResponse["content"][number] & {
-			width: number;
-			height: number;
-		})[];
-	};
-
 	type AlbumState =
 		| { status: "idle" }
 		| { status: "loading" }
@@ -53,145 +44,37 @@
 
 	$effect(() => {
 		if (albumState.status !== "loading") return;
-		(async () => {
-			const loaded = await getAlbumContent(message.albumId).then(
-				async (res) => ({
-					...res,
-					content: await Promise.all(
-						res.content.map(async (slide) => {
-							if (slide.contentType.startsWith("video/")) {
-								const video = document.createElement("video");
-								video.src = slide.url ?? "";
-								video.load();
-								try {
-									await new Promise<void>((resolve, reject) => {
-										if (video.readyState >= 1) resolve();
-										video.addEventListener("loadedmetadata", () => resolve(), {
-											once: true,
-										});
-										video.addEventListener(
-											"error",
-											({ error }) =>
-												reject(
-													new Error(`Failed to load video: ${slide.url}`, {
-														cause: error,
-													}),
-												),
-											{
-												once: true,
-											},
-										);
-									});
-									return {
-										...slide,
-										width: video.videoWidth,
-										height: video.videoHeight,
-									};
-								} finally {
-									video.remove();
-								}
-							} else {
-								const img = document.createElement("img");
-								img.src = slide.url ?? "";
-								try {
-									await new Promise<void>((resolve, reject) => {
-										if (img.complete) resolve();
-										img.addEventListener("load", () => resolve(), {
-											once: true,
-										});
-										img.addEventListener(
-											"error",
-											({ error }) =>
-												reject(
-													new Error(`Failed to load image: ${slide.url}`, {
-														cause: error,
-													}),
-												),
-											{
-												once: true,
-											},
-										);
-									});
-									return {
-										...slide,
-										src: img.src,
-										width: img.naturalWidth,
-										height: img.naturalHeight,
-									};
-								} finally {
-									img.remove();
-								}
-							}
-						}),
-					),
-				}),
-			);
-			cachedAlbum = loaded;
-			albumState = { status: "open", album: loaded };
-		})().catch((error) => {
-			console.error(error);
-			showErrorToast({
-				label: "Failed to load album content",
-				error,
+		loadAlbum(message.albumId)
+			.then((loaded) => {
+				cachedAlbum = loaded;
+				albumState = { status: "open", album: loaded };
+			})
+			.catch((error) => {
+				console.error(error);
+				showErrorToast({
+					label: "Failed to load album content",
+					error,
+				});
+				albumState = { status: "idle" };
 			});
-			albumState = { status: "idle" };
-		});
 	});
 
 	$effect(() => {
 		if (albumState.status !== "open") return;
 		const { album } = albumState;
-		let lightbox: PhotoSwipeLightbox | undefined;
+		let destroy: (() => void) | undefined;
 		let canceled = false;
-		import("photoswipe/lightbox")
-			.then(({ default: PhotoSwipeLightbox }) => {
-				if (canceled) return;
-				lightbox = new PhotoSwipeLightbox({
-					showHideAnimationType: "fade",
-					pswpModule: () => import("photoswipe"),
-					mainClass: `pswp--buttons-visible`,
-				});
-				lightbox.addFilter("numItems", () => album.content.length);
-				lightbox.addFilter("itemData", (_, index) => {
-					const { url, width, height } = album.content[index];
-					return { src: url, width, height };
-				});
-				const onBackGesture = () => {
-					lightbox?.pswp?.close();
-					return false;
-				};
-				lightbox.on("beforeOpen", () => {
-					backGestureEventHandlers.add(onBackGesture);
-				});
-				lightbox.on("close", () => {
-					backGestureEventHandlers.delete(onBackGesture);
-				});
-				lightbox.on("contentLoad", (event) => {
-					const { content } = event;
-					const slide = album.content[content.index];
-					if (slide?.contentType.startsWith("video/")) {
-						event.preventDefault();
-						content.element = document.createElement("div");
-						const video = document.createElement("video");
-						video.src = slide.url;
-						video.controls = true;
-						video.playsInline = true;
-						video.className = "max-w-full max-h-full m-auto";
-						content.element.appendChild(video);
-						content.state = "loading";
-						if (video.readyState >= 3) {
-							content.onLoaded();
-						} else {
-							video.addEventListener("loadeddata", () => content.onLoaded());
-							video.addEventListener("error", () => content.onError());
-						}
-					}
-				});
-				lightbox.on("closingAnimationEnd", () => {
-					albumState = { status: "idle" };
-				});
-				lightbox.init();
-				lightbox.loadAndOpen(0);
+		openAlbumLightbox(album, {
+			onClosed: () => {
+				albumState = { status: "idle" };
+			},
+		})
+			.then((teardown) => {
+				if (canceled) {
+					teardown();
+				} else {
+					destroy = teardown;
+				}
 			})
 			.catch((error) => {
 				console.error(error);
@@ -203,8 +86,8 @@
 			});
 		return () => {
 			canceled = true;
-			lightbox?.destroy();
-			lightbox = undefined;
+			destroy?.();
+			destroy = undefined;
 		};
 	});
 </script>

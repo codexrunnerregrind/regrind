@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { showErrorToast } from "$lib/api/error";
+	import { hapticImpact } from "$lib/platform/haptics";
 	import type { Message } from "$lib/model/messaging/messages";
 	import ComposerAttachments from "./attachments/ComposerAttachments.svelte";
 	import ComposerSubmitButton from "./ComposerSubmitButton.svelte";
@@ -20,6 +21,7 @@
 		if (text === "") return;
 		try {
 			await onSend({ type: "Text", body: { text } });
+			hapticImpact("light");
 			textContent = "";
 		} catch (error) {
 			console.error(error);

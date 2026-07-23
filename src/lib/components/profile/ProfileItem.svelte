@@ -42,11 +42,11 @@
 </script>
 
 {#snippet avatarNode()}
-	<Item.Media class="relative translate-y-0! rounded-2xl p-2">
-		<Avatar.Root class="size-20 after:rounded-xl">
+	<Item.Media class="relative translate-y-0! rounded-2xl">
+		<Avatar.Root class="size-16 after:border-0">
 			<UserAvatar
 				mediaHash={avatar.mediaHash}
-				class="size-20 rounded-xl bg-neutral-700 *:rounded-xl"
+				class="size-16 rounded-2xl bg-neutral-700 *:rounded-2xl"
 			/>
 		</Avatar.Root>
 		{@render avatar.overlay?.()}
@@ -71,12 +71,12 @@
 	{@render actions?.()}
 {/snippet}
 <Item.Root
-	variant={active ? "muted" : "outline"}
+	variant={active ? "muted" : "default"}
 	class={[
-		"@container relative flex min-w-24 flex-nowrap items-stretch gap-0 p-0",
+		"@container relative flex min-w-24 flex-nowrap items-stretch gap-0 rounded-none p-0",
+		!selected && !active && "can-hover:hover:bg-muted/40",
 		{
-			"border-primary outline-2 -outline-offset-2 outline-primary outline-solid":
-				selected,
+			"outline-2 -outline-offset-2 outline-primary outline-solid": selected,
 			"[-webkit-touch-callout:none] **:[-webkit-touch-callout:none]":
 				!!onLongPress,
 		},
@@ -86,14 +86,14 @@
 	{#if avatar.link}
 		<a
 			href={avatar.link}
-			class="rounded-l-2xl @max-row:hidden"
+			class="flex items-center ps-4 pe-3 py-3 @max-row:hidden"
 			tabindex={linkTabindex}
 		>
 			{@render avatarNode()}
 		</a>
 		<a
 			href={link}
-			class="content gap-0.5 rounded-r-2xl p-4 ps-2 @max-row:hidden!"
+			class="content gap-0.5 border-b border-border/60 py-3 pe-4 @max-row:hidden!"
 			tabindex={linkTabindex}
 		>
 			{@render contentNode()}
@@ -108,7 +108,7 @@
 	{:else}
 		<a
 			href={link}
-			class="content gap-2.5 overflow-clip rounded-2xl pe-4"
+			class="content gap-3 overflow-clip border-b border-border/60 py-3 ps-4 pe-4"
 			tabindex={linkTabindex}
 		>
 			{@render avatarNode()}

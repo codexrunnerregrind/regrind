@@ -6,11 +6,16 @@
 	<meta name="viewport"
 		content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
 	<style>
+		/* Pre-paint fallback only. The real theme lives in layout.css (:root =
+		   light, .dark = dark) and is toggled onto <html> by theme.svelte.ts. */
 		:root {
+			color-scheme: light;
+			background-color: #ffffff;
+		}
+
+		:root.dark {
 			color-scheme: dark;
-			background-color: #1e1e1e;
-			--background: oklch(0.145 0 0);
-			background-color: var(--background);
+			background-color: #12191d;
 		}
 
 		#webview-too-old {
@@ -63,6 +68,17 @@
 		}
 	</style>
 	<script>
+		// Apply the system theme before first paint to avoid a flash. Once
+		// preferences hydrate, theme.svelte.ts takes over and honours the
+		// user's explicit Light/Dark/System choice.
+		(function () {
+			try {
+				if (window.matchMedia &&
+					window.matchMedia("(prefers-color-scheme: dark)").matches) {
+					document.documentElement.classList.add("dark");
+				}
+			} catch (e) { }
+		})();
 		(function () {
 			try {
 				if (window.CSS && CSS.supports &&
@@ -77,7 +93,7 @@
 	%sveltekit.head%
 </head>
 
-<body data-sveltekit-preload-data="hover" class="dark">
+<body data-sveltekit-preload-data="hover">
 	<div style="display: contents">%sveltekit.body%</div>
 	<div id="webview-too-old">
 		<div class="wv-inner">

@@ -7,11 +7,31 @@ import { geohashSchema } from "$lib/model/geohash";
 import { type UnitSystem, unitSystemSchema } from "$lib/util/units";
 import { existsAppDataFile, readAppDataFile, writeAppDataFileAtomic } from ".";
 
+export const themeModeSchema = z.enum(["light", "dark", "system"]);
+export type ThemeMode = z.infer<typeof themeModeSchema>;
+
+export const accentColors = [
+	"green",
+	"teal",
+	"blue",
+	"indigo",
+	"purple",
+	"pink",
+	"red",
+	"orange",
+	"brown",
+	"slate",
+] as const;
+export const accentColorSchema = z.enum(accentColors);
+export type AccentColor = z.infer<typeof accentColorSchema>;
+
 const preferencesSchema = z.object({
+	accentColor: accentColorSchema.default("green"),
 	geohash: geohashSchema.nullable().default(null),
 	gridSearchFilters: gridSearchFiltersSchema.optional(),
 	revealMessageRead: z.boolean().default(false),
 	revealProfileViews: z.boolean().default(false),
+	themeMode: themeModeSchema.default("system"),
 	units: unitSystemSchema.default("metric"),
 	warnBeforeCopyingErrorDetails: z.boolean().default(true),
     rightNowFilters: rightNowFiltersSchema.optional(),
@@ -74,6 +94,14 @@ export function getUnitsSnapshot(): UnitSystem {
 
 export function getGeohashSnapshot(): string | null {
 	return preferencesSnapshot.geohash;
+}
+
+export function getThemeModeSnapshot(): ThemeMode {
+	return preferencesSnapshot.themeMode;
+}
+
+export function getAccentColorSnapshot(): AccentColor {
+	return preferencesSnapshot.accentColor;
 }
 
 export async function hydratePreferences(): Promise<void> {

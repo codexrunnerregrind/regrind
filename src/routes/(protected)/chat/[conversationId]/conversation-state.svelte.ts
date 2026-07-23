@@ -382,13 +382,41 @@ export class ConversationState {
 	}
 
 	// Revokes the recipient's access to an album shared into this conversation.
+	// The album message stays in the chat, but is locked in place: its content
+	// is no longer viewable. The backend keeps historical messages, so a
+	// refresh() would show it as still shared — we update local state instead.
 	async unshareAlbum(albumId: number): Promise<void> {
 		if (!this.profile) return;
-		await unshareAlbum({
-			albumId,
-			profiles: [{ profileId: this.profile.profileId, shareId: 0 }],
-		});
-		await this.refresh();
+
+		const affected = this.messages.filter(
+			(m) =>
+				m.senderId === this.ourProfileId &&
+				!m.unsent &&
+				(m.type === "Album" ||
+					m.type === "ExpiringAlbum" ||
+					m.type === "ExpiringAlbumV2") &&
+				(m.body as { albumId: number }).albumId === albumId,
+		);
+
+		// Lock the album bubble(s) in place, remembering prior state to revert.
+		const previous = affected.map((m) => ({
+			body: m.body as { isViewable: boolean },
+			wasViewable: (m.body as { isViewable: boolean }).isViewable,
+		}));
+		for (const { body } of previous) body.isViewable = false;
+		if (previous.length > 0) this.#syncCache();
+
+		try {
+			await unshareAlbum({
+				albumId,
+				profiles: [{ profileId: this.profile.profileId, shareId: 0 }],
+			});
+		} catch (error) {
+			for (const { body, wasViewable } of previous)
+				body.isViewable = wasViewable;
+			if (previous.length > 0) this.#syncCache();
+			throw error;
+		}
 	}
 
 	#advanceLastRead(timestamp: number | null): boolean {

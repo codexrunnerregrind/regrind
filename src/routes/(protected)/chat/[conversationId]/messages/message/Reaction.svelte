@@ -6,7 +6,7 @@
 </script>
 
 <Badge
-	class="text-white text-xs shrink-0 px-1 h-auto border border-muted-foreground/20"
+	class="text-secondary-foreground text-xs shrink-0 px-1 h-auto border border-muted-foreground/20"
 	variant="secondary"
 >
 	{#if type === 1}

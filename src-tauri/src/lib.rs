@@ -90,6 +90,9 @@ pub fn run() {
     #[cfg(target_os = "android")]
     let builder = builder.plugin(tauri_plugin_android_fs::init());
 
+    #[cfg(mobile)]
+    let builder = builder.plugin(tauri_plugin_haptics::init());
+
     builder
         .plugin(open_grind_platform_plugin())
         .plugin(tauri_plugin_dialog::init())

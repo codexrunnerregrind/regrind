@@ -9,6 +9,7 @@ import {
 	demoSentMessage,
 	demoSetConversationMuted,
 	demoSetConversationPinned,
+	demoSharedAlbumsFeed,
 	demoSingleMessage,
 } from "./mock/conversations";
 import {
@@ -113,6 +114,9 @@ export function demoRoute(
 	}
 	if (method === "GET" && rawPath === "/v1/albums") {
 		return ok(demoMyAlbums());
+	}
+	if (method === "POST" && rawPath === "/v3/pressie-albums/feed") {
+		return ok(demoSharedAlbumsFeed());
 	}
 	if (method === "GET" && segments[0] === "v2" && segments[1] === "albums") {
 		return ok(demoAlbumContent(Number(segments[2])));

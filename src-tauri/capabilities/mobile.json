@@ -12,6 +12,10 @@
 		"geolocation:allow-check-permissions",
 		"geolocation:allow-request-permissions",
 		"geolocation:allow-get-current-position",
-		"geolocation:allow-watch-position"
+		"geolocation:allow-watch-position",
+		"haptics:allow-vibrate",
+		"haptics:allow-impact-feedback",
+		"haptics:allow-notification-feedback",
+		"haptics:allow-selection-feedback"
 	]
 }

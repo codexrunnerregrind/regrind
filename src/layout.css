@@ -5,41 +5,135 @@
 @custom-variant dark (&:is(.dark *));
 @custom-variant can-hover (@media (hover: hover) and (pointer: fine));
 
+/* WhatsApp-inspired palette. Light is the default (:root); dark values live in
+   the .dark block below and are toggled onto <html> by theme.svelte.ts. Both
+   themes are always defined so the app renders correctly in either mode. */
 :root {
 	--radius: 1rem;
-	--background: oklch(0.145 0 0);
-	--foreground: oklch(0.985 0 0);
-	--card: oklch(0.205 0 0);
-	--card-foreground: oklch(0.985 0 0);
-	--popover: oklch(0.205 0 0);
-	--popover-foreground: oklch(0.985 0 0);
-	--primary: oklch(86.521% 0.17664 90.372);
-	--primary-foreground: oklch(0.421 0.095 57.708);
-	--secondary: oklch(0.274 0.006 286.033);
-	--secondary-foreground: oklch(0.985 0 0);
-	--muted: oklch(0.269 0 0);
-	--muted-foreground: oklch(0.708 0 0);
-	--accent: oklch(86.521% 0.17664 90.372);
-	--accent-foreground: oklch(0.421 0.095 57.708);
-	--destructive: oklch(0.704 0.191 22.216);
+	--background: oklch(1 0 0);
+	--foreground: oklch(0.21 0.02 220);
+	--card: oklch(1 0 0);
+	--card-foreground: oklch(0.21 0.02 220);
+	--popover: oklch(1 0 0);
+	--popover-foreground: oklch(0.21 0.02 220);
+	/* WhatsApp brand green (#00a884) drives primary actions, links, focus. */
+	--primary: oklch(0.68 0.13 172);
+	--primary-foreground: oklch(1 0 0);
+	--secondary: oklch(0.96 0.005 220);
+	--secondary-foreground: oklch(0.21 0.02 220);
+	--muted: oklch(0.96 0.005 220);
+	--muted-foreground: oklch(0.55 0.02 220);
+	--accent: oklch(0.68 0.13 172);
+	--accent-foreground: oklch(1 0 0);
+	--destructive: oklch(0.58 0.22 27);
+	--border: oklch(0.92 0.006 220);
+	--input: oklch(0.92 0.006 220);
+	--ring: oklch(0.68 0.13 172);
+	--chart-1: oklch(0.68 0.13 172);
+	--chart-2: oklch(0.7 0.12 200);
+	--chart-3: oklch(0.65 0.14 145);
+	--chart-4: oklch(0.75 0.13 90);
+	--chart-5: oklch(0.6 0.15 40);
+	--sidebar: oklch(0.98 0.004 220);
+	--sidebar-foreground: oklch(0.21 0.02 220);
+	--sidebar-primary: oklch(0.68 0.13 172);
+	--sidebar-primary-foreground: oklch(1 0 0);
+	--sidebar-accent: oklch(0.96 0.005 220);
+	--sidebar-accent-foreground: oklch(0.21 0.02 220);
+	--sidebar-border: oklch(0.92 0.006 220);
+	--sidebar-ring: oklch(0.68 0.13 172);
+	/* Solid backdrop behind chat bubbles (no doodle wallpaper). WhatsApp beige. */
+	--chat-background: oklch(0.95 0.008 90);
+	/* Incoming = white, outgoing = WhatsApp light green (#d9fdd3). */
+	--message-bubble-in: oklch(1 0 0);
+	--message-bubble-out: oklch(0.94 0.06 145);
+	--message-bubble-foreground: oklch(0.21 0.02 220);
+}
+
+.dark {
+	--background: oklch(0.19 0.02 220);
+	--foreground: oklch(0.93 0.01 220);
+	--card: oklch(0.25 0.02 220);
+	--card-foreground: oklch(0.93 0.01 220);
+	--popover: oklch(0.25 0.02 220);
+	--popover-foreground: oklch(0.93 0.01 220);
+	--primary: oklch(0.68 0.13 172);
+	--primary-foreground: oklch(0.16 0.02 220);
+	--secondary: oklch(0.28 0.02 220);
+	--secondary-foreground: oklch(0.93 0.01 220);
+	--muted: oklch(0.28 0.02 220);
+	--muted-foreground: oklch(0.68 0.02 220);
+	--accent: oklch(0.68 0.13 172);
+	--accent-foreground: oklch(0.16 0.02 220);
+	--destructive: oklch(0.7 0.19 22);
 	--border: oklch(1 0 0 / 10%);
 	--input: oklch(1 0 0 / 15%);
-	--ring: oklch(0.556 0 0);
-	--chart-1: oklch(0.905 0.182 98.111);
-	--chart-2: oklch(86.521% 0.17664 90.372);
-	--chart-3: oklch(0.681 0.162 75.834);
-	--chart-4: oklch(0.554 0.135 66.442);
-	--chart-5: oklch(0.476 0.114 61.907);
-	--sidebar: oklch(0.205 0 0);
-	--sidebar-foreground: oklch(0.985 0 0);
-	--sidebar-primary: oklch(86.521% 0.17664 90.372);
-	--sidebar-primary-foreground: oklch(0.987 0.026 102.212);
-	--sidebar-accent: oklch(0.269 0 0);
-	--sidebar-accent-foreground: oklch(0.985 0 0);
+	--ring: oklch(0.68 0.13 172);
+	--chart-1: oklch(0.68 0.13 172);
+	--chart-2: oklch(0.7 0.12 200);
+	--chart-3: oklch(0.65 0.14 145);
+	--chart-4: oklch(0.75 0.13 90);
+	--chart-5: oklch(0.6 0.15 40);
+	--sidebar: oklch(0.22 0.02 220);
+	--sidebar-foreground: oklch(0.93 0.01 220);
+	--sidebar-primary: oklch(0.68 0.13 172);
+	--sidebar-primary-foreground: oklch(0.16 0.02 220);
+	--sidebar-accent: oklch(0.28 0.02 220);
+	--sidebar-accent-foreground: oklch(0.93 0.01 220);
 	--sidebar-border: oklch(1 0 0 / 10%);
-	--sidebar-ring: oklch(0.556 0 0);
-	--message-bubble-in: oklch(0.7882 0.1455 228.36);
-	--message-bubble-out: oklch(0.8618 0.1973 89.76);
+	--sidebar-ring: oklch(0.68 0.13 172);
+	--chat-background: oklch(0.15 0.015 220);
+	/* Incoming = dark slate, outgoing = WhatsApp dark green (#005c4b). */
+	--message-bubble-in: oklch(0.27 0.02 220);
+	--message-bubble-out: oklch(0.45 0.08 165);
+	--message-bubble-foreground: oklch(0.93 0.01 220);
+}
+
+/* Accent presets. theme.svelte.ts sets data-accent on <html>; these override
+   the primary/accent/ring family in both light and dark (declared after .dark
+   so they win). Chosen at a lightness that pairs with white foreground. Chat
+   bubbles keep their own green tokens and are intentionally unaffected. */
+[data-accent] {
+	--primary-foreground: oklch(1 0 0);
+	--accent-foreground: oklch(1 0 0);
+	--sidebar-primary-foreground: oklch(1 0 0);
+}
+[data-accent="green"] {
+	--primary: oklch(0.62 0.13 168);
+}
+[data-accent="teal"] {
+	--primary: oklch(0.6 0.1 195);
+}
+[data-accent="blue"] {
+	--primary: oklch(0.58 0.16 250);
+}
+[data-accent="indigo"] {
+	--primary: oklch(0.52 0.17 275);
+}
+[data-accent="purple"] {
+	--primary: oklch(0.55 0.18 305);
+}
+[data-accent="pink"] {
+	--primary: oklch(0.6 0.2 350);
+}
+[data-accent="red"] {
+	--primary: oklch(0.58 0.21 25);
+}
+[data-accent="orange"] {
+	--primary: oklch(0.63 0.17 50);
+}
+[data-accent="brown"] {
+	--primary: oklch(0.5 0.08 50);
+}
+[data-accent="slate"] {
+	--primary: oklch(0.52 0.03 250);
+}
+[data-accent] {
+	--accent: var(--primary);
+	--ring: var(--primary);
+	--sidebar-primary: var(--primary);
+	--sidebar-ring: var(--primary);
+	--chart-1: var(--primary);
 }
 
 @theme inline {
@@ -78,6 +172,8 @@
 	--color-background: var(--background);
 	--color-message-bubble-in: var(--message-bubble-in);
 	--color-message-bubble-out: var(--message-bubble-out);
+	--color-message-bubble-foreground: var(--message-bubble-foreground);
+	--color-chat-background: var(--chat-background);
 	--radius-sm: calc(var(--radius) * 0.6);
 	--radius-md: calc(var(--radius) * 0.8);
 	--radius-lg: var(--radius);

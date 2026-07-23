@@ -11,12 +11,14 @@
 	import { Toaster } from "svelte-sonner";
 
 	import { hydratePreferences } from "$lib/app-data/preferences.svelte";
+	import { initTheme } from "$lib/app-data/theme.svelte";
 	import {
 		applyAndroidInsets,
 		applyBackGestureHandler,
 		registerAndroidBackButtonListener,
 	} from "$lib/platform/android-native-bridge";
 	import { blockZoom } from "$lib/platform/block-zoom";
+	import { applySwipeBackGesture } from "$lib/platform/swipe-back-gesture";
 
 	onMount(() => {
 		if (env.PUBLIC_TEST_INSETS) {
@@ -38,6 +40,8 @@
 		applyAndroidInsets();
 		applyBackGestureHandler();
 		const releaseZoomBlock = blockZoom();
+		const releaseSwipeBack = applySwipeBackGesture();
+		const releaseTheme = initTheme();
 		if (isTauri() && platform() === "android") {
 			void registerAndroidBackButtonListener().catch((error) => {
 				console.error("Failed to register back button listener", error);
@@ -46,7 +50,11 @@
 		void hydratePreferences().catch((error) => {
 			console.error("Failed to hydrate preferences", error);
 		});
-		return releaseZoomBlock;
+		return () => {
+			releaseZoomBlock();
+			releaseSwipeBack();
+			releaseTheme();
+		};
 	});
 
 	import { env } from "$env/dynamic/public";
@@ -106,7 +114,9 @@
 	expand
 />
 <IconContext values={{}}>
-	{@render children?.()}
+	<div id="screen-nav-root">
+		{@render children?.()}
+	</div>
 </IconContext>
 <RequestBlockedAlert />
 <SessionErrorAlert />

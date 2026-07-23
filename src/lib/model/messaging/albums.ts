@@ -90,3 +90,45 @@ export type AlbumUnshareProfile = z.infer<typeof albumUnshareProfileSchema>;
 export const albumUnshareRequestSchema = z.object({
 	profiles: z.array(albumUnshareProfileSchema),
 });
+
+// A trimmed-down profile attached to albums shared with us.
+export const pressieProfileMiniSchema = z.object({
+	profileId: z.int(),
+	name: z.string().nullable().optional(),
+	profileUrl: z.string().nullable().optional(),
+	onlineUntil: unixTimestampMsSchema.nullable().optional(),
+	distanceKm: z.number().nullable().optional(),
+});
+
+export type PressieProfileMini = z.infer<typeof pressieProfileMiniSchema>;
+
+// One album another profile has shared with us, as returned by the
+// POST /v3/pressie-albums/feed "albums shared with me" endpoint. Kept lenient:
+// the backend marks most fields optional/nullable once an album expires or is
+// locked, and we only rely on the handful we render.
+export const sharedAlbumSchema = z.object({
+	albumId: z.int(),
+	hasUnseenContent: z.boolean().optional().default(false),
+	albumViewable: z.boolean().optional().default(true),
+	name: z.string().nullable().optional(),
+	ownerProfileId: z.int().optional(),
+	imageCount: z.int().optional(),
+	videoCount: z.int().optional(),
+	coverContent: z
+		.object({
+			id: z.int().optional(),
+			contentType: z.string().optional(),
+			coverContent: z.string().nullable().optional(),
+			status: z.string().optional(),
+		})
+		.nullable()
+		.optional(),
+	profile: pressieProfileMiniSchema.nullable().optional(),
+});
+
+export type SharedAlbum = z.infer<typeof sharedAlbumSchema>;
+
+export const pressieAlbumsFeedResponseSchema = z.object({
+	sharedAlbums: z.array(sharedAlbumSchema),
+	nonEmptyPersonalAlbumCount: z.number().optional(),
+});

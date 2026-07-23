@@ -2,6 +2,7 @@
 	import { version } from "$app/environment";
 
 	import AccountSettingsLink from "./AccountSettingsLink.svelte";
+	import AppearanceLink from "./AppearanceLink.svelte";
 	import AppSettingsLink from "./AppSettingsLink.svelte";
 	import ProfileLink from "./ProfileLink.svelte";
 	import SignOutButton from "./SignOutButton.svelte";
@@ -18,6 +19,7 @@
 				<span role="separator"></span>
 				<AccountSettingsLink />
 				<AppSettingsLink />
+				<AppearanceLink />
 				<SignOutButton />
 				<span role="separator"></span>
 				<Socials />

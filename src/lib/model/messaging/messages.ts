@@ -352,6 +352,7 @@ export function previewFromMessage(
 				albumId: message.body.albumId,
 				imageHash: null,
 			};
+		case "Location":
 		case "ExpiringImage":
 		default:
 			return {
@@ -368,5 +369,6 @@ export function previewLabel(preview: MessagePreview | null): string | null {
 	if (preview.text !== null) return preview.text;
 	if (preview.albumId !== null) return "Album";
 	if (preview.imageHash !== null || preview.type === "Image") return "Photo";
+	if (preview.type === "Location") return "Location";
 	return null;
 }

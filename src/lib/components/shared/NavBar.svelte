@@ -12,7 +12,13 @@
 	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
 	import { Badge } from "$lib/components/ui/badge";
 	import { tabsListVariants } from "$lib/components/ui/tabs";
+	import { hapticSelection } from "$lib/platform/haptics";
 	import type { ConversationsState } from "$lib/chat/conversations-state.svelte";
+
+	function onTabSelect(currentTab: boolean) {
+		// Only buzz when actually switching to a different tab.
+		if (!currentTab) hapticSelection();
+	}
 
 	const myProfilePhotos = $derived(
 		getMyProfile().then((profile) => profile.medias),
@@ -44,9 +50,11 @@
 			href="/"
 			data-active={page.route.id === "/(protected)/(navbar)/(root)"}
 			onclick={(e) => {
-				if (page.route.id === "/(protected)/(navbar)/(root)") {
+				const current = page.route.id === "/(protected)/(navbar)/(root)";
+				if (current) {
 					e.preventDefault();
 				}
+				onTabSelect(current);
 			}}
 		>
 			<DotsNineIcon weight="fill" />
@@ -55,6 +63,8 @@
 		<a
 			href="/right-now"
 			data-active={page.route.id === "/(protected)/(navbar)/right-now"}
+			onclick={() =>
+				onTabSelect(page.route.id === "/(protected)/(navbar)/right-now")}
 		>
 			<DropIcon weight="fill" />
 			Right Now
@@ -62,11 +72,19 @@
 		<a
 			href="/interest"
 			data-active={page.route.id?.startsWith("/(protected)/(navbar)/interest")}
+			onclick={() =>
+				onTabSelect(
+					page.route.id?.startsWith("/(protected)/(navbar)/interest") ?? false,
+				)}
 		>
 			<FireIcon weight="fill" />
 			Interest
 		</a>
-		<a href="/chat" data-active={page.route.id === "/(protected)/chat"}>
+		<a
+			href="/chat"
+			data-active={page.route.id === "/(protected)/chat"}
+			onclick={() => onTabSelect(page.route.id === "/(protected)/chat")}
+		>
 			<ChatCircleIcon weight="fill" />
 			Inbox
 			{#if hasUnread}
@@ -76,6 +94,8 @@
 	</div>
 	<a
 		href="/settings"
+		onclick={() =>
+			onTabSelect(page.route.id === "/(protected)/(navbar)/settings/(me)")}
 		class={[
 			"flex size-14 shrink-0 rounded-full border bg-muted p-1",
 			{

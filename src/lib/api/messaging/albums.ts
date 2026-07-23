@@ -8,6 +8,7 @@ import {
 	type AlbumShareProfile,
 	type AlbumUnshareProfile,
 	myAlbumsResponseSchema,
+	pressieAlbumsFeedResponseSchema,
 } from "$lib/model/messaging/albums";
 
 const albumResponseSchema = z.object({
@@ -34,6 +35,14 @@ export async function getMyAlbums() {
 	return await fetchRest("/v1/albums").then((res) =>
 		res.jsonParsed(myAlbumsResponseSchema),
 	);
+}
+
+// The albums other profiles have shared with us ("shared with me" feed).
+export async function getSharedAlbumsFeed() {
+	return await fetchRest("/v3/pressie-albums/feed", {
+		method: "POST",
+		body: {},
+	}).then((res) => res.jsonParsed(pressieAlbumsFeedResponseSchema));
 }
 
 // Shares an album with the given profiles. The backend automatically posts the
