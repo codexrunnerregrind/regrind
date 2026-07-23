@@ -49,3 +49,15 @@ export const albumContentSchema = albumContentMin.extend({
 	processing: z.boolean().nullable(),
 	rejectionId: z.unknown().nullable(),
 });
+
+export const myAlbumSchema = z.object({
+	...albumDetailsSchema.shape,
+	albumId: z.int(),
+	albumName: z.string().nullable(),
+	profileId: z.int(),
+	version: z.int(),
+	content: z.array(albumContentSchema),
+	isShareable: z.boolean(),
+});
+
+export type MyAlbum = z.infer<typeof myAlbumSchema>;

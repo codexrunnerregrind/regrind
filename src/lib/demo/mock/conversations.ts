@@ -400,6 +400,28 @@ export function demoAlbumContent(albumId: number) {
 	};
 }
 
+const DEMO_ALBUM_NAMES = ["Gym", "Beach trip", null];
+
+export function demoMyAlbums() {
+	return {
+		albums: DEMO_ALBUM_NAMES.map((albumName, index) => {
+			const albumId = 9001 + index;
+			const { content, createdAt, updatedAt } = demoAlbumContent(albumId);
+			return {
+				albumId,
+				albumName,
+				profileId: demoMeProfileId,
+				version: 1,
+				content,
+				isShareable: true,
+				sharedCount: index,
+				createdAt,
+				updatedAt,
+			};
+		}),
+	};
+}
+
 let demoSentCounter = 0;
 
 export function demoSentMessage(body: unknown): ApiResponseMessage {

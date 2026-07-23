@@ -10,6 +10,7 @@
 	import * as Drawer from "$lib/components/ui/drawer";
 	import * as Tabs from "$lib/components/ui/tabs";
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+	import ComposerAlbumsTab from "./ComposerAlbumsTab.svelte";
 	import ComposerMediaTab from "./ComposerMediaTab.svelte";
 	import ComposerUnimplementedTab from "./ComposerUnimplementedTab.svelte";
 
@@ -132,7 +133,7 @@
 						/>
 					</Tabs.Content>
 					<Tabs.Content value="albums">
-						<ComposerUnimplementedTab label="Sharing albums" issue={33} />
+						<ComposerAlbumsTab onClose={() => (open = false)} />
 					</Tabs.Content>
 					<Tabs.Content value="location">
 						<ComposerUnimplementedTab label="Sharing location" issue={35} />
