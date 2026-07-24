@@ -1,5 +1,6 @@
 <script lang="ts">
-	import EyeSlashIcon from "phosphor-svelte/lib/EyeSlashIcon";
+	import CaretDownIcon from "phosphor-svelte/lib/CaretDownIcon";
+	import CheckCircleIcon from "phosphor-svelte/lib/CheckCircleIcon";
 	import FolderOpenIcon from "phosphor-svelte/lib/FolderOpenIcon";
 	import ImageBrokenIcon from "phosphor-svelte/lib/ImageBrokenIcon";
 	import { toast } from "svelte-sonner";
@@ -10,12 +11,9 @@
 		getAlbumShared,
 		setAlbumShared,
 	} from "$lib/api/messaging/album-shares-state.svelte";
-	import {
-		getMyAlbums,
-		shareAlbum,
-		unshareAlbum,
-	} from "$lib/api/messaging/albums";
+	import { getMyAlbums, shareAlbum } from "$lib/api/messaging/albums";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
+	import { Button } from "$lib/components/ui/button";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
 	import * as Empty from "$lib/components/ui/empty";
 	import { Skeleton } from "$lib/components/ui/skeleton";
@@ -26,9 +24,7 @@
 	} from "$lib/model/messaging/albums";
 	import { getConversationState } from "../../conversation-state.svelte";
 
-	// Expiry choices offered when sharing, ordered to match the official app.
-	// Keyed by `AlbumExpiration` so adding an option fails the typecheck until it
-	// is labelled here.
+	// Expiry choices, ordered to match the official app.
 	const EXPIRATION_OPTIONS: {
 		value: keyof typeof AlbumExpiration;
 		label: string;
@@ -54,10 +50,15 @@
 
 	let albums = $state<MyAlbum[] | null>(null);
 	let error = $state<unknown>(null);
-	let busyAlbumId = $state<number | null>(null);
+	let selectedIds = $state<Set<number>>(new Set());
+	let expirationType = $state<AlbumExpirationType>("INDEFINITE");
+	let sharing = $state(false);
 
-	// Derived from the shared record so reopening the sheet shows what is already
-	// known; share/unshare only have to write to the record.
+	const expirationLabel = $derived(
+		EXPIRATION_OPTIONS.find((o) => o.value === expirationType)?.label ??
+			"Indefinitely",
+	);
+
 	const sharedAlbumIds = $derived(
 		new Set(
 			recipientId === null
@@ -90,39 +91,36 @@
 		if (active && albums === null && error === null) void load();
 	});
 
-	async function share(albumId: number, expirationType: AlbumExpirationType) {
-		if (recipientId === null || busyAlbumId !== null) return;
-		busyAlbumId = albumId;
+	function toggle(albumId: number) {
+		const next = new Set(selectedIds);
+		if (next.has(albumId)) next.delete(albumId);
+		else next.add(albumId);
+		selectedIds = next;
+	}
+
+	async function share() {
+		if (selectedIds.size === 0 || recipientId === null || sharing) return;
+		sharing = true;
+		const ids = [...selectedIds];
 		try {
-			await shareAlbum({ albumId, profileIds: [recipientId], expirationType });
-			setAlbumShared(albumId, recipientId, true);
+			await Promise.all(
+				ids.map((albumId) =>
+					shareAlbum({ albumId, profileIds: [recipientId], expirationType }),
+				),
+			);
+			for (const albumId of ids) setAlbumShared(albumId, recipientId, true);
 			onClose();
-			toast.success("Album shared");
+			toast.success(ids.length === 1 ? "Album shared" : "Albums shared");
 		} catch (err) {
 			console.error(err);
 			showErrorToast({ label: "Failed to share album", error: err });
 		} finally {
-			busyAlbumId = null;
-		}
-	}
-
-	async function unshare(albumId: number) {
-		if (recipientId === null || busyAlbumId !== null) return;
-		busyAlbumId = albumId;
-		try {
-			await unshareAlbum({ albumId, profileIds: [recipientId] });
-			setAlbumShared(albumId, recipientId, false);
-			toast.success("Album unshared");
-		} catch (err) {
-			console.error(err);
-			showErrorToast({ label: "Failed to unshare album", error: err });
-		} finally {
-			busyAlbumId = null;
+			sharing = false;
 		}
 	}
 </script>
 
-<div class="@container/photo-grid flex flex-col rounded-grid">
+<div class="@container/photo-grid flex flex-col gap-3 rounded-grid">
 	{#if error !== null}
 		<div class="flex flex-1">
 			<ApiErrorDisplay {error} onRetry={() => void load()} class="m-auto" />
@@ -148,72 +146,108 @@
 	{:else}
 		<div class="photo-grid">
 			{#each albums as album (album.albumId)}
+				{@const isSelected = selectedIds.has(album.albumId)}
 				{@const isShared = sharedAlbumIds.has(album.albumId)}
 				{@const cover =
 					album.content[0]?.coverUrl || album.content[0]?.thumbUrl}
-				<DropdownMenu.Root>
-					<DropdownMenu.Trigger disabled={busyAlbumId !== null}>
-						{#snippet child({ props: { class: className, ...props } })}
-							<button
-								{...props}
-								type="button"
-								class={[className, "relative aspect-3/4"]}
-								aria-label={isShared ? "Unshare album" : "Share album"}
-							>
-								{#if cover}
-									<img
-										src={cover}
-										alt=""
-										class="size-full rounded-[inherit] bg-card-foreground/10 object-cover"
-										draggable="false"
-									/>
-								{:else}
-									<div
-										class="flex size-full items-center justify-center rounded-[inherit] bg-card-foreground/20"
-									>
-										<ImageBrokenIcon
-											weight="fill"
-											class="size-8"
-											color="var(--color-neutral-600)"
-										/>
-									</div>
-								{/if}
-								<div
-									class="pointer-events-none absolute inset-x-0 bottom-0 flex items-end gap-1 rounded-b-[inherit] bg-linear-to-t from-black/70 to-transparent p-2 pt-6 text-start"
-								>
-									<span class="line-clamp-2 text-xs font-medium text-white">
-										{album.albumName || "Untitled album"}
-									</span>
-								</div>
-								{#if isShared}
-									<span
-										class="pointer-events-none absolute top-1.5 left-1.5 rounded-full bg-primary/90 px-2 py-0.5 text-xs font-medium text-primary-foreground"
-									>
-										Shared
-									</span>
-								{/if}
-							</button>
-						{/snippet}
-					</DropdownMenu.Trigger>
-					<DropdownMenu.Content class="w-44" align="start">
-						{#if isShared}
-							<DropdownMenu.Item onSelect={() => void unshare(album.albumId)}>
-								<EyeSlashIcon class="size-5" />
-								Unshare album
-							</DropdownMenu.Item>
-						{:else}
-							<DropdownMenu.Label>Share album for…</DropdownMenu.Label>
-							{#each EXPIRATION_OPTIONS as option (option.value)}
-								<DropdownMenu.Item
-									onSelect={() => void share(album.albumId, option.value)}
-								>
-									{option.label}
-								</DropdownMenu.Item>
-							{/each}
-						{/if}
-					</DropdownMenu.Content>
-				</DropdownMenu.Root>
+				<button
+					type="button"
+					class={[
+						"relative aspect-3/4 rounded-[inherit] transition-[outline] outline-3 -outline-offset-3",
+						isSelected ? "outline-primary" : "outline-transparent",
+					]}
+					aria-pressed={isSelected}
+					aria-label={isSelected ? "Deselect album" : "Select album"}
+					onclick={() => toggle(album.albumId)}
+				>
+					{#if cover}
+						<img
+							src={cover}
+							alt=""
+							class="size-full rounded-[inherit] bg-card-foreground/10 object-cover"
+							draggable="false"
+						/>
+					{:else}
+						<div
+							class="flex size-full items-center justify-center rounded-[inherit] bg-card-foreground/20"
+						>
+							<ImageBrokenIcon
+								weight="fill"
+								class="size-8"
+								color="var(--color-neutral-600)"
+							/>
+						</div>
+					{/if}
+					<div
+						class="pointer-events-none absolute inset-x-0 bottom-0 flex items-end gap-1 rounded-b-[inherit] bg-linear-to-t from-black/70 to-transparent p-2 pt-6 text-start"
+					>
+						<span class="line-clamp-2 text-xs font-medium text-white">
+							{album.albumName || "Untitled album"}
+						</span>
+					</div>
+					{#if isSelected}
+						<span
+							class="absolute top-1.5 right-1.5 text-primary"
+							aria-hidden="true"
+						>
+							<CheckCircleIcon weight="fill" class="size-6" />
+						</span>
+					{:else if isShared}
+						<span
+							class="pointer-events-none absolute top-1.5 left-1.5 rounded-full bg-primary/90 px-2 py-0.5 text-xs font-medium text-primary-foreground"
+						>
+							Shared
+						</span>
+					{/if}
+				</button>
 			{/each}
+		</div>
+
+		<!-- Expiry dropdown + share, mirroring the official app's layout. -->
+		<div class="flex flex-col items-center gap-3 pt-1">
+			<DropdownMenu.Root>
+				<DropdownMenu.Trigger>
+					{#snippet child({ props })}
+						<button
+							{...props}
+							type="button"
+							class="flex items-center gap-2 text-lg font-semibold"
+						>
+							<CheckCircleIcon weight="regular" class="size-6 text-primary" />
+							{expirationLabel}
+							<CaretDownIcon weight="bold" class="size-4" />
+						</button>
+					{/snippet}
+				</DropdownMenu.Trigger>
+				<DropdownMenu.Content class="w-52" align="center">
+					<DropdownMenu.Label>Share album for…</DropdownMenu.Label>
+					{#each EXPIRATION_OPTIONS as option (option.value)}
+						<DropdownMenu.Item onSelect={() => (expirationType = option.value)}>
+							{#if option.value === expirationType}
+								<CheckCircleIcon weight="fill" class="size-5 text-primary" />
+							{:else}
+								<span class="size-5"></span>
+							{/if}
+							{option.label}
+						</DropdownMenu.Item>
+					{/each}
+				</DropdownMenu.Content>
+			</DropdownMenu.Root>
+
+			<Button
+				size="lg"
+				class="w-full"
+				disabled={selectedIds.size === 0 || recipientId === null || sharing}
+				onclick={() => void share()}
+			>
+				{#if sharing}
+					Sharing…
+				{:else if selectedIds.size > 1}
+					Share {selectedIds.size} Albums
+				{:else}
+					Share Album
+				{/if}
+			</Button>
 		</div>
 	{/if}
 </div>

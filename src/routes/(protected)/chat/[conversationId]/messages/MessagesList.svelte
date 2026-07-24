@@ -138,6 +138,9 @@
 					const albumId = albumIdToUnshare(message);
 					const profileId = conversationState.profile?.profileId;
 					if (albumId === null || profileId === undefined) return;
+					// Optimistically lock the album bubble(s) so they show as no
+					// longer viewable straight away; revert if the request fails.
+					const { revert } = conversationState.lockSharedAlbum(albumId);
 					try {
 						await unshareAlbum({ albumId, profileIds: [profileId] });
 						setAlbumShared(albumId, profileId, false);
@@ -148,6 +151,7 @@
 							label: "Failed to unshare album",
 							error,
 						});
+						revert();
 					}
 				}
 			: undefined}

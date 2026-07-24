@@ -535,6 +535,36 @@ export class ConversationState {
 			revert,
 		};
 	}
+
+	// Locks our album bubbles for `albumId` in place after the album is
+	// unshared, so the recipient can no longer view them. The backend keeps
+	// historical messages, so a refresh would still show them as shared — we
+	// update local state instead. Returns a revert to undo the optimistic
+	// change if the unshare request fails.
+	lockSharedAlbum(albumId: number): { revert: () => void } {
+		const affected = this.messages.filter(
+			(m) =>
+				m.senderId === this.ourProfileId &&
+				!m.unsent &&
+				(m.type === "Album" ||
+					m.type === "ExpiringAlbum" ||
+					m.type === "ExpiringAlbumV2") &&
+				(m.body as { albumId: number } | null)?.albumId === albumId,
+		);
+		const previous = affected.map((m) => ({
+			body: m.body as { isViewable: boolean },
+			wasViewable: (m.body as { isViewable: boolean }).isViewable,
+		}));
+		for (const { body } of previous) body.isViewable = false;
+		if (previous.length > 0) this.#syncCache();
+		return {
+			revert: () => {
+				for (const { body, wasViewable } of previous)
+					body.isViewable = wasViewable;
+				if (previous.length > 0) this.#syncCache();
+			},
+		};
+	}
 }
 
 function removeDuplicateMessages(

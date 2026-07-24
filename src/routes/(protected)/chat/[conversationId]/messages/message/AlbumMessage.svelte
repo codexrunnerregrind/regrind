@@ -7,6 +7,7 @@
 		VideoIcon,
 	} from "phosphor-svelte";
 	import type PhotoSwipeLightbox from "photoswipe/lightbox";
+	import { toast } from "svelte-sonner";
 
 	import { showErrorToast } from "$lib/api/error";
 	import { type AlbumContentResponse, getAlbumContent } from "$lib/api/messaging/albums";
@@ -156,6 +157,13 @@
 	$effect(() => {
 		if (albumState.status !== "open") return;
 		const { album } = albumState;
+		// Locked/expired albums come back with no viewable content. Rather than
+		// opening an empty lightbox, surface a clear message like the album grids.
+		if (album.content.length === 0) {
+			toast.info("This album is locked or has expired.");
+			albumState = { status: "idle" };
+			return;
+		}
 		let lightbox: PhotoSwipeLightbox | undefined;
 		let canceled = false;
 		import("photoswipe/lightbox")
