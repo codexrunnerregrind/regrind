@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { SlidersHorizontalIcon } from "phosphor-svelte";
+	import { SlidersHorizontalIcon, StarIcon } from "phosphor-svelte";
 
 	import { defaultFilters } from "$lib/components/filters/filters";
 	import { Button, buttonVariants } from "$lib/components/ui/button";
@@ -21,11 +21,22 @@
 	const TOGGLE_FILTER_KEYS = ["isOnline", "isRightNow", "isFresh"] as const;
 
 	const filters = $derived(gridState.filters.value ?? defaultFilters);
-	const { ageEnabled, positionEnabled } = $derived(filters);
+	const { ageEnabled, positionEnabled, isFavorite } = $derived(filters);
 </script>
 
 <Button variant="secondary" onclick={() => (openFilters.all = true)}>
 	<SlidersHorizontalIcon />
+</Button>
+<Button
+	variant="secondary"
+	aria-label="Favorites"
+	aria-pressed={isFavorite}
+	onclick={() => gridState.filters.set({ isFavorite: !isFavorite })}
+	class={{
+		"bg-white hover:bg-neutral-200 text-popover": isFavorite,
+	}}
+>
+	<StarIcon weight={isFavorite ? "fill" : "regular"} />
 </Button>
 <Button
 	variant="secondary"
