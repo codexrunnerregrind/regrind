@@ -4,8 +4,10 @@
 		ArrowLeftIcon,
 		CaretLeftIcon,
 		CaretRightIcon,
+		ImageIcon,
 		PencilSimpleIcon,
 		TrashIcon,
+		UsersIcon,
 	} from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
@@ -18,8 +20,10 @@
 		renameAlbum,
 		reorderAlbumContent,
 	} from "$lib/api/messaging/albums";
+	import { loadAlbum, openAlbumLightbox } from "$lib/chat/album-viewer";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
+	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
 	import * as AlertDialog from "$lib/components/ui/alert-dialog";
 	import { Button } from "$lib/components/ui/button";
 	import * as Dialog from "$lib/components/ui/dialog";
@@ -29,6 +33,7 @@
 		ALBUM_NAME_MAX_BYTES,
 		albumNameByteLength,
 	} from "$lib/model/messaging/albums";
+	import { hapticImpact } from "$lib/platform/haptics";
 	import AlbumShares from "./AlbumShares.svelte";
 
 	let { data }: import("./$types").PageProps = $props();
@@ -38,9 +43,16 @@
 	let album = $state<AlbumContentResponse | null>(null);
 	let error = $state<unknown>(null);
 	let busy = $state(false);
+	let opening = $state(false);
 
 	const isMine = $derived(
 		album !== null && album.profileId === data.ourProfileId,
+	);
+	const cover = $derived(
+		album?.content[0]?.coverUrl ?? album?.content[0]?.thumbUrl ?? null,
+	);
+	const updatedMs = $derived(
+		album === null ? null : new Date(album.updatedAt).getTime(),
 	);
 
 	let renameOpen = $state(false);
@@ -69,6 +81,11 @@
 	$effect(() => {
 		void load(albumId);
 	});
+
+	function openRename() {
+		renameValue = album?.albumName ?? "";
+		renameOpen = true;
+	}
 
 	async function submitRename() {
 		if (album === null || renameTooLong || busy) return;
@@ -99,6 +116,21 @@
 			showErrorToast({ label: "Failed to delete album", error: err });
 		} finally {
 			busy = false;
+		}
+	}
+
+	async function view(index: number) {
+		if (opening) return;
+		opening = true;
+		hapticImpact("light");
+		try {
+			const loaded = await loadAlbum(albumId);
+			await openAlbumLightbox(loaded, { startIndex: index });
+		} catch (err) {
+			console.error(err);
+			showErrorToast({ label: "Failed to open album", error: err });
+		} finally {
+			opening = false;
 		}
 	}
 
@@ -145,6 +177,12 @@
 			busy = false;
 		}
 	}
+
+	function scrollToShares() {
+		document
+			.getElementById("album-shares")
+			?.scrollIntoView({ behavior: "smooth", block: "start" });
+	}
 </script>
 
 <ProgressiveBlur
@@ -162,39 +200,16 @@
 	>
 		<ArrowLeftIcon size={32} />
 	</button>
-	<span class="min-w-0 flex-1 truncate">
-		{album?.albumName ?? "Album"}
+	<span class="min-w-0 flex-1 truncate text-lg font-medium">
+		{isMine ? "Edit Album" : (album?.albumName ?? "Album")}
 	</span>
-	{#if isMine}
-		<div class="flex shrink-0 items-center gap-1">
-			<Button
-				variant="ghost"
-				size="icon"
-				aria-label="Rename album"
-				onclick={() => {
-					renameValue = album?.albumName ?? "";
-					renameOpen = true;
-				}}
-			>
-				<PencilSimpleIcon class="size-5" />
-			</Button>
-			<Button
-				variant="ghost"
-				size="icon"
-				aria-label="Delete album"
-				onclick={() => (deleteAlbumOpen = true)}
-			>
-				<TrashIcon class="size-5" />
-			</Button>
-		</div>
-	{/if}
 </ProgressiveBlur>
 
 <main class="screen-nav-host">
 	<div class="h-full w-full overflow-y-auto overscroll-none">
 		<div class="flex w-full px-4 pt-19 pb-nav-clear">
 			<div
-				class="@container/photo-grid m-auto flex w-full max-w-200 flex-col gap-3 pb-16"
+				class="@container/photo-grid m-auto flex w-full max-w-200 flex-col gap-5 pb-16"
 			>
 				{#if error !== null}
 					<ApiErrorDisplay
@@ -203,65 +218,173 @@
 						class="m-auto mt-8"
 					/>
 				{:else if album === null}
+					<div class="flex gap-4">
+						<Skeleton class="aspect-3/4 w-28 shrink-0 rounded-xl" />
+						<div class="flex flex-1 flex-col gap-2 pt-1">
+							<Skeleton class="h-5 w-32 rounded-md" />
+							<Skeleton class="h-4 w-40 rounded-md" />
+							<Skeleton class="h-9 w-36 rounded-full" />
+						</div>
+					</div>
 					<div class="photo-grid">
 						{#each Array(6)}
-							<Skeleton class="aspect-square rounded-none" />
+							<Skeleton class="aspect-square rounded-lg" />
 						{/each}
 					</div>
 				{:else}
-					<div class="photo-grid">
-						{#each album.content as item, index (item.contentId)}
-							<div class="relative aspect-square">
+					<!-- Album summary -->
+					<div class="flex gap-4">
+						<div
+							class="relative aspect-3/4 w-28 shrink-0 overflow-hidden rounded-xl bg-card-foreground/10"
+						>
+							{#if cover}
 								<img
-									src={item.thumbUrl}
+									src={cover}
 									alt=""
-									class="size-full bg-card-foreground/10 object-cover"
+									class="size-full object-cover"
 									draggable="false"
 								/>
+							{:else}
+								<div
+									class="flex size-full items-center justify-center text-muted-foreground"
+								>
+									<ImageIcon weight="fill" class="size-8" />
+								</div>
+							{/if}
+						</div>
+						<div class="flex min-w-0 flex-1 flex-col gap-1">
+							<span
+								class="text-xs tracking-wide text-muted-foreground uppercase"
+							>
+								Album name
+							</span>
+							<div class="flex items-center gap-2">
+								<span class="truncate text-xl font-semibold">
+									{album.albumName ?? "Untitled album"}
+								</span>
 								{#if isMine}
-									<div class="absolute inset-x-0 top-0 flex justify-end p-1">
-										<Button
-											variant="secondary"
-											size="icon"
-											class="size-7 bg-black/60 text-white hover:bg-black/80"
-											aria-label="Delete media"
-											disabled={busy}
-											onclick={() => void removeContent(item.contentId)}
-										>
-											<TrashIcon class="size-4" />
-										</Button>
-									</div>
-									<div
-										class="absolute inset-x-0 bottom-0 flex justify-between p-1"
+									<button
+										type="button"
+										class="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+										aria-label="Rename album"
+										onclick={openRename}
 									>
-										<Button
-											variant="secondary"
-											size="icon"
-											class="size-7 bg-black/60 text-white hover:bg-black/80"
-											aria-label="Move earlier"
-											disabled={busy || index === 0}
-											onclick={() => void moveContent(index, -1)}
-										>
-											<CaretLeftIcon class="size-4" />
-										</Button>
-										<Button
-											variant="secondary"
-											size="icon"
-											class="size-7 bg-black/60 text-white hover:bg-black/80"
-											aria-label="Move later"
-											disabled={busy || index === album.content.length - 1}
-											onclick={() => void moveContent(index, 1)}
-										>
-											<CaretRightIcon class="size-4" />
-										</Button>
-									</div>
+										<PencilSimpleIcon class="size-5" />
+									</button>
 								{/if}
 							</div>
-						{/each}
+							{#if isMine}
+								<span class="text-xs text-muted-foreground">
+									Only you see the album name
+								</span>
+							{/if}
+							<span class="mt-1 text-sm text-muted-foreground">
+								{album.content.length}
+								{album.content.length === 1 ? "item" : "items"}
+								{#if updatedMs !== null}
+									&middot; updated <RelativeTimeDynamic date={updatedMs} />
+								{/if}
+							</span>
+							{#if isMine}
+								<Button
+									variant="secondary"
+									size="sm"
+									class="mt-2 w-fit gap-2 rounded-full"
+									onclick={scrollToShares}
+								>
+									<UsersIcon weight="fill" class="size-4" />
+									Shared with ({album.sharedCount})
+								</Button>
+							{/if}
+						</div>
 					</div>
-				{/if}
-				{#if isMine && album !== null}
-					<AlbumShares {albumId} />
+
+					<!-- Content grid -->
+					<div class="flex flex-col gap-2">
+						{#if album.content.length > 0}
+							<div class="photo-grid">
+								{#each album.content as item, index (item.contentId)}
+									<div class="relative aspect-square">
+										<button
+											type="button"
+											class="size-full overflow-hidden rounded-lg"
+											aria-label="View media"
+											disabled={opening}
+											onclick={() => void view(index)}
+										>
+											<img
+												src={item.thumbUrl}
+												alt=""
+												class="size-full bg-card-foreground/10 object-cover"
+												draggable="false"
+											/>
+										</button>
+										{#if isMine}
+											<button
+												type="button"
+												class="absolute top-1.5 right-1.5 flex size-7 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80 disabled:opacity-50"
+												aria-label="Delete media"
+												disabled={busy}
+												onclick={() => void removeContent(item.contentId)}
+											>
+												<TrashIcon class="size-4" />
+											</button>
+											<div
+												class="absolute inset-x-1.5 bottom-1.5 flex justify-between"
+											>
+												<button
+													type="button"
+													class="flex size-7 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80 disabled:opacity-30"
+													aria-label="Move earlier"
+													disabled={busy || index === 0}
+													onclick={() => void moveContent(index, -1)}
+												>
+													<CaretLeftIcon class="size-4" />
+												</button>
+												<button
+													type="button"
+													class="flex size-7 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80 disabled:opacity-30"
+													aria-label="Move later"
+													disabled={busy || index === album.content.length - 1}
+													onclick={() => void moveContent(index, 1)}
+												>
+													<CaretRightIcon class="size-4" />
+												</button>
+											</div>
+										{/if}
+									</div>
+								{/each}
+							</div>
+							<span class="text-center text-xs text-muted-foreground">
+								{#if isMine}
+									Tap to view &middot; use the arrows to reorder
+								{:else}
+									Tap to view
+								{/if}
+							</span>
+						{:else}
+							<div
+								class="rounded-xl border border-dashed border-border py-10 text-center text-sm text-muted-foreground"
+							>
+								This album has no media yet.
+							</div>
+						{/if}
+					</div>
+
+					{#if isMine}
+						<div id="album-shares" class="scroll-mt-20">
+							<AlbumShares {albumId} />
+						</div>
+
+						<Button
+							variant="ghost"
+							class="mt-2 w-full text-destructive hover:text-destructive"
+							onclick={() => (deleteAlbumOpen = true)}
+						>
+							<TrashIcon class="size-5" />
+							Delete album
+						</Button>
+					{/if}
 				{/if}
 			</div>
 		</div>
@@ -276,9 +399,7 @@
 		<Input bind:value={renameValue} placeholder="Album name" />
 		{#if renameTooLong}
 			<p class="text-sm text-destructive">
-				Name is too long ({albumNameByteLength(
-					renameValue,
-				)}/{ALBUM_NAME_MAX_BYTES}
+				Name is too long ({albumNameByteLength(renameValue)}/{ALBUM_NAME_MAX_BYTES}
 				bytes).
 			</p>
 		{/if}
