@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ClockCountdownIcon from "phosphor-svelte/lib/ClockCountdownIcon";
 	import FolderOpenIcon from "phosphor-svelte/lib/FolderOpenIcon";
 	import ImageIcon from "phosphor-svelte/lib/ImageIcon";
 	import NavigationArrowIcon from "phosphor-svelte/lib/NavigationArrowIcon";
@@ -33,13 +34,23 @@
 	let mediaTab = $state<ComposerMediaTab | null>(null);
 	let mediaCount = $state(0);
 
+	// Off by default; when on, selected photos are sent as expiring (view-once)
+	// images. Only the media tab offers this — albums have their own expiry.
+	let expiring = $state(false);
+
 	// The floating Send button belongs to the media tab; albums are shared or
 	// unshared directly by tapping a tile, so they never contribute a count.
 	const selectedCount = $derived(selectedTab === "media" ? mediaCount : 0);
 
 	function sendSelected() {
-		if (selectedTab === "media") mediaTab?.sendSelected();
+		if (selectedTab === "media") mediaTab?.sendSelected(expiring);
 	}
+
+	// Reset the timer whenever the sheet closes so it never carries over to the
+	// next photo the user picks.
+	$effect(() => {
+		if (!open) expiring = false;
+	});
 
 	const settleQuietMs = 140;
 	let settleTimer: ReturnType<typeof setTimeout> | null = null;
@@ -151,16 +162,31 @@
 
 			{#if selectedCount > 0}
 				<div
-					class="pointer-events-none absolute inset-x-0 bottom-18 flex justify-center"
+					class="pointer-events-none absolute inset-x-0 bottom-18 flex justify-center gap-2 px-4"
 					in:fly={{ duration: 600, y: 100, easing: expoOut }}
 					out:fly={{ duration: 400, y: 100, easing: sineIn }}
 				>
+					<button
+						type="button"
+						class={[
+							"pointer-events-auto flex h-11 items-center gap-1.5 rounded-full px-4 font-medium shadow-lg transition-colors",
+							expiring
+								? "bg-foreground text-background"
+								: "bg-popover text-foreground",
+						]}
+						aria-pressed={expiring}
+						aria-label="Toggle expiring photo"
+						onclick={() => (expiring = !expiring)}
+					>
+						<ClockCountdownIcon weight="bold" class="size-5" />
+						{expiring ? "10s" : "Off"}
+					</button>
 					<Button
 						size="lg"
 						class="pointer-events-auto shadow-lg"
 						onclick={sendSelected}
 					>
-						Send
+						{expiring ? "Send Expiring" : "Send"}
 						<Badge
 							variant="secondary"
 							class="bg-primary-foreground/10 text-primary-foreground"

@@ -366,9 +366,10 @@ export function demoConversationMessages(
 
 export function demoSingleMessage(conversationId: string, messageId: string) {
 	const conv = demoConversationById.get(conversationId);
-	const message = conv
-		? threadMessages(conv).find((entry) => entry.messageId === messageId)
-		: undefined;
+	const message =
+		(conv
+			? threadMessages(conv).find((entry) => entry.messageId === messageId)
+			: undefined) ?? demoSentMessages.get(messageId);
 	return { message: message ?? null };
 }
 
@@ -481,6 +482,10 @@ export function demoSharedAlbumsFeed() {
 
 let demoSentCounter = 0;
 
+// Echoed-back sent messages, so a just-sent expiring image can still be
+// re-fetched by messageId when its bubble is tapped (getSingleMessage).
+const demoSentMessages = new Map<string, ApiResponseMessage>();
+
 export function demoSentMessage(body: unknown): ApiResponseMessage {
 	const sent = body as {
 		type?: string;
@@ -497,22 +502,44 @@ export function demoSentMessage(body: unknown): ApiResponseMessage {
 		unsent: false,
 		reactions: [],
 	};
-	if (sent.type === "Image" && sent.body && typeof sent.body === "object") {
+	const remember = (message: ApiResponseMessage): ApiResponseMessage => {
+		demoSentMessages.set(message.messageId, message);
+		return message;
+	};
+	if (
+		(sent.type === "Image" || sent.type === "ExpiringImage") &&
+		sent.body &&
+		typeof sent.body === "object"
+	) {
 		const { mediaId } = sent.body as { mediaId: number };
 		const item = demoDrawerMedia().find((media) => media.id === mediaId);
-		return {
+		const url = item?.url ?? DEMO_IMAGE_URL;
+		if (sent.type === "ExpiringImage") {
+			return remember({
+				type: "ExpiringImage",
+				body: {
+					mediaId,
+					width: null,
+					height: null,
+					url,
+					viewsRemaining: 1,
+				},
+				...overlay,
+			});
+		}
+		return remember({
 			type: "Image",
 			body: {
 				mediaId,
 				width: null,
 				height: null,
-				url: item?.url ?? DEMO_IMAGE_URL,
+				url,
 				imageHash: hashFromSeed(`drawer-${mediaId}`),
 				takenOnGrindr: item?.takenOnGrindr ?? false,
 				createdAt: item?.createdTs ?? timestamp,
 			},
 			...overlay,
-		};
+		});
 	}
 	return {
 		type: "Text",

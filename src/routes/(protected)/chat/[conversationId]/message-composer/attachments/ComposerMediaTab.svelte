@@ -77,7 +77,7 @@
 		return /([0-9a-f]{64}|[0-9a-f]{40})/i.exec(url)?.[1] ?? "";
 	}
 
-	export function sendSelected() {
+	export function sendSelected(expiring = false) {
 		if (media === null) return;
 		const items = media.filter((item) => selected.has(item.id));
 		selected.clear();
@@ -85,18 +85,31 @@
 		onClose();
 		for (const item of items) {
 			item.used = true;
-			void composer().sendMessage({
-				type: "Image",
-				body: {
-					mediaId: item.id,
-					width: null,
-					height: null,
-					url: item.url,
-					imageHash: imageHashFromUrl(item.url),
-					takenOnGrindr: item.takenOnGrindr,
-					createdAt: item.createdTs,
-				},
-			});
+			if (expiring) {
+				void composer().sendMessage({
+					type: "ExpiringImage",
+					body: {
+						mediaId: item.id,
+						width: null,
+						height: null,
+						url: item.url,
+						viewsRemaining: 1,
+					},
+				});
+			} else {
+				void composer().sendMessage({
+					type: "Image",
+					body: {
+						mediaId: item.id,
+						width: null,
+						height: null,
+						url: item.url,
+						imageHash: imageHashFromUrl(item.url),
+						takenOnGrindr: item.takenOnGrindr,
+						createdAt: item.createdTs,
+					},
+				});
+			}
 		}
 	}
 </script>
