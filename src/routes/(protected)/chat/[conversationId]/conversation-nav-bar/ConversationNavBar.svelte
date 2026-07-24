@@ -5,6 +5,7 @@
 	import { Skeleton } from "$lib/components/ui/skeleton";
 	import { getConversationState } from "../conversation-state.svelte";
 	import ConversationNavBarProfile from "./ConversationNavBarProfile.svelte";
+	import ConversationSharedAlbums from "./ConversationSharedAlbums.svelte";
 
 	const conversationState = $derived(getConversationState()());
 </script>
@@ -31,5 +32,9 @@
 		<span class="flex-1">Failed to load conversation</span>
 	{:else}
 		<ConversationNavBarProfile profile={conversationState.profile} />
+		<ConversationSharedAlbums
+			profileId={conversationState.profile.profileId}
+			name={conversationState.profile.name}
+		/>
 	{/if}
 </ProgressiveBlur>
