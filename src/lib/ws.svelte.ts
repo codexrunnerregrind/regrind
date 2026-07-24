@@ -81,8 +81,15 @@ export type ChatV1ConversationReadEventPayload = z.infer<
 
 export type WsStatus = "disconnected" | "connecting" | "connected" | "error";
 
+// A hidden window shorter than this (opening the OS share sheet, a permission
+// prompt, a quick app switch) leaves the socket healthy, so we skip the liveness
+// poke on resume. Longer means the OS likely suspended us and the connection may
+// have died silently.
+const RESUME_POKE_THRESHOLD_MS = 3000;
+
 class WsState {
 	status = $state<WsStatus>("disconnected");
+	#hiddenSince: number | undefined;
 
 	constructor() {
 		listen<void>("ws:connected", () => {
@@ -97,12 +104,69 @@ class WsState {
 		listen<string>("ws:ws_error", (event) => {
 			console.error("[ws] server error", event.payload);
 		}).catch(console.error);
+
+		this.#registerLifecycle();
 	}
 
 	connect(): void {
 		console.log("[ws] connecting...");
+		if (this.status === "disconnected") this.status = "connecting";
 		invoke("ws_connect").catch((e: unknown) => {
 			console.error("[ws] connect failed", e);
+		});
+	}
+
+	// When iOS/Android suspends the app in the background, the realtime socket is
+	// often dropped by the carrier/NAT/server without a FIN reaching our frozen
+	// process. On resume, the Rust side is still `await`ing a read that will never
+	// complete: the app looks connected but receives nothing, and the only cure
+	// used to be force-quitting. The backend auto-reconnects when the socket
+	// *errors*, but never notices a silently half-open one on its own.
+	//
+	// We can't tell the backend to drop the socket from here, but sending any
+	// command makes its send loop attempt a write. On a dead socket that write
+	// fails, which is exactly the error the reconnect logic waits for; on a
+	// healthy socket it's a cheap no-op the server ignores. So on real resume we
+	// (idempotently) ensure the task is up and poke the socket to prove it.
+	#registerLifecycle(): void {
+		if (typeof document === "undefined") return;
+
+		const onVisibilityChange = () => {
+			if (document.visibilityState === "visible") {
+				const hiddenMs =
+					this.#hiddenSince === undefined
+						? Number.POSITIVE_INFINITY
+						: Date.now() - this.#hiddenSince;
+				this.#hiddenSince = undefined;
+				this.resume(hiddenMs >= RESUME_POKE_THRESHOLD_MS);
+			} else {
+				this.#hiddenSince = Date.now();
+			}
+		};
+
+		document.addEventListener("visibilitychange", onVisibilityChange);
+		// Regaining network (e.g. Wi-Fi/cellular handoff) can also strand a stale
+		// socket; force a liveness check when it comes back.
+		window.addEventListener("online", () => this.resume(true));
+	}
+
+	// Bring the realtime socket back after the app was backgrounded. `poke`
+	// forces a liveness write (see #registerLifecycle); pass false for brief
+	// hides where the socket is still healthy.
+	resume(poke = true): void {
+		this.connect();
+		if (poke) this.#poke();
+	}
+
+	// Liveness write. We don't care about the response — the point is that the
+	// backend's send loop attempts a socket write, which fails fast on a dead
+	// connection and triggers its reconnect.
+	#poke(): void {
+		invoke("ws_send", {
+			command: { type: "keepalive", ref_id: crypto.randomUUID(), payload: {} },
+		}).catch(() => {
+			// The command channel only errors if the client is gone; connect()
+			// above will have re-armed the task, so there's nothing to do here.
 		});
 	}
 
