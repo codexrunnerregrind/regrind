@@ -105,3 +105,53 @@ export const albumSharesSchema = z.object({
 	// Tolerated as absent: the spec marks nothing on this body as required.
 	profileIds: z.array(z.int()).nullish(),
 });
+
+// --- "Albums shared with me" feed (POST /v3/pressie-albums/feed) ---
+// This is a separate contract from {@link sharedAlbumSchema} above (which is the
+// per-profile shares list). The pressie feed powers the inbox Albums tab's
+// "shared with me" grid, so its types are namespaced `Pressie*` to avoid
+// colliding with the per-profile album types.
+
+export const pressieProfileMiniSchema = z.object({
+	profileId: z.int(),
+	name: z.string().nullable().optional(),
+	profileUrl: z.string().nullable().optional(),
+	onlineUntil: unixTimestampMsSchema.nullable().optional(),
+	distanceKm: z.number().nullable().optional(),
+});
+
+export type PressieProfileMini = z.infer<typeof pressieProfileMiniSchema>;
+
+// One album another profile has shared with us, as returned by the
+// POST /v3/pressie-albums/feed "albums shared with me" endpoint. Kept lenient:
+// the backend marks most fields optional/nullable once an album expires or is
+// locked, and we only rely on the handful we render.
+export const pressieSharedAlbumSchema = z.object({
+	albumId: z.int(),
+	hasUnseenContent: z.boolean().optional().default(false),
+	albumViewable: z.boolean().optional().default(true),
+	name: z.string().nullable().optional(),
+	ownerProfileId: z.int().optional(),
+	imageCount: z.int().optional(),
+	videoCount: z.int().optional(),
+	coverContent: z
+		.object({
+			id: z.int().optional(),
+			contentType: z.string().optional(),
+			// The signed CDN URL of the (blurred) cover preview. The backend calls
+			// this field `location`; older payloads used `coverContent`.
+			location: z.string().nullable().optional(),
+			coverContent: z.string().nullable().optional(),
+			status: z.string().optional(),
+		})
+		.nullable()
+		.optional(),
+	profile: pressieProfileMiniSchema.nullable().optional(),
+});
+
+export type PressieSharedAlbum = z.infer<typeof pressieSharedAlbumSchema>;
+
+export const pressieAlbumsFeedResponseSchema = z.object({
+	sharedAlbums: z.array(pressieSharedAlbumSchema),
+	nonEmptyPersonalAlbumCount: z.number().optional(),
+});

@@ -8,6 +8,7 @@ import {
 	albumMinSchema,
 	albumSharesSchema,
 	myAlbumSchema,
+	pressieAlbumsFeedResponseSchema,
 	sharedAlbumSchema,
 } from "$lib/model/messaging/albums";
 
@@ -178,4 +179,15 @@ export async function shareAlbum({
 			profiles: profileIds.map((profileId) => ({ profileId, expirationType })),
 		},
 	}).then((res) => res.assertOk());
+}
+
+/**
+ * The "albums shared with me" feed powering the inbox Albums tab. Distinct from
+ * {@link getAlbumsSharedByProfile}, which lists a single profile's shares.
+ */
+export async function getSharedAlbumsFeed() {
+	return await fetchRest("/v3/pressie-albums/feed", {
+		method: "POST",
+		body: {},
+	}).then((res) => res.jsonParsed(pressieAlbumsFeedResponseSchema));
 }

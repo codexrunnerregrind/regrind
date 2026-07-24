@@ -1,11 +1,19 @@
 <script lang="ts">
-	import MyAlbumsGrid from "$lib/components/albums/MyAlbumsGrid.svelte";
+	import { goto } from "$app/navigation";
+
+	import SharedAlbumsGrid from "$lib/components/albums/SharedAlbumsGrid.svelte";
+	import { hapticSelection } from "$lib/platform/haptics";
 
 	let {
 		class: className,
 	}: {
 		class?: import("svelte/elements").ClassValue;
 	} = $props();
+
+	function openMyAlbums() {
+		hapticSelection();
+		void goto("/albums");
+	}
 </script>
 
 <div
@@ -14,5 +22,5 @@
 		className,
 	]}
 >
-	<MyAlbumsGrid />
+	<SharedAlbumsGrid onOpenMyAlbums={openMyAlbums} />
 </div>
