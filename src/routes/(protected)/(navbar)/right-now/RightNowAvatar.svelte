@@ -28,7 +28,7 @@
 			class="size-16 overflow-hidden rounded-full bg-neutral-700 *:rounded-full"
 		/>
 		{#if online}
-			<Avatar.Badge class="bg-green-500"></Avatar.Badge>
+			<Avatar.Badge class="right-1 bottom-1 bg-green-500"></Avatar.Badge>
 			<span class="sr-only">Online</span>
 		{/if}
 		<span class="sr-only">View profile</span>

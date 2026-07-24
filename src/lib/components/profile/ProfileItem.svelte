@@ -93,7 +93,7 @@
 		</a>
 		<a
 			href={link}
-			class="content gap-0.5 border-b border-border/60 py-3 pe-4 @max-row:hidden!"
+			class="content relative gap-0.5 py-3 pe-4 @max-row:hidden! after:pointer-events-none after:absolute after:right-4 after:bottom-0 after:left-0 after:border-b after:border-border/60"
 			tabindex={linkTabindex}
 		>
 			{@render contentNode()}
@@ -108,7 +108,7 @@
 	{:else}
 		<a
 			href={link}
-			class="content gap-3 overflow-clip border-b border-border/60 py-3 ps-4 pe-4"
+			class="content relative gap-3 overflow-clip py-3 ps-4 pe-4 after:pointer-events-none after:absolute after:right-4 after:bottom-0 after:left-[92px] after:border-b after:border-border/60"
 			tabindex={linkTabindex}
 		>
 			{@render avatarNode()}
