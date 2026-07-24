@@ -6,12 +6,13 @@
 	import { getConversations } from "$lib/chat/conversations-context.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
+	import PillTabs from "$lib/components/shared/PillTabs.svelte";
 	import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
-	import * as Tabs from "$lib/components/ui/tabs";
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 	import { hapticImpact, hapticSelection } from "$lib/platform/haptics";
 	import { below } from "$lib/util/breakpoints.svelte";
 	import { SelectionSet } from "$lib/util/selection.svelte";
+	import { swipeTabs } from "$lib/util/swipe-tabs";
 	import type { ConversationsState } from "$lib/chat/conversations-state.svelte";
 	import AlbumsTab from "./AlbumsTab.svelte";
 	import Conversation from "./Conversation.svelte";
@@ -53,7 +54,23 @@
 		class?: import("svelte/elements").ClassValue;
 	} = $props();
 
+	const tabs = [
+		{ value: "inbox", label: "Inbox" },
+		{ value: "albums", label: "Albums" },
+	];
 	let activeTab = $state("inbox");
+
+	function selectTab(value: string) {
+		if (value === activeTab) return;
+		hapticSelection();
+		activeTab = value;
+	}
+
+	function cycleTab(delta: number) {
+		const index = tabs.findIndex((tab) => tab.value === activeTab);
+		const next = tabs[index + delta];
+		if (next) selectTab(next.value);
+	}
 
 	const selection = new SelectionSet<string>();
 	let selecting = $state(false);
@@ -203,19 +220,20 @@
 	onConfirm={() => void confirmDelete()}
 />
 
-<div class="relative flex h-full w-full min-w-list-rail flex-col">
-	<Tabs.Root
-		bind:value={activeTab}
-		onValueChange={(value) => {
-			if (value !== activeTab) hapticSelection();
-		}}
-		class="shrink-0 items-center px-3 pt-1 pb-2"
-	>
-		<Tabs.List>
-			<Tabs.Trigger value="inbox">Inbox</Tabs.Trigger>
-			<Tabs.Trigger value="albums">Albums</Tabs.Trigger>
-		</Tabs.List>
-	</Tabs.Root>
+<div
+	class="relative flex h-full w-full min-w-list-rail flex-col"
+	use:swipeTabs={{
+		enabled: mobile.current,
+		onNext: () => cycleTab(1),
+		onPrev: () => cycleTab(-1),
+	}}
+>
+	<PillTabs
+		{tabs}
+		value={activeTab}
+		onSelect={selectTab}
+		class="shrink-0 px-4 pt-4 pb-2"
+	/>
 	{#if activeTab === "albums"}
 		<AlbumsTab class={className} />
 	{:else}

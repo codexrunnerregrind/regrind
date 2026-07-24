@@ -1,38 +1,54 @@
 <script lang="ts">
+	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 
+	import PillTabs from "$lib/components/shared/PillTabs.svelte";
 	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
-	import { Button } from "$lib/components/ui/button";
-	import { toggleVariants } from "$lib/components/ui/toggle";
+	import { hapticSelection } from "$lib/platform/haptics";
+	import { swipeTabs } from "$lib/util/swipe-tabs";
 
 	let { children }: { children?: import("svelte").Snippet } = $props();
+
+	const tabs = [
+		{ value: "/interest/views", label: "Views", href: "/interest/views" },
+		{ value: "/interest/taps", label: "Taps", href: "/interest/taps" },
+	];
+
+	const activeIndex = $derived(
+		Math.max(
+			0,
+			tabs.findIndex((tab) => tab.value === page.url.pathname),
+		),
+	);
+
+	function select(value: string) {
+		if (value === page.url.pathname) return;
+		hapticSelection();
+		void goto(value);
+	}
+
+	function selectIndex(index: number) {
+		const tab = tabs[index];
+		if (tab) select(tab.value);
+	}
 </script>
 
-{#snippet tab(href: string, label: string)}
-	{@const active = page.url.pathname === href}
-	<Button
-		{href}
-		class={[
-			toggleVariants({ variant: "default" }),
-			"text-muted-foreground",
-			{
-				"hover:bg-muted-foreground/10": !active,
-				"bg-muted-foreground/15 hover:bg-muted-foreground/20": active,
-			},
-		]}
-	>
-		{label}
-	</Button>
-{/snippet}
 <ProgressiveBlur
 	direction="topToBottom"
 	tag="nav"
 	data-fixed-header
 	class="fixed top-0 left-0 z-10 w-full px-4 pt-fixed-header pb-2"
 	bgClass="bg-linear-to-b from-background to-transparent"
-	contentClass="flex items-center w-full *:flex-1 max-w-120 mx-auto"
+	contentClass="w-full"
 >
-	{@render tab("/interest/views", "Views")}
-	{@render tab("/interest/taps", "Taps")}
+	<PillTabs {tabs} value={tabs[activeIndex].value} onSelect={select} />
 </ProgressiveBlur>
-{@render children?.()}
+<div
+	class="contents"
+	use:swipeTabs={{
+		onNext: () => selectIndex(activeIndex + 1),
+		onPrev: () => selectIndex(activeIndex - 1),
+	}}
+>
+	{@render children?.()}
+</div>
