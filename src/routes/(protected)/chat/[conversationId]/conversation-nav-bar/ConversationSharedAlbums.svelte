@@ -120,7 +120,14 @@
 							locked={!album.albumViewable}
 							loading={opener.openingId === album.albumId}
 							disabled={opener.openingId !== null}
-							onclick={() => void opener.open(album.albumId)}
+							onclick={async () => {
+								// Close the sheet once the viewer is open: as a modal it puts
+								// `pointer-events: none` on the body, which the toolbar buttons
+								// override but the swipe surface inherits — blocking swiping
+								// between the album's photos.
+								await opener.open(album.albumId);
+								open = false;
+							}}
 						/>
 					{/each}
 				</div>

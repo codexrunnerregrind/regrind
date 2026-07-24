@@ -3,10 +3,12 @@ import { toast } from "svelte-sonner";
 
 import { saveMediaToDevice } from "$lib/platform/save-media";
 
-// A download-to-tray glyph, styled to match PhotoSwipe's built-in buttons.
+// A download-to-tray glyph. Explicit white fill (CSS var() isn't resolved inside
+// SVG presentation attributes) so it matches the built-in close/zoom buttons
+// instead of inheriting the dark `currentColor` PhotoSwipe puts on `.pswp__icn`.
 const DOWNLOAD_ICON = `
 <svg class="pswp__icn" viewBox="0 0 32 32" width="32" height="32" aria-hidden="true">
-	<path fill="currentColor" d="M16 4a1 1 0 0 1 1 1v11.59l3.3-3.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 0 1 1.4-1.42l3.3 3.3V5a1 1 0 0 1 1-1Zm-9 17a1 1 0 0 1 1 1v3h16v-3a1 1 0 1 1 2 0v4a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1Z"/>
+	<path fill="#fff" d="M16 4a1 1 0 0 1 1 1v11.59l3.3-3.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 0 1 1.4-1.42l3.3 3.3V5a1 1 0 0 1 1-1Zm-9 17a1 1 0 0 1 1 1v3h16v-3a1 1 0 1 1 2 0v4a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1Z"/>
 </svg>`;
 
 export type DownloadTarget = { url: string; mimeType?: string };

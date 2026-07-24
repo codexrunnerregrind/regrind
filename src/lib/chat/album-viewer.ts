@@ -2,6 +2,7 @@ import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
 import { type AlbumContentResponse, getAlbumContent } from "$lib/api/messaging/albums";
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+import { registerLightboxDownloadButton } from "./lightbox-download";
 
 // Thrown when an album has no viewable content — typically a locked or expired
 // shared album. Callers can catch this to show a friendlier message.
@@ -112,6 +113,10 @@ export async function openAlbumLightbox(
 	lightbox.addFilter("itemData", (_, index) => {
 		const { url, width, height } = album.content[index];
 		return { src: url, width, height };
+	});
+	registerLightboxDownloadButton(lightbox, (index) => {
+		const slide = album.content[index];
+		return slide ? { url: slide.url, mimeType: slide.contentType } : null;
 	});
 	const onBackGesture = () => {
 		lightbox.pswp?.close();

@@ -113,6 +113,13 @@ export async function saveMediaToDevice(
 		return true;
 	}
 
+	// iOS has no direct "save to Photos" API here, but WKWebView supports the
+	// Web Share sheet for files (triggered by the button tap), from which the
+	// user can pick "Save Image" / "Save Video".
+	if (platform() === "ios") {
+		return shareFile(media.bytes, media.mimeType, filename);
+	}
+
 	const path = await save({
 		defaultPath: filename,
 		filters: [
@@ -124,6 +131,30 @@ export async function saveMediaToDevice(
 	});
 	if (path === null) return false; // user cancelled
 	await writeFile(path, media.bytes);
+	return true;
+}
+
+// Presents the native share sheet with the file. Returns `false` if the user
+// dismisses it. Falls back to a browser download when Web Share is unavailable.
+async function shareFile(
+	bytes: Uint8Array,
+	mimeType: string,
+	filename: string,
+): Promise<boolean> {
+	const file = new File([new Uint8Array(bytes)], filename, { type: mimeType });
+	if (navigator.canShare?.({ files: [file] })) {
+		try {
+			await navigator.share({ files: [file] });
+			return true;
+		} catch (error) {
+			// The user dismissing the share sheet is a cancel, not a failure.
+			if (error instanceof DOMException && error.name === "AbortError") {
+				return false;
+			}
+			throw error;
+		}
+	}
+	saveViaBrowser(bytes, mimeType, filename);
 	return true;
 }
 

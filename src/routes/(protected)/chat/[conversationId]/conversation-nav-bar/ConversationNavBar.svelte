@@ -4,6 +4,7 @@
 	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
 	import { Skeleton } from "$lib/components/ui/skeleton";
 	import { getConversationState } from "../conversation-state.svelte";
+	import ConversationActionsMenu from "./ConversationActionsMenu.svelte";
 	import ConversationNavBarProfile from "./ConversationNavBarProfile.svelte";
 	import ConversationSharedAlbums from "./ConversationSharedAlbums.svelte";
 
@@ -36,5 +37,6 @@
 			profileId={conversationState.profile.profileId}
 			name={conversationState.profile.name}
 		/>
+		<ConversationActionsMenu profileId={conversationState.profile.profileId} />
 	{/if}
 </ProgressiveBlur>
