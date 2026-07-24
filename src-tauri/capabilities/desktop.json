@@ -12,6 +12,30 @@
 	],
 	"permissions": [
 		"opener:default",
-		"fs:default"
+		"fs:default",
+		"dialog:allow-save",
+		{
+			"identifier": "fs:allow-write-file",
+			"allow": [
+				{
+					"path": "$HOME/**"
+				},
+				{
+					"path": "$DOWNLOAD/**"
+				},
+				{
+					"path": "$PICTURE/**"
+				},
+				{
+					"path": "$VIDEO/**"
+				},
+				{
+					"path": "$DESKTOP/**"
+				},
+				{
+					"path": "$DOCUMENT/**"
+				}
+			]
+		}
 	]
 }

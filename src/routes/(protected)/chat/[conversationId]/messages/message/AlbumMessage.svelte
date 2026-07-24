@@ -11,6 +11,7 @@
 
 	import { showErrorToast } from "$lib/api/error";
 	import { type AlbumContentResponse, getAlbumContent } from "$lib/api/messaging/albums";
+	import { registerLightboxDownloadButton } from "$lib/chat/lightbox-download";
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 	import { getNow, subscribeNow } from "$lib/util/now.svelte";
 	import type { AlbumMessage } from "$lib/model/messaging/messages";
@@ -178,6 +179,10 @@
 				lightbox.addFilter("itemData", (_, index) => {
 					const { url, width, height } = album.content[index];
 					return { src: url, width, height };
+				});
+				registerLightboxDownloadButton(lightbox, (index) => {
+					const slide = album.content[index];
+					return slide ? { url: slide.url, mimeType: slide.contentType } : null;
 				});
 				const onBackGesture = () => {
 					lightbox?.pswp?.close();

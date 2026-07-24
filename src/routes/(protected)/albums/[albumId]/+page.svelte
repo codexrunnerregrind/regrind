@@ -207,7 +207,9 @@
 
 <main class="screen-nav-host">
 	<div class="h-full w-full overflow-y-auto overscroll-none">
-		<div class="flex w-full px-4 pt-19 pb-nav-clear">
+		<div
+			class="flex w-full px-4 pt-[calc(4.75rem+var(--safe-area-top))] pb-nav-clear"
+		>
 			<div
 				class="@container/photo-grid m-auto flex w-full max-w-200 flex-col gap-5 pb-16"
 			>

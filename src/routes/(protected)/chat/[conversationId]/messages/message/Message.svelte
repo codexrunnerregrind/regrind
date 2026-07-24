@@ -193,7 +193,7 @@
 		{#if message.type === "Text"}
 			<TextMessage message={message.body} replyTo={message.replyToMessage} />
 		{:else if message.type === "Image"}
-			<ImageMessage message={message.body} />
+			<ImageMessage message={message.body} messageId={message.messageId} />
 		{:else if message.type === "ExpiringImage"}
 			<ExpiringImageMessage
 				message={message.body}

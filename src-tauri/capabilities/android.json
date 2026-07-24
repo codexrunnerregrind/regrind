@@ -11,6 +11,12 @@
 	"permissions": [
 		"android-fs:allow-show-open-file-picker",
 		"android-fs:allow-read-file",
-		"android-fs:allow-get-mime-type"
+		"android-fs:allow-get-mime-type",
+		"android-fs:allow-create-new-public-image-file",
+		"android-fs:allow-create-new-public-video-file",
+		"android-fs:allow-write-file",
+		"android-fs:allow-scan-public-file",
+		"android-fs:allow-check-public-files-permission",
+		"android-fs:allow-request-public-files-permission"
 	]
 }
