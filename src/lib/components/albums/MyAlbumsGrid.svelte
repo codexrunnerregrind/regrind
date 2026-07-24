@@ -18,8 +18,7 @@
 		albums = null;
 		error = null;
 		try {
-			const { albums: fetched } = await getMyAlbums();
-			albums = fetched;
+			albums = await getMyAlbums();
 		} catch (err) {
 			console.error(err);
 			error = err;

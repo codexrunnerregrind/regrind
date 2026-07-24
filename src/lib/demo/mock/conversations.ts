@@ -20,6 +20,13 @@ type DemoMessage = { fromMe: boolean; reactions?: number } & (
 			unseen?: boolean;
 			coverUrl?: null;
 	  }
+	| {
+			kind: "albumContent";
+			albumId: number;
+			reply?: string;
+			locked?: boolean;
+			expired?: boolean;
+	  }
 	| { kind: "unsent" }
 );
 
@@ -50,6 +57,23 @@ const demoConversationSeeds: DemoConversation[] = [
 			},
 			{ fromMe: false, text: "Sed do eiusmod tempor incididunt?" },
 			{ fromMe: false, kind: "album", albumId: 5001, unseen: true },
+			{
+				fromMe: true,
+				kind: "albumContent",
+				albumId: 5001,
+				reply: "this one's great",
+			},
+			{ fromMe: false, kind: "albumContent", albumId: 5001 },
+			{
+				fromMe: false,
+				kind: "albumContent",
+				albumId: 5001,
+				reply: "can't see it anymore",
+				expired: true,
+			},
+			{ fromMe: false, kind: "albumContent", albumId: 5001, locked: true },
+			// Kept last so this conversation's preview stays an Album, which
+			// demo.test.ts asserts.
 			{
 				fromMe: false,
 				kind: "album",
@@ -229,9 +253,12 @@ function buildMessage(
 			const albumBody = {
 				albumId: message.albumId,
 				hasUnseenContent: message.unseen ?? false,
-				expiresAt: message.expiring ? timestamp + DAY : null,
+				// Mirrors the API: expiresAt belongs to the signed media URL and is
+				// short-lived on every album, expiring or not. The share's own
+				// deadline is viewableUntil.
+				expiresAt: NOW + 30 * MINUTE,
 				expirationType: (message.expiring
-					? "ONCE"
+					? "ONE_DAY"
 					: "INDEFINITE") satisfies AlbumExpirationType,
 				coverUrl:
 					message.coverUrl === null
@@ -260,6 +287,36 @@ function buildMessage(
 					unsent: false,
 				};
 			return { type: "Album", body: albumBody, ...base, unsent: false };
+		}
+		case "albumContent": {
+			const contentBody = {
+				albumId: message.albumId,
+				ownerProfileId: message.fromMe ? conv.withId : demoMeProfileId,
+				albumContentId: message.albumId * 100,
+				previewUrl: message.locked
+					? null
+					: picsum(`album-${message.albumId}-0`, 300, 400),
+				expiresAt: message.expired ? timestamp - HOUR : null,
+				viewable: !message.locked,
+			};
+			if (message.reply === undefined) {
+				return {
+					type: "AlbumContentReaction",
+					body: contentBody,
+					...base,
+					unsent: false,
+				};
+			}
+			return {
+				type: "AlbumContentReply",
+				body: {
+					...contentBody,
+					albumContentReply: message.reply,
+					contentType: "image/jpeg",
+				},
+				...base,
+				unsent: false,
+			};
 		}
 		case "unsent":
 			return { type: "Unsent", body: null, ...base, unsent: true };
@@ -373,9 +430,9 @@ export function demoSingleMessage(conversationId: string, messageId: string) {
 	return { message: message ?? null };
 }
 
-export function demoAlbumContent(albumId: number) {
+function generateAlbumContent(albumId: number) {
 	const count = 3 + (albumId % 3);
-	const content = Array.from({ length: count }, (_, i) => {
+	return Array.from({ length: count }, (_, i) => {
 		const thumb = picsum(`album-${albumId}-${i}`, 300, 400);
 		return {
 			contentId: albumId * 100 + i,
@@ -388,55 +445,151 @@ export function demoAlbumContent(albumId: number) {
 			rejectionId: null,
 		};
 	});
+}
+
+export function demoAlbumContent(albumId: number) {
+	// Prefer the mutable store so edits made in demo mode are visible here.
+	const owned = demoAlbumStore().find((album) => album.albumId === albumId);
 	return {
 		albumId,
 		hasUnseenContent: false,
-		albumName: null,
+		albumName: owned?.albumName ?? null,
 		profileId: demoMeProfileId,
 		albumViewable: true,
-		sharedCount: 1,
+		sharedCount: owned?.sharedCount ?? 1,
 		createdAt: localDateTime(NOW - 3 * DAY),
 		updatedAt: localDateTime(NOW - DAY),
-		content,
+		content: owned?.content ?? generateAlbumContent(albumId),
 	};
 }
 
-// Albums we own, offered in the chat composer's "Albums" tab for sharing.
-export function demoMyAlbums() {
-	const seeds = [
-		{ albumId: 7001, albumName: "Weekend trip" },
-		{ albumId: 7002, albumName: "Gym progress" },
-		{ albumId: 7003, albumName: null },
-	];
-	const albums = seeds.map(({ albumId, albumName }, i) => {
-		const thumb = picsum(`my-album-${albumId}-cover`, 300, 400);
-		return {
-			albumId,
-			albumName,
-			profileId: demoMeProfileId,
-			version: 1,
-			isShareable: true,
-			sharedCount: i,
-			createdAt: localDateTime(NOW - (i + 2) * DAY),
-			updatedAt: localDateTime(NOW - (i + 1) * DAY),
-			content: [
-				{
+export function demoAlbumsSharedByProfile(profileId: number) {
+	return {
+		albums: [0, 1].map((index) => {
+			const albumId = 8001 + index;
+			const thumb = picsum(`album-${albumId}-0`, 300, 400);
+			return {
+				albumId,
+				hasUnseenContent: index === 0,
+				albumName: index === 0 ? "Shared with you" : null,
+				profileId,
+				albumViewable: true,
+				expiresAt: null,
+				expirationType: "INDEFINITE",
+				content: {
 					contentId: albumId * 100,
 					contentType: "image/jpeg",
 					coverUrl: thumb,
 					statusId: 1,
-					thumbUrl: thumb,
-					url: picsum(`my-album-${albumId}-0`),
-					processing: false,
-					rejectionId: null,
 				},
-			],
-		};
-	});
-	return { albums };
+				contentCount: { imageCount: 3 + index, videoCount: index },
+			};
+		}),
+	};
 }
 
-// Albums other profiles have shared with us, shown in the inbox "Albums" tab.
+const DEMO_ALBUM_NAMES = ["Gym", "Beach trip", null];
+const DEMO_FIRST_ALBUM_ID = 9001;
+
+function buildDemoAlbum(
+	albumId: number,
+	albumName: string | null,
+	sharedCount: number,
+	content = generateAlbumContent(albumId),
+) {
+	return {
+		albumId,
+		albumName,
+		profileId: demoMeProfileId,
+		version: 1,
+		content,
+		isShareable: true,
+		sharedCount,
+		createdAt: localDateTime(NOW - 3 * DAY),
+		updatedAt: localDateTime(NOW - DAY),
+	};
+}
+
+let demoAlbums: ReturnType<typeof buildDemoAlbum>[] | null = null;
+let demoNextAlbumId = DEMO_FIRST_ALBUM_ID + DEMO_ALBUM_NAMES.length;
+
+function demoAlbumStore() {
+	demoAlbums ??= DEMO_ALBUM_NAMES.map((albumName, index) =>
+		buildDemoAlbum(DEMO_FIRST_ALBUM_ID + index, albumName, index),
+	);
+	return demoAlbums;
+}
+
+const demoAlbumShares = new Map<number, number[]>();
+
+function albumShareStore(albumId: number): number[] {
+	let shares = demoAlbumShares.get(albumId);
+	if (shares === undefined) {
+		// Seed from the demo conversations so the list is not empty to start.
+		shares = [100005, 100006];
+		demoAlbumShares.set(albumId, shares);
+	}
+	return shares;
+}
+
+export function demoAlbumSharesFor(albumId: number) {
+	return { profileIds: albumShareStore(albumId) };
+}
+
+export function demoUnshareAlbum(albumId: number, body: unknown) {
+	const profiles = (body as { profiles?: { profileId?: number }[] } | null)
+		?.profiles;
+	if (!profiles) return;
+	const removed = new Set(profiles.map((p) => p.profileId));
+	demoAlbumShares.set(
+		albumId,
+		albumShareStore(albumId).filter((id) => !removed.has(id)),
+	);
+}
+
+function albumNameFromBody(body: unknown): string | null {
+	return (body as { albumName?: string | null } | null)?.albumName ?? null;
+}
+
+export function demoMyAlbums() {
+	return { albums: demoAlbumStore() };
+}
+
+export function demoCreateAlbum(body: unknown) {
+	const albumName = albumNameFromBody(body);
+	const album = buildDemoAlbum(demoNextAlbumId++, albumName, 0, []);
+	demoAlbumStore().push(album);
+	return { albumId: album.albumId, albumName };
+}
+
+export function demoRenameAlbum(albumId: number, body: unknown) {
+	const albumName = albumNameFromBody(body);
+	const album = demoAlbumStore().find((item) => item.albumId === albumId);
+	if (album) album.albumName = albumName;
+	return { albumId, albumName };
+}
+
+export function demoDeleteAlbum(albumId: number) {
+	const albums = demoAlbumStore();
+	const index = albums.findIndex((item) => item.albumId === albumId);
+	if (index !== -1) albums.splice(index, 1);
+}
+
+export function demoReorderAlbumContent(albumId: number, body: unknown) {
+	const contentIds = (body as { contentIds?: number[] } | null)?.contentIds;
+	const album = demoAlbumStore().find((item) => item.albumId === albumId);
+	if (!album || !contentIds) return;
+	album.content = contentIds
+		.map((id) => album.content.find((item) => item.contentId === id))
+		.filter((item) => item !== undefined);
+}
+
+export function demoDeleteAlbumContent(albumId: number, contentId: number) {
+	const album = demoAlbumStore().find((item) => item.albumId === albumId);
+	if (!album) return;
+	album.content = album.content.filter((item) => item.contentId !== contentId);
+}
+
 export function demoSharedAlbumsFeed() {
 	const seeds = [
 		{ albumId: 8001, ownerProfileId: 100001, name: "Beach day" },

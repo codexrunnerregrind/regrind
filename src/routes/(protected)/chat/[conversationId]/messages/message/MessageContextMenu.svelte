@@ -4,8 +4,8 @@
 		ArrowBendUpLeftIcon,
 		ArrowUUpLeftIcon,
 		CopyIcon,
-		EyeSlashIcon,
 		FlagIcon,
+		FolderSimpleMinusIcon,
 		TrashIcon,
 	} from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
@@ -21,7 +21,7 @@
 		reactionAvailable,
 		onDelete,
 		onUnsend,
-		onUnshare,
+		onUnshareAlbum,
 		onReply,
 		...props
 	}: ComponentProps<typeof ContextMenu> & {
@@ -29,7 +29,7 @@
 		reactionAvailable?: boolean;
 		onDelete?: () => void;
 		onUnsend?: () => void;
-		onUnshare?: () => void;
+		onUnshareAlbum?: () => void;
 		onReply?: () => void;
 	} = $props();
 </script>
@@ -105,15 +105,15 @@
 					Unsend message
 				</Button>
 			{/if}
-			{#if onUnshare}
+			{#if onUnshareAlbum}
 				<Button
 					variant="ghost"
 					onclick={() => {
-						onUnshare();
+						onUnshareAlbum();
 						props.onClose();
 					}}
 				>
-					<EyeSlashIcon />
+					<FolderSimpleMinusIcon />
 					Unshare album
 				</Button>
 			{/if}

@@ -1,0 +1,273 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const { fetchRestMock } = vi.hoisted(() => ({ fetchRestMock: vi.fn() }));
+
+vi.mock("$lib/api", async (importOriginal) => ({
+	...(await importOriginal<typeof import("$lib/api")>()),
+	fetchRest: fetchRestMock,
+}));
+
+import {
+	createAlbum,
+	deleteAlbum,
+	deleteAlbumContent,
+	getAlbumShares,
+	getAlbumsSharedByProfile,
+	getMyAlbums,
+	renameAlbum,
+	reorderAlbumContent,
+	shareAlbum,
+	unshareAlbum,
+} from "$lib/api/messaging/albums";
+
+function albumContent(contentId = 1) {
+	return {
+		contentId,
+		contentType: "image/jpeg",
+		coverUrl: "https://example.com/cover.jpg",
+		statusId: 1,
+		thumbUrl: "https://example.com/thumb.jpg",
+		url: "https://example.com/full.jpg",
+		processing: false,
+		rejectionId: null,
+	};
+}
+
+function myAlbum(albumId = 1) {
+	return {
+		albumId,
+		albumName: "Gym",
+		profileId: 42,
+		version: 1,
+		content: [albumContent()],
+		isShareable: true,
+		sharedCount: 0,
+		createdAt: "2026-03-27T20:39:00",
+		updatedAt: "2026-03-27T20:39:00",
+	};
+}
+
+function response(data?: unknown, status = 200) {
+	return {
+		status,
+		assertOk() {
+			if (status < 200 || status >= 300) {
+				throw new Error(`mock assertOk rejected status ${status}`);
+			}
+		},
+		jsonParsed: vi.fn((schema: { parse(value: unknown): unknown }) =>
+			schema.parse(data),
+		),
+	};
+}
+
+beforeEach(() => {
+	fetchRestMock.mockReset();
+});
+
+describe("getMyAlbums", () => {
+	it("requests the album list and unwraps it", async () => {
+		fetchRestMock.mockResolvedValue(response({ albums: [myAlbum()] }));
+
+		await expect(getMyAlbums()).resolves.toEqual([myAlbum()]);
+		expect(fetchRestMock).toHaveBeenCalledWith("/v1/albums");
+	});
+
+	it("accepts a null album name", async () => {
+		const album = { ...myAlbum(), albumName: null };
+		fetchRestMock.mockResolvedValue(response({ albums: [album] }));
+
+		await expect(getMyAlbums()).resolves.toEqual([album]);
+	});
+});
+
+describe("getAlbumsSharedByProfile", () => {
+	it("requests the profile's shared albums and unwraps them", async () => {
+		const album = {
+			albumId: 5,
+			hasUnseenContent: true,
+			albumName: "Shared",
+			profileId: 42,
+			albumViewable: true,
+			expiresAt: null,
+			expirationType: "INDEFINITE",
+			content: {
+				contentId: 500,
+				contentType: "image/jpeg",
+				coverUrl: "https://example.com/cover.jpg",
+				statusId: 1,
+			},
+			contentCount: { imageCount: 3, videoCount: 1 },
+		};
+		fetchRestMock.mockResolvedValue(response({ albums: [album] }));
+
+		await expect(getAlbumsSharedByProfile(42)).resolves.toEqual([album]);
+		expect(fetchRestMock).toHaveBeenCalledWith("/v2/albums/shares/42");
+	});
+
+	it("tolerates a missing preview and counts", async () => {
+		const album = {
+			albumId: 5,
+			hasUnseenContent: false,
+			albumName: null,
+			profileId: 42,
+			albumViewable: false,
+			expiresAt: null,
+			expirationType: null,
+		};
+		fetchRestMock.mockResolvedValue(response({ albums: [album] }));
+
+		await expect(getAlbumsSharedByProfile(42)).resolves.toEqual([album]);
+	});
+});
+
+describe("createAlbum", () => {
+	it("posts the name and returns the new album", async () => {
+		fetchRestMock.mockResolvedValue(
+			response({ albumId: 12, albumName: "Gym" }),
+		);
+
+		await expect(createAlbum({ albumName: "Gym" })).resolves.toEqual({
+			albumId: 12,
+			albumName: "Gym",
+		});
+		expect(fetchRestMock).toHaveBeenCalledWith("/v2/albums", {
+			method: "POST",
+			body: { albumName: "Gym" },
+		});
+	});
+
+	it("surfaces the 402 returned at the album cap", async () => {
+		fetchRestMock.mockResolvedValue(response(undefined, 402));
+
+		await expect(createAlbum({ albumName: null })).rejects.toThrow(
+			"mock assertOk rejected status 402",
+		);
+	});
+});
+
+describe("renameAlbum", () => {
+	it("puts the new name", async () => {
+		fetchRestMock.mockResolvedValue(response({ albumId: 12, albumName: null }));
+
+		await expect(
+			renameAlbum({ albumId: 12, albumName: null }),
+		).resolves.toEqual({ albumId: 12, albumName: null });
+		expect(fetchRestMock).toHaveBeenCalledWith("/v2/albums/12", {
+			method: "PUT",
+			body: { albumName: null },
+		});
+	});
+});
+
+describe("deleteAlbum", () => {
+	it("deletes by id", async () => {
+		fetchRestMock.mockResolvedValue(response());
+
+		await deleteAlbum({ albumId: 12 });
+
+		expect(fetchRestMock).toHaveBeenCalledWith("/v1/albums/12", {
+			method: "DELETE",
+		});
+	});
+});
+
+describe("reorderAlbumContent", () => {
+	it("posts the full content order", async () => {
+		fetchRestMock.mockResolvedValue(response());
+
+		await reorderAlbumContent({ albumId: 12, contentIds: [3, 1, 2] });
+
+		expect(fetchRestMock).toHaveBeenCalledWith("/v1/albums/12/content/order", {
+			method: "POST",
+			body: { contentIds: [3, 1, 2] },
+		});
+	});
+});
+
+describe("deleteAlbumContent", () => {
+	it("deletes a single item", async () => {
+		fetchRestMock.mockResolvedValue(response());
+
+		await deleteAlbumContent({ albumId: 12, contentId: 7 });
+
+		expect(fetchRestMock).toHaveBeenCalledWith("/v1/albums/12/content/7", {
+			method: "DELETE",
+		});
+	});
+});
+
+describe("getAlbumShares", () => {
+	it("returns the shared-with profile ids", async () => {
+		fetchRestMock.mockResolvedValue(response({ profileIds: [42, 43] }));
+
+		await expect(getAlbumShares(12)).resolves.toEqual([42, 43]);
+		expect(fetchRestMock).toHaveBeenCalledWith("/v1/albums/12/shares");
+	});
+
+	it("treats a missing list as no shares", async () => {
+		fetchRestMock.mockResolvedValue(response({}));
+
+		await expect(getAlbumShares(12)).resolves.toEqual([]);
+	});
+});
+
+describe("unshareAlbum", () => {
+	it("puts one entry per profile with the placeholder share id", async () => {
+		fetchRestMock.mockResolvedValue(response());
+
+		await unshareAlbum({ albumId: 12, profileIds: [42, 43] });
+
+		expect(fetchRestMock).toHaveBeenCalledWith("/v1/albums/12/unshares", {
+			method: "PUT",
+			body: {
+				profiles: [
+					{ profileId: 42, shareId: "0", expiresAt: null },
+					{ profileId: 43, shareId: "0", expiresAt: null },
+				],
+			},
+		});
+	});
+
+	it("propagates a failed response", async () => {
+		fetchRestMock.mockResolvedValue(response(undefined, 403));
+
+		await expect(
+			unshareAlbum({ albumId: 12, profileIds: [42] }),
+		).rejects.toThrow("mock assertOk rejected status 403");
+	});
+});
+
+describe("shareAlbum", () => {
+	it("posts one entry per profile with the expiration", async () => {
+		fetchRestMock.mockResolvedValue(response());
+
+		await shareAlbum({
+			albumId: 7,
+			profileIds: [42, 43],
+			expirationType: "ONE_HOUR",
+		});
+
+		expect(fetchRestMock).toHaveBeenCalledWith("/v4/albums/7/shares", {
+			method: "POST",
+			body: {
+				profiles: [
+					{ profileId: 42, expirationType: "ONE_HOUR" },
+					{ profileId: 43, expirationType: "ONE_HOUR" },
+				],
+			},
+		});
+	});
+
+	it("propagates a failed response", async () => {
+		fetchRestMock.mockResolvedValue(response(undefined, 403));
+
+		await expect(
+			shareAlbum({
+				albumId: 7,
+				profileIds: [42],
+				expirationType: "INDEFINITE",
+			}),
+		).rejects.toThrow("mock assertOk rejected status 403");
+	});
+});

@@ -7,6 +7,7 @@
 	import { longPressHandlers } from "$lib/util/long-press";
 	import { SwipeToReply } from "$lib/util/swipe-to-reply.svelte";
 	import type { ApiResponseMessage } from "$lib/model/messaging/messages";
+	import AlbumContentMessage from "./AlbumContentMessage.svelte";
 	import AlbumMessage from "./AlbumMessage.svelte";
 	import { setMessageContext } from "./context";
 	import ExpiringImageMessage from "./ExpiringImageMessage.svelte";
@@ -33,7 +34,7 @@
 		onDelete,
 		onVisible,
 		onUnsend,
-		onUnshare,
+		onUnshareAlbum,
 		onReply,
 	}: {
 		message: ApiResponseMessage;
@@ -47,7 +48,7 @@
 		onDelete?: () => void;
 		onVisible?: () => void;
 		onUnsend?: () => void;
-		onUnshare?: () => void;
+		onUnshareAlbum?: () => void;
 		onReply?: () => void;
 	} = $props();
 
@@ -203,6 +204,8 @@
 			<AlbumMessage message={message.body} />
 		{:else if message.type === "Location"}
 			<LocationMessage message={message.body} />
+		{:else if message.type === "AlbumContentReply" || message.type === "AlbumContentReaction"}
+			<AlbumContentMessage message={message.body} />
 		{:else if message.type === "Unsent"}
 			<UnsentMessage />
 		{:else}
@@ -312,7 +315,7 @@
 		reactionAvailable={message.reactions.length === 0 && !isOut}
 		{onDelete}
 		{onUnsend}
-		{onUnshare}
+		{onUnshareAlbum}
 		{onReply}
 	/>
 {/if}

@@ -1,93 +1,154 @@
 <script lang="ts">
-	import EyeSlashIcon from "phosphor-svelte/lib/EyeSlashIcon";
 	import FolderOpenIcon from "phosphor-svelte/lib/FolderOpenIcon";
-	import ImageBrokenIcon from "phosphor-svelte/lib/ImageBrokenIcon";
-	import PaperPlaneTiltIcon from "phosphor-svelte/lib/PaperPlaneTiltIcon";
 	import { toast } from "svelte-sonner";
 
 	import { showErrorToast } from "$lib/api/error";
-	import { getMyAlbums } from "$lib/api/messaging/albums";
+	import {
+		ensureAlbumSharesSwept,
+		getAlbumShared,
+		setAlbumShared,
+	} from "$lib/api/messaging/album-shares-state.svelte";
+	import {
+		getMyAlbums,
+		shareAlbum,
+		unshareAlbum,
+	} from "$lib/api/messaging/albums";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+	import { Button } from "$lib/components/ui/button";
 	import * as Empty from "$lib/components/ui/empty";
 	import { Skeleton } from "$lib/components/ui/skeleton";
-	import type { MyAlbum } from "$lib/model/messaging/albums";
+	import * as ToggleGroup from "$lib/components/ui/toggle-group";
+	import {
+		AlbumExpiration,
+		type AlbumExpirationType,
+		albumExpirationTypeSchema,
+		type MyAlbum,
+	} from "$lib/model/messaging/albums";
 	import { getConversationState } from "../../conversation-state.svelte";
 
+	// Keyed by `AlbumExpiration` rather than `AlbumExpirationType` so that adding
+	// an expiration option fails the typecheck until it is given a label here.
+	const EXPIRATION_LABELS: Record<keyof typeof AlbumExpiration, string> = {
+		INDEFINITE: "Indefinitely",
+		ONCE: "View once",
+		TEN_MINUTES: "10 minutes",
+		ONE_HOUR: "60 minutes",
+		ONE_DAY: "24 hours",
+	};
+
 	let {
+		active,
 		onClose,
 	}: {
+		/** Whether this tab is the one on screen. */
+		active: boolean;
 		onClose: () => void;
 	} = $props();
 
 	const conversationState = $derived(getConversationState()());
-
-	// Albums we've already shared into this conversation show up as our own
-	// outgoing album messages. A still-viewable album message means the
-	// recipient can currently see it; unsharing locks it, clearing the badge.
-	const sharedAlbumIds = $derived(
-		new Set(
-			conversationState.messages
-				.filter(
-					(message) =>
-						!message.unsent &&
-						message.senderId === conversationState.ourProfileId &&
-						(message.type === "Album" ||
-							message.type === "ExpiringAlbum" ||
-							message.type === "ExpiringAlbumV2") &&
-						(message.body as { isViewable: boolean }).isViewable,
-				)
-				.map((message) => (message.body as { albumId: number }).albumId),
-		),
-	);
+	const recipientId = $derived(conversationState.profile?.profileId ?? null);
 
 	let albums = $state<MyAlbum[] | null>(null);
 	let error = $state<unknown>(null);
+	let selectedAlbumId = $state<number | null>(null);
+	let expirationType = $state<AlbumExpirationType>("INDEFINITE");
+	let sharing = $state(false);
+
+	/**
+	 * Derived from the shared record rather than kept alongside it, so reopening
+	 * the sheet shows what is already known without waiting on the lookups
+	 * below, and share/unshare only have to write to the record.
+	 */
+	const sharedWith = $derived(
+		new Set(
+			recipientId === null
+				? []
+				: (albums ?? [])
+						.filter(
+							(album) => getAlbumShared(album.albumId, recipientId) === true,
+						)
+						.map((album) => album.albumId),
+		),
+	);
+
+	const selectedIsShared = $derived(
+		selectedAlbumId !== null && sharedWith.has(selectedAlbumId),
+	);
 
 	async function load() {
 		albums = null;
 		error = null;
 		try {
-			const { albums: fetched } = await getMyAlbums();
-			albums = fetched.filter((album) => album.isShareable);
+			const list = await getMyAlbums();
+			albums = list;
+			if (recipientId !== null) void ensureAlbumSharesSwept(recipientId, list);
 		} catch (err) {
 			console.error(err);
 			error = err;
 		}
 	}
 
-	void load();
+	// Deliberately not loading on mount: Tabs.Content is rendered whether or not
+	// its tab is showing, so mounting would fetch albums every time the
+	// attachments sheet is opened, including to send a photo.
+	$effect(() => {
+		if (active && albums === null && error === null) void load();
+	});
 
-	async function share(albumId: number) {
+	function albumCover(album: MyAlbum): string | null {
+		const first = album.content[0];
+		return first?.coverUrl ?? first?.thumbUrl ?? null;
+	}
+
+	async function share() {
+		if (selectedAlbumId === null || recipientId === null || sharing) return;
+		sharing = true;
 		try {
-			await conversationState.shareAlbums([albumId]);
+			await shareAlbum({
+				albumId: selectedAlbumId,
+				profileIds: [recipientId],
+				expirationType,
+			});
+			setAlbumShared(selectedAlbumId, recipientId, true);
 			onClose();
+			toast.success("Album shared");
 		} catch (err) {
 			console.error(err);
 			showErrorToast({ label: "Failed to share album", error: err });
+		} finally {
+			sharing = false;
 		}
 	}
 
-	async function unshare(albumId: number) {
+	async function unshare() {
+		const albumId = selectedAlbumId;
+		if (albumId === null || recipientId === null || sharing) return;
+		sharing = true;
 		try {
-			await conversationState.unshareAlbum(albumId);
+			await unshareAlbum({ albumId, profileIds: [recipientId] });
+			// Stays open: unsharing is a correction, and closing would hide the
+			// result of it. The list derives from the record, so this is all the
+			// update it needs.
+			setAlbumShared(albumId, recipientId, false);
 			toast.success("Album unshared");
 		} catch (err) {
 			console.error(err);
 			showErrorToast({ label: "Failed to unshare album", error: err });
+		} finally {
+			sharing = false;
 		}
 	}
 </script>
 
-<div class="@container/photo-grid flex flex-col rounded-grid">
+<div class="flex flex-col gap-4 pb-2">
 	{#if error !== null}
-		<div class="flex flex-1">
+		<div class="flex flex-1 py-8">
 			<ApiErrorDisplay {error} onRetry={() => void load()} class="m-auto" />
 		</div>
 	{:else if albums === null}
-		<div class="photo-grid">
-			{#each Array(6)}
-				<Skeleton class="aspect-3/4 rounded-none" />
+		<div class="flex flex-col gap-2">
+			{#each Array(3)}
+				<Skeleton class="h-18 w-full" />
 			{/each}
 		</div>
 	{:else if albums.length === 0}
@@ -96,85 +157,107 @@
 				<Empty.Media variant="icon">
 					<FolderOpenIcon weight="fill" />
 				</Empty.Media>
-				<Empty.Title>No albums to share</Empty.Title>
+				<Empty.Title>No albums yet</Empty.Title>
 				<Empty.Description>
-					Albums you create appear here, ready to share.
+					Albums you create will show up here.
 				</Empty.Description>
 			</Empty.Header>
 		</Empty.Root>
 	{:else}
-		<div class="photo-grid">
+		<div class="flex flex-col gap-2">
 			{#each albums as album (album.albumId)}
-				{@const isShared = sharedAlbumIds.has(album.albumId)}
-				{@const cover =
-					album.content[0]?.thumbUrl || album.content[0]?.coverUrl}
-				<DropdownMenu.Root>
-					<DropdownMenu.Trigger>
-						{#snippet child({ props: { class: className, ...props } })}
-							<button
-								{...props}
-								type="button"
-								class={[className, "relative aspect-3/4"]}
-								aria-label={isShared
-									? "Unshare album"
-									: "Share album"}
-							>
-								{#if cover}
-									<img
-										src={cover}
-										alt=""
-										class="size-full rounded-[inherit] bg-card-foreground/10 object-cover"
-										draggable="false"
-									/>
-								{:else}
-									<div
-										class="flex size-full items-center justify-center rounded-[inherit] bg-card-foreground/20"
-									>
-										<ImageBrokenIcon
-											weight="fill"
-											class="size-8"
-											color="var(--color-neutral-600)"
-										/>
-									</div>
-								{/if}
-								<div
-									class="pointer-events-none absolute inset-x-0 bottom-0 flex items-end gap-1 rounded-b-[inherit] bg-linear-to-t from-black/70 to-transparent p-2 pt-6 text-start"
-								>
-									<span
-										class="line-clamp-2 text-xs font-medium text-white"
-									>
-										{album.albumName || "Untitled album"}
-									</span>
-								</div>
-								{#if isShared}
-									<span
-										class="pointer-events-none absolute top-1.5 left-1.5 rounded-full bg-primary/90 px-2 py-0.5 text-xs font-medium text-primary-foreground"
-									>
-										Shared
-									</span>
-								{/if}
-							</button>
-						{/snippet}
-					</DropdownMenu.Trigger>
-					<DropdownMenu.Content class="w-42" align="start">
-						{#if isShared}
-							<DropdownMenu.Item
-								onSelect={() => void unshare(album.albumId)}
-							>
-								<EyeSlashIcon class="size-5" />
-								Unshare album
-							</DropdownMenu.Item>
-						{:else}
-							<DropdownMenu.Item
-								onSelect={() => void share(album.albumId)}
-							>
-								<PaperPlaneTiltIcon class="size-5" />
-								Share album
-							</DropdownMenu.Item>
-						{/if}
-					</DropdownMenu.Content>
-				</DropdownMenu.Root>
+				{@const isSelected = selectedAlbumId === album.albumId}
+				{@const cover = albumCover(album)}
+				<button
+					type="button"
+					disabled={!album.isShareable}
+					class={[
+						"flex items-center gap-3 rounded-2xl border p-2 text-start transition-colors",
+						{
+							"cursor-pointer border-border hover:bg-card-foreground/5":
+								album.isShareable && !isSelected,
+							"border-primary bg-primary/10": isSelected,
+							"opacity-50": !album.isShareable,
+						},
+					]}
+					aria-pressed={isSelected}
+					onclick={() => (selectedAlbumId = album.albumId)}
+				>
+					{#if cover}
+						<img
+							src={cover}
+							alt=""
+							class="size-14 shrink-0 rounded-xl bg-card-foreground/10 object-cover"
+							draggable="false"
+						/>
+					{:else}
+						<div
+							class="flex size-14 shrink-0 items-center justify-center rounded-xl bg-card-foreground/10 text-muted-foreground"
+						>
+							<FolderOpenIcon weight="fill" class="size-6" />
+						</div>
+					{/if}
+					<div class="flex min-w-0 flex-col">
+						<span class="truncate font-medium">
+							{album.albumName ?? "Untitled album"}
+						</span>
+						<span class="text-sm text-muted-foreground">
+							{album.content.length}
+							{album.content.length === 1 ? "item" : "items"}
+							{#if !album.isShareable}
+								&middot; can't be shared
+							{:else if sharedWith.has(album.albumId)}
+								&middot; already shared
+							{/if}
+						</span>
+					</div>
+				</button>
 			{/each}
 		</div>
+
+		<!-- Meaningless while the action is unsharing. -->
+		<div class={["flex flex-col gap-2", { hidden: selectedIsShared }]}>
+			<span class="text-sm font-medium text-muted-foreground">Viewable for</span
+			>
+			<ToggleGroup.Root
+				type="single"
+				variant="outline"
+				class="flex-wrap"
+				bind:value={
+					() => expirationType,
+					(next: string) => {
+						// Deselecting sends "", and the value is a plain string either
+						// way, so fall back rather than trusting it.
+						const parsed = albumExpirationTypeSchema.safeParse(next);
+						expirationType = parsed.success ? parsed.data : "INDEFINITE";
+					}
+				}
+			>
+				{#each Object.entries(EXPIRATION_LABELS) as [option, label] (option)}
+					<ToggleGroup.Item value={option}>
+						{label}
+					</ToggleGroup.Item>
+				{/each}
+			</ToggleGroup.Root>
+		</div>
+
+		{#if selectedIsShared}
+			<Button
+				size="lg"
+				variant="outline"
+				disabled={recipientId === null || sharing}
+				onclick={() => void unshare()}
+			>
+				{sharing ? "Unsharing…" : "Unshare album"}
+			</Button>
+		{:else}
+			<Button
+				size="lg"
+				disabled={selectedAlbumId === null || recipientId === null || sharing}
+				onclick={() => void share()}
+			>
+				{sharing ? "Sharing…" : "Share album"}
+			</Button>
+		{/if}
 	{/if}
 </div>

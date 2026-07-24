@@ -9,11 +9,11 @@ import {
 	viewerProfileSchema,
 	viewPreviewSchema,
 } from "$lib/model/interest/views";
+import { myAlbumsResponseSchema } from "$lib/api/messaging/albums";
 import {
 	albumContentSchema,
 	albumDetailsSchema,
 	albumMinSchema,
-	myAlbumsResponseSchema,
 } from "$lib/model/messaging/albums";
 import { fullConversationSchema } from "$lib/model/messaging/conversations";
 import {

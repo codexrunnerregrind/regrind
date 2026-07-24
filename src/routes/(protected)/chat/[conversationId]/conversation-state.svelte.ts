@@ -2,7 +2,6 @@ import { createContext } from "svelte";
 
 import { ApiError } from "$lib/api";
 import { showErrorToast } from "$lib/api/error";
-import { shareAlbum, unshareAlbum } from "$lib/api/messaging/albums";
 import { markConversationAsRead } from "$lib/api/messaging/conversations";
 import { reactToMessage, sendMessage } from "$lib/api/messaging/messages";
 import { getPreferences } from "$lib/app-data/preferences.svelte";
@@ -381,60 +380,6 @@ export class ConversationState {
 			if (msg) msg.status = "error";
 			const latestSent = this.messages.find((m) => m.status === "sent");
 			this.#updatePreview(latestSent);
-		}
-	}
-
-	// Shares the given albums into this conversation. The backend posts each
-	// shared album as a message, so we refresh afterwards to pull them in.
-	async shareAlbums(albumIds: number[]): Promise<void> {
-		if (!this.profile || albumIds.length === 0) return;
-		const profileId = this.profile.profileId;
-		await Promise.all(
-			albumIds.map((albumId) =>
-				shareAlbum({
-					albumId,
-					profiles: [{ profileId, expirationType: "INDEFINITE" }],
-				}),
-			),
-		);
-		await this.refresh();
-	}
-
-	// Revokes the recipient's access to an album shared into this conversation.
-	// The album message stays in the chat, but is locked in place: its content
-	// is no longer viewable. The backend keeps historical messages, so a
-	// refresh() would show it as still shared — we update local state instead.
-	async unshareAlbum(albumId: number): Promise<void> {
-		if (!this.profile) return;
-
-		const affected = this.messages.filter(
-			(m) =>
-				m.senderId === this.ourProfileId &&
-				!m.unsent &&
-				(m.type === "Album" ||
-					m.type === "ExpiringAlbum" ||
-					m.type === "ExpiringAlbumV2") &&
-				(m.body as { albumId: number }).albumId === albumId,
-		);
-
-		// Lock the album bubble(s) in place, remembering prior state to revert.
-		const previous = affected.map((m) => ({
-			body: m.body as { isViewable: boolean },
-			wasViewable: (m.body as { isViewable: boolean }).isViewable,
-		}));
-		for (const { body } of previous) body.isViewable = false;
-		if (previous.length > 0) this.#syncCache();
-
-		try {
-			await unshareAlbum({
-				albumId,
-				profiles: [{ profileId: this.profile.profileId, shareId: 0 }],
-			});
-		} catch (error) {
-			for (const { body, wasViewable } of previous)
-				body.isViewable = wasViewable;
-			if (previous.length > 0) this.#syncCache();
-			throw error;
 		}
 	}
 

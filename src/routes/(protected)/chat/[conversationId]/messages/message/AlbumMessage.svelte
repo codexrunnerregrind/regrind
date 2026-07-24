@@ -1,23 +1,33 @@
 <script lang="ts">
 	import "photoswipe/style.css";
-	import { ImageBrokenIcon, ImagesIcon, VideoIcon } from "phosphor-svelte";
-
-	import { toast } from "svelte-sonner";
+	import {
+		ClockIcon,
+		ImageBrokenIcon,
+		ImagesIcon,
+		VideoIcon,
+	} from "phosphor-svelte";
+	import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
 	import { showErrorToast } from "$lib/api/error";
-	import {
-		AlbumLockedError,
-		loadAlbum,
-		type LoadedAlbum,
-		openAlbumLightbox,
-	} from "$lib/chat/album-viewer";
+	import { type AlbumContentResponse, getAlbumContent } from "$lib/api/messaging/albums";
+	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+	import { getNow, subscribeNow } from "$lib/util/now.svelte";
 	import type { AlbumMessage } from "$lib/model/messaging/messages";
+	import { albumExpiry } from "./album-expiry";
 	import LockedMedia from "./LockedMedia.svelte";
 	import { MessageMediaState } from "./message-media.svelte";
 
 	let { message }: { message: AlbumMessage["body"] } = $props();
 
 	const media = new MessageMediaState();
+
+	const expiry = $derived(albumExpiry(message, getNow()));
+
+	// Only tick the shared clock while an expiring album is on screen.
+	$effect(() => {
+		if (expiry === null) return;
+		return subscribeNow();
+	});
 
 	const className: import("svelte/elements").ClassValue = $derived([
 		"aspect-3/4 h-auto relative",
@@ -32,6 +42,13 @@
 		"rounded-xl",
 		media.cornerClass,
 	]);
+
+	type LoadedAlbum = AlbumContentResponse & {
+		content: (AlbumContentResponse["content"][number] & {
+			width: number;
+			height: number;
+		})[];
+	};
 
 	type AlbumState =
 		| { status: "idle" }
@@ -51,54 +68,158 @@
 
 	$effect(() => {
 		if (albumState.status !== "loading") return;
-		loadAlbum(message.albumId)
-			.then((loaded) => {
-				cachedAlbum = loaded;
-				albumState = { status: "open", album: loaded };
-			})
-			.catch((error) => {
-				console.error(error);
-				showErrorToast({
-					label: "Failed to load album content",
-					error,
-				});
-				albumState = { status: "idle" };
+		(async () => {
+			const loaded = await getAlbumContent(message.albumId).then(
+				async (res) => ({
+					...res,
+					content: await Promise.all(
+						res.content.map(async (slide) => {
+							if (slide.contentType.startsWith("video/")) {
+								const video = document.createElement("video");
+								video.src = slide.url ?? "";
+								video.load();
+								try {
+									await new Promise<void>((resolve, reject) => {
+										if (video.readyState >= 1) resolve();
+										video.addEventListener("loadedmetadata", () => resolve(), {
+											once: true,
+										});
+										video.addEventListener(
+											"error",
+											({ error }) =>
+												reject(
+													new Error(`Failed to load video: ${slide.url}`, {
+														cause: error,
+													}),
+												),
+											{
+												once: true,
+											},
+										);
+									});
+									return {
+										...slide,
+										width: video.videoWidth,
+										height: video.videoHeight,
+									};
+								} finally {
+									video.remove();
+								}
+							} else {
+								const img = document.createElement("img");
+								img.src = slide.url ?? "";
+								try {
+									await new Promise<void>((resolve, reject) => {
+										if (img.complete) resolve();
+										img.addEventListener("load", () => resolve(), {
+											once: true,
+										});
+										img.addEventListener(
+											"error",
+											({ error }) =>
+												reject(
+													new Error(`Failed to load image: ${slide.url}`, {
+														cause: error,
+													}),
+												),
+											{
+												once: true,
+											},
+										);
+									});
+									return {
+										...slide,
+										src: img.src,
+										width: img.naturalWidth,
+										height: img.naturalHeight,
+									};
+								} finally {
+									img.remove();
+								}
+							}
+						}),
+					),
+				}),
+			);
+			cachedAlbum = loaded;
+			albumState = { status: "open", album: loaded };
+		})().catch((error) => {
+			console.error(error);
+			showErrorToast({
+				label: "Failed to load album content",
+				error,
 			});
+			albumState = { status: "idle" };
+		});
 	});
 
 	$effect(() => {
 		if (albumState.status !== "open") return;
 		const { album } = albumState;
-		let destroy: (() => void) | undefined;
+		let lightbox: PhotoSwipeLightbox | undefined;
 		let canceled = false;
-		openAlbumLightbox(album, {
-			onClosed: () => {
-				albumState = { status: "idle" };
-			},
-		})
-			.then((teardown) => {
-				if (canceled) {
-					teardown();
-				} else {
-					destroy = teardown;
-				}
+		import("photoswipe/lightbox")
+			.then(({ default: PhotoSwipeLightbox }) => {
+				if (canceled) return;
+				lightbox = new PhotoSwipeLightbox({
+					showHideAnimationType: "fade",
+					pswpModule: () => import("photoswipe"),
+					mainClass: `pswp--buttons-visible`,
+				});
+				lightbox.addFilter("numItems", () => album.content.length);
+				lightbox.addFilter("itemData", (_, index) => {
+					const { url, width, height } = album.content[index];
+					return { src: url, width, height };
+				});
+				const onBackGesture = () => {
+					lightbox?.pswp?.close();
+					return false;
+				};
+				lightbox.on("beforeOpen", () => {
+					backGestureEventHandlers.add(onBackGesture);
+				});
+				lightbox.on("close", () => {
+					backGestureEventHandlers.delete(onBackGesture);
+				});
+				lightbox.on("contentLoad", (event) => {
+					const { content } = event;
+					const slide = album.content[content.index];
+					if (slide?.contentType.startsWith("video/")) {
+						event.preventDefault();
+						content.element = document.createElement("div");
+						const video = document.createElement("video");
+						video.src = slide.url;
+						video.controls = true;
+						video.playsInline = true;
+						video.className = "max-w-full max-h-full m-auto";
+						content.element.appendChild(video);
+						content.state = "loading";
+						if (video.readyState >= 3) {
+							content.onLoaded();
+						} else {
+							video.addEventListener("loadeddata", () => content.onLoaded());
+							video.addEventListener("error", () => content.onError());
+						}
+					}
+				});
+				lightbox.on("closingAnimationEnd", () => {
+					albumState = { status: "idle" };
+				});
+				lightbox.init();
+				lightbox.loadAndOpen(0);
 			})
 			.catch((error) => {
-				if (error instanceof AlbumLockedError) {
-					toast.info(error.message);
-				} else {
-					console.error(error);
-					showErrorToast({
-						label: "Failed to open album",
-						error,
-					});
-				}
+				console.error(error);
+				showErrorToast({
+					label: "Failed to open album",
+					error,
+				});
 				albumState = { status: "idle" };
 			});
 		return () => {
 			canceled = true;
-			destroy?.();
-			destroy = undefined;
+			lightbox?.destroy();
+			lightbox = undefined;
 		};
 	});
 </script>
@@ -136,6 +257,17 @@
 			</div>
 		{/if}
 		<div class={["@container absolute top-0 left-0 size-full", contentClass]}>
+			{#if expiry !== null}
+				<div
+					class={[
+						"absolute top-1.5 left-1.5 flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-white",
+						expiry.expired ? "bg-destructive/80" : "bg-black/60",
+					]}
+				>
+					<ClockIcon weight="fill" class="size-3.5 shrink-0" />
+					<span class="truncate">{expiry.label}</span>
+				</div>
+			{/if}
 			<div
 				class="absolute bottom-1/5 left-1/2 flex -translate-x-1/2 items-center gap-1 px-2 py-0.5 *:aspect-square *:w-[20cqw] *:rounded-full *:bg-card *:p-2"
 			>
