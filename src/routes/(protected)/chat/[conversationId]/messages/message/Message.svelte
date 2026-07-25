@@ -4,6 +4,7 @@
 	import { expoOut } from "svelte/easing";
 	import { scale } from "svelte/transition";
 
+	import { hapticImpact } from "$lib/platform/haptics";
 	import { longPressHandlers } from "$lib/util/long-press";
 	import { SwipeToReply } from "$lib/util/swipe-to-reply.svelte";
 	import type { ApiResponseMessage } from "$lib/model/messaging/messages";
@@ -139,7 +140,24 @@
 	// oncontextmenu handler alone leaves the menu unreachable on iOS. These
 	// pointer-based handlers synthesize the long-press (and still forward a real
 	// right-click via their own oncontextmenu).
-	const longPress = longPressHandlers(onContextMenu);
+	function reactOnDoubleTap() {
+		const selection = window.getSelection();
+		if (
+			selection &&
+			!selection.isCollapsed &&
+			messageElement?.contains(selection.anchorNode)
+		)
+			return;
+		if (!isOut && onReact) {
+			hapticImpact("medium");
+			onReact(1);
+			selection?.removeAllRanges();
+		}
+	}
+
+	// iOS WebKit fires neither `contextmenu` (handled by the long-press synthesis)
+	// nor `dblclick` on touch, so the double-tap-to-react is synthesized here too.
+	const longPress = longPressHandlers(onContextMenu, reactOnDoubleTap);
 
 	function observeRead(node: HTMLElement) {
 		if (!onVisible) return {};
@@ -252,18 +270,9 @@
 			aria-label="Message"
 			{...longPress}
 			ondblclick={(event) => {
-				const selection = window.getSelection();
-				if (
-					selection &&
-					!selection.isCollapsed &&
-					messageElement?.contains(selection.anchorNode)
-				)
-					return;
-				if (!isOut && onReact) {
-					event.preventDefault();
-					onReact(1);
-					selection?.removeAllRanges();
-				}
+				// Mouse double-click; touch double-tap is synthesized in longPress.
+				if (!isOut && onReact) event.preventDefault();
+				reactOnDoubleTap();
 			}}
 			onkeydown={(event) => {
 				if (event.key === "Enter" || event.key === " ") {

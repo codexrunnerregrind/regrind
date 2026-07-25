@@ -2,6 +2,10 @@ import type { HTMLAttributes } from "svelte/elements";
 
 const LONG_PRESS_DURATION_MS = 450;
 const LONG_PRESS_MOVE_TOLERANCE_PX = 12;
+// iOS WebKit does not reliably fire `dblclick` for touch, so we synthesize a
+// double-tap from two quick taps landing close together.
+const DOUBLE_TAP_MAX_GAP_MS = 300;
+const DOUBLE_TAP_MOVE_TOLERANCE_PX = 24;
 // One press fires once app-wide, a layout shift can land the native ~500ms contextmenu on a new element
 const REFIRE_GAP_MS = 500;
 // Lifting synthetic click can retarget the same way so suppress the next click anywhere
@@ -45,11 +49,17 @@ type LongPressHandlers = Pick<
 	| "oncontextmenu"
 >;
 
-export function longPressHandlers(onLongPress: () => void): LongPressHandlers {
+export function longPressHandlers(
+	onLongPress: () => void,
+	onDoubleTap?: () => void,
+): LongPressHandlers {
 	let timer: ReturnType<typeof setTimeout> | null = null;
 	let originX = 0;
 	let originY = 0;
 	let pressConsumed = false;
+	let lastTapAt = 0;
+	let lastTapX = 0;
+	let lastTapY = 0;
 
 	const cancel = () => {
 		if (timer !== null) {
@@ -82,9 +92,28 @@ export function longPressHandlers(onLongPress: () => void): LongPressHandlers {
 		},
 		onpointerup(event) {
 			cancel();
-			if (pressConsumed && event.pointerType !== "mouse") {
+			if (event.pointerType === "mouse") return;
+			if (pressConsumed) {
 				suppressNextClick();
+				lastTapAt = 0;
+				return;
 			}
+			// Synthesize a double-tap: a second clean tap shortly after the first,
+			// landing near it, that did not move far enough to be a long-press cancel.
+			if (
+				onDoubleTap &&
+				Date.now() - lastTapAt < DOUBLE_TAP_MAX_GAP_MS &&
+				Math.abs(event.clientX - lastTapX) < DOUBLE_TAP_MOVE_TOLERANCE_PX &&
+				Math.abs(event.clientY - lastTapY) < DOUBLE_TAP_MOVE_TOLERANCE_PX
+			) {
+				lastTapAt = 0;
+				suppressNextClick();
+				onDoubleTap();
+				return;
+			}
+			lastTapAt = Date.now();
+			lastTapX = event.clientX;
+			lastTapY = event.clientY;
 		},
 		onpointercancel: cancel,
 		oncontextmenu(event) {

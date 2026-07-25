@@ -10,6 +10,11 @@ To get started, choose one of the methods below (Docker, Nix or manual) and foll
     - [Clean-up Docker](#clean-up-docker)
   - [Build with Nix (builds everywhere)](#build-with-nix-builds-everywhere)
   - [Build manually (advanced)](#build-manually-advanced)
+  - [Build for iOS (macOS only)](#build-for-ios-macos-only)
+    - [iOS build configuration](#ios-build-configuration)
+    - [Build the app](#build-the-app)
+    - [Deploy to a connected iPhone](#deploy-to-a-connected-iphone)
+    - [Develop on device / simulator](#develop-on-device--simulator)
   - [Signing](#signing)
     - [Sign \& build with Docker](#sign--build-with-docker)
     - [Sign \& build with Nix](#sign--build-with-nix)
@@ -96,6 +101,90 @@ bun run tauri android build --apk
 
 3. Retrieve the apk from `src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk` on your host system
 4. Follow [Signing](#signing) to make the build installable on your Android device
+
+## Build for iOS (macOS only)
+
+iOS builds are **not** reproducible or governance-signed the way the Android
+release is — they are for local development and testing on your own device.
+Building for iOS requires a Mac with Xcode and an Apple Developer account
+(a free personal team is enough for on-device debug installs).
+
+Prerequisites:
+
+- **macOS** with **Xcode** (full install, not just the Command Line Tools) and its iOS platform
+- **Rust** via [rustup](https://rustup.rs) with the iOS targets:
+  ```bash
+  rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+  ```
+- **[CocoaPods](https://cocoapods.org)** (`brew install cocoapods`) — Tauri uses it to link plugin pods
+- **[Bun](https://bun.sh)** and `bun install`
+- An **Apple Developer team**; the device you install onto must be registered with that team
+
+### iOS build configuration
+
+Everything needed to reproduce an iOS build is committed:
+
+| Setting                    | Value                       | Where it's pinned                                            |
+| -------------------------- | --------------------------- | ------------------------------------------------------------ |
+| Apple development team     | `65BJ8C3N7S`                | `src-tauri/tauri.conf.json` &rarr; `bundle.iOS.developmentTeam` |
+| Bundle identifier          | `org.opengrind.tiagogomes`  | `src-tauri/tauri.conf.json` &rarr; `identifier` (and `gen/apple/project.yml`) |
+| Marketing / build version  | from `version`              | `src-tauri/tauri.conf.json` &rarr; `version`                 |
+| iOS usage descriptions     | location permission string  | `src-tauri/Info.ios.plist`                                   |
+| Export method              | `debugging`                 | `src-tauri/gen/apple/ExportOptions.plist`                    |
+| Xcode project              | committed                   | `src-tauri/gen/apple/` (regenerate with `bun tauri ios init`)|
+
+To build for a **different** Apple account, change `bundle.iOS.developmentTeam`
+in [`src-tauri/tauri.conf.json`](./src-tauri/tauri.conf.json) to your own team ID
+(Xcode &rarr; Settings &rarr; Accounts, or `Membership` on the developer portal) and
+pick a `identifier` that is unique to you. The `debugging` export method in
+`ExportOptions.plist` produces a development-signed IPA installable on registered
+devices; switch it to `app-store-connect`, `release-testing`, or `enterprise` for
+other distribution channels.
+
+### Build the app
+
+```bash
+bun install
+bun run tauri ios build
+```
+
+This runs the frontend build (`bun run build`) and produces a development-signed
+IPA at:
+
+```
+src-tauri/gen/apple/build/arm64/Open Grind.ipa
+```
+
+Add `--debug` for a debug build, or `--open` to open the project in Xcode instead
+of building headless.
+
+### Deploy to a connected iPhone
+
+With the iPhone plugged in (and trusted / registered with the development team),
+install the freshly built IPA using Apple's device tooling:
+
+```bash
+# Confirm the device is visible and paired
+xcrun devicectl list devices
+
+# Install the IPA (grab the identifier from the command above)
+xcrun devicectl device install app \
+  --device <DEVICE_IDENTIFIER> \
+  "src-tauri/gen/apple/build/arm64/Open Grind.ipa"
+```
+
+The app then launches from the Home Screen. The first launch of a build signed
+with a free personal team also needs a one-time trust step on the phone:
+Settings &rarr; General &rarr; VPN & Device Management &rarr; trust your developer certificate.
+
+### Develop on device / simulator
+
+For an iterative dev loop with hot reload instead of a standalone install:
+
+```bash
+bun run tauri ios dev            # pick a target when prompted
+bun run tauri ios dev --open     # or drive it from Xcode
+```
 
 ## Signing
 
