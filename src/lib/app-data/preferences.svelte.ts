@@ -10,6 +10,8 @@ import { existsAppDataFile, readAppDataFile, writeAppDataFileAtomic } from ".";
 const preferencesSchema = z.object({
 	geohash: geohashSchema.nullable().default(null),
 	gridSearchFilters: gridSearchFiltersSchema.optional(),
+	notifyMessages: z.boolean().default(true),
+	notifyTaps: z.boolean().default(true),
 	revealMessageRead: z.boolean().default(false),
 	revealProfileViews: z.boolean().default(false),
 	units: unitSystemSchema.default("metric"),
