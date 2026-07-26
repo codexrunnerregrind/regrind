@@ -219,6 +219,12 @@ export function demoGetProfiles(profileIds: number[]): DemoShortProfile[] {
 	return profileIds.map((id) => buildShortProfile(profileSeed(id)));
 }
 
+export function demoFavoriteNotes() {
+	return demoGridOrder
+		.filter((id) => profileSeed(id).favorite)
+		.map((id) => ({ counterpartyId: id, notes: "", phoneNumber: "" }));
+}
+
 export function demoSearchProfiles(params: URLSearchParams) {
 	const ids = filteredGridIds(params).slice(0, GRID_PAGE_SIZE);
 	return ids.map((id) => {

@@ -24,6 +24,7 @@ import {
 	buildFullProfile,
 	buildShortProfile,
 	demoCascadeV4,
+	demoFavoriteNotes,
 	demoGetProfiles,
 	demoMyUploadedPhotos,
 	demoSearchProfiles,
@@ -94,6 +95,8 @@ export function demoRoute(
 		return ok({ profiles: demoReceivedTaps() });
 	if (rawPath === "/v2/taps/add") return ok({ isMutual: false });
 	if (rawPath === "/v7/views/list") return ok(demoViews());
+	if (method === "GET" && rawPath === "/v1/favorites/notes")
+		return ok(demoFavoriteNotes());
 	if (rawPath === "/v3.1/me/blocks") return ok({ blocking: [] });
 	if (method === "POST" && rawPath === "/v4/inbox") {
 		return ok(demoConversations(num(params.get("page")) ?? 1));

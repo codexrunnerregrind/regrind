@@ -26,6 +26,7 @@ import {
 	profileSchema,
 	profileShortSchema,
 } from "$lib/model/users/profiles";
+import { favoriteNotesResponseSchema } from "$lib/model/users/favorites";
 
 const shortProfileSchema = z.object({
 	...profileShortSchema.shape,
@@ -227,6 +228,22 @@ describe("demo route data matches the real schemas", () => {
 		};
 		for (const profile of views.profiles) viewerProfileSchema.parse(profile);
 		for (const preview of views.previews) viewPreviewSchema.parse(preview);
+	});
+
+	it("favorite notes validate and hydrate to valid profiles", () => {
+		const notes = favoriteNotesResponseSchema.parse(
+			route("/v1/favorites/notes"),
+		);
+		expect(notes.length).toBeGreaterThan(0);
+
+		const ids = notes.map((note) => note.counterpartyId);
+		const { profiles } = route("/v3/profiles", "POST", {
+			targetProfileIds: ids,
+		}) as { profiles: unknown[] };
+		expect(profiles).toHaveLength(ids.length);
+		expect(
+			profiles.every((profile) => shortProfileSchema.parse(profile).isFavorite),
+		).toBe(true);
 	});
 
 	it("reference data validates and mutations are accepted no-ops", () => {

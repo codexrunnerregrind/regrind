@@ -1,5 +1,15 @@
 import { fetchRest } from "$lib/api";
+import { favoriteNotesResponseSchema } from "$lib/model/users/favorites";
 import type { Profile } from "$lib/model/users/profiles";
+
+// Lists every favorited profile (online or offline, regardless of location).
+// Each entry only carries the target profile id, so callers hydrate the full
+// profiles separately.
+export async function getFavoriteNotes() {
+	return await fetchRest("/v1/favorites/notes").then((res) =>
+		res.jsonParsed(favoriteNotesResponseSchema),
+	);
+}
 
 export async function addFavoriteUser({
 	profileId,
