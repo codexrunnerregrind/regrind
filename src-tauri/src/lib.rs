@@ -101,6 +101,7 @@ pub fn run() {
         .plugin(tauri_plugin_geolocation::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_notification::init())
         .plugin(api::google_oauth::plugin())
         .manage(AppState {
             client: OnceLock::new(),

@@ -39,6 +39,8 @@ const preferencesSchema = z.object({
 	// device (refresh re-detects); when false it stays on the mock `geohash`.
 	usingCurrentLocation: z.boolean().default(false),
 	gridSearchFilters: gridSearchFiltersSchema.optional(),
+	notifyMessages: z.boolean().default(true),
+	notifyTaps: z.boolean().default(true),
 	revealMessageRead: z.boolean().default(false),
 	revealProfileViews: z.boolean().default(false),
 	themeMode: themeModeSchema.default("system"),

@@ -57,6 +57,7 @@
 		"opener:default",
 		"clipboard-manager:default",
 		"clipboard-manager:allow-write-text",
-		"dialog:allow-open"
+		"dialog:allow-open",
+		"notification:default"
 	]
 }

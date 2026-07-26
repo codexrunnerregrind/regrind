@@ -4,6 +4,7 @@
 
 	import ToastUnimplemented from "$lib/components/feedback/ToastUnimplemented.svelte";
 	import * as Item from "$lib/components/ui/item";
+	import NotificationSettings from "./NotificationSettings.svelte";
 	import RevealMessageReadSetting from "./RevealMessageReadSetting.svelte";
 	import RevealProfileViewSetting from "./RevealProfileViewSetting.svelte";
 	import UnitsSetting from "./UnitsSetting.svelte";
@@ -43,10 +44,8 @@
 {/snippet}
 <h2>Display</h2>
 <UnitsSetting />
-{@render item({
-	title: "Notifications",
-	unimplemented: { feature: "Notifications", issue: 45 },
-})}
+<h2>Notifications</h2>
+<NotificationSettings />
 <h2>Privacy</h2>
 <RevealMessageReadSetting />
 <RevealProfileViewSetting />
