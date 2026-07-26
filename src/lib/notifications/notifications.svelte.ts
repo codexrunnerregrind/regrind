@@ -1,8 +1,11 @@
+import { goto } from "$app/navigation";
 import {
 	isPermissionGranted,
+	onAction,
 	requestPermission,
 	sendNotification,
 } from "@tauri-apps/plugin-notification";
+import z from "zod";
 
 import { getPreferences } from "$lib/app-data/preferences.svelte";
 import { peekConversationsState } from "$lib/chat/conversations-context.svelte";
@@ -15,6 +18,10 @@ import {
 import type { ApiResponseMessage } from "$lib/model/messaging/messages";
 
 type PermissionState = "unknown" | "granted" | "denied" | "default";
+
+// `extra` survives the round-trip through the OS and comes back on tap, so we
+// stash the in-app route to open there.
+const notificationExtraSchema = z.object({ route: z.string().optional() });
 
 /**
  * OS-level notifications for incoming realtime events.
@@ -45,13 +52,36 @@ class NotificationService {
 		this.#started = true;
 		this.#ourProfileId = ourProfileId;
 
+		// Any of these can reject when the Tauri runtime is absent (e.g. running in
+		// a plain browser); normalise every entry to a safe unlisten so teardown
+		// never throws.
+		const safe = (p: Promise<() => void>): Promise<() => void> =>
+			p.catch((error: unknown) => {
+				console.error("[notifications] listener registration failed", error);
+				return () => {};
+			});
+
 		this.#unlisteners.push(
-			ws.on("chat.v1.message_sent", chatV1MessageSentEventSchema, (event) => {
-				void this.#onMessage(event.payload);
-			}),
-			ws.on("tap.v1.tap_sent", tapV1TapSentEventSchema, (event) => {
-				void this.#onTap(event.payload);
-			}),
+			safe(
+				ws.on("chat.v1.message_sent", chatV1MessageSentEventSchema, (event) => {
+					void this.#onMessage(event.payload);
+				}),
+			),
+			safe(
+				ws.on("tap.v1.tap_sent", tapV1TapSentEventSchema, (event) => {
+					void this.#onTap(event.payload);
+				}),
+			),
+			// Tapping a notification (or its action) foregrounds the app and fires
+			// this; open the route we stashed in `extra`.
+			safe(
+				onAction((notification) => {
+					const route = notificationExtraSchema.safeParse(
+						notification.extra,
+					).data?.route;
+					if (route) void goto(route);
+				}).then((listener) => () => void listener.unregister()),
+			),
 		);
 
 		// Warm up permission on launch so the first real event can notify without a
@@ -122,6 +152,7 @@ class NotificationService {
 			title: senderName || "New message",
 			body: previewLabel(previewFromMessage(message)) ?? "Sent you a message",
 			group: message.conversationId,
+			extra: { route: `/chat/${message.conversationId}` },
 		});
 	}
 
@@ -144,6 +175,7 @@ class NotificationService {
 			title: "New tap",
 			body: name ? `${name} tapped you` : "Someone tapped you",
 			group: `tap:${tap.senderId}`,
+			extra: { route: "/interest/taps" },
 		});
 	}
 }
