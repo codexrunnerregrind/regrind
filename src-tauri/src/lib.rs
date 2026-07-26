@@ -93,6 +93,22 @@ pub fn run() {
     #[cfg(mobile)]
     let builder = builder.plugin(tauri_plugin_haptics::init());
 
+    // On iOS/macOS the WKWebView renders our page in a separate web content
+    // process. While the app is backgrounded, iOS reclaims memory by jettisoning
+    // that process (easily triggered by opening other apps). WKWebView does not
+    // recover on its own: on return the view is blank and unresponsive, and the
+    // only cure is force-quitting and relaunching — which is the "UI freezes,
+    // I have to reopen the app" symptom. WKWebView delivers
+    // `webViewWebContentProcessDidTerminate`, which wry surfaces here; the
+    // documented fix is to reload, which respawns the content process.
+    #[cfg(any(target_os = "ios", target_os = "macos"))]
+    let builder = builder.on_web_content_process_terminate(|webview| {
+        eprintln!("[webview] web content process terminated; reloading to recover");
+        if let Err(e) = webview.reload() {
+            eprintln!("[webview] reload after content-process termination failed: {e}");
+        }
+    });
+
     builder
         .plugin(open_grind_platform_plugin())
         .plugin(tauri_plugin_dialog::init())
