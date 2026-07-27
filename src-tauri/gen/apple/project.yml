@@ -30,7 +30,11 @@ targets:
     sources:
       - path: Sources
       - path: Assets.xcassets
+      # Only the active configuration's libapp.a should reach the bundle; globbing
+      # both debug/ and release/ makes two copy commands fight over the same path.
       - path: Externals
+        excludes:
+          - "*/debug"
       - path: open-grind_iOS
       - path: assets
         buildPhase: resources
@@ -40,6 +44,8 @@ targets:
       path: open-grind_iOS/Info.plist
       properties:
         LSRequiresIPhoneOS: true
+        NSLocationWhenInUseUsageDescription: Open Grind uses your location to show where you are on the map and to share your location in chats.
+        NSPhotoLibraryAddUsageDescription: Open Grind saves photos and videos you download from chats to your Photos library.
         UILaunchStoryboardName: LaunchScreen
         UIRequiredDeviceCapabilities: [arm64, metal]
         UISupportedInterfaceOrientations:

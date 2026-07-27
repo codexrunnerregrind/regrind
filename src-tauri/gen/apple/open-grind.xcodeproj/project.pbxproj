@@ -17,16 +17,19 @@
 		C481D4383CA8C5F2D85A3920 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6317E3462D1514EC85708C79 /* Assets.xcassets */; };
 		CC009F7CD2502D7359D5A12F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 945C140FF298948FFB951EB6 /* LaunchScreen.storyboard */; };
 		E8A5D61B0A5A10B6890873A3 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 7BC715B4E517EFC458993030 /* assets */; };
+		EF16A5F6EBCDE7670CB36EDF /* HideInputAccessory.mm in Sources */ = {isa = PBXBuildFile; fileRef = 04AD49A7891949C74DE2E142 /* HideInputAccessory.mm */; };
 		F26006DE3DA1630253A2674B /* libapp.a in Resources */ = {isa = PBXBuildFile; fileRef = A95C3576409D00E9793E5797 /* libapp.a */; };
 		F6B3441FE45B1E54BA09CFB9 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 04C410E122DCFD78C7B7D5CD /* WebKit.framework */; };
 		F8B006C1A6DA759FAEC25D16 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8E9207576D4E967417A5DBBB /* UIKit.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		04AD49A7891949C74DE2E142 /* HideInputAccessory.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = HideInputAccessory.mm; sourceTree = "<group>"; };
 		04C410E122DCFD78C7B7D5CD /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		0FDAA82C8CDCF37C725EA794 /* client.rs */ = {isa = PBXFileReference; path = client.rs; sourceTree = "<group>"; };
 		111884E929AAAB5FCEAF142B /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		1B783D6A49BB78418922B11B /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
+		1E86815E36FC5BB9429D127A /* media_download.rs */ = {isa = PBXFileReference; path = media_download.rs; sourceTree = "<group>"; };
 		23FC9030341F22BCC8C1DB75 /* error.rs */ = {isa = PBXFileReference; path = error.rs; sourceTree = "<group>"; };
 		24921155B146EBBBD04774DF /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
 		35E7799A490B0E8E059F2942 /* mod.rs */ = {isa = PBXFileReference; path = mod.rs; sourceTree = "<group>"; };
@@ -48,6 +51,7 @@
 		A95C3576409D00E9793E5797 /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
 		AC451D2AE06F7E09F2F015C1 /* media_upload.rs */ = {isa = PBXFileReference; path = media_upload.rs; sourceTree = "<group>"; };
 		BCC99EAF8BFB0694EAC26446 /* lib.rs */ = {isa = PBXFileReference; path = lib.rs; sourceTree = "<group>"; };
+		C253EDE0B143CB810A24DA0A /* logging.rs */ = {isa = PBXFileReference; path = logging.rs; sourceTree = "<group>"; };
 		C60FD689806A879B96C88019 /* rest.rs */ = {isa = PBXFileReference; path = rest.rs; sourceTree = "<group>"; };
 		DD6D16D95AAB38BF66545751 /* web.rs */ = {isa = PBXFileReference; path = web.rs; sourceTree = "<group>"; };
 		E5ADA4E2783DB83BF4F1A3C4 /* android.rs */ = {isa = PBXFileReference; path = android.rs; sourceTree = "<group>"; };
@@ -119,6 +123,7 @@
 		8DE7CFF9B84691435B68979F /* open-grind */ = {
 			isa = PBXGroup;
 			children = (
+				04AD49A7891949C74DE2E142 /* HideInputAccessory.mm */,
 				24921155B146EBBBD04774DF /* main.mm */,
 				ACB269354C4450E320349E84 /* bindings */,
 			);
@@ -138,6 +143,7 @@
 			children = (
 				23FC9030341F22BCC8C1DB75 /* error.rs */,
 				BCC99EAF8BFB0694EAC26446 /* lib.rs */,
+				C253EDE0B143CB810A24DA0A /* logging.rs */,
 				70E570E9C9D517912E41101F /* main.rs */,
 				56B07937C31C302D37E0E0F3 /* state.rs */,
 				EDEF35985A581A144A08C78A /* storage.rs */,
@@ -168,6 +174,7 @@
 			children = (
 				EE57BA2136A5AF49F60F9F43 /* auth.rs */,
 				0FDAA82C8CDCF37C725EA794 /* client.rs */,
+				1E86815E36FC5BB9429D127A /* media_download.rs */,
 				AC451D2AE06F7E09F2F015C1 /* media_upload.rs */,
 				9D59937947635CAECA0115F9 /* mod.rs */,
 				C60FD689806A879B96C88019 /* rest.rs */,
@@ -211,7 +218,7 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		"TEMP_3AEC8CEF-F14E-4B75-A946-2DD6FFAD7099" /* x86_64 */ = {
+		"TEMP_5AE23297-D9F0-42AD-8708-6B8C08743F02" /* x86_64 */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -314,6 +321,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EF16A5F6EBCDE7670CB36EDF /* HideInputAccessory.mm in Sources */,
 				958AEB08DC253BDEBCDAD1DD /* main.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

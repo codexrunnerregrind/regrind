@@ -18,6 +18,7 @@
 		registerAndroidBackButtonListener,
 	} from "$lib/platform/android-native-bridge";
 	import { blockZoom } from "$lib/platform/block-zoom";
+	import { applyKeyboardInset } from "$lib/platform/keyboard-inset";
 	import { applySwipeBackGesture } from "$lib/platform/swipe-back-gesture";
 
 	onMount(() => {
@@ -38,6 +39,8 @@
 			};
 		}
 		applyAndroidInsets();
+		// Must follow applyAndroidInsets — it reads the inset that call writes.
+		const releaseKeyboardInset = applyKeyboardInset();
 		applyBackGestureHandler();
 		const releaseZoomBlock = blockZoom();
 		const releaseSwipeBack = applySwipeBackGesture();
@@ -51,6 +54,7 @@
 			console.error("Failed to hydrate preferences", error);
 		});
 		return () => {
+			releaseKeyboardInset();
 			releaseZoomBlock();
 			releaseSwipeBack();
 			releaseTheme();
