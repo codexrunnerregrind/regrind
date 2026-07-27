@@ -31,7 +31,11 @@
 					gallery,
 					children: ".item",
 					pswpModule: () => import("photoswipe"),
-					mainClass: `pswp--buttons-visible`,
+					// `pswp--close-only` scopes this route's button-hiding rule to this
+					// lightbox: its CSS is global once the profile chunk loads, and an
+					// unscoped rule would also strip zoom/download from the chat and
+					// album viewers for the rest of the session.
+					mainClass: `pswp--buttons-visible pswp--close-only`,
 				});
 				lightbox.addFilter("itemData", (itemData) => {
 					const img = itemData.element?.querySelector("img");
@@ -162,16 +166,16 @@
 		display: none;
 	}
 	:global {
-		.pswp .pswp__button:not(.pswp__button--close) {
+		.pswp--close-only .pswp__button:not(.pswp__button--close) {
 			display: none;
 		}
-		.pswp .pswp__created-at-label {
+		.pswp--close-only .pswp__created-at-label {
 			text-shadow: 1px 1px 3px var(--pswp-icon-color-secondary);
 			@apply absolute bottom-0 left-1/2 flex w-full -translate-x-1/2 items-center justify-center bg-linear-to-t from-background/60 pt-4 font-medium text-white/90;
 			height: calc(4rem + var(--safe-area-bottom));
 			padding-bottom: calc(0.5rem + var(--safe-area-bottom));
 		}
-		.pswp .pswp__top-bar {
+		.pswp--close-only .pswp__top-bar {
 			margin-top: var(--safe-area-top);
 		}
 	}
