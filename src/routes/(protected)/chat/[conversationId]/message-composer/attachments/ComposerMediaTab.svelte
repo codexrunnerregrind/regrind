@@ -2,13 +2,19 @@
 	import { page } from "$app/state";
 	import ImageIcon from "phosphor-svelte/lib/ImageIcon";
 	import PlusIcon from "phosphor-svelte/lib/PlusIcon";
+	import TrashIcon from "phosphor-svelte/lib/TrashIcon";
 	import { toast } from "svelte-sonner";
 
 	import { addMediaToDrawer } from "$lib/api/messaging/chat-media";
-	import { type DrawerMedia, getDrawerMedia } from "$lib/api/messaging/drawer";
+	import {
+		deleteMediaFromDrawer,
+		type DrawerMedia,
+		getDrawerMedia,
+	} from "$lib/api/messaging/drawer";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import SelectionCheck from "$lib/components/shared/SelectionCheck.svelte";
 	import { Button } from "$lib/components/ui/button";
+	import * as ContextMenu from "$lib/components/ui/context-menu";
 	import * as Empty from "$lib/components/ui/empty";
 	import { Skeleton } from "$lib/components/ui/skeleton";
 	import { pickMultipleMedia } from "$lib/platform/media-picker";
@@ -34,6 +40,7 @@
 	let media = $state<DrawerMedia[] | null>(null);
 	let error = $state<unknown>(null);
 	let uploadingCount = $state(0);
+	let contextMenuUsed = $state(false);
 
 	async function load() {
 		media = null;
@@ -70,6 +77,25 @@
 			} finally {
 				uploadingCount--;
 			}
+		}
+	}
+
+	async function deletePhoto(id: number) {
+		if (media === null) return;
+		const index = media.findIndex((item) => item.id === id);
+		if (index === -1) return;
+		const [removed] = media.splice(index, 1);
+		if (selected.has(id)) {
+			selected.delete(id);
+			onSelectionChange(selected.size);
+		}
+		try {
+			await deleteMediaFromDrawer(id);
+		} catch (err) {
+			console.error(err);
+			toast.error("Couldn't delete photo");
+			// Put it back where it was; an upload may have prepended since.
+			media?.splice(Math.min(index, media.length), 0, removed);
 		}
 	}
 
@@ -156,36 +182,57 @@
 			{/each}
 			{#each media as item (item.id)}
 				{@const isSelected = selected.has(item.id)}
-				<button
-					type="button"
-					class={[
-						"relative aspect-square",
-						{ "cursor-pointer": selected.canSelectMore || isSelected },
-					]}
-					aria-label={isSelected ? "Deselect media" : "Select media"}
-					aria-pressed={isSelected}
-					onclick={() => toggleSelected(item.id)}
+				<ContextMenu.Root
+					onOpenChange={(open) => {
+						if (open) contextMenuUsed = true;
+					}}
 				>
-					<img
-						src={item.url}
-						alt=""
-						class="size-full rounded-[inherit] bg-card-foreground/10 object-cover"
-						draggable="false"
-					/>
-					{#if isSelected}
-						<div
-							class="absolute inset-0 flex items-center justify-center rounded-[inherit] bg-primary/50 outline-2 -outline-offset-2 outline-primary"
+					<ContextMenu.Trigger
+						class="relative aspect-square [-webkit-touch-callout:none] **:[-webkit-touch-callout:none]"
+					>
+						<button
+							type="button"
+							class={[
+								"relative size-full rounded-[inherit]",
+								{ "cursor-pointer": selected.canSelectMore || isSelected },
+							]}
+							aria-label={isSelected ? "Deselect media" : "Select media"}
+							aria-pressed={isSelected}
+							onclick={() => toggleSelected(item.id)}
 						>
-							<SelectionCheck />
-						</div>
-					{:else if item.used}
-						<div
-							class="absolute inset-0 flex items-center justify-center rounded-[inherit] bg-black/50"
-						>
-							<span class="font-medium text-white">Sent</span>
-						</div>
+							<img
+								src={item.url}
+								alt=""
+								class="size-full rounded-[inherit] bg-card-foreground/10 object-cover"
+								draggable="false"
+							/>
+							{#if isSelected}
+								<div
+									class="absolute inset-0 flex items-center justify-center rounded-[inherit] bg-primary/50 outline-2 -outline-offset-2 outline-primary"
+								>
+									<SelectionCheck />
+								</div>
+							{:else if item.used}
+								<div
+									class="absolute inset-0 flex items-center justify-center rounded-[inherit] bg-black/50"
+								>
+									<span class="font-medium text-white">Sent</span>
+								</div>
+							{/if}
+						</button>
+					</ContextMenu.Trigger>
+					{#if contextMenuUsed}
+						<ContextMenu.Content class="w-48">
+							<ContextMenu.Item
+								variant="destructive"
+								onSelect={() => void deletePhoto(item.id)}
+							>
+								<TrashIcon class="size-5" />
+								Delete Photo
+							</ContextMenu.Item>
+						</ContextMenu.Content>
 					{/if}
-				</button>
+				</ContextMenu.Root>
 			{/each}
 		</div>
 	{/if}

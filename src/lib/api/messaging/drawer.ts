@@ -25,3 +25,9 @@ export async function saveMediaToDrawer(mediaId: number): Promise<void> {
 		(res) => res.assertOk(),
 	);
 }
+
+export async function deleteMediaFromDrawer(mediaId: number): Promise<void> {
+	await fetchRest(`/v4/chat/media/drawer/${mediaId}`, {
+		method: "DELETE",
+	}).then((res) => res.assertOk());
+}
