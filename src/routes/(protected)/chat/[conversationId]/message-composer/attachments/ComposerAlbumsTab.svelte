@@ -11,7 +11,11 @@
 		getAlbumShared,
 		setAlbumShared,
 	} from "$lib/api/messaging/album-shares-state.svelte";
-	import { getMyAlbums, shareAlbum } from "$lib/api/messaging/albums";
+	import {
+		getMyAlbums,
+		shareAlbum,
+		unshareAlbum,
+	} from "$lib/api/messaging/albums";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
@@ -71,6 +75,13 @@
 		),
 	);
 
+	// Selecting an already-shared album flips the sheet into "stop sharing"
+	// intent. Shared and unshared albums can't be mixed in one selection (see
+	// `toggle`), so a single selected shared album is enough to decide the mode.
+	const stopMode = $derived(
+		[...selectedIds].some((id) => sharedAlbumIds.has(id)),
+	);
+
 	async function load() {
 		albums = null;
 		error = null;
@@ -93,8 +104,16 @@
 
 	function toggle(albumId: number) {
 		const next = new Set(selectedIds);
-		if (next.has(albumId)) next.delete(albumId);
-		else next.add(albumId);
+		if (next.has(albumId)) {
+			next.delete(albumId);
+		} else {
+			// Never mix shared and unshared albums: tapping one whose share state
+			// differs from the current selection starts a fresh selection instead.
+			const wasStop = [...next].some((id) => sharedAlbumIds.has(id));
+			if (next.size > 0 && wasStop !== sharedAlbumIds.has(albumId))
+				next.clear();
+			next.add(albumId);
+		}
 		selectedIds = next;
 	}
 
@@ -114,6 +133,33 @@
 		} catch (err) {
 			console.error(err);
 			showErrorToast({ label: "Failed to share album", error: err });
+		} finally {
+			sharing = false;
+		}
+	}
+
+	async function unshare() {
+		if (selectedIds.size === 0 || recipientId === null || sharing) return;
+		sharing = true;
+		const ids = [...selectedIds];
+		// Optimistically lock the shared-album bubbles in the chat so they show as
+		// no longer viewable straight away; revert them if the request fails.
+		const reverts = ids.map(
+			(albumId) => conversationState.lockSharedAlbum(albumId).revert,
+		);
+		try {
+			await Promise.all(
+				ids.map((albumId) =>
+					unshareAlbum({ albumId, profileIds: [recipientId] }),
+				),
+			);
+			for (const albumId of ids) setAlbumShared(albumId, recipientId, false);
+			onClose();
+			toast.success(ids.length === 1 ? "Album unshared" : "Albums unshared");
+		} catch (err) {
+			for (const revert of reverts) revert();
+			console.error(err);
+			showErrorToast({ label: "Failed to unshare album", error: err });
 		} finally {
 			sharing = false;
 		}
@@ -153,7 +199,7 @@
 				<button
 					type="button"
 					class={[
-						"relative aspect-3/4 rounded-[inherit] transition-[outline] outline-3 -outline-offset-3",
+						"relative aspect-3/4 rounded-[inherit] outline-3 -outline-offset-3 transition-[outline]",
 						isSelected ? "outline-primary" : "outline-transparent",
 					]}
 					aria-pressed={isSelected}
@@ -203,45 +249,61 @@
 			{/each}
 		</div>
 
-		<!-- Expiry dropdown + share, mirroring the official app's layout. -->
-		<div class="flex flex-col items-center gap-3 pt-1">
-			<DropdownMenu.Root>
-				<DropdownMenu.Trigger>
-					{#snippet child({ props })}
-						<button
-							{...props}
-							type="button"
-							class="flex items-center gap-2 text-lg font-semibold"
-						>
-							<CheckCircleIcon weight="regular" class="size-6 text-primary" />
-							{expirationLabel}
-							<CaretDownIcon weight="bold" class="size-4" />
-						</button>
-					{/snippet}
-				</DropdownMenu.Trigger>
-				<DropdownMenu.Content class="w-52" align="center">
-					<DropdownMenu.Label>Share album for…</DropdownMenu.Label>
-					{#each EXPIRATION_OPTIONS as option (option.value)}
-						<DropdownMenu.Item onSelect={() => (expirationType = option.value)}>
-							{#if option.value === expirationType}
-								<CheckCircleIcon weight="fill" class="size-5 text-primary" />
-							{:else}
-								<span class="size-5"></span>
-							{/if}
-							{option.label}
-						</DropdownMenu.Item>
-					{/each}
-				</DropdownMenu.Content>
-			</DropdownMenu.Root>
+		<!-- Reserve room so the last row can scroll clear of the floating bar. -->
+		<div class="h-32 shrink-0" aria-hidden="true"></div>
+
+		<!-- Expiry dropdown + share/stop-share. Floated over the bottom of the
+		     sheet (like the media tab's Send button) so it stays visible without
+		     dragging the sheet up, regardless of how many albums there are. -->
+		<div
+			class="pointer-events-none absolute inset-x-0 bottom-18 flex flex-col items-center gap-3 bg-linear-to-t from-popover via-popover to-transparent px-4 pt-8 pb-1"
+		>
+			{#if !stopMode}
+				<DropdownMenu.Root>
+					<DropdownMenu.Trigger>
+						{#snippet child({ props })}
+							<button
+								{...props}
+								type="button"
+								class="pointer-events-auto flex items-center gap-2 text-lg font-semibold"
+							>
+								<CheckCircleIcon weight="regular" class="size-6 text-primary" />
+								{expirationLabel}
+								<CaretDownIcon weight="bold" class="size-4" />
+							</button>
+						{/snippet}
+					</DropdownMenu.Trigger>
+					<DropdownMenu.Content class="w-52" align="center">
+						<DropdownMenu.Label>Share album for…</DropdownMenu.Label>
+						{#each EXPIRATION_OPTIONS as option (option.value)}
+							<DropdownMenu.Item
+								onSelect={() => (expirationType = option.value)}
+							>
+								{#if option.value === expirationType}
+									<CheckCircleIcon weight="fill" class="size-5 text-primary" />
+								{:else}
+									<span class="size-5"></span>
+								{/if}
+								{option.label}
+							</DropdownMenu.Item>
+						{/each}
+					</DropdownMenu.Content>
+				</DropdownMenu.Root>
+			{/if}
 
 			<Button
 				size="lg"
-				class="w-full"
+				variant={stopMode ? "destructive" : "default"}
+				class="pointer-events-auto w-full shadow-lg"
 				disabled={selectedIds.size === 0 || recipientId === null || sharing}
-				onclick={() => void share()}
+				onclick={() => void (stopMode ? unshare() : share())}
 			>
 				{#if sharing}
-					Sharing…
+					{stopMode ? "Stopping…" : "Sharing…"}
+				{:else if stopMode}
+					{selectedIds.size > 1
+						? `Stop Sharing ${selectedIds.size} Albums`
+						: "Stop Sharing"}
 				{:else if selectedIds.size > 1}
 					Share {selectedIds.size} Albums
 				{:else}
