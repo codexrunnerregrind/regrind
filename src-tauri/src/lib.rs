@@ -1,5 +1,7 @@
 pub mod api;
 mod error;
+#[cfg_attr(debug_assertions, allow(dead_code))]
+mod logging;
 mod state;
 mod storage;
 
@@ -79,6 +81,9 @@ fn outdated_webview_notice() -> Option<String> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    #[cfg(not(debug_assertions))]
+    logging::init();
+
     #[cfg(debug_assertions)]
     let devtools = tauri_plugin_devtools::init();
 
@@ -139,6 +144,24 @@ pub fn run() {
             api::client::rotate_api_params,
         ])
         .setup(|app| {
+            let user_agent = format!(
+                "open-grind/{} (+https://opengrind.org/; contact: admin@opengrind.org)",
+                app.package_info().version
+            );
+            let deferred: Vec<_> = app
+                .config()
+                .app
+                .windows
+                .iter()
+                .filter(|window| !window.create)
+                .cloned()
+                .collect();
+            for window in deferred {
+                tauri::WebviewWindowBuilder::from_config(app.handle(), &window)?
+                    .user_agent(&user_agent)
+                    .build()?;
+            }
+
             #[cfg(desktop)]
             if let Some(message) = outdated_webview_notice() {
                 use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
@@ -149,7 +172,10 @@ pub fn run() {
                     .show(|_| {});
             }
 
-            #[cfg(all(target_os = "macos", not(feature = "keychain")))]
+            #[cfg(any(
+                target_os = "linux",
+                all(target_os = "macos", not(feature = "keychain"))
+            ))]
             storage::init_file_store(app.path().app_data_dir()?);
 
             storage::init_keyring();
@@ -159,12 +185,12 @@ pub fn run() {
                 Ok(None) => {
                     let d = grindr::DeviceInfo::generate();
                     if let Err(e) = DeviceStorage::save(&d) {
-                        eprintln!("[setup] could not persist device info: {e}");
+                        tracing::error!("[setup] could not persist device info: {e}");
                     }
                     d
                 }
                 Err(e) => {
-                    eprintln!("[setup] could not load device info, regenerating: {e}");
+                    tracing::warn!("[setup] could not load device info, regenerating: {e}");
                     grindr::DeviceInfo::generate()
                 }
             };
@@ -172,7 +198,7 @@ pub fn run() {
             let session = match AuthStorage::get_session() {
                 Ok(s) => s,
                 Err(e) => {
-                    eprintln!("[setup] could not load session: {e}");
+                    tracing::warn!("[setup] could not load session: {e}");
                     None
                 }
             };
@@ -187,7 +213,7 @@ pub fn run() {
                         match session_rx.borrow().as_ref() {
                             Some(s) => {
                                 if let Err(e) = AuthStorage::set_session(s) {
-                                    eprintln!("[session] persist failed: {e}");
+                                    tracing::error!("[session] persist failed: {e}");
                                 }
                             }
                             None => AuthStorage::delete_session(),
@@ -208,7 +234,7 @@ pub fn run() {
                         match key_rx.borrow().clone() {
                             Some(k) => {
                                 if let Err(e) = SigningKeyStorage::save(&k) {
-                                    eprintln!("[signing] persist failed: {e}");
+                                    tracing::error!("[signing] persist failed: {e}");
                                 }
                             }
                             None => SigningKeyStorage::delete(),

@@ -5,11 +5,41 @@ import perfectionist from "eslint-plugin-perfectionist";
 import svelte from "eslint-plugin-svelte";
 import { defineConfig } from "eslint/config";
 import globals from "globals";
+import path from "node:path";
 import ts from "typescript-eslint";
 
 import svelteConfig from "./svelte.config.js";
 
+const progress = {
+	rules: {
+		file: {
+			create(context) {
+				if (process.env.ESLINT_PROGRESS)
+					process.stderr.write(
+						`  lint ${path.relative(context.cwd, context.filename)}\n`,
+					);
+				return {};
+			},
+		},
+	},
+};
+
 export default defineConfig(
+	{
+		ignores: [
+			"build/",
+			".svelte-kit/",
+			"src-tauri/",
+			"reverse/",
+			"docs/",
+			"contrib/",
+			"coverage/",
+			"static/",
+			"scripts/",
+			"test-results/",
+			"playwright-report/",
+		],
+	},
 	js.configs.recommended,
 	...ts.configs.recommendedTypeChecked,
 	prettier,
@@ -17,6 +47,7 @@ export default defineConfig(
 	{
 		plugins: {
 			perfectionist,
+			progress,
 		},
 		languageOptions: {
 			globals: globals.node,
@@ -25,6 +56,7 @@ export default defineConfig(
 			},
 		},
 		rules: {
+			"progress/file": "warn",
 			"no-undef": "off",
 			"@typescript-eslint/require-array-sort-compare": [
 				"error",
@@ -58,6 +90,9 @@ export default defineConfig(
 			"@typescript-eslint/no-unsafe-assignment": "off",
 			"@typescript-eslint/no-unsafe-call": "off",
 			"@typescript-eslint/no-unsafe-member-access": "off",
+			"@typescript-eslint/no-unsafe-argument": "off",
+			"@typescript-eslint/no-unsafe-return": "off",
+			"@typescript-eslint/no-redundant-type-constituents": "off",
 		},
 	},
 	{

@@ -1,0 +1,15 @@
+runner:
+  capacity: 1
+  labels:
+    - open-grind-orchestrator:docker://git.opengrind.org/open-grind/open-grind-orchestrator@sha256:fdc1ebf9f386285dcc27708f50ff57e72e8d0dece0a9900ced6f05928948080f
+container:
+  privileged: false
+  valid_volumes: []
+  docker_host: "-"
+  network: ""
+server:
+  connections:
+    open-grind-orchestrator:
+      url: https://git.opengrind.org/
+      uuid: 00000000-0000-0000-0000-000000000000
+      token: 0000000000000000000000000000000000000000

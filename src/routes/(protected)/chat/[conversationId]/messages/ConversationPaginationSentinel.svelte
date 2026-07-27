@@ -12,15 +12,15 @@
 	const conversationState = $derived(getConversationState()());
 
 	async function loadMore() {
-		if (
-			!container ||
-			conversationState.loadingMore ||
-			conversationState.pageKey === null
-		)
-			return;
+		const state = conversationState;
+		if (!container || state.loadingMore || state.pageKey === null) return;
 		const prevScrollHeight = container.scrollHeight;
-		await conversationState.loadMore();
+		await state.loadMore();
+		// The scroll container is shared between conversations. If we switched
+		// mid-fetch the old state is destroyed, so skip its scroll adjust.
+		if (state.destroyed || conversationState !== state) return;
 		await tick();
+		if (state.destroyed || conversationState !== state) return;
 		container.scrollTop += container.scrollHeight - prevScrollHeight;
 	}
 

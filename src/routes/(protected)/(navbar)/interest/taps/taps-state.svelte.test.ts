@@ -34,7 +34,7 @@ vi.mock("$lib/util/reconcile", () => ({
 	},
 }));
 import type { TapProfile } from "$lib/model/interest/tap-profile";
-import { TapsState } from "./taps-state.svelte";
+import { resetTapsCacheForTesting, TapsState } from "./taps-state.svelte";
 
 vi.mock("$lib/ws.svelte", async (importOriginal) => ({
 	...(await importOriginal<typeof import("$lib/ws.svelte")>()),
@@ -86,7 +86,33 @@ async function waitForLoaded(state: TapsState) {
 	await vi.waitFor(() => expect(state.loading).toBe(false));
 }
 
+function deferred<T>() {
+	let resolve!: (value: T) => void;
+	const promise = new Promise<T>((r) => {
+		resolve = r;
+	});
+	return { promise, resolve };
+}
+
+function tapEvent(senderId: number, recipientId: number) {
+	return {
+		type: "tap.v1.tap_sent",
+		notificationId: null,
+		ref: null,
+		payload: {
+			timestamp: 1_710_000_000_000 + senderId,
+			senderId,
+			recipientId,
+			tapType: 0,
+			senderProfileImageHash: null,
+			senderDisplayName: `Profile ${senderId}`,
+			isMutual: false,
+		},
+	};
+}
+
 beforeEach(() => {
+	resetTapsCacheForTesting();
 	getReceivedTapsMock.mockReset();
 	showErrorToastMock.mockReset();
 	unsubscribeReconcileMock.mockReset();
@@ -176,6 +202,41 @@ describe("TapsState", () => {
 			tapType: 2,
 			isMutual: true,
 		});
+	});
+
+	it("keeps a websocket tap that lands while a reconcile fetch is in flight", async () => {
+		getReceivedTapsMock.mockResolvedValueOnce({ profiles: [tap(1)] });
+		const state = new TapsState({ ourProfileId: 99 });
+		await waitForLoaded(state);
+
+		const gate = deferred<{ profiles: TapProfile[] }>();
+		getReceivedTapsMock.mockReturnValueOnce(gate.promise);
+
+		const reconcilePromise = reconcileHandlers[0]?.();
+		emitTap(tapEvent(5, 99));
+		gate.resolve({ profiles: [tap(1), tap(2)] });
+		await reconcilePromise;
+
+		const ids = state.taps.map((entry) => entry.profileId);
+		expect(ids).toEqual([5, 1, 2]);
+	});
+
+	it("does not duplicate a mid-fetch tap already in the snapshot", async () => {
+		getReceivedTapsMock.mockResolvedValueOnce({ profiles: [tap(1)] });
+		const state = new TapsState({ ourProfileId: 99 });
+		await waitForLoaded(state);
+
+		const gate = deferred<{ profiles: TapProfile[] }>();
+		getReceivedTapsMock.mockReturnValueOnce(gate.promise);
+
+		const reconcilePromise = reconcileHandlers[0]?.();
+		emitTap(tapEvent(2, 99));
+		gate.resolve({ profiles: [tap(1), tap(2)] });
+		await reconcilePromise;
+
+		const ids = state.taps.map((entry) => entry.profileId);
+		expect(ids.filter((id) => id === 2)).toHaveLength(1);
+		expect(ids).toEqual([1, 2]);
 	});
 
 	it("reconciles after initial load and cleans up listeners on destroy", async () => {

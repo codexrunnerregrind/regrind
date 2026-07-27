@@ -106,6 +106,7 @@
           toolchainInputs = [
             rustToolchain
             pkgs.bun
+            pkgs.nodejs_24
             jdk
             pkgs.gradle_8
             androidSdk
@@ -113,6 +114,7 @@
             pkgs.stdenv.cc
             pkgs.libclang.lib
             pkgs.gnused # gradlew's arg-parsing needs sed
+            pkgs.git # boring-sys2 patches BoringSSL with `git apply` on every build
           ]
           ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [
             pkgs.libiconv
@@ -144,9 +146,25 @@
 
               ${envExports}
               export PATH="${buildToolsBin}:${cmakeBin}:$PATH"
+              export NODE_OPTIONS="''${NODE_OPTIONS:---max-old-space-size=4096}"
 
               ROOT="''${OPEN_GRIND_ROOT:-$PWD}"
               cd "$ROOT"
+              # rustc and clang see the symlink-resolved path, which is what must match.
+              ROOT="$(pwd -P)"
+
+              # F-Droid's buildserver fixes its checkout and HOME at /repo/build/<appid>
+              # and /home/vagrant, so ours can never match; remap both sides to literals
+              # instead. Lives here, not in build.yml, which F-Droid never reads.
+              CARGO_HOME="''${CARGO_HOME:-$HOME/.cargo}"
+              export CARGO_HOME
+              export RUSTFLAGS="''${RUSTFLAGS:-} --remap-path-prefix=$CARGO_HOME=/cargo --remap-path-prefix=$ROOT=/open-grind"
+              # rustc's remap misses C: BoringSSL bakes __FILE__ from boring-sys2's
+              # OUT_DIR. cc forwards these into the cmake crate's CMAKE_C_FLAGS, and
+              # neither var feeds cargo's unit hash, so boring-sys2-<hash> stays stable.
+              prefixMaps="-ffile-prefix-map=$CARGO_HOME=/cargo -ffile-prefix-map=$ROOT=/open-grind"
+              export CFLAGS="''${CFLAGS:-} $prefixMaps"
+              export CXXFLAGS="''${CXXFLAGS:-} $prefixMaps"
 
               KEYSTORE_DEST="$ROOT/src-tauri/gen/android/keystore.properties"
 
@@ -187,11 +205,18 @@
               if [ "$TARGET" = "aab" ]; then
                 echo "Produced app bundle(s) under: $base/bundle/"
               else
-                apk="$base/apk/universal/release/app-universal-release$sfx.apk"
-                if [ -f "$apk" ]; then
+                # Version-stamp the APK post-build (not in Gradle, which would desync
+                # Tauri's default-path lookup) so local/CI artifacts are identifiable.
+                reldir="$base/apk/universal/release"
+                src="$reldir/app-universal-release$sfx.apk"
+                version="$(sed -n 's/^tauri\.android\.versionName=//p' \
+                  "$ROOT/src-tauri/gen/android/app/tauri.properties")"
+                apk="$reldir/open-grind-v$version$sfx.apk"
+                if [ -f "$src" ]; then
+                  mv -f "$src" "$apk"
                   printf 'Produced: %s (%s)\n' "$apk" "$(du -h "$apk" | cut -f1)"
                 else
-                  printf 'Produced: %s\n' "$apk"
+                  printf 'Produced: %s (expected, not found)\n' "$src"
                 fi
               fi
             '';

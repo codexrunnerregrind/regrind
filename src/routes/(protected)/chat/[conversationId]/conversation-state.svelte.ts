@@ -6,6 +6,7 @@ import { markConversationAsRead } from "$lib/api/messaging/conversations";
 import { reactToMessage, sendMessage } from "$lib/api/messaging/messages";
 import { getPreferences } from "$lib/app-data/preferences.svelte";
 import { previewFromMessage } from "$lib/model/messaging/messages";
+import { now } from "$lib/util/clock";
 import { reconciler } from "$lib/util/reconcile";
 import {
 	chatV1ConversationDeleteEventSchema,
@@ -23,6 +24,9 @@ import { getConversation } from "./messages";
 export type OptimisticMessage = ApiResponseMessage & {
 	status: "sent" | "pending" | "error";
 };
+
+const READ_DEBOUNCE_MS = 500;
+const READ_MAX_WAIT_MS = 2000;
 
 export type ConversationProfile = Awaited<
 	ReturnType<typeof getConversation>
@@ -45,6 +49,7 @@ export class ConversationState {
 	#conversations: ConversationsState;
 	#readQueue: { messageId: string; timestamp: number }[] = [];
 	#readTimer: ReturnType<typeof setTimeout> | null = null;
+	#readDeadline: number | null = null;
 	#unsubscribeReconcile: () => void;
 
 	constructor({
@@ -83,7 +88,7 @@ export class ConversationState {
 				}
 
 				if (incoming.senderId === this.ourProfileId) {
-					const pending = this.messages.find((m) => m.status === "pending");
+					const pending = this.#matchPendingEcho(incoming);
 					if (pending) {
 						pending.status = "sent";
 						pending.messageId = incoming.messageId;
@@ -134,6 +139,9 @@ export class ConversationState {
 	#wsPromises: Promise<() => void>[] = [];
 
 	#destroyed = false;
+	get destroyed(): boolean {
+		return this.#destroyed;
+	}
 	destroy(): void {
 		if (this.#destroyed) return;
 		this.#destroyed = true;
@@ -144,6 +152,7 @@ export class ConversationState {
 		this.#wsPromises = [];
 		this.#unsubscribeReconcile();
 		if (this.#readTimer !== null) clearTimeout(this.#readTimer);
+		if (this.#readQueue.length > 0) void this.#flushReadQueue();
 	}
 
 	async #reconcileMessages(): Promise<void> {
@@ -383,6 +392,21 @@ export class ConversationState {
 		}
 	}
 
+	// Echoes come back in send order, so match the oldest pending; prefer a
+	// same-type match when kinds arrive out of order.
+	#matchPendingEcho(
+		incoming: ApiResponseMessage,
+	): OptimisticMessage | undefined {
+		let fallback: OptimisticMessage | undefined;
+		for (let i = this.messages.length - 1; i >= 0; i--) {
+			const candidate = this.messages[i];
+			if (candidate.status !== "pending") continue;
+			if (candidate.type === incoming.type) return candidate;
+			fallback ??= candidate;
+		}
+		return fallback;
+	}
+
 	#advanceLastRead(timestamp: number | null): boolean {
 		if (timestamp === null) return false;
 		if (this.lastReadTimestamp !== null && timestamp <= this.lastReadTimestamp)
@@ -459,16 +483,23 @@ export class ConversationState {
 		if (this.lastReadTimestamp !== null && timestamp <= this.lastReadTimestamp)
 			return;
 		this.#readQueue.push({ messageId, timestamp });
+		const current = now();
+		this.#readDeadline ??= current + READ_MAX_WAIT_MS;
 		if (this.#readTimer !== null) clearTimeout(this.#readTimer);
+		const delay = Math.max(
+			0,
+			Math.min(READ_DEBOUNCE_MS, this.#readDeadline - current),
+		);
 		this.#readTimer = setTimeout(() => {
 			void this.#flushReadQueue();
-		}, 500);
+		}, delay);
 	}
 
 	async #flushReadQueue(): Promise<void> {
 		const queue = this.#readQueue;
 		this.#readQueue = [];
 		this.#readTimer = null;
+		this.#readDeadline = null;
 		if (queue.length === 0) return;
 		queue.sort((a, b) => a.timestamp - b.timestamp);
 		const highest = queue[queue.length - 1];

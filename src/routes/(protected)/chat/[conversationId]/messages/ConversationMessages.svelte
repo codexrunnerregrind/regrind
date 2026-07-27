@@ -11,6 +11,12 @@
 	import MessagesListSkeleton from "./MessagesListSkeleton.svelte";
 	import ScrollToBottomButton from "./ScrollToBottomButton.svelte";
 
+	let {
+		composerHeight,
+	}: {
+		composerHeight: number;
+	} = $props();
+
 	const conversationState = $derived(getConversationState()());
 
 	let container: HTMLDivElement | null = $state(null);
@@ -148,11 +154,28 @@
 		}
 		lastFirstId = firstId;
 	}
+
+	$effect(() => {
+		onComposerResizeEffect();
+	});
+
+	function onComposerResizeEffect(): void {
+		void composerHeight;
+		const el = container;
+		if (!el) return;
+		untrack(() => {
+			if (!atFloor) return;
+			el.scrollTop = el.scrollHeight;
+		});
+	}
 </script>
 
-<div class="relative flex min-h-0 max-w-full flex-1 flex-col bg-chat-background">
+<div
+	class="relative flex min-h-0 max-w-full flex-1 flex-col bg-chat-background"
+	style:--composer-height="{composerHeight}px"
+>
 	<div
-		class="flex min-h-0 max-w-full flex-1 flex-col gap-1 overflow-auto overscroll-contain p-2 pt-20 pb-16 *:first:mt-auto"
+		class="flex min-h-0 max-w-full flex-1 flex-col gap-1 overflow-auto overscroll-contain p-2 pt-20 pb-[calc(var(--composer-height)+--spacing(1.5))] *:first:mt-auto"
 		bind:this={container}
 		style:overflow-anchor="none"
 		onscroll={onContainerScroll}
@@ -181,7 +204,7 @@
 			bind:this={refreshControl}
 			{container}
 			updating={conversationState.refreshing}
-			containerClass="bottom-11.5"
+			containerClass="bottom-(--composer-height)"
 			hintOffset={8}
 			position="bottom"
 			onrefresh={() => {

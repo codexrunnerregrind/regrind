@@ -218,6 +218,8 @@
 
 @theme {
 	--radius-grid: 17px;
+
+	--radius-composer: 22px;
 }
 
 /* .photo-grid column-count thresholds, queried against the nearest

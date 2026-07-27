@@ -19,16 +19,13 @@
 				"minWidth": 320,
 				"minHeight": 300,
 				"theme": "Dark",
-				"userAgent": "OpenGrind/0.1.0 (+https://opengrind.org/; contact: admin@opengrind.org)",
+				"create": false,
 				"titleBarStyle": "Visible",
 				"backgroundColor": "#1e1e1e"
 			}
 		],
 		"security": {
-			"csp": null,
-			"dangerousDisableAssetCspModification": [
-				"script-src"
-			]
+			"csp": "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'self' 'unsafe-inline'; img-src 'self' data: https://cdns.grindr.com https://tile.openstreetmap.org https://*.giphy.com; media-src 'self' https://cdns.grindr.com https://*.giphy.com; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'; base-uri 'self'; form-action 'self'"
 		}
 	},
 	"bundle": {

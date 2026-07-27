@@ -17,14 +17,17 @@
 		disabled,
 		replyTo,
 		onCancelReply,
+		height = $bindable(0),
 	}: {
 		onSend: (params: Message) => void | Promise<void>;
 		disabled: boolean;
 		replyTo?: ApiResponseMessage | null;
 		onCancelReply?: () => void;
+		height?: number;
 	} = $props();
 
 	let textContent = $state("");
+	let form: HTMLFormElement | null = $state(null);
 
 	async function onSubmit() {
 		const text = textContent.trim();
@@ -49,7 +52,14 @@
 </script>
 
 <form
+	bind:this={form}
 	class="absolute bottom-0 z-20 flex min-h-11 w-full min-w-0 shrink-0 flex-col gap-1 px-2 pb-2"
+	bind:clientHeight={height}
+	oninput={() => {
+		// WebKit bug: resive observer emits event a frame late,
+		// painting the taller composer over the newest message once
+		if (form) height = form.clientHeight;
+	}}
 	onsubmit={(event) => {
 		event.preventDefault();
 		onSubmit().catch((error) => console.error(error));
@@ -58,7 +68,7 @@
 	{#if replyTo}
 		<ComposerReplyPreview message={replyTo} onCancel={onCancelReply} />
 	{/if}
-	<div class="relative h-full w-full rounded-[22px] bg-popover">
+	<div class="relative h-full w-full rounded-composer bg-popover">
 		<MessageTextInput bind:value={textContent} />
 		<ComposerAttachments />
 		{#if textContent === ""}

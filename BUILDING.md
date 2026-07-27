@@ -46,7 +46,7 @@ Prerequisites:
 1. Install Docker on your host system and make sure to give it enough disk headroom (Settings &rarr; Resources &rarr; Disk): the toolchain is ~12 GB and its first realization needs ~15 GB of transient space.
 2. Build the thin image: `docker compose build`
 3. Build the apk: `docker compose run --rm build`
-4. Retrieve the apk from `src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk` on your host system
+4. Retrieve the apk from `src-tauri/gen/android/app/build/outputs/apk/universal/release/open-grind-v<version>-unsigned.apk` on your host system
 5. Follow [Signing](#signing) steps to make the build installable on your Android device
 
 ### Clean-up Docker
@@ -58,14 +58,14 @@ docker image rm open-grind-build   # removes the thin image
 
 ## Build with Nix (builds everywhere)
 
-Open Grind ships a [Nix flake](./flake.nix) that pins the entire Android toolchain — Rust, the JDK, the Android SDK, the NDK, Gradle, and Bun — so any contributor on Linux or macOS can produce an identical build in an identical environment.
+Open Grind ships a [Nix flake](./flake.nix) that pins the entire Android toolchain — Rust, the JDK, the Android SDK, the NDK, Gradle, Bun, and Node.js — so any contributor on Linux or macOS can produce an identical build in an identical environment.
 
 - [Nix](https://nixos.org/download) >= 2.18
 - ~30 GB of disk space
 
 1. Install and configure Nix on your host system
 2. Run `nix run .#build-android`
-3. Retrieve the apk: `src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk` on your host system
+3. Retrieve the apk: `src-tauri/gen/android/app/build/outputs/apk/universal/release/open-grind-v<version>-unsigned.apk` on your host system
 
 > [!NOTE]
 > First time you run `nix develop` or `nix run` in Open Grind's repository, Nix will download and setup about 3 GB environment, which might take some time, depending on your internet connection speed.
@@ -248,7 +248,7 @@ Before running any build or verification steps, you are trusting several compone
 
 ### Verifying Nix and flake.lock
 
-[flake.lock](./flake.lock) pins every flake input to an exact content hash: JDK, Android SDK, NDK, Rust, Bun.
+[flake.lock](./flake.lock) pins every flake input to an exact content hash: JDK, Android SDK, NDK, Rust, Bun, Node.js.
 
 1. Confirm the nixpkgs revision in flake.lock resolves to a commit on the official NixOS/nixpkgs repository:
 
@@ -287,7 +287,7 @@ nix develop
 # 1. Reproduce the unsigned APK locally
 git checkout v<tag>
 nix run .#build-android
-LOCAL=src-tauri/gen/android/app/build/outputs/apk/universal/release/app-universal-release-unsigned.apk
+LOCAL=src-tauri/gen/android/app/build/outputs/apk/universal/release/open-grind-v<tag>-unsigned.apk
 
 # 2. Fetch the published signed APK
 #    (https://git.opengrind.org/open-grind/open-grind/releases)
@@ -328,7 +328,7 @@ If steps 3 and 4 both succeed, the published APK was built from this commit and 
 
 ## Reproducible CI release
 
-See [ci/README.md](./ci/README.md).
+See [ci/](./ci/).
 
 ## Reproducibility
 
@@ -347,6 +347,7 @@ Every input that affects the output bytes is pinned in exactly one place:
 | Gradle distribution                     | `src-tauri/gen/android/gradle/wrapper/gradle-wrapper.properties` |
 | Kotlin                                  | `src-tauri/gen/android/build.gradle.kts`                         |
 | Bun                                     | nixpkgs pin (via `flake.lock`)                                   |
+| Node.js (runs `vite build`)             | nixpkgs pin (via `flake.lock`)                                   |
 | Tauri CLI                               | `package.json` / `bun.lock`                                      |
 | JS deps                                 | `bun.lock`                                                       |
 | Cargo deps                              | `src-tauri/Cargo.lock`                                           |

@@ -180,6 +180,13 @@
 					const { url, width, height } = album.content[index];
 					return { src: url, width, height };
 				});
+				lightbox.addFilter(
+					"useContentPlaceholder",
+					(usePlaceholder, content) =>
+						album.content[content.index]?.contentType.startsWith("video/")
+							? false
+							: usePlaceholder,
+				);
 				registerLightboxDownloadButton(lightbox, (index) => {
 					const slide = album.content[index];
 					return slide ? { url: slide.url, mimeType: slide.contentType } : null;
@@ -202,9 +209,10 @@
 						content.element = document.createElement("div");
 						const video = document.createElement("video");
 						video.src = slide.url;
+						if (slide.coverUrl !== null) video.poster = slide.coverUrl;
 						video.controls = true;
 						video.playsInline = true;
-						video.className = "max-w-full max-h-full m-auto";
+						video.className = "size-full object-contain";
 						content.element.appendChild(video);
 						content.state = "loading";
 						if (video.readyState >= 3) {
