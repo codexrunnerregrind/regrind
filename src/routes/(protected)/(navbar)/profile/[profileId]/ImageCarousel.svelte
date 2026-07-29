@@ -150,7 +150,7 @@
 			></span>
 		</div>
 	{:else}
-		<div class="absolute size-full bg-neutral-700">
+		<div class="absolute size-full bg-media-placeholder">
 			<UserIcon
 				weight="fill"
 				color="var(--color-stone-400)"

@@ -375,7 +375,12 @@
 
 					{#if isMine}
 						<div id="album-shares" class="scroll-mt-20">
-							<AlbumShares {albumId} />
+							<AlbumShares
+								{albumId}
+								onSharedCountChange={(count) => {
+									if (album !== null) album.sharedCount = count;
+								}}
+							/>
 						</div>
 
 						<Button
@@ -401,7 +406,9 @@
 		<Input bind:value={renameValue} placeholder="Album name" />
 		{#if renameTooLong}
 			<p class="text-sm text-destructive">
-				Name is too long ({albumNameByteLength(renameValue)}/{ALBUM_NAME_MAX_BYTES}
+				Name is too long ({albumNameByteLength(
+					renameValue,
+				)}/{ALBUM_NAME_MAX_BYTES}
 				bytes).
 			</p>
 		{/if}

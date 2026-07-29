@@ -89,9 +89,13 @@
 		if (node.complete && node.naturalWidth > 0) markLoaded(node, imgIndex);
 	}
 
+	// Whitespace-only posts would render a blank first line and leave the row
+	// a different height from its neighbours.
+	const postText = $derived(text?.trim() ? text : null);
+
 	const postAriaLabel = $derived.by(() => {
 		let label = `Post by ${displayName ? displayName : "someone"}.`;
-		if (text !== null) {
+		if (postText !== null) {
 			label += `With message.`;
 		}
 		if (distance !== null) {
@@ -101,8 +105,10 @@
 	});
 </script>
 
+<!-- Padding, gap and the inset divider mirror ProfileItem so this feed lines up
+     with the inbox/taps lists (avatar at 16px, content and rule at 92px). -->
 <article
-	class="flex w-full gap-3 border-b border-border/60 py-4 text-sm text-gray-400"
+	class="relative flex w-full gap-3 py-3 ps-4 pe-4 text-sm text-muted-foreground after:pointer-events-none after:absolute after:right-4 after:bottom-0 after:left-list-inset after:border-b after:border-border/60"
 	aria-label={postAriaLabel}
 >
 	<div>
@@ -112,10 +118,10 @@
 		<div
 			class={[
 				"mt-1 leading-snug font-medium wrap-break-word",
-				{ "text-white": text },
+				{ "text-foreground": postText !== null },
 			]}
 		>
-			{text ? text : displayName ? `${displayName} joined` : "Joined"}
+			{postText ?? (displayName ? `${displayName} joined` : "Joined")}
 		</div>
 		{#if media.length}
 			<div class="mt-2 flex flex-col items-start gap-1">
@@ -135,7 +141,7 @@
 					>
 						{#if !mediaStates[imgIndex].loaded}
 							<div
-								class="h-64 w-full animate-pulse rounded-lg bg-neutral-200 dark:bg-neutral-800"
+								class="h-64 w-full animate-pulse rounded-lg bg-muted"
 							></div>
 						{/if}
 

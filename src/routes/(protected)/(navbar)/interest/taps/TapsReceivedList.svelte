@@ -62,7 +62,7 @@
 		>
 			{#if taps.loading}
 				{#each Array(8)}
-					<Skeleton class="h-24.5 w-full shrink-0" />
+					<Skeleton class="h-22 w-full shrink-0" />
 				{/each}
 			{:else if taps.error}
 				<div class="flex flex-1">

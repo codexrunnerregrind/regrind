@@ -124,14 +124,14 @@ Prerequisites:
 
 Everything needed to reproduce an iOS build is committed:
 
-| Setting                    | Value                       | Where it's pinned                                            |
-| -------------------------- | --------------------------- | ------------------------------------------------------------ |
-| Apple development team     | `65BJ8C3N7S`                | `src-tauri/tauri.conf.json` &rarr; `bundle.iOS.developmentTeam` |
-| Bundle identifier          | `org.opengrind.tiagogomes`  | `src-tauri/tauri.conf.json` &rarr; `identifier` (and `gen/apple/project.yml`) |
-| Marketing / build version  | from `version`              | `src-tauri/tauri.conf.json` &rarr; `version`                 |
-| iOS usage descriptions     | location permission string  | `src-tauri/Info.ios.plist`                                   |
-| Export method              | `debugging`                 | `src-tauri/gen/apple/ExportOptions.plist`                    |
-| Xcode project              | committed                   | `src-tauri/gen/apple/` (regenerate with `bun tauri ios init`)|
+| Setting                   | Value                      | Where it's pinned                                                             |
+| ------------------------- | -------------------------- | ----------------------------------------------------------------------------- |
+| Apple development team    | `65BJ8C3N7S`               | `src-tauri/tauri.conf.json` &rarr; `bundle.iOS.developmentTeam`               |
+| Bundle identifier         | `org.opengrind.app`        | `src-tauri/tauri.conf.json` &rarr; `identifier` (and `gen/apple/project.yml`) |
+| Marketing / build version | from `version`             | `src-tauri/tauri.conf.json` &rarr; `version`                                  |
+| iOS usage descriptions    | location permission string | `src-tauri/Info.ios.plist`                                                    |
+| Export method             | `debugging`                | `src-tauri/gen/apple/ExportOptions.plist`                                     |
+| Xcode project             | committed                  | `src-tauri/gen/apple/` (regenerate with `bun tauri ios init`)                 |
 
 To build for a **different** Apple account, change `bundle.iOS.developmentTeam`
 in [`src-tauri/tauri.conf.json`](./src-tauri/tauri.conf.json) to your own team ID
@@ -185,6 +185,55 @@ For an iterative dev loop with hot reload instead of a standalone install:
 bun run tauri ios dev            # pick a target when prompted
 bun run tauri ios dev --open     # or drive it from Xcode
 ```
+
+### Distributing via SideStore
+
+There is no free way to put an iOS app in front of other people the way the
+Android APK does it. TestFlight, the App Store, and the EU alternative
+marketplaces (AltStore PAL, Epic, Aptoide) all require a paid Apple Developer
+Program membership plus Apple notarization. Open Grind is instead distributed
+for iOS as a plain IPA that users sideload and re-sign with **their own** free
+Apple ID, using [SideStore](https://sidestore.io).
+
+This works because the app needs no restricted capabilities:
+[`open-grind_iOS.entitlements`](./src-tauri/gen/apple/open-grind_iOS/open-grind_iOS.entitlements)
+is empty, and location and photo-library access are Info.plist usage strings
+rather than entitlements. `tauri-plugin-notification` uses local notifications
+only, so no `aps-environment` entitlement is required — a free personal team
+cannot issue one.
+
+The free-team limits apply to whoever installs it, not to whoever builds it:
+three sideloaded apps at a time and a seven-day signing certificate. SideStore
+refreshes on-device so the seven-day cycle is invisible after setup; AltStore
+needs a computer on the same network to refresh.
+
+Sideloading clients re-sign the IPA under the installing user's team and append
+that team ID to the bundle identifier, so `org.opengrind.app` does not collide
+between users.
+
+#### Publishing a release
+
+1. Build the IPA as above and rename it to match the Android convention:
+   `open-grind-v<version>.ipa`
+2. Attach it to the release on
+   [git.opengrind.org](https://git.opengrind.org/open-grind/open-grind/releases)
+3. Regenerate the source manifest from the artifact and commit it:
+
+   ```bash
+   bun ci/altstore/source.ts "src-tauri/gen/apple/build/arm64/Open Grind.ipa"
+   ```
+
+[`ci/altstore/source.ts`](./ci/altstore/source.ts) reads the version and bundle
+identifier from `tauri.conf.json`, reuses the store listing in
+[`fastlane/metadata`](./fastlane/metadata) that F-Droid already uses, and hashes
+the IPA so `size` and `sha256` match the published artifact byte-for-byte. It
+writes `ci/altstore/source.json`.
+
+Users add the URL of that JSON file as a source in SideStore. The same
+AltStore-format manifest is also read by AltStore, Feather, and TrollApps — so
+one file covers every sideloading client. TrollStore itself only works on
+iOS 14.0&ndash;17.0, whose CoreTrust bug Apple has since patched; treat it as a
+footnote rather than a supported channel.
 
 ## Signing
 
@@ -268,7 +317,6 @@ shasum -a 256 src-tauri/gen/android/gradle/wrapper/gradle-wrapper.jar
 ```
 
 Compare against [Gradle's published checksums](https://gradle.org/release-checksums/) for 8.14.5 (`7d3a4ac4de1c32b59bc6a4eb8ecb8e612ccd0cf1ae1e99f66902da64df296172`).
-
 
 ## Verifying a published release
 

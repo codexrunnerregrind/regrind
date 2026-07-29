@@ -1,0 +1,41 @@
+{
+	"name": "Open Grind",
+	"identifier": "org.opengrind.source",
+	"subtitle": "Unofficial Grindr client. Free, libre, privacy-centered and community-driven",
+	"description": "Open Grind is the cross-platform, free, libre, ad-free, tracker-free, privacy-centered and community-driven unofficial client for Grindr queer social network.\n\n• Unlocked grid\nUnlimited profiles for free, ads removed from grid, all filters unlocked\n\n• Location spoofing\nNative geolocation change with OpenStreetMap and location search built-in\n\n• Zero ads\nNo ads, first party, third party or self-promotion, no obstructive pop-ups\n\n• Privacy by default\nNo analytics, zero trackers, no data is collected by Open Grind developers\n\n• Security as foundation\nHuman code review, audit, supply chain security, end-to-end testing",
+	"iconURL": "https://git.opengrind.org/open-grind/open-grind/raw/branch/main/fastlane/metadata/android/en-US/images/icon.png",
+	"website": "https://opengrind.org",
+	"tintColor": "0DB28F",
+	"apps": [
+		{
+			"name": "Open Grind",
+			"bundleIdentifier": "org.opengrind.app",
+			"developerName": "Open Grind Governance",
+			"subtitle": "Unofficial Grindr client. Free, libre, privacy-centered and community-driven",
+			"localizedDescription": "Open Grind is the cross-platform, free, libre, ad-free, tracker-free, privacy-centered and community-driven unofficial client for Grindr queer social network.\n\n• Unlocked grid\nUnlimited profiles for free, ads removed from grid, all filters unlocked\n\n• Location spoofing\nNative geolocation change with OpenStreetMap and location search built-in\n\n• Zero ads\nNo ads, first party, third party or self-promotion, no obstructive pop-ups\n\n• Privacy by default\nNo analytics, zero trackers, no data is collected by Open Grind developers\n\n• Security as foundation\nHuman code review, audit, supply chain security, end-to-end testing",
+			"iconURL": "https://git.opengrind.org/open-grind/open-grind/raw/branch/main/fastlane/metadata/android/en-US/images/icon.png",
+			"tintColor": "0DB28F",
+			"category": "social",
+			"screenshots": [
+				"https://git.opengrind.org/open-grind/open-grind/raw/branch/main/fastlane/metadata/android/en-US/images/phoneScreenshots/1.jpeg",
+				"https://git.opengrind.org/open-grind/open-grind/raw/branch/main/fastlane/metadata/android/en-US/images/phoneScreenshots/2.jpeg",
+				"https://git.opengrind.org/open-grind/open-grind/raw/branch/main/fastlane/metadata/android/en-US/images/phoneScreenshots/3.jpeg",
+				"https://git.opengrind.org/open-grind/open-grind/raw/branch/main/fastlane/metadata/android/en-US/images/phoneScreenshots/4.jpeg",
+				"https://git.opengrind.org/open-grind/open-grind/raw/branch/main/fastlane/metadata/android/en-US/images/phoneScreenshots/5.jpeg",
+				"https://git.opengrind.org/open-grind/open-grind/raw/branch/main/fastlane/metadata/android/en-US/images/phoneScreenshots/6.jpeg"
+			],
+			"versions": [
+				{
+					"version": "0.1.0-beta.3",
+					"date": "2026-07-27",
+					"localizedDescription": "Open Grind 0.1.0-beta.3.",
+					"downloadURL": "https://git.opengrind.org/open-grind/open-grind/releases/download/v0.1.0-beta.3/open-grind-v0.1.0-beta.3.ipa",
+					"size": 41378885,
+					"sha256": "4adbb8e098239d3be7af01c9e4c637cc0fe60dfe87d3d5f6b611479f61213653",
+					"minOSVersion": "14.0"
+				}
+			]
+		}
+	],
+	"news": []
+}

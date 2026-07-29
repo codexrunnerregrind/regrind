@@ -25,7 +25,7 @@
 	<Avatar.Root class="size-16 *:rounded-full">
 		<UserAvatar
 			{mediaHash}
-			class="size-16 overflow-hidden rounded-full bg-neutral-700 *:rounded-full"
+			class="size-16 overflow-hidden rounded-full bg-media-placeholder *:rounded-full"
 		/>
 		{#if online}
 			<Avatar.Badge class="right-1 bottom-1 bg-green-500"></Avatar.Badge>

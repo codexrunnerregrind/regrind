@@ -25,7 +25,7 @@
 			{...props}
 			class={["rounded-full", props.class, "flex-nowrap!"]}
 		>
-			<Item.Media class="translate-y-none size-14 rounded-full bg-neutral-700">
+			<Item.Media class="translate-y-none size-14 rounded-full bg-media-placeholder">
 				{#await myProfilePhotos then photos}
 					<UserAvatar
 						mediaHash={photos[0]?.mediaHash ?? null}

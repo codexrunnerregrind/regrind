@@ -9,6 +9,6 @@
 </script>
 
 <div class="gap-1">
-	<span class="text-neutral-500 font-light">{label}</span>
+	<span class="font-light text-muted-foreground">{label}</span>
 	{@render children?.()}
 </div>

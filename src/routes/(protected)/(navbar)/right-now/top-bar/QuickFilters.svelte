@@ -30,7 +30,7 @@
 	variant="secondary"
 	onclick={() => (openFilters.sort = true)}
 	class={{
-		"bg-white text-popover hover:bg-neutral-200": sort === "NEWEST",
+		"bg-foreground text-background hover:bg-foreground/90": sort === "NEWEST",
 	}}
 >
 	<SortAscendingIcon />
@@ -40,7 +40,7 @@
 	variant="secondary"
 	onclick={() => (openFilters.age = true)}
 	class={{
-		"bg-white text-popover hover:bg-neutral-200": ageEnabled,
+		"bg-foreground text-background hover:bg-foreground/90": ageEnabled,
 	}}
 >
 	Age
@@ -49,7 +49,7 @@
 	variant="secondary"
 	onclick={() => (openFilters.position = true)}
 	class={{
-		"bg-white text-popover hover:bg-neutral-200": positionEnabled,
+		"bg-foreground text-background hover:bg-foreground/90": positionEnabled,
 	}}
 >
 	Position
@@ -58,7 +58,7 @@
 	variant="secondary"
 	onclick={() => (openFilters.hosting = true)}
 	class={{
-		"bg-white text-popover hover:bg-neutral-200": hostingEnabled,
+		"bg-foreground text-background hover:bg-foreground/90": hostingEnabled,
 	}}
 >
 	Hosting

@@ -46,7 +46,7 @@
 		<Avatar.Root class="size-16 after:border-0">
 			<UserAvatar
 				mediaHash={avatar.mediaHash}
-				class="size-16 rounded-full bg-neutral-700 *:rounded-full"
+				class="size-16 rounded-full bg-media-placeholder *:rounded-full"
 			/>
 		</Avatar.Root>
 		{@render avatar.overlay?.()}
@@ -86,14 +86,14 @@
 	{#if avatar.link}
 		<a
 			href={avatar.link}
-			class="flex items-center ps-4 pe-3 py-3 @max-row:hidden"
+			class="flex items-center py-3 ps-4 pe-3 @max-row:hidden"
 			tabindex={linkTabindex}
 		>
 			{@render avatarNode()}
 		</a>
 		<a
 			href={link}
-			class="content relative gap-0.5 py-3 pe-4 @max-row:hidden! after:pointer-events-none after:absolute after:right-4 after:bottom-0 after:left-0 after:border-b after:border-border/60"
+			class="content relative gap-0.5 py-3 pe-4 after:pointer-events-none after:absolute after:right-4 after:bottom-0 after:left-0 after:border-b after:border-border/60 @max-row:hidden!"
 			tabindex={linkTabindex}
 		>
 			{@render contentNode()}
@@ -108,7 +108,7 @@
 	{:else}
 		<a
 			href={link}
-			class="content relative gap-3 overflow-clip py-3 ps-4 pe-4 after:pointer-events-none after:absolute after:right-4 after:bottom-0 after:left-[92px] after:border-b after:border-border/60"
+			class="content relative gap-3 overflow-clip py-3 ps-4 pe-4 after:pointer-events-none after:absolute after:right-4 after:bottom-0 after:left-list-inset after:border-b after:border-border/60"
 			tabindex={linkTabindex}
 		>
 			{@render avatarNode()}

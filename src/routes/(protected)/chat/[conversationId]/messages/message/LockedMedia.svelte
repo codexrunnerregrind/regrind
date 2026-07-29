@@ -14,7 +14,7 @@
 
 <div
 	class={[
-		"size-full flex justify-center items-center bg-card-foreground/10 rounded-xl",
+		"flex size-full items-center justify-center rounded-xl bg-card-foreground/10",
 		className,
 	]}
 >
@@ -27,7 +27,7 @@
 				"w-1/6": size === "md",
 			},
 		]}
-		color="var(--color-neutral-600)"
+		color="var(--media-placeholder-foreground)"
 	/>
 	{@render children?.()}
 </div>

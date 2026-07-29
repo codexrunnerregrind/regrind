@@ -10,7 +10,10 @@
 	import { toast } from "svelte-sonner";
 
 	import { showErrorToast } from "$lib/api/error";
-	import { type AlbumContentResponse, getAlbumContent } from "$lib/api/messaging/albums";
+	import {
+		type AlbumContentResponse,
+		getAlbumContent,
+	} from "$lib/api/messaging/albums";
 	import { registerLightboxDownloadButton } from "$lib/chat/lightbox-download";
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 	import { getNow, subscribeNow } from "$lib/util/now.svelte";
@@ -272,8 +275,8 @@
 			>
 				<ImageBrokenIcon
 					weight="fill"
-					class="aspect-square w-8 h-auto"
-					color="var(--color-neutral-600)"
+					class="aspect-square h-auto w-8"
+					color="var(--media-placeholder-foreground)"
 				/>
 			</div>
 		{/if}

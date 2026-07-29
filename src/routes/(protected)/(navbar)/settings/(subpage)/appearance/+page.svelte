@@ -78,7 +78,7 @@
 	{#each modes as mode (mode.value)}
 		<ToggleGroup.Item
 			value={mode.value}
-			class="flex h-auto flex-col items-center justify-center gap-2 rounded-2xl py-5 data-[state=on]:border-primary data-[state=on]:text-primary"
+			class="flex h-auto flex-col items-center justify-center gap-2 rounded-2xl py-5 data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
 		>
 			<mode.icon weight="fill" class="size-7" />
 			<span class="text-sm font-medium">{mode.label}</span>

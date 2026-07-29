@@ -33,7 +33,7 @@
 	aria-pressed={isFavorite}
 	onclick={() => gridState.filters.set({ isFavorite: !isFavorite })}
 	class={{
-		"bg-white hover:bg-neutral-200 text-popover": isFavorite,
+		"bg-foreground text-background hover:bg-foreground/90": isFavorite,
 	}}
 >
 	<StarIcon />
@@ -42,7 +42,7 @@
 	variant="secondary"
 	onclick={() => (openFilters.age = true)}
 	class={{
-		"bg-white hover:bg-neutral-200 text-popover": ageEnabled,
+		"bg-foreground text-background hover:bg-foreground/90": ageEnabled,
 	}}
 >
 	Age
@@ -51,7 +51,7 @@
 	variant="secondary"
 	onclick={() => (openFilters.position = true)}
 	class={{
-		"bg-white hover:bg-neutral-200 text-popover": positionEnabled,
+		"bg-foreground text-background hover:bg-foreground/90": positionEnabled,
 	}}
 >
 	Position

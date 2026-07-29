@@ -7,27 +7,42 @@
 	import { openImageGalleryLightbox } from "$lib/chat/image-gallery";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
 	import { getConversationState } from "../conversation-state.svelte";
+	import { collectReceivedPhotos } from "./received-photos";
+	import type { ReceivedPhoto } from "./received-photos";
 
 	let { profileId }: { profileId: number } = $props();
 
 	const conversationState = $derived(getConversationState()());
 
-	// Photos this person has sent us, oldest-first to match the chat order.
-	const receivedPhotos = $derived(
-		conversationState.messages
-			.filter((m) => m.type === "Image")
-			.filter((m) => m.senderId === profileId)
-			.map((m) => ({
-				url: m.body.url,
-				width: m.body.width,
-				height: m.body.height,
-			}))
-			.reverse(),
-	);
-
 	let teardown: (() => void) | undefined;
+	let collecting = $state(false);
 
-	function openReceivedPhotos() {
+	async function openReceivedPhotos() {
+		if (collecting) return;
+		collecting = true;
+		// The chat only holds the pages the user scrolled through, so scan the
+		// rest of the history for image messages. Only the photos are kept — the
+		// scanned messages are discarded rather than added to the chat.
+		const toastId =
+			conversationState.pageKey === null
+				? undefined
+				: toast.loading("Looking for received photos…");
+		let receivedPhotos: ReceivedPhoto[];
+		try {
+			receivedPhotos = await collectReceivedPhotos({
+				conversationId: conversationState.conversationId,
+				profileId,
+				loaded: conversationState.messages.filter((m) => m.status === "sent"),
+				pageKey: conversationState.pageKey,
+			});
+		} catch (error) {
+			console.error(error);
+			showErrorToast({ label: "Failed to load received photos", error });
+			return;
+		} finally {
+			collecting = false;
+			if (toastId !== undefined) toast.dismiss(toastId);
+		}
 		if (receivedPhotos.length === 0) {
 			toast.info("No received photos yet");
 			return;
@@ -66,7 +81,7 @@
 		{/snippet}
 	</DropdownMenu.Trigger>
 	<DropdownMenu.Content class="w-48" align="end">
-		<DropdownMenu.Item onSelect={openReceivedPhotos}>
+		<DropdownMenu.Item onSelect={() => void openReceivedPhotos()}>
 			<ImageIcon class="size-5" />
 			Received photos
 		</DropdownMenu.Item>

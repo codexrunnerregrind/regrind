@@ -208,7 +208,7 @@
 					showSearchResults = v.length > 0;
 				}
 			}
-			class="bg-popover-foreground text-background shadow-md"
+			class="bg-white text-black shadow-md"
 			maxlength={100}
 			onfocus={() => {
 				if (searchQuery.trim()) {
@@ -226,7 +226,7 @@
 	{#if showSearchResults}
 		<div class="absolute top-0 left-0 z-1000 size-full p-1">
 			<div
-				class="flex h-full w-full flex-col gap-2 overflow-auto rounded-md bg-popover-foreground px-1 py-3 text-popover shadow-md backdrop-blur-xl"
+				class="flex h-full w-full flex-col gap-2 overflow-auto rounded-md bg-white px-1 py-3 text-black shadow-md backdrop-blur-xl"
 			>
 				{#await searchPlaces}
 					<Spinner class="m-auto size-8" />
@@ -247,7 +247,7 @@
 									{place.name}
 								</span>
 								<span
-									class="line-clamp-1 block max-w-full truncate text-sm text-popover/40"
+									class="line-clamp-1 block max-w-full truncate text-sm text-black/40"
 								>
 									{place.address}
 								</span>

@@ -220,7 +220,7 @@
 							<ImageBrokenIcon
 								weight="fill"
 								class="size-8"
-								color="var(--color-neutral-600)"
+								color="var(--media-placeholder-foreground)"
 							/>
 						</div>
 					{/if}

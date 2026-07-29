@@ -85,7 +85,7 @@
 				class={[
 					"w-11",
 					// Highlighted while a manually-picked (mock) location is in use.
-					{ "bg-white text-popover hover:bg-neutral-200": !usingCurrent },
+					{ "bg-foreground text-background hover:bg-foreground/90": !usingCurrent },
 					className,
 				]}
 			>

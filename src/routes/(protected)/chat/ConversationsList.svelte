@@ -241,62 +241,62 @@
 			bind:this={container}
 			data-scroll-root
 			class={[
-				"flex min-h-0 flex-1 flex-col gap-0 overflow-auto overscroll-contain px-0 pt-2 pb-0",
+				"flex min-h-0 flex-1 flex-col gap-0 overflow-auto overscroll-contain px-0 pt-1 pb-0",
 				selecting && "pt-(--selection-bar-height)",
 				className,
 			]}
 			onscroll={() => (conversations.listScrollY = container?.scrollTop ?? 0)}
 		>
-		{#await conversations.initial}
-			{#each Array(8)}
-				<Skeleton class="mx-3 my-1 h-20 shrink-0 rounded-xl" />
-			{/each}
-		{:then}
-			<div
-				class="flex min-h-overscrollable shrink-0 flex-col gap-0 pb-nav-clear"
-			>
-				{#each conversations.entries as conversation, i (conversation.data.conversationId)}
-					{@const conversationId = conversation.data.conversationId}
-					{#if i < EAGER_COUNT}
-						<Conversation
-							{conversation}
-							selection={selecting ? selection : null}
-							onEnterSelection={mobile.current
-								? () => enterSelection(conversationId)
-								: undefined}
-							onRequestDelete={() => requestDelete([conversationId])}
-						/>
-					{:else}
-						<LazyConversation
-							{conversation}
-							selection={selecting ? selection : null}
-							onEnterSelection={mobile.current
-								? () => enterSelection(conversationId)
-								: undefined}
-							onRequestDelete={() => requestDelete([conversationId])}
-						/>
-					{/if}
-				{:else}
-					<EmptyConversationsList />
+			{#await conversations.initial}
+				{#each Array(8)}
+					<Skeleton class="h-22 w-full shrink-0" />
 				{/each}
-				{#if conversations.loadingMore}
-					{#each Array(6)}
-						<Skeleton class="mx-3 my-1 h-20 shrink-0 rounded-xl" />
+			{:then}
+				<div
+					class="flex min-h-overscrollable shrink-0 flex-col gap-0 pb-nav-clear"
+				>
+					{#each conversations.entries as conversation, i (conversation.data.conversationId)}
+						{@const conversationId = conversation.data.conversationId}
+						{#if i < EAGER_COUNT}
+							<Conversation
+								{conversation}
+								selection={selecting ? selection : null}
+								onEnterSelection={mobile.current
+									? () => enterSelection(conversationId)
+									: undefined}
+								onRequestDelete={() => requestDelete([conversationId])}
+							/>
+						{:else}
+							<LazyConversation
+								{conversation}
+								selection={selecting ? selection : null}
+								onEnterSelection={mobile.current
+									? () => enterSelection(conversationId)
+									: undefined}
+								onRequestDelete={() => requestDelete([conversationId])}
+							/>
+						{/if}
+					{:else}
+						<EmptyConversationsList />
 					{/each}
-				{/if}
-				{#if conversations.nextPage !== null}
-					<div class="h-0" use:observeSentinel></div>
-				{/if}
-			</div>
-		{:catch error}
-			<div class="flex flex-1">
-				<ApiErrorDisplay
-					{error}
-					onRetry={() => conversations.retry()}
-					class="m-auto"
-				/>
-			</div>
-		{/await}
+					{#if conversations.loadingMore}
+						{#each Array(6)}
+							<Skeleton class="h-22 w-full shrink-0" />
+						{/each}
+					{/if}
+					{#if conversations.nextPage !== null}
+						<div class="h-0" use:observeSentinel></div>
+					{/if}
+				</div>
+			{:catch error}
+				<div class="flex flex-1">
+					<ApiErrorDisplay
+						{error}
+						onRetry={() => conversations.retry()}
+						class="m-auto"
+					/>
+				</div>
+			{/await}
 		</div>
 		{#await conversations.initial then}
 			<DataRefreshControl

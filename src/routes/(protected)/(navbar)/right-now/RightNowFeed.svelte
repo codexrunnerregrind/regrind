@@ -5,6 +5,7 @@
 	import PhotoSwipeLightbox from "photoswipe/lightbox";
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
+	import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
 	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
 	import RightNowPost from "./RightNowPost.svelte";
 	import RightNowEmptyFeed from "./RightNowEmptyFeed.svelte";
@@ -85,11 +86,11 @@
 
 <div
 	bind:this={feedContainer}
-	class="flex w-full max-w-5xl flex-col gap-0 px-2"
+	class="mx-auto flex w-full max-w-120 flex-col gap-0"
 >
 	{#if rightNowState.loading}
 		{#each Array.from({ length: 10 })}
-			<div class="h-20 w-full animate-pulse rounded-md bg-stone-700"></div>
+			<Skeleton class="h-22 w-full shrink-0" />
 		{/each}
 	{:else if rightNowState.error}
 		<div class="flex p-4">
