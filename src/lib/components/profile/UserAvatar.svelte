@@ -30,7 +30,9 @@
 			draggable="false"
 		/>
 	{:else}
-		<div class="flex size-full items-center justify-center bg-media-placeholder">
+		<div
+			class="flex size-full items-center justify-center bg-media-placeholder"
+		>
 			<UserIcon
 				weight="fill"
 				color="var(--media-placeholder-foreground)"

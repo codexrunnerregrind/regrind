@@ -1,5 +1,5 @@
 {
-	"$schema": "../gen/schemas/mobile-schema.json",
+	"$schema": "../gen/schemas/android-schema.json",
 	"identifier": "android-capability",
 	"description": "Android-only capability (android-fs file access)",
 	"windows": [

@@ -1,9 +1,13 @@
 [package]
 name = "open-grind"
-version = "0.1.0-beta.3"
+version = "0.1.0-beta.4-dev"
 description = "FLOSS Grindr client"
 authors = ["Open Grind Governance (https://opengrind.org/governance)"]
 homepage = "https://opengrind.org"
+repository = "https://git.opengrind.org/open-grind/open-grind"
+license = "MIT"
+readme = "../README.md"
+publish = false
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -54,8 +58,10 @@ tauri-plugin-haptics = "2"
 windows-native-keyring-store = "1.1.0"
 
 [target.'cfg(target_os = "linux")'.dependencies]
-# rt-tokio would make zbus block_on a nested runtime and panic inside our spawned tasks
-zbus-secret-service-keyring-store = { version = "1.0.0", features = ["rt-async-io-crypto-rust"] }
+# Synchronous by construction. zbus's blocking wrapper drives a nested tokio
+# runtime and panics inside our spawned tasks whenever zbus/tokio is enabled,
+# which any dependency can turn on for us.
+dbus-secret-service-keyring-store = { version = "1.0.0", features = ["crypto-rust"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 android-native-keyring-store = "1.0.0"

@@ -15,6 +15,8 @@ To get started, choose one of the methods below (Docker, Nix or manual) and foll
     - [Build the app](#build-the-app)
     - [Deploy to a connected iPhone](#deploy-to-a-connected-iphone)
     - [Develop on device / simulator](#develop-on-device--simulator)
+    - [Distributing via SideStore](#distributing-via-sidestore)
+  - [Credential storage](#credential-storage)
   - [Signing](#signing)
     - [Sign \& build with Docker](#sign--build-with-docker)
     - [Sign \& build with Nix](#sign--build-with-nix)
@@ -235,6 +237,22 @@ one file covers every sideloading client. TrollStore itself only works on
 iOS 14.0&ndash;17.0, whose CoreTrust bug Apple has since patched; treat it as a
 footnote rather than a supported channel.
 
+## Credential storage
+
+Open Grind keeps the session, device identity, and media signing key in the platform's own credential store: Keychain on iOS, Keystore on Android, Credential Manager on Windows, and the Secret Service (GNOME Keyring, KWallet, etc) over D-Bus on Linux.
+
+Two targets fall back to a file store: `credentials/` in the app data directory, each file `0600` inside a `0700` directory.
+
+- macOS, by default. Keychain entries are tied to the code-signing identity, so an unsigned build cannot read back what an earlier build wrote, which breaks local development ([`ac38b2c`](https://git.opengrind.org/open-grind/open-grind/commit/ac38b2c)).
+- Linux, only when no Secret Service is reachable, such as a headless box with no D-Bus session bus.
+
+> [!IMPORTANT]
+> A macOS build that is distributed must be code-signed and built with the `keychain` feature, which swaps the file store for the Keychain:
+>
+> ```bash
+> bun run tauri build --features keychain
+> ```
+
 ## Signing
 
 You need to follow these instructions in order to install the APK on an Android device, otherwise attempts to install it will throw "App not installed as package appears to be invalid." error.
@@ -320,7 +338,7 @@ Compare against [Gradle's published checksums](https://gradle.org/release-checks
 
 ## Verifying a published release
 
-Open Grind's official APK is signed with a [governance-held JKS](./KEYS.md), but anyone can verify that the published binary was built from the source in this repository — no access to that key required.
+Published artifacts carry a detached [minisign](https://jedisct1.github.io/minisign/) signature. Anyone can also check that the published binary was built from the source in this repository, no key required.
 
 Android's v2/v3 signing block lives in a dedicated region between the last zip entry and the central directory; v1 (JAR) signatures live in `META-INF/*.SF`, `*.{RSA,EC,DSA}`, and modify `MANIFEST.MF`. Everything else — dex, native libs, resources, manifest, assets — is byte-identical between a signed and an unsigned build of the same source on the same toolchain.
 
@@ -337,20 +355,16 @@ git checkout v<tag>
 nix run .#build-android
 LOCAL=src-tauri/gen/android/app/build/outputs/apk/universal/release/open-grind-v<tag>-unsigned.apk
 
-# 2. Fetch the published signed APK
+# 2. Fetch the published signed APK and its signature, side by side
 #    (https://git.opengrind.org/open-grind/open-grind/releases)
-PUBLISHED=/path/to/open-grind-v<tag>.apk
+PUBLISHED=/path/to/open-grind-v<tag>.apk   # minisign reads "$PUBLISHED.minisig"
 
-# 3. Confirm JKS certificate
-EXPECTED="2805fdd8f0badb9424d3244c5e5b3473cef5b8798ec1117382e89eda45c3658c"
-ACTUAL=$(apksigner verify --print-certs "$PUBLISHED" \
-  | grep "Signer #1 certificate SHA-256 digest" \
-  | awk '{print $NF}')
-
-if [ "$ACTUAL" = "$EXPECTED" ]; then
-  echo "✓ APK certificate matches Open Grind's release JKS"
+# 3. Confirm the release signature
+#    Key and its provenance: KEYS.md
+if minisign -Vm "$PUBLISHED" -P RWReleaseOpenGrindurRQcmR+NovOaU5IEU3LM5l6TcXJvOGYw2m4O+; then
+  echo "✓ signature valid and verified"
 else
-  echo "✗ APK: certificate fingerprint mismatch" >&2
+  echo "✗ signature invalid, do not install this APK" >&2
   exit 1
 fi
 
@@ -365,7 +379,7 @@ apk_content_hash() {
       done
 }
 if diff <(apk_content_hash "$LOCAL") <(apk_content_hash "$PUBLISHED"); then
-  echo "✓ APK hash checksum matches, local build reproduces the published APK exactly"
+  echo "✓ APK hash checksum matches"
 else
   echo "✗ APK hash checksum mismatch, local build does not match the published APK" >&2
   exit 1

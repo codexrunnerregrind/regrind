@@ -25,13 +25,17 @@ const read = (p: string) => readFileSync(resolve(root, p), "utf8").trim();
 
 const ipaPath = process.argv[2];
 if (!ipaPath) {
-	console.error("usage: bun ci/altstore/source.ts <path-to-ipa> [--date YYYY-MM-DD]");
+	console.error(
+		"usage: bun ci/altstore/source.ts <path-to-ipa> [--date YYYY-MM-DD]",
+	);
 	process.exit(1);
 }
 
 const dateFlag = process.argv.indexOf("--date");
 const date =
-	dateFlag !== -1 ? process.argv[dateFlag + 1] : new Date().toISOString().slice(0, 10);
+	dateFlag !== -1
+		? process.argv[dateFlag + 1]
+		: new Date().toISOString().slice(0, 10);
 
 const tauri = JSON.parse(read("src-tauri/tauri.conf.json"));
 const { version, identifier } = tauri;
@@ -50,7 +54,9 @@ const description = read(`${METADATA}/full_description.txt`)
 
 const changelog = (() => {
 	try {
-		return read(`${METADATA}/changelogs/${tauri.bundle.android.versionCode}.txt`);
+		return read(
+			`${METADATA}/changelogs/${tauri.bundle.android.versionCode}.txt`,
+		);
 	} catch {
 		return `Open Grind ${version}.`;
 	}

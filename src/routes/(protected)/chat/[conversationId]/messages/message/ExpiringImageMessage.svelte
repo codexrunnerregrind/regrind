@@ -149,7 +149,10 @@
 {:else}
 	<div class={["h-12 w-50", className, contentClass]} bind:this={media.el}>
 		<LockedMedia
-			class={[media.cornerClass, "gap-2 font-medium text-media-placeholder-foreground"]}
+			class={[
+				media.cornerClass,
+				"gap-2 font-medium text-media-placeholder-foreground",
+			]}
 			size="sm"
 		>
 			Expired image

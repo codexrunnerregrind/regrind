@@ -32,7 +32,7 @@
 				console.error(error);
 			}
 		}
-		await gridState.reload();
+		await gridState.refresh();
 	}
 
 	let gridContainer: HTMLElement | null = $state(null);

@@ -71,6 +71,7 @@
 >
 	<a
 		href={message.url}
+		rel="noreferrer"
 		aria-label="Open image"
 		class="item block"
 		onclick={openGallery}

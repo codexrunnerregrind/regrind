@@ -140,9 +140,7 @@
 						]}
 					>
 						{#if !mediaStates[imgIndex].loaded}
-							<div
-								class="h-64 w-full animate-pulse rounded-lg bg-muted"
-							></div>
+							<div class="h-64 w-full animate-pulse rounded-lg bg-muted"></div>
 						{/if}
 
 						<img

@@ -1,0 +1,28 @@
+name: keys
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - KEYS.md
+      - KEYS.md.asc
+      - .forgejo/workflows/keys.yml
+  workflow_dispatch: {}
+
+concurrency:
+  group: open-grind-keys
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ["verify", "hetzner"]
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        run: |
+          git init -q .
+          git remote add origin "$FORGEJO_SERVER_URL/$FORGEJO_REPOSITORY.git"
+          git fetch -q --depth 1 origin "$FORGEJO_REF_NAME"
+          git checkout -q "$FORGEJO_SHA"
+      - name: Verify the KEYS.md signature
+        run: bun ci/verify-keys.ts
