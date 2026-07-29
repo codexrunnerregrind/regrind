@@ -32,7 +32,10 @@ type Fetched = {
 
 // Downloads the media bytes through Rust (so the request isn't blocked by the
 // webview's CORS policy), falling back to a plain fetch in the demo/web build.
-async function fetchMedia(url: string, hintMimeType?: string): Promise<Fetched> {
+async function fetchMedia(
+	url: string,
+	hintMimeType?: string,
+): Promise<Fetched> {
 	let bytes: Uint8Array;
 	let contentType: string | null;
 	if (demoEnabled) {
@@ -50,7 +53,9 @@ async function fetchMedia(url: string, hintMimeType?: string): Promise<Fetched> 
 		contentType = ct;
 	}
 	const mimeType =
-		hintMimeType ?? contentType?.split(";")[0].trim() ?? "application/octet-stream";
+		hintMimeType ??
+		contentType?.split(";")[0].trim() ??
+		"application/octet-stream";
 	const isVideo = mimeType.startsWith("video/");
 	const extension =
 		extensionByMimeType[mimeType] ??
@@ -99,9 +104,14 @@ export async function saveMediaToDevice(
 
 	if (platform() === "android") {
 		const uri = media.isVideo
-			? await AndroidFs.createNewPublicVideoFile("Movies", filename, media.mimeType, {
-					requestPermission: true,
-				})
+			? await AndroidFs.createNewPublicVideoFile(
+					"Movies",
+					filename,
+					media.mimeType,
+					{
+						requestPermission: true,
+					},
+				)
 			: await AndroidFs.createNewPublicImageFile(
 					"Pictures",
 					filename,

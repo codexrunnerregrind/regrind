@@ -189,17 +189,14 @@ export const defaultFilters: GridSearchFilters = gridSearchFiltersSchema.parse(
 export const filterHostingEnabledSchema = z.boolean();
 export const filterHostingSchema = z.boolean();
 
-export const RightNowSort = z.enum([
-    "DISTANCE",
-    "NEWEST",
-]);
+export const RightNowSort = z.enum(["DISTANCE", "NEWEST"]);
 export const filterRightNowSortSchema = RightNowSort;
 
 export const rightNowFiltersSchema = z.object({
-    sort: filterRightNowSortSchema.default("DISTANCE"),
+	sort: filterRightNowSortSchema.default("DISTANCE"),
 
-    hostingEnabled: filterHostingEnabledSchema.default(false),
-    hosting: filterHostingSchema.default(false),
+	hostingEnabled: filterHostingEnabledSchema.default(false),
+	hosting: filterHostingSchema.default(false),
 
 	ageEnabled: filterAgeEnabledSchema.default(false),
 	age: filterAgeSchema.default([18, 102]),
@@ -210,6 +207,5 @@ export const rightNowFiltersSchema = z.object({
 
 export type RightNowFilters = z.infer<typeof rightNowFiltersSchema>;
 
-export const defaultRightNowFilters: RightNowFilters = rightNowFiltersSchema.parse(
-	{},
-);
+export const defaultRightNowFilters: RightNowFilters =
+	rightNowFiltersSchema.parse({});

@@ -1,7 +1,11 @@
 import { showErrorToast } from "$lib/api/error";
 import { toast } from "svelte-sonner";
 
-import { AlbumLockedError, loadAlbum, openAlbumLightbox } from "$lib/chat/album-viewer";
+import {
+	AlbumLockedError,
+	loadAlbum,
+	openAlbumLightbox,
+} from "$lib/chat/album-viewer";
 import { hapticImpact } from "$lib/platform/haptics";
 
 // Shared "tap an album cover → load its content → open the PhotoSwipe viewer"

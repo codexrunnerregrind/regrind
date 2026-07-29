@@ -54,7 +54,9 @@
 	} = $props();
 
 	const swipe = untrack(() =>
-		onReply ? new SwipeToReply(isOut ? "left" : "right", () => onReply?.()) : null,
+		onReply
+			? new SwipeToReply(isOut ? "left" : "right", () => onReply?.())
+			: null,
 	);
 
 	const firstInStack = $derived(indexInStack === 0);
@@ -182,10 +184,10 @@
 {#snippet adornments()}
 	<div
 		class={[
-			"absolute top-0 -translate-y-1/2 z-5",
+			"absolute top-0 z-5 -translate-y-1/2",
 			{
-				"translate-x-1/2 right-0": !isOut,
-				"-translate-x-1/2 left-0": isOut,
+				"right-0 translate-x-1/2": !isOut,
+				"left-0 -translate-x-1/2": isOut,
 			},
 		]}
 	>
@@ -195,7 +197,7 @@
 				new Map<number, number>(),
 			)}
 			<div
-				class="flex items-center gap-0.5 mt-1 mr-1"
+				class="mt-1 mr-1 flex items-center gap-0.5"
 				transition:scale={{ duration: 150, easing: expoOut }}
 			>
 				{#each reactionMap.entries() as [type, count]}
@@ -234,7 +236,7 @@
 
 <div
 	class={[
-		"flex flex-col gap-0.5 z-1 relative",
+		"relative z-1 flex flex-col gap-0.5",
 		{
 			"mt-3": firstInStack,
 		},
@@ -261,8 +263,8 @@
 			class={[
 				"[-webkit-touch-callout:none] **:[-webkit-touch-callout:none]",
 				{
-					"*:me-auto *:float-start pe-3": !isOut,
-					"*:ms-auto *:float-end ps-3": isOut,
+					"pe-3 *:float-start *:me-auto": !isOut,
+					"ps-3 *:float-end *:ms-auto": isOut,
 				},
 			]}
 			role="button"
@@ -281,7 +283,9 @@
 				}
 			}}
 			style:visibility={contextMenuOpen ? "hidden" : undefined}
-			style:transform={swipe?.deltaX ? `translateX(${swipe.deltaX}px)` : undefined}
+			style:transform={swipe?.deltaX
+				? `translateX(${swipe.deltaX}px)`
+				: undefined}
 			use:observeRead
 		>
 			{@render content()}
@@ -290,7 +294,7 @@
 	{#if lastInStack}
 		<span
 			class={[
-				"text-xs text-muted-foreground mx-3 mt-0.5",
+				"mx-3 mt-0.5 text-xs text-muted-foreground",
 				{ "text-right": isOut },
 			]}
 		>

@@ -1,6 +1,9 @@
 import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
-import { type AlbumContentResponse, getAlbumContent } from "$lib/api/messaging/albums";
+import {
+	type AlbumContentResponse,
+	getAlbumContent,
+} from "$lib/api/messaging/albums";
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 import { registerLightboxDownloadButton } from "./lightbox-download";
 
@@ -101,9 +104,8 @@ export async function openAlbumLightbox(
 	if (album.content.length === 0) {
 		throw new AlbumLockedError();
 	}
-	const { default: PhotoSwipeLightboxCtor } = await import(
-		"photoswipe/lightbox"
-	);
+	const { default: PhotoSwipeLightboxCtor } =
+		await import("photoswipe/lightbox");
 	const lightbox: PhotoSwipeLightbox = new PhotoSwipeLightboxCtor({
 		showHideAnimationType: "fade",
 		pswpModule: () => import("photoswipe"),

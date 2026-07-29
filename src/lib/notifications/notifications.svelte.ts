@@ -9,7 +9,10 @@ import z from "zod";
 
 import { getPreferences } from "$lib/app-data/preferences.svelte";
 import { peekConversationsState } from "$lib/chat/conversations-context.svelte";
-import { previewFromMessage, previewLabel } from "$lib/model/messaging/messages";
+import {
+	previewFromMessage,
+	previewLabel,
+} from "$lib/model/messaging/messages";
 import {
 	chatV1MessageSentEventSchema,
 	tapV1TapSentEventSchema,
@@ -76,9 +79,8 @@ class NotificationService {
 			// this; open the route we stashed in `extra`.
 			safe(
 				onAction((notification) => {
-					const route = notificationExtraSchema.safeParse(
-						notification.extra,
-					).data?.route;
+					const route = notificationExtraSchema.safeParse(notification.extra)
+						.data?.route;
 					if (route) void goto(route);
 				}).then((listener) => () => void listener.unregister()),
 			),

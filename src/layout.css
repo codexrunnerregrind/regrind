@@ -19,15 +19,15 @@
 	/* WhatsApp brand green (#00a884) drives primary actions, links, focus. */
 	--primary: oklch(0.68 0.13 172);
 	--primary-foreground: oklch(1 0 0);
-	--secondary: oklch(0.96 0.005 220);
+	--secondary: oklch(0.94 0.006 220);
 	--secondary-foreground: oklch(0.21 0.02 220);
-	--muted: oklch(0.96 0.005 220);
-	--muted-foreground: oklch(0.55 0.02 220);
+	--muted: oklch(0.94 0.006 220);
+	--muted-foreground: oklch(0.5 0.025 220);
 	--accent: oklch(0.68 0.13 172);
 	--accent-foreground: oklch(1 0 0);
 	--destructive: oklch(0.58 0.22 27);
-	--border: oklch(0.92 0.006 220);
-	--input: oklch(0.92 0.006 220);
+	--border: oklch(0.87 0.008 220);
+	--input: oklch(0.87 0.008 220);
 	--ring: oklch(0.68 0.13 172);
 	--chart-1: oklch(0.68 0.13 172);
 	--chart-2: oklch(0.7 0.12 200);
@@ -38,9 +38,9 @@
 	--sidebar-foreground: oklch(0.21 0.02 220);
 	--sidebar-primary: oklch(0.68 0.13 172);
 	--sidebar-primary-foreground: oklch(1 0 0);
-	--sidebar-accent: oklch(0.96 0.005 220);
+	--sidebar-accent: oklch(0.94 0.006 220);
 	--sidebar-accent-foreground: oklch(0.21 0.02 220);
-	--sidebar-border: oklch(0.92 0.006 220);
+	--sidebar-border: oklch(0.87 0.008 220);
 	--sidebar-ring: oklch(0.68 0.13 172);
 	/* Solid backdrop behind chat bubbles (no doodle wallpaper). WhatsApp beige. */
 	--chat-background: oklch(0.95 0.008 90);
@@ -51,6 +51,11 @@
 	/* Text on the outgoing bubble. Follows the accent (see [data-accent]); this
 	   value is the pre-hydration fallback for the light-green default bubble. */
 	--message-bubble-out-foreground: oklch(0.21 0.02 220);
+	/* Neutral surface behind photos: avatar/grid placeholders, images that are
+	   still loading, locked media. Its foreground is for the icons and labels
+	   drawn on top of it. */
+	--media-placeholder: oklch(0.87 0.008 220);
+	--media-placeholder-foreground: oklch(0.58 0.015 220);
 }
 
 .dark {
@@ -91,6 +96,8 @@
 	--message-bubble-out: oklch(0.45 0.08 165);
 	--message-bubble-foreground: oklch(0.93 0.01 220);
 	--message-bubble-out-foreground: oklch(0.93 0.01 220);
+	--media-placeholder: oklch(0.37 0.01 220);
+	--media-placeholder-foreground: oklch(0.6 0.01 220);
 }
 
 /* Accent presets. theme.svelte.ts sets data-accent on <html>; these override
@@ -190,6 +197,8 @@
 	--color-message-bubble-foreground: var(--message-bubble-foreground);
 	--color-message-bubble-out-foreground: var(--message-bubble-out-foreground);
 	--color-chat-background: var(--chat-background);
+	--color-media-placeholder: var(--media-placeholder);
+	--color-media-placeholder-foreground: var(--media-placeholder-foreground);
 	--radius-sm: calc(var(--radius) * 0.6);
 	--radius-md: calc(var(--radius) * 0.8);
 	--radius-lg: var(--radius);
@@ -205,6 +214,9 @@
 
 	--spacing-avatar: 37.5px;
 	--spacing-list-rail: 117px;
+	/* Where a list row's content column starts: ps-4 (16) + the size-16 avatar
+	   (64) + gap-3 (12). Row dividers are inset to it. */
+	--spacing-list-inset: 92px;
 }
 
 /* Keep in sync with src/lib/util/breakpoints.svelte.ts */

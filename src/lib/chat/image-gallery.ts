@@ -23,9 +23,8 @@ export async function openImageGalleryLightbox(
 	if (images.length === 0) {
 		throw new Error("No images to display");
 	}
-	const { default: PhotoSwipeLightboxCtor } = await import(
-		"photoswipe/lightbox"
-	);
+	const { default: PhotoSwipeLightboxCtor } =
+		await import("photoswipe/lightbox");
 	const lightbox: PhotoSwipeLightbox = new PhotoSwipeLightboxCtor({
 		showHideAnimationType: "fade",
 		pswpModule: () => import("photoswipe"),

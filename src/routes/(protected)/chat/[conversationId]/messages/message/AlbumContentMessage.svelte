@@ -13,7 +13,8 @@
 		message,
 	}: {
 		message:
-			AlbumContentReplyMessage["body"] | AlbumContentReactionMessage["body"];
+			| AlbumContentReplyMessage["body"]
+			| AlbumContentReactionMessage["body"];
 	} = $props();
 
 	const media = new MessageMediaState();

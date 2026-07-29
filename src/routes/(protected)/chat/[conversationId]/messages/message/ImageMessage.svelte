@@ -66,13 +66,13 @@
 </script>
 
 <div
-	class={["relative", { "w-2/5 min-w-35 max-w-60 ms-3": !media.clone }]}
+	class={["relative", { "ms-3 w-2/5 max-w-60 min-w-35": !media.clone }]}
 	bind:this={media.el}
 >
 	<a
 		href={message.url}
 		aria-label="Open image"
-		class="block item"
+		class="item block"
 		onclick={openGallery}
 	>
 		<img

@@ -209,7 +209,8 @@ class WsState {
 				run();
 			};
 			const timeout = setTimeout(
-				() => settle(() => reject(new Error(`[ws] command timed out: ${type}`))),
+				() =>
+					settle(() => reject(new Error(`[ws] command timed out: ${type}`))),
 				timeoutMs,
 			);
 			const onError = (e: unknown) =>

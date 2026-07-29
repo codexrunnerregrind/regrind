@@ -3,10 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const { fetchRestMock } = vi.hoisted(() => ({
 	fetchRestMock:
 		vi.fn<
-			(
-				path: string,
-				options?: { method?: string; body?: unknown },
-			) => unknown
+			(path: string, options?: { method?: string; body?: unknown }) => unknown
 		>(),
 }));
 

@@ -5,8 +5,14 @@ import z from "zod";
 // the full profile has to be hydrated separately via `getProfiles`.
 export const favoriteNoteSchema = z.object({
 	counterpartyId: z.coerce.number().int().nonnegative(),
-	notes: z.string().nullish().transform((value) => value ?? ""),
-	phoneNumber: z.string().nullish().transform((value) => value ?? ""),
+	notes: z
+		.string()
+		.nullish()
+		.transform((value) => value ?? ""),
+	phoneNumber: z
+		.string()
+		.nullish()
+		.transform((value) => value ?? ""),
 });
 
 export type FavoriteNote = z.infer<typeof favoriteNoteSchema>;
