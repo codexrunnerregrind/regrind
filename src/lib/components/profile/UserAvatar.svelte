@@ -27,6 +27,7 @@
 				},
 			]}
 			loading="lazy"
+			decoding="sync"
 			draggable="false"
 		/>
 	{:else}
