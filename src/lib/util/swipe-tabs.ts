@@ -11,13 +11,19 @@ import type { Action } from "svelte/action";
  */
 
 // Horizontal travel (px) that commits a tab change on release.
-const COMMIT_DISTANCE = 60;
+const COMMIT_DISTANCE = 45;
 // Horizontal velocity (px/ms) that commits regardless of distance.
-const COMMIT_VELOCITY = 0.4;
-// The gesture must be this many times more horizontal than vertical.
-const HORIZONTAL_BIAS = 1.3;
+const COMMIT_VELOCITY = 0.25;
+// Travel (px) after which the gesture locks to one axis.
+const LOCK_DISTANCE = 10;
+// At lock time the gesture must be this many times more horizontal than vertical.
+const HORIZONTAL_BIAS = 1;
+// Window (ms) the release velocity is averaged over.
+const VELOCITY_WINDOW = 120;
 // Left-edge zone (px) reserved for the swipe-back gesture.
 const EDGE_ZONE = 30;
+
+type Sample = { x: number; t: number };
 
 export type SwipeTabsOptions = {
 	onNext?: () => void;
@@ -56,12 +62,30 @@ export const swipeTabs: Action<HTMLElement, SwipeTabsOptions | undefined> = (
 	let pointerId: number | null = null;
 	let startX = 0;
 	let startY = 0;
-	let lastX = 0;
-	let lastT = 0;
-	let velocity = 0;
+	// null until the gesture passes LOCK_DISTANCE on either axis.
+	let axis: "x" | "y" | null = null;
+	// Recent positions, trimmed to VELOCITY_WINDOW, for the release velocity.
+	let samples: Sample[] = [];
 
 	function reset() {
 		pointerId = null;
+		axis = null;
+		samples = [];
+	}
+
+	/**
+	 * Average px/ms over the last {@link VELOCITY_WINDOW}. Sampling a window
+	 * rather than the final pointermove matters because the finger usually
+	 * decelerates just before lifting, which makes the instantaneous velocity
+	 * of a genuine flick read as ~0.
+	 */
+	function releaseVelocity(): number {
+		const newest = samples.at(-1);
+		const oldest = samples[0];
+		if (!newest || !oldest) return 0;
+		const dt = newest.t - oldest.t;
+		if (dt <= 0) return 0;
+		return (newest.x - oldest.x) / dt;
 	}
 
 	function onPointerDown(event: PointerEvent) {
@@ -72,33 +96,52 @@ export const swipeTabs: Action<HTMLElement, SwipeTabsOptions | undefined> = (
 		if (shouldIgnoreStart(event.target)) return;
 
 		pointerId = event.pointerId;
-		startX = lastX = event.clientX;
+		startX = event.clientX;
 		startY = event.clientY;
-		lastT = event.timeStamp;
-		velocity = 0;
+		axis = null;
+		samples = [{ x: event.clientX, t: event.timeStamp }];
 	}
 
 	function onPointerMove(event: PointerEvent) {
 		if (event.pointerId !== pointerId) return;
-		const dt = event.timeStamp - lastT;
-		if (dt > 0) velocity = (event.clientX - lastX) / dt;
-		lastX = event.clientX;
-		lastT = event.timeStamp;
+
+		samples.push({ x: event.clientX, t: event.timeStamp });
+		while (
+			samples.length > 2 &&
+			event.timeStamp - samples[0].t > VELOCITY_WINDOW
+		)
+			samples.shift();
+
+		if (axis !== null) return;
+
+		// Decide the axis once, from the first bit of travel, and stick with it:
+		// judging the whole gesture on its total dx/dy ratio meant any vertical
+		// drift over a long horizontal drag cancelled the swipe.
+		const dx = event.clientX - startX;
+		const dy = event.clientY - startY;
+		if (Math.abs(dx) < LOCK_DISTANCE && Math.abs(dy) < LOCK_DISTANCE) return;
+		axis = Math.abs(dx) >= Math.abs(dy) * HORIZONTAL_BIAS ? "x" : "y";
 	}
 
 	function onPointerEnd(event: PointerEvent) {
 		if (event.pointerId !== pointerId) return;
 		const dx = event.clientX - startX;
-		const dy = event.clientY - startY;
+		const horizontal = axis === "x";
+		const velocity = releaseVelocity();
 		reset();
 
-		if (Math.abs(dx) < Math.abs(dy) * HORIZONTAL_BIAS) return;
+		if (!horizontal) return;
 
 		const commit =
 			Math.abs(dx) > COMMIT_DISTANCE || Math.abs(velocity) > COMMIT_VELOCITY;
 		if (!commit) return;
 
-		if (dx < 0) opts.onNext?.();
+		// A flick's direction is its velocity; a slow drag's is its net travel.
+		const direction =
+			Math.abs(velocity) > COMMIT_VELOCITY
+				? Math.sign(velocity)
+				: Math.sign(dx);
+		if (direction < 0) opts.onNext?.();
 		else opts.onPrev?.();
 	}
 
