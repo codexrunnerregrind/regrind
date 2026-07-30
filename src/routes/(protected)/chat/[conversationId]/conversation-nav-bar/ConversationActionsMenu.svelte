@@ -1,18 +1,57 @@
 <script lang="ts">
-	import "photoswipe/style.css";
 	import { DotsThreeIcon, ImageIcon } from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
 	import { showErrorToast } from "$lib/api/error";
 	import { openImageGalleryLightbox } from "$lib/chat/image-gallery";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+	import { profileMediaUrl } from "$lib/util/media";
 	import { getConversationState } from "../conversation-state.svelte";
 	import { collectReceivedPhotos } from "./received-photos";
 	import type { ReceivedPhoto } from "./received-photos";
 
+	// The reaction the double-tap on a message bubble sends, mirrored here so the
+	// viewer's 🔥 lands as the same reaction.
+	const FIRE_REACTION = 1;
+
 	let { profileId }: { profileId: number } = $props();
 
 	const conversationState = $derived(getConversationState()());
+
+	// Every photo here came from them, so the viewer gets the same header and
+	// reply bar as tapping one of these photos in the conversation would.
+	function chromeFor(photos: ReceivedPhoto[]) {
+		const profile = conversationState.profile;
+		return {
+			header: {
+				profileId: profile?.profileId ?? profileId,
+				name: profile?.name,
+				fallbackName: "Received photos",
+				avatarUrl:
+					profile?.mediaHash === undefined || profile.mediaHash === null
+						? null
+						: profileMediaUrl(profile.mediaHash, "thumb"),
+				// The conversation profile reports metres, the viewer takes kilometres.
+				distanceKm:
+					profile?.distance === undefined || profile.distance === null
+						? null
+						: profile.distance / 1000,
+			},
+			actions: {
+				onReply: (text: string, index: number) => {
+					const target = photos[index]?.message;
+					if (target) conversationState.setReplyTo(target);
+					conversationState.send({ type: "Text", body: { text } });
+					return Promise.resolve();
+				},
+				onReact: async (index: number) => {
+					const target = photos[index]?.message;
+					if (!target) return;
+					await conversationState.reactTo(target.messageId, FIRE_REACTION);
+				},
+			},
+		};
+	}
 
 	let teardown: (() => void) | undefined;
 	let collecting = $state(false);
@@ -50,6 +89,7 @@
 		teardown?.();
 		teardown = undefined;
 		openImageGalleryLightbox(receivedPhotos, {
+			chrome: chromeFor(receivedPhotos),
 			onClosed: () => {
 				teardown?.();
 				teardown = undefined;

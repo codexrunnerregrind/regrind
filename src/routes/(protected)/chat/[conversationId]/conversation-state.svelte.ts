@@ -522,7 +522,16 @@ export class ConversationState {
 
 	async reactTo(messageId: string, reactionType: number): Promise<void> {
 		const msg = this.messages.find((m) => m.messageId === messageId);
-		if (!msg) return;
+		// The received-photos viewer reaches back past what the chat has loaded,
+		// so a message we can't show optimistically still gets its reaction sent.
+		if (!msg) {
+			await reactToMessage({
+				conversationId: this.conversationId,
+				messageId,
+				reactionType,
+			});
+			return;
+		}
 		const optimistic = { reactionType, profileId: this.ourProfileId };
 		msg.reactions.push(optimistic);
 		this.#syncCache();

@@ -5,6 +5,12 @@ export type ReceivedPhoto = {
 	url: string;
 	width: number;
 	height: number;
+	/**
+	 * The message the photo arrived in, so the viewer can reply to and react to
+	 * the right one. Kept whole because photos scanned out of deep history are
+	 * not in the chat's own message list for a lookup by id.
+	 */
+	message: ApiResponseMessage;
 };
 
 function toPhotos({
@@ -17,8 +23,13 @@ function toPhotos({
 	return messages
 		.filter((m) => m.type === "Image" && m.senderId === profileId)
 		.map((m) => {
-			const body = m.body as ReceivedPhoto;
-			return { url: body.url, width: body.width, height: body.height };
+			const body = m.body as { url: string; width: number; height: number };
+			return {
+				url: body.url,
+				width: body.width,
+				height: body.height,
+				message: m,
+			};
 		});
 }
 
