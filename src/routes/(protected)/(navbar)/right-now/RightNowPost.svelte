@@ -1,19 +1,30 @@
 <script lang="ts">
+	import "photoswipe/style.css";
+	import { goto } from "$app/navigation";
 	import { env } from "$env/dynamic/public";
+	import {
+		ChatIcon,
+		ClockIcon,
+		HouseIcon,
+		NavigationArrowIcon,
+	} from "phosphor-svelte";
 	import { untrack } from "svelte";
+	import type PhotoSwipeLightbox from "photoswipe/lightbox";
+
+	import { sendTap } from "$lib/api/interest/taps";
+	import { sendMessage } from "$lib/api/messaging/messages";
+	import { getUnitsSnapshot } from "$lib/app-data/preferences.svelte";
+	import { registerLightboxDownloadButton } from "$lib/chat/lightbox-download";
+	import { registerMediaViewerChrome } from "$lib/chat/media-viewer-chrome";
+	import DistanceFormatted from "$lib/components/profile/DistanceFormatted.svelte";
+	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
+	import Button from "$lib/components/ui/button/button.svelte";
+	import { TapType } from "$lib/model/interest/taps";
+	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+	import { profileMediaUrl } from "$lib/util/media";
+	import { formatDistance } from "$lib/util/units";
 	import type { FeedPostMedia } from "$lib/right-now/posts";
 	import RightNowAvatar from "./RightNowAvatar.svelte";
-	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
-	import DistanceFormatted from "$lib/components/profile/DistanceFormatted.svelte";
-	import Button from "$lib/components/ui/button/button.svelte";
-	import { formatDistance } from "$lib/util/units";
-	import { getUnitsSnapshot } from "$lib/app-data/preferences.svelte";
-	import {
-		ClockIcon,
-		NavigationArrowIcon,
-		HouseIcon,
-		ChatIcon,
-	} from "phosphor-svelte";
 
 	let {
 		profileId,
@@ -89,6 +100,86 @@
 		if (node.complete && node.naturalWidth > 0) markLoaded(node, imgIndex);
 	}
 
+	// One lightbox per post, anchored to that post's own photos: a feed-wide
+	// gallery would let you swipe from one person's photos straight into a
+	// stranger's, which reads as a single set when it isn't.
+	let mediaContainer = $state<HTMLElement | null>(null);
+	// Starting guesses; the mounted chrome measures its bars and reports back.
+	const insets = { top: 104, bottom: 88 };
+
+	$effect(() => {
+		if (!mediaContainer || media.length === 0) return;
+		const gallery = mediaContainer;
+		let lightbox: PhotoSwipeLightbox | undefined;
+		let canceled = false;
+		void import("photoswipe/lightbox")
+			.then(({ default: PhotoSwipeLightboxCtor }) => {
+				if (canceled) return;
+				lightbox = new PhotoSwipeLightboxCtor({
+					gallery,
+					children: "a.pswp-trigger",
+					pswpModule: () => import("photoswipe"),
+					mainClass: `pswp--buttons-visible`,
+					// Matches the chat and album viewers.
+					bgOpacity: 1,
+					counter: false,
+					paddingFn: () => ({ ...insets, left: 0, right: 0 }),
+				});
+				const onBackGesture = () => {
+					lightbox?.pswp?.close();
+					return false;
+				};
+				lightbox.on("beforeOpen", () => {
+					backGestureEventHandlers.add(onBackGesture);
+				});
+				lightbox.on("close", () => {
+					backGestureEventHandlers.delete(onBackGesture);
+				});
+				registerLightboxDownloadButton(lightbox, (index) => {
+					const image = media[index];
+					return image ? { url: image.fullImageUrl } : null;
+				});
+				registerMediaViewerChrome(lightbox, {
+					count: media.length,
+					insets,
+					header: {
+						profileId,
+						name: displayName,
+						fallbackName: "Right Now",
+						avatarUrl: mediaHash ? profileMediaUrl(mediaHash, "thumb") : null,
+						// The feed reports metres, the viewer takes kilometres.
+						distanceKm: distance === null ? null : distance / 1000,
+					},
+					actions: {
+						// A post is not a message, so a reply here starts an ordinary
+						// chat rather than quoting anything; 🔥 is a Fire tap.
+						onReply: async (text) => {
+							await sendMessage({
+								toUserId: profileId,
+								message: { type: "Text", body: { text } },
+							});
+						},
+						onReact: async () => {
+							await sendTap({ recipientId: profileId, tapType: TapType.Hot });
+						},
+						onOpenChat: async () => {
+							// Closing first: the lightbox is a body-level overlay, so it
+							// would sit on top of the conversation we navigate to.
+							lightbox?.pswp?.close();
+							await goto(`/chat/${conversationId}`);
+						},
+					},
+				});
+				lightbox.init();
+			})
+			.catch((error: unknown) => console.error(error));
+		return () => {
+			canceled = true;
+			lightbox?.destroy();
+			lightbox = undefined;
+		};
+	});
+
 	// Whitespace-only posts would render a blank first line and leave the row
 	// a different height from its neighbours.
 	const postText = $derived(text?.trim() ? text : null);
@@ -124,7 +215,10 @@
 			{postText ?? (displayName ? `${displayName} joined` : "Joined")}
 		</div>
 		{#if media.length}
-			<div class="mt-2 flex flex-col items-start gap-1">
+			<div
+				class="mt-2 flex flex-col items-start gap-1"
+				bind:this={mediaContainer}
+			>
 				{#each media as image, imgIndex (image.fullImageUrl)}
 					<a
 						href={image.fullImageUrl}

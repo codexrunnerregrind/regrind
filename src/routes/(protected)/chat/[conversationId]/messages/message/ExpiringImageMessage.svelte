@@ -1,17 +1,21 @@
 <script lang="ts">
-	import "photoswipe/style.css";
 	import { ImagesIcon } from "phosphor-svelte";
-	import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
 	import { showErrorToast } from "$lib/api/error";
 	import { getSingleMessage } from "$lib/api/messaging/messages";
+	import { openImageGalleryLightbox } from "$lib/chat/image-gallery";
 	import {
 		type ExpiringImageMessage,
 		expiringImageMessageSchema,
 	} from "$lib/model/messaging/messages";
-	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+	import { profileMediaUrl } from "$lib/util/media";
+	import { getConversationState } from "../../conversation-state.svelte";
 	import LockedMedia from "./LockedMedia.svelte";
 	import { MessageMediaState } from "./message-media.svelte";
+
+	// The reaction the double-tap on a message bubble sends, mirrored here so the
+	// viewer's 🔥 lands as the same reaction.
+	const FIRE_REACTION = 1;
 
 	let {
 		conversationId,
@@ -24,6 +28,11 @@
 	} = $props();
 
 	const media = new MessageMediaState();
+	const conversation = $derived(getConversationState()());
+	const isOurs = $derived(
+		conversation.messages.find((m) => m.messageId === messageId)?.senderId ===
+			conversation.ourProfileId,
+	);
 
 	const className: import("svelte/elements").ClassValue = $derived([
 		"relative",
@@ -40,90 +49,87 @@
 
 	type LoadedImage = { url: string };
 
-	type ImageState =
-		| { status: "idle" }
-		| { status: "loading" }
-		| { status: "open"; image: LoadedImage };
-
-	let imageState = $state<ImageState>({ status: "idle" });
+	let phase = $state<"idle" | "loading" | "open">("idle");
+	// A view-once image is fetched once and kept: the view is already spent, so
+	// re-opening it must not cost another one.
 	let cachedImage: LoadedImage | null = null;
+	let destroyLightbox: (() => void) | null = null;
 
-	function openImage() {
-		if (cachedImage) {
-			imageState = { status: "open", image: cachedImage };
-		} else {
-			imageState = { status: "loading" };
-		}
-	}
+	$effect(() => () => {
+		destroyLightbox?.();
+		destroyLightbox = null;
+	});
 
-	$effect(() => {
-		if (imageState.status !== "loading") return;
-		void (async () => {
-			try {
+	async function openImage() {
+		if (phase !== "idle") return;
+		phase = "loading";
+		try {
+			if (!cachedImage) {
 				const { body: image } = await getSingleMessage({
 					conversationId,
 					messageId,
 				}).then((res) => expiringImageMessageSchema.parse(res.message));
 				if (image.url === null) throw new Error("Image URL is null");
 				cachedImage = { url: image.url };
-				imageState = {
-					status: "open",
-					image: {
-						url: image.url,
-					},
-				};
-			} catch (error) {
-				console.error(error);
-				showErrorToast({
-					label: "Failed to load expiring image",
-					error,
-				});
-				imageState = { status: "idle" };
 			}
-		})();
-	});
+			destroyLightbox = await openImageGalleryLightbox(
+				[{ url: cachedImage.url, width: null, height: null }],
+				{
+					chrome: chromeFor(),
+					onClosed: () => {
+						phase = "idle";
+						destroyLightbox = null;
+					},
+				},
+			);
+			phase = "open";
+		} catch (error) {
+			phase = "idle";
+			console.error(error);
+			showErrorToast({ label: "Failed to open expiring image", error });
+		}
+	}
 
-	$effect(() => {
-		if (imageState.status !== "open") return;
-		const { image } = imageState;
-		let lightbox: PhotoSwipeLightbox | undefined;
-		import("photoswipe/lightbox")
-			.then(({ default: PhotoSwipeLightbox }) => {
-				lightbox = new PhotoSwipeLightbox({
-					showHideAnimationType: "fade",
-					pswpModule: () => import("photoswipe"),
-					mainClass: `pswp--buttons-visible`,
-				});
-				lightbox.addFilter("numItems", () => 1);
-				lightbox.addFilter("itemData", () => {
-					return { src: image.url, width: 0, height: 0 };
-				});
-				const onBackGesture = () => {
-					lightbox?.pswp?.close();
-					return false;
-				};
-				lightbox.on("beforeOpen", () => {
-					backGestureEventHandlers.add(onBackGesture);
-				});
-				lightbox.on("close", () => {
-					backGestureEventHandlers.delete(onBackGesture);
-				});
-				lightbox.on("closingAnimationEnd", () => {
-					imageState = { status: "idle" };
-				});
-				lightbox.init();
-				lightbox.loadAndOpen(0);
-			})
-			.catch((error) => {
-				console.error(error);
-				showErrorToast({
-					label: "Failed to open expiring image",
-					error,
-				});
-				imageState = { status: "idle" };
-			});
-		return () => lightbox?.destroy();
-	});
+	// Same bar as an ordinary photo: theirs can be replied to and reacted to,
+	// ours is browse-only.
+	function chromeFor() {
+		const profile = conversation.profile;
+		if (isOurs) {
+			return {
+				header: { fallbackName: "You", subtitle: "Expiring photo" },
+				actions: {},
+			};
+		}
+		return {
+			header: {
+				profileId: profile?.profileId,
+				name: profile?.name,
+				fallbackName: "Expiring photo",
+				avatarUrl:
+					profile?.mediaHash === undefined || profile.mediaHash === null
+						? null
+						: profileMediaUrl(profile.mediaHash, "thumb"),
+				// The conversation profile reports metres, the viewer takes kilometres.
+				distanceKm:
+					profile?.distance === undefined || profile.distance === null
+						? null
+						: profile.distance / 1000,
+			},
+			actions: {
+				onReply: (text: string) => {
+					const target = conversation.messages.find(
+						(m) => m.messageId === messageId,
+					);
+					if (target) conversation.setReplyTo(target);
+					conversation.send({ type: "Text", body: { text } });
+					return Promise.resolve();
+				},
+				onReact: async () => {
+					await conversation.reactTo(messageId, FIRE_REACTION);
+				},
+			},
+		};
+	}
 </script>
 
 {#if message.viewsRemaining === null || message.viewsRemaining > 0}
@@ -134,12 +140,12 @@
 			contentClass,
 			"border border-border bg-input",
 			{
-				"cursor-pointer": imageState.status === "idle",
-				"opacity-50": imageState.status === "loading",
+				"cursor-pointer": phase === "idle",
+				"opacity-50": phase === "loading",
 			},
 		]}
-		onclick={openImage}
-		disabled={imageState.status !== "idle"}
+		onclick={() => void openImage()}
+		disabled={phase !== "idle"}
 		bind:this={media.el}
 	>
 		<ImagesIcon size={24} weight="fill" />

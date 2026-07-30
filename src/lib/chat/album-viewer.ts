@@ -1,11 +1,22 @@
+// Imported here rather than by each caller: a route that opens the viewer
+// without also mounting one of the album grids would otherwise get an unstyled
+// lightbox (`.pswp` falls back to `position: static`).
+import "photoswipe/style.css";
+import { goto } from "$app/navigation";
 import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
+import { callMethod } from "$lib/api";
 import {
 	type AlbumContentResponse,
 	getAlbumContent,
 } from "$lib/api/messaging/albums";
+import {
+	sendAlbumContentReaction,
+	sendAlbumContentReply,
+} from "$lib/api/messaging/messages";
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 import { registerLightboxDownloadButton } from "./lightbox-download";
+import { registerMediaViewerChrome } from "./media-viewer-chrome";
 
 // Thrown when an album has no viewable content — typically a locked or expired
 // shared album. Callers can catch this to show a friendlier message.
@@ -15,6 +26,17 @@ export class AlbumLockedError extends Error {
 		this.name = "AlbumLockedError";
 	}
 }
+
+/**
+ * Who shared the album, for the viewer's header. Every field is optional: the
+ * shares feed carries the sharer's profile, but an album opened from its own
+ * page only knows the album itself, and the header falls back to that.
+ */
+export type AlbumSharer = {
+	name?: string | null;
+	avatarUrl?: string | null;
+	distanceKm?: number | null;
+};
 
 // An album whose slides have been measured so PhotoSwipe can size them.
 export type LoadedAlbum = AlbumContentResponse & {
@@ -91,14 +113,29 @@ export async function loadAlbum(albumId: number): Promise<LoadedAlbum> {
 	return { ...res, content };
 }
 
+// Room left for PhotoSwipe's own toolbar when the viewer has no chrome of its
+// own, and the starting guesses for the chrome's two bars — the mounted chrome
+// measures itself and reports the real heights straight after.
+const TOOLBAR_INSET = 64;
+const CHROME_TOP_INSET = 104;
+const CHROME_BOTTOM_INSET = 88;
+
 // Opens a measured album in a PhotoSwipe lightbox, wiring up video slides and
 // the platform back gesture. Resolves with a teardown function; call it to
 // destroy the lightbox (e.g. when the owning component unmounts).
+//
+// Pass `sharer` for an album somebody shared with us: it adds the story-style
+// chrome — who shared it, where in the album we are, and the reply bar. Own
+// albums leave it out and get the bare viewer.
 export async function openAlbumLightbox(
 	album: LoadedAlbum,
-	options: { startIndex?: number; onClosed?: () => void } = {},
+	options: {
+		startIndex?: number;
+		onClosed?: () => void;
+		sharer?: AlbumSharer;
+	} = {},
 ): Promise<() => void> {
-	const { startIndex = 0, onClosed } = options;
+	const { startIndex = 0, onClosed, sharer } = options;
 	// Locked/expired albums come back with no viewable content. PhotoSwipe would
 	// crash trying to lay out zero slides, so surface a clear error instead.
 	if (album.content.length === 0) {
@@ -106,16 +143,34 @@ export async function openAlbumLightbox(
 	}
 	const { default: PhotoSwipeLightboxCtor } =
 		await import("photoswipe/lightbox");
+	const insets =
+		sharer === undefined
+			? { top: TOOLBAR_INSET, bottom: 0 }
+			: { top: CHROME_TOP_INSET, bottom: CHROME_BOTTOM_INSET };
 	const lightbox: PhotoSwipeLightbox = new PhotoSwipeLightboxCtor({
 		showHideAnimationType: "fade",
 		pswpModule: () => import("photoswipe"),
 		mainClass: `pswp--buttons-visible`,
+		// The album fills the screen the way the official viewer does, instead of
+		// letting the screen underneath show through a translucent backdrop.
+		bgOpacity: 1,
+		// The chrome's progress bar says where we are, so the counter is redundant.
+		counter: sharer === undefined,
+		// Keeps the media clear of the chrome rather than centred behind it.
+		paddingFn: () => ({ ...insets, left: 0, right: 0 }),
 	});
 	lightbox.addFilter("numItems", () => album.content.length);
 	lightbox.addFilter("itemData", (_, index) => {
 		const { url, width, height } = album.content[index];
 		return { src: url, width, height };
 	});
+	// A video draws its own poster; PhotoSwipe's placeholder would only sit
+	// behind it as a stretched blur.
+	lightbox.addFilter("useContentPlaceholder", (usePlaceholder, content) =>
+		album.content[content.index]?.contentType.startsWith("video/")
+			? false
+			: usePlaceholder,
+	);
 	registerLightboxDownloadButton(lightbox, (index) => {
 		const slide = album.content[index];
 		return slide ? { url: slide.url, mimeType: slide.contentType } : null;
@@ -138,6 +193,7 @@ export async function openAlbumLightbox(
 			content.element = document.createElement("div");
 			const video = document.createElement("video");
 			video.src = slide.url;
+			if (slide.coverUrl !== null) video.poster = slide.coverUrl;
 			video.controls = true;
 			video.playsInline = true;
 			video.className = "max-w-full max-h-full m-auto";
@@ -151,6 +207,50 @@ export async function openAlbumLightbox(
 			}
 		}
 	});
+	if (sharer !== undefined) {
+		// The album payload names its owner, so replies reach the right person even
+		// when the caller had no profile to hand.
+		const toUserId = album.profileId;
+		registerMediaViewerChrome(lightbox, {
+			count: album.content.length,
+			insets,
+			header: {
+				profileId: toUserId,
+				name: sharer.name,
+				avatarUrl: sharer.avatarUrl,
+				distanceKm: sharer.distanceKm,
+				fallbackName: album.albumName?.trim() || "Album",
+			},
+			actions: {
+				onReply: async (reply, index) => {
+					await sendAlbumContentReply({
+						toUserId,
+						albumId: album.albumId,
+						albumContentId: album.content[index].contentId,
+						reply,
+					});
+				},
+				onReact: async (index) => {
+					await sendAlbumContentReaction({
+						toUserId,
+						albumId: album.albumId,
+						albumContentId: album.content[index].contentId,
+					});
+				},
+				onOpenChat: async () => {
+					const ourProfileId = await callMethod("auth_state").catch(() => null);
+					if (ourProfileId === null) return;
+					const conversationId = [toUserId, ourProfileId]
+						.toSorted((a, b) => a - b)
+						.join(":");
+					// Closing first: the lightbox is a body-level overlay, so it would
+					// sit on top of the conversation we're navigating to.
+					lightbox.pswp?.close();
+					await goto(`/chat/${conversationId}`);
+				},
+			},
+		});
+	}
 	if (onClosed) {
 		lightbox.on("closingAnimationEnd", onClosed);
 	}

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import "photoswipe/style.css";
 	import ImagesIcon from "phosphor-svelte/lib/ImagesIcon";
 	import LockKeyIcon from "phosphor-svelte/lib/LockKeyIcon";
 
@@ -10,9 +9,9 @@
 	import * as Empty from "$lib/components/ui/empty";
 	import * as Sheet from "$lib/components/ui/sheet";
 	import { Skeleton } from "$lib/components/ui/skeleton";
-	import type { PressieSharedAlbum } from "$lib/model/messaging/albums";
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 	import { hapticSelection } from "$lib/platform/haptics";
+	import type { PressieSharedAlbum } from "$lib/model/messaging/albums";
 
 	let {
 		profileId,
@@ -125,7 +124,11 @@
 								// `pointer-events: none` on the body, which the toolbar buttons
 								// override but the swipe surface inherits — blocking swiping
 								// between the album's photos.
-								await opener.open(album.albumId);
+								await opener.open(album.albumId, {
+									name: album.profile?.name ?? name,
+									avatarUrl: album.profile?.profileUrl,
+									distanceKm: album.profile?.distanceKm,
+								});
 								open = false;
 							}}
 						/>

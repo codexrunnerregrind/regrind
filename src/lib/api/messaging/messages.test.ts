@@ -12,6 +12,8 @@ import {
 	getConversationMessages,
 	getSingleMessage,
 	reactToMessage,
+	sendAlbumContentReaction,
+	sendAlbumContentReply,
 	sendMessage,
 	unsendMessage,
 } from "$lib/api/messaging/messages";
@@ -155,6 +157,78 @@ describe("message API wrappers", () => {
 				type: "Image",
 				target: { type: "Direct", targetId: 99 },
 				body: { mediaId: 910_001 },
+			},
+		});
+	});
+
+	it("sends album content replies with the ids and text only", async () => {
+		const albumBody = {
+			albumId: 8001,
+			ownerProfileId: 99,
+			albumContentId: 800_100,
+			previewUrl: "https://cdns.grindr.com/images/chat/a".padEnd(100, "b"),
+			expiresAt: null,
+			viewable: true,
+			albumContentReply: "nice",
+			contentType: "image/jpeg",
+		};
+		const responseMessage = apiMessage({
+			type: "AlbumContentReply",
+			body: albumBody,
+		});
+		fetchRestMock.mockResolvedValue(response({ data: responseMessage }));
+
+		await expect(
+			sendAlbumContentReply({
+				toUserId: 99,
+				albumId: 8001,
+				albumContentId: 800_100,
+				reply: "nice",
+			}),
+		).resolves.toEqual(responseMessage);
+
+		expect(fetchRestMock).toHaveBeenCalledWith("/v4/chat/message/send", {
+			method: "POST",
+			body: {
+				type: "AlbumContentReply",
+				target: { type: "Direct", targetId: 99 },
+				body: {
+					albumId: 8001,
+					albumContentId: 800_100,
+					albumContentReply: "nice",
+				},
+			},
+		});
+	});
+
+	it("sends album content reactions with no emoji of their own", async () => {
+		const responseMessage = apiMessage({
+			type: "AlbumContentReaction",
+			body: {
+				albumId: 8001,
+				ownerProfileId: 99,
+				albumContentId: 800_100,
+				previewUrl: "https://cdns.grindr.com/images/chat/a".padEnd(100, "b"),
+				expiresAt: null,
+				viewable: true,
+			},
+		});
+		fetchRestMock.mockResolvedValue(response({ data: responseMessage }));
+
+		await expect(
+			sendAlbumContentReaction({
+				toUserId: 99,
+				albumId: 8001,
+				albumContentId: 800_100,
+			}),
+		).resolves.toEqual(responseMessage);
+
+		expect(fetchRestMock).toHaveBeenCalledWith("/v4/chat/message/send", {
+			method: "POST",
+			body: {
+				type: "AlbumContentReaction",
+				target: { type: "Direct", targetId: 99 },
+				body: { albumId: 8001, albumContentId: 800_100 },
 			},
 		});
 	});

@@ -204,7 +204,13 @@
 						socialNetworks,
 						medias,
 					} = profile}
-					<ImageCarousel {medias} />
+					<ImageCarousel
+						{medias}
+						{profileId}
+						{ourProfileId}
+						{displayName}
+						self={ourProfile}
+					/>
 					<ProfileTopNavBar
 						{ourProfileId}
 						{profile}

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import "photoswipe/style.css";
 	import LockKeyIcon from "phosphor-svelte/lib/LockKeyIcon";
 	import UsersIcon from "phosphor-svelte/lib/UsersIcon";
 
@@ -93,7 +92,12 @@
 					locked={!album.albumViewable}
 					loading={opener.openingId === album.albumId}
 					disabled={opener.openingId !== null}
-					onclick={() => void opener.open(album.albumId)}
+					onclick={() =>
+						void opener.open(album.albumId, {
+							name: album.profile?.name,
+							avatarUrl: album.profile?.profileUrl,
+							distanceKm: album.profile?.distanceKm,
+						})}
 				/>
 			{/each}
 		</div>

@@ -125,7 +125,12 @@
 		hapticImpact("light");
 		try {
 			const loaded = await loadAlbum(albumId);
-			await openAlbumLightbox(loaded, { startIndex: index });
+			await openAlbumLightbox(loaded, {
+				startIndex: index,
+				// Someone else's album gets the reply chrome. This page knows no
+				// profile to put in its header, so it falls back to the album name.
+				sharer: isMine ? undefined : {},
+			});
 		} catch (err) {
 			console.error(err);
 			showErrorToast({ label: "Failed to open album", error: err });

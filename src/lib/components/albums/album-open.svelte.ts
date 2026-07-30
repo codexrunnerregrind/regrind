@@ -1,8 +1,9 @@
-import { showErrorToast } from "$lib/api/error";
 import { toast } from "svelte-sonner";
 
+import { showErrorToast } from "$lib/api/error";
 import {
 	AlbumLockedError,
+	type AlbumSharer,
 	loadAlbum,
 	openAlbumLightbox,
 } from "$lib/chat/album-viewer";
@@ -15,13 +16,17 @@ import { hapticImpact } from "$lib/platform/haptics";
 export class AlbumOpener {
 	openingId = $state<number | null>(null);
 
-	async open(albumId: number) {
+	/**
+	 * `sharer` marks the album as somebody else's and describes them for the
+	 * viewer's header; leaving it out opens our own album with no reply chrome.
+	 */
+	async open(albumId: number, sharer?: AlbumSharer) {
 		if (this.openingId !== null) return;
 		this.openingId = albumId;
 		hapticImpact("light");
 		try {
 			const album = await loadAlbum(albumId);
-			await openAlbumLightbox(album);
+			await openAlbumLightbox(album, { sharer });
 		} catch (error) {
 			if (error instanceof AlbumLockedError) {
 				toast.info(error.message);

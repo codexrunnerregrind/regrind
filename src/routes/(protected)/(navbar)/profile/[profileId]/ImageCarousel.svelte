@@ -1,23 +1,78 @@
 <script lang="ts">
 	import "photoswipe/style.css";
+	import { goto } from "$app/navigation";
 	import { format } from "date-fns";
 	import { UserIcon } from "phosphor-svelte";
-	import z from "zod";
 	import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
+	import { sendTap } from "$lib/api/interest/taps";
+	import { sendMessage } from "$lib/api/messaging/messages";
+	import { registerLightboxDownloadButton } from "$lib/chat/lightbox-download";
+	import { registerMediaViewerChrome } from "$lib/chat/media-viewer-chrome";
+	import { TapType } from "$lib/model/interest/taps";
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 	import { profileMediaUrl } from "$lib/util/media";
 	import ImageCarouselItem from "./ImageCarouselItem.svelte";
 
 	let {
 		medias,
+		profileId,
+		ourProfileId,
+		displayName = null,
+		self = false,
 	}: {
 		medias: {
 			mediaHash: string;
 			takenOnGrindr: boolean | null;
 			createdAt: number | null;
 		}[];
+		profileId: number;
+		ourProfileId: number;
+		displayName?: string | null;
+		/** Our own profile: nobody to reply to or tap. */
+		self?: boolean;
 	} = $props();
+
+	const conversationId = $derived(
+		[profileId, ourProfileId].toSorted((a, b) => a - b).join(":"),
+	);
+
+	// Starting guesses; the mounted chrome measures its bars and reports back.
+	const insets = { top: 104, bottom: 88 };
+
+	function dateLabel(index: number): string | null {
+		const createdAt = medias[index]?.createdAt;
+		return createdAt === null || createdAt === undefined
+			? null
+			: format(createdAt, "dd MMMM yyyy");
+	}
+
+	// A reply to a profile photo is its own message type, quoting the photo by
+	// hash; 🔥 is the profile-level Fire tap rather than a message reaction.
+	const profileActions = {
+		onReply: async (text: string, index: number) => {
+			const media = medias[index];
+			if (!media) return;
+			await sendMessage({
+				toUserId: profileId,
+				message: {
+					type: "ProfilePhotoReply",
+					body: { imageHash: media.mediaHash, photoContentReply: text },
+				},
+			});
+		},
+		onReact: async () => {
+			await sendTap({ recipientId: profileId, tapType: TapType.Hot });
+		},
+		onOpenChat: async () => {
+			// Closing first: the lightbox is a body-level overlay, so it would sit
+			// on top of the conversation we're navigating to.
+			lightboxRef?.pswp?.close();
+			await goto(`/chat/${conversationId}`);
+		},
+	};
+
+	let lightboxRef: PhotoSwipeLightbox | undefined = $state();
 
 	let gallery: HTMLDivElement | null = $state(null);
 
@@ -31,11 +86,13 @@
 					gallery,
 					children: ".item",
 					pswpModule: () => import("photoswipe"),
-					// `pswp--close-only` scopes this route's button-hiding rule to this
-					// lightbox: its CSS is global once the profile chunk loads, and an
-					// unscoped rule would also strip zoom/download from the chat and
-					// album viewers for the rest of the session.
-					mainClass: `pswp--buttons-visible pswp--close-only`,
+					mainClass: `pswp--buttons-visible`,
+					// Matches the chat and album viewers: opaque backdrop, no counter
+					// (the chrome's pills say where we are) and the media padded clear
+					// of the chrome.
+					bgOpacity: 1,
+					counter: false,
+					paddingFn: () => ({ ...insets, left: 0, right: 0 }),
 				});
 				lightbox.addFilter("itemData", (itemData) => {
 					const img = itemData.element?.querySelector("img");
@@ -75,25 +132,31 @@
 						}
 					});
 				});
-				lightbox.on("uiRegister", () => {
-					lightbox?.pswp?.ui?.registerElement({
-						name: "created-at-label",
-						order: 9,
-						appendTo: "root",
-						onInit(element, pswp) {
-							setTimeout(() => {
-								const { data: createdAt } = z.coerce
-									.number()
-									.int()
-									.safeParse(pswp.currSlide?.data.element?.dataset.createdAt);
-								if (createdAt !== undefined) {
-									element.textContent = format(createdAt, "dd MMMM yyyy");
-								}
-							}, 0);
-						},
-					});
+				registerLightboxDownloadButton(lightbox, (index) => {
+					const media = medias[index];
+					return media
+						? { url: profileMediaUrl(media.mediaHash, "full") }
+						: null;
+				});
+				registerMediaViewerChrome(lightbox, {
+					count: medias.length,
+					insets,
+					// The date each photo was taken replaces the old bottom label, which
+					// the reply bar now occupies.
+					header: (index) => ({
+						fallbackName: displayName?.trim() || "Photos",
+						subtitle: dateLabel(index),
+						// Their primary photo, which is the avatar everywhere else. No
+						// profileId: this viewer opens from that profile already, so
+						// there is nowhere for the header to link to.
+						avatarUrl: medias[0]
+							? profileMediaUrl(medias[0].mediaHash, "thumb")
+							: null,
+					}),
+					actions: self ? {} : profileActions,
 				});
 
+				lightboxRef = lightbox;
 				lightbox.init();
 			})
 			.catch((error) => console.error(error));
@@ -165,18 +228,8 @@
 	.carousel::-webkit-scrollbar {
 		display: none;
 	}
-	:global {
-		.pswp--close-only .pswp__button:not(.pswp__button--close) {
-			display: none;
-		}
-		.pswp--close-only .pswp__created-at-label {
-			text-shadow: 1px 1px 3px var(--pswp-icon-color-secondary);
-			@apply absolute bottom-0 left-1/2 flex w-full -translate-x-1/2 items-center justify-center bg-linear-to-t from-background/60 pt-4 font-medium text-white/90;
-			height: calc(4rem + var(--safe-area-bottom));
-			padding-bottom: calc(0.5rem + var(--safe-area-bottom));
-		}
-		.pswp--close-only .pswp__top-bar {
-			margin-top: var(--safe-area-top);
-		}
-	}
+	/* The former `pswp--close-only` rules are gone with them: this viewer now
+	   keeps the download and zoom buttons, and the date it used to print along
+	   the bottom edge moved into the chrome's header, which the reply bar would
+	   otherwise sit on top of. */
 </style>

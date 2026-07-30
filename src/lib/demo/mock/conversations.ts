@@ -5,7 +5,7 @@ import {
 import type { AlbumExpirationType } from "$lib/model/messaging/albums";
 import type { Conversation } from "$lib/model/messaging/conversations";
 import { DAY, demoMeProfileId, HOUR, MINUTE, NOW } from "../config";
-import { hashFromSeed } from "./avatars";
+import { demoMediaUrl, hashFromSeed } from "./avatars";
 import { lastOnlineOf, onlineUntilOf, photosOf, profileSeed } from "./profiles";
 
 type DemoMessage = { fromMe: boolean; reactions?: number } & (
@@ -447,14 +447,43 @@ function generateAlbumContent(albumId: number) {
 	});
 }
 
+const sharedAlbumSeeds = [
+	{ albumId: 8001, ownerProfileId: 100001, name: "Beach day" },
+	{ albumId: 8002, ownerProfileId: 100004, name: null },
+	{ albumId: 8003, ownerProfileId: 100005, name: "Night out" },
+	{ albumId: 8004, ownerProfileId: 100007, name: "Trip" },
+];
+
+/**
+ * Who an album belongs to. The real API answers with the owner's profile id,
+ * which the viewer uses both for its header and as the person a reply is
+ * addressed to, so the seeds have to agree about it: albums shared with us come
+ * from the feed's owners or from whoever shared them in a conversation, and
+ * everything else is our own.
+ */
+function demoAlbumOwner(albumId: number): number {
+	const shared = sharedAlbumSeeds.find((seed) => seed.albumId === albumId);
+	if (shared) return shared.ownerProfileId;
+	for (const conversation of demoConversationSeeds) {
+		for (const message of conversation.messages) {
+			if (message.kind !== "album" || message.albumId !== albumId) continue;
+			return message.fromMe ? demoMeProfileId : conversation.withId;
+		}
+	}
+	return demoMeProfileId;
+}
+
 export function demoAlbumContent(albumId: number) {
 	// Prefer the mutable store so edits made in demo mode are visible here.
 	const owned = demoAlbumStore().find((album) => album.albumId === albumId);
 	return {
 		albumId,
 		hasUnseenContent: false,
-		albumName: owned?.albumName ?? null,
-		profileId: demoMeProfileId,
+		albumName:
+			owned?.albumName ??
+			sharedAlbumSeeds.find((seed) => seed.albumId === albumId)?.name ??
+			null,
+		profileId: demoAlbumOwner(albumId),
 		albumViewable: true,
 		sharedCount: owned?.sharedCount ?? 1,
 		createdAt: localDateTime(NOW - 3 * DAY),
@@ -591,39 +620,37 @@ export function demoDeleteAlbumContent(albumId: number, contentId: number) {
 }
 
 export function demoSharedAlbumsFeed() {
-	const seeds = [
-		{ albumId: 8001, ownerProfileId: 100001, name: "Beach day" },
-		{ albumId: 8002, ownerProfileId: 100004, name: null },
-		{ albumId: 8003, ownerProfileId: 100005, name: "Night out" },
-		{ albumId: 8004, ownerProfileId: 100007, name: "Trip" },
-	];
-	const sharedAlbums = seeds.map(({ albumId, ownerProfileId, name }, i) => {
-		const owner = profileSeed(ownerProfileId);
-		return {
-			albumId,
-			albumNumber: i + 1,
-			totalAlbumsShared: seeds.length,
-			hasUnseenContent: i % 2 === 0,
-			albumViewable: true,
-			name,
-			ownerProfileId,
-			imageCount: 2 + (albumId % 3),
-			videoCount: albumId % 2,
-			coverContent: {
-				id: albumId * 10,
-				contentType: "image/jpeg",
-				location: picsum(`shared-album-${albumId}-cover`, 300, 400),
-				status: "AVAILABLE",
-			},
-			profile: {
-				profileId: ownerProfileId,
-				name: owner.name ?? "",
-				profileUrl: null,
-				onlineUntil: null,
-				distanceKm: null,
-			},
-		};
-	});
+	const sharedAlbums = sharedAlbumSeeds.map(
+		({ albumId, ownerProfileId, name }, i) => {
+			const owner = profileSeed(ownerProfileId);
+			return {
+				albumId,
+				albumNumber: i + 1,
+				totalAlbumsShared: sharedAlbumSeeds.length,
+				hasUnseenContent: i % 2 === 0,
+				albumViewable: true,
+				name,
+				ownerProfileId,
+				imageCount: 2 + (albumId % 3),
+				videoCount: albumId % 2,
+				coverContent: {
+					id: albumId * 10,
+					contentType: "image/jpeg",
+					location: picsum(`shared-album-${albumId}-cover`, 300, 400),
+					status: "AVAILABLE",
+				},
+				profile: {
+					profileId: ownerProfileId,
+					name: owner.name ?? "",
+					// The feed hands out a ready-made avatar URL rather than a media
+					// hash, so mirror that with the seeded photo's demo URL.
+					profileUrl: demoMediaUrl(photosOf(ownerProfileId)[0]),
+					onlineUntil: null,
+					distanceKm: owner.distanceM === null ? null : owner.distanceM / 1000,
+				},
+			};
+		},
+	);
 	return {
 		profileFeeds: [],
 		sharedAlbums,
@@ -690,6 +717,44 @@ export function demoSentMessage(body: unknown): ApiResponseMessage {
 				imageHash: hashFromSeed(`drawer-${mediaId}`),
 				takenOnGrindr: item?.takenOnGrindr ?? false,
 				createdAt: item?.createdTs ?? timestamp,
+			},
+			...overlay,
+		});
+	}
+	if (
+		(sent.type === "AlbumContentReply" ||
+			sent.type === "AlbumContentReaction") &&
+		sent.body &&
+		typeof sent.body === "object"
+	) {
+		const { albumId, albumContentId, albumContentReply } = sent.body as {
+			albumId: number;
+			albumContentId: number;
+			albumContentReply?: string;
+		};
+		// The real API fills these in from the album; mirror that here so the
+		// echoed message renders like a received one.
+		const contentBody = {
+			albumId,
+			ownerProfileId: targetId,
+			albumContentId,
+			previewUrl: picsum(`album-${albumId}-0`, 300, 400),
+			expiresAt: null,
+			viewable: true,
+		};
+		if (sent.type === "AlbumContentReaction") {
+			return remember({
+				type: "AlbumContentReaction",
+				body: contentBody,
+				...overlay,
+			});
+		}
+		return remember({
+			type: "AlbumContentReply",
+			body: {
+				...contentBody,
+				albumContentReply: albumContentReply ?? "",
+				contentType: "image/jpeg",
 			},
 			...overlay,
 		});

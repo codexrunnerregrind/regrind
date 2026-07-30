@@ -1,23 +1,24 @@
 <script lang="ts">
-	import "photoswipe/style.css";
 	import {
 		ClockIcon,
 		ImageBrokenIcon,
 		ImagesIcon,
 		VideoIcon,
 	} from "phosphor-svelte";
-	import type PhotoSwipeLightbox from "photoswipe/lightbox";
 	import { toast } from "svelte-sonner";
 
 	import { showErrorToast } from "$lib/api/error";
 	import {
-		type AlbumContentResponse,
-		getAlbumContent,
-	} from "$lib/api/messaging/albums";
-	import { registerLightboxDownloadButton } from "$lib/chat/lightbox-download";
-	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+		AlbumLockedError,
+		type AlbumSharer,
+		loadAlbum,
+		type LoadedAlbum,
+		openAlbumLightbox,
+	} from "$lib/chat/album-viewer";
+	import { profileMediaUrl } from "$lib/util/media";
 	import { getNow, subscribeNow } from "$lib/util/now.svelte";
 	import type { AlbumMessage } from "$lib/model/messaging/messages";
+	import { getConversationState } from "../../conversation-state.svelte";
 	import { albumExpiry } from "./album-expiry";
 	import LockedMedia from "./LockedMedia.svelte";
 	import { MessageMediaState } from "./message-media.svelte";
@@ -25,6 +26,7 @@
 	let { message }: { message: AlbumMessage["body"] } = $props();
 
 	const media = new MessageMediaState();
+	const conversation = $derived(getConversationState()());
 
 	const expiry = $derived(albumExpiry(message, getNow()));
 
@@ -48,204 +50,61 @@
 		media.cornerClass,
 	]);
 
-	type LoadedAlbum = AlbumContentResponse & {
-		content: (AlbumContentResponse["content"][number] & {
-			width: number;
-			height: number;
-		})[];
-	};
-
-	type AlbumState =
-		| { status: "idle" }
-		| { status: "loading" }
-		| { status: "open"; album: LoadedAlbum };
-
-	let albumState = $state<AlbumState>({ status: "idle" });
-	let cachedAlbum: LoadedAlbum | null = null;
-
-	function openAlbum() {
-		if (cachedAlbum) {
-			albumState = { status: "open", album: cachedAlbum };
-		} else {
-			albumState = { status: "loading" };
-		}
-	}
-
-	$effect(() => {
-		if (albumState.status !== "loading") return;
-		(async () => {
-			const loaded = await getAlbumContent(message.albumId).then(
-				async (res) => ({
-					...res,
-					content: await Promise.all(
-						res.content.map(async (slide) => {
-							if (slide.contentType.startsWith("video/")) {
-								const video = document.createElement("video");
-								video.src = slide.url ?? "";
-								video.load();
-								try {
-									await new Promise<void>((resolve, reject) => {
-										if (video.readyState >= 1) resolve();
-										video.addEventListener("loadedmetadata", () => resolve(), {
-											once: true,
-										});
-										video.addEventListener(
-											"error",
-											({ error }) =>
-												reject(
-													new Error(`Failed to load video: ${slide.url}`, {
-														cause: error,
-													}),
-												),
-											{
-												once: true,
-											},
-										);
-									});
-									return {
-										...slide,
-										width: video.videoWidth,
-										height: video.videoHeight,
-									};
-								} finally {
-									video.remove();
-								}
-							} else {
-								const img = document.createElement("img");
-								img.src = slide.url ?? "";
-								try {
-									await new Promise<void>((resolve, reject) => {
-										if (img.complete) resolve();
-										img.addEventListener("load", () => resolve(), {
-											once: true,
-										});
-										img.addEventListener(
-											"error",
-											({ error }) =>
-												reject(
-													new Error(`Failed to load image: ${slide.url}`, {
-														cause: error,
-													}),
-												),
-											{
-												once: true,
-											},
-										);
-									});
-									return {
-										...slide,
-										src: img.src,
-										width: img.naturalWidth,
-										height: img.naturalHeight,
-									};
-								} finally {
-									img.remove();
-								}
-							}
-						}),
-					),
-				}),
-			);
-			cachedAlbum = loaded;
-			albumState = { status: "open", album: loaded };
-		})().catch((error) => {
-			console.error(error);
-			showErrorToast({
-				label: "Failed to load album content",
-				error,
-			});
-			albumState = { status: "idle" };
-		});
-	});
-
-	$effect(() => {
-		if (albumState.status !== "open") return;
-		const { album } = albumState;
-		// Locked/expired albums come back with no viewable content. Rather than
-		// opening an empty lightbox, surface a clear message like the album grids.
-		if (album.content.length === 0) {
-			toast.info("This album is locked or has expired.");
-			albumState = { status: "idle" };
-			return;
-		}
-		let lightbox: PhotoSwipeLightbox | undefined;
-		let canceled = false;
-		import("photoswipe/lightbox")
-			.then(({ default: PhotoSwipeLightbox }) => {
-				if (canceled) return;
-				lightbox = new PhotoSwipeLightbox({
-					showHideAnimationType: "fade",
-					pswpModule: () => import("photoswipe"),
-					mainClass: `pswp--buttons-visible`,
-				});
-				lightbox.addFilter("numItems", () => album.content.length);
-				lightbox.addFilter("itemData", (_, index) => {
-					const { url, width, height } = album.content[index];
-					return { src: url, width, height };
-				});
-				lightbox.addFilter(
-					"useContentPlaceholder",
-					(usePlaceholder, content) =>
-						album.content[content.index]?.contentType.startsWith("video/")
-							? false
-							: usePlaceholder,
-				);
-				registerLightboxDownloadButton(lightbox, (index) => {
-					const slide = album.content[index];
-					return slide ? { url: slide.url, mimeType: slide.contentType } : null;
-				});
-				const onBackGesture = () => {
-					lightbox?.pswp?.close();
-					return false;
-				};
-				lightbox.on("beforeOpen", () => {
-					backGestureEventHandlers.add(onBackGesture);
-				});
-				lightbox.on("close", () => {
-					backGestureEventHandlers.delete(onBackGesture);
-				});
-				lightbox.on("contentLoad", (event) => {
-					const { content } = event;
-					const slide = album.content[content.index];
-					if (slide?.contentType.startsWith("video/")) {
-						event.preventDefault();
-						content.element = document.createElement("div");
-						const video = document.createElement("video");
-						video.src = slide.url;
-						if (slide.coverUrl !== null) video.poster = slide.coverUrl;
-						video.controls = true;
-						video.playsInline = true;
-						video.className = "size-full object-contain";
-						content.element.appendChild(video);
-						content.state = "loading";
-						if (video.readyState >= 3) {
-							content.onLoaded();
-						} else {
-							video.addEventListener("loadeddata", () => content.onLoaded());
-							video.addEventListener("error", () => content.onError());
-						}
-					}
-				});
-				lightbox.on("closingAnimationEnd", () => {
-					albumState = { status: "idle" };
-				});
-				lightbox.init();
-				lightbox.loadAndOpen(0);
-			})
-			.catch((error) => {
-				console.error(error);
-				showErrorToast({
-					label: "Failed to open album",
-					error,
-				});
-				albumState = { status: "idle" };
-			});
-		return () => {
-			canceled = true;
-			lightbox?.destroy();
-			lightbox = undefined;
+	// Someone else's album gets the viewer's reply chrome; our own share opens
+	// bare. The conversation partner is the sharer, so its profile is what the
+	// header describes.
+	const sharer = $derived.by<AlbumSharer | undefined>(() => {
+		if (message.ownerProfileId === conversation.ourProfileId) return undefined;
+		const profile = conversation.profile;
+		return {
+			name: profile?.name,
+			avatarUrl:
+				profile?.mediaHash === undefined || profile.mediaHash === null
+					? null
+					: profileMediaUrl(profile.mediaHash, "thumb"),
+			// The conversation profile reports metres, the viewer takes kilometres.
+			distanceKm:
+				profile?.distance === undefined || profile.distance === null
+					? null
+					: profile.distance / 1000,
 		};
 	});
+
+	let phase = $state<"idle" | "loading" | "open">("idle");
+	// Reopening the same album shouldn't refetch it.
+	let cachedAlbum: LoadedAlbum | null = null;
+	let destroyLightbox: (() => void) | null = null;
+
+	// The message can scroll out of the list (or the conversation can be left)
+	// while the viewer is open, so the lightbox is torn down with it.
+	$effect(() => () => {
+		destroyLightbox?.();
+		destroyLightbox = null;
+	});
+
+	async function openAlbum() {
+		if (phase !== "idle") return;
+		phase = "loading";
+		try {
+			cachedAlbum ??= await loadAlbum(message.albumId);
+			destroyLightbox = await openAlbumLightbox(cachedAlbum, {
+				sharer,
+				onClosed: () => {
+					phase = "idle";
+					destroyLightbox = null;
+				},
+			});
+			phase = "open";
+		} catch (error) {
+			phase = "idle";
+			if (error instanceof AlbumLockedError) {
+				toast.info(error.message);
+			} else {
+				console.error(error);
+				showErrorToast({ label: "Failed to open album", error });
+			}
+		}
+	}
 </script>
 
 {#if message.isViewable}
@@ -254,12 +113,12 @@
 			className,
 			contentClass,
 			{
-				"cursor-pointer": albumState.status === "idle",
-				"opacity-50": albumState.status === "loading",
+				"cursor-pointer": phase === "idle",
+				"opacity-50": phase === "loading",
 			},
 		]}
-		onclick={openAlbum}
-		disabled={albumState.status !== "idle"}
+		onclick={() => void openAlbum()}
+		disabled={phase !== "idle"}
 		bind:this={media.el}
 	>
 		{#if message.coverUrl !== null}
