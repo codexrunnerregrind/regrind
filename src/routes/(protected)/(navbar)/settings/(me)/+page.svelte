@@ -1,9 +1,15 @@
 <script lang="ts">
 	import { version } from "$app/environment";
+	import {
+		GearIcon,
+		IdentificationCardIcon,
+		PaletteIcon,
+		UserCircleIcon,
+	} from "phosphor-svelte";
 
-	import AccountSettingsLink from "./AccountSettingsLink.svelte";
-	import AppearanceLink from "./AppearanceLink.svelte";
-	import AppSettingsLink from "./AppSettingsLink.svelte";
+	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
+	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
+	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
 	import ProfileLink from "./ProfileLink.svelte";
 	import SignOutButton from "./SignOutButton.svelte";
 	import Socials from "./Socials.svelte";
@@ -14,17 +20,58 @@
 <main class="screen-nav-host">
 	<div class="h-full w-full overflow-y-auto overscroll-none">
 		<div class="flex w-full p-4 pb-nav-clear">
-			<div class="m-auto flex w-full max-w-120 flex-col gap-3 pb-16">
+			<div class="m-auto flex w-full max-w-120 flex-col pb-16">
 				<ProfileLink id={data.ourProfileId} />
-				<span role="separator"></span>
-				<AccountSettingsLink />
-				<AppSettingsLink />
-				<AppearanceLink />
-				<SignOutButton />
-				<span role="separator"></span>
-				<Socials />
+
+				<SectionHeader>Preferences</SectionHeader>
+				<SettingsGroup>
+					<SettingsRow
+						title="Edit Profile"
+						href="/settings/profile"
+						tint="blue"
+					>
+						{#snippet icon()}
+							<IdentificationCardIcon weight="fill" />
+						{/snippet}
+					</SettingsRow>
+					<SettingsRow
+						title="Account Settings"
+						href="/settings/account"
+						tint="indigo"
+					>
+						{#snippet icon()}
+							<UserCircleIcon weight="fill" />
+						{/snippet}
+					</SettingsRow>
+					<SettingsRow title="App Settings" href="/settings/app" tint="slate">
+						{#snippet icon()}
+							<GearIcon weight="fill" />
+						{/snippet}
+					</SettingsRow>
+					<SettingsRow
+						title="Appearance"
+						href="/settings/appearance"
+						tint="purple"
+					>
+						{#snippet icon()}
+							<PaletteIcon weight="fill" />
+						{/snippet}
+					</SettingsRow>
+				</SettingsGroup>
+
+				<SectionHeader>About</SectionHeader>
+				<SettingsGroup>
+					<Socials />
+				</SettingsGroup>
+
+				<div class="mt-5">
+					<SettingsGroup>
+						<SignOutButton />
+					</SettingsGroup>
+				</div>
+
 				<span
-					class="px-4 py-2 font-mono text-xs break-all whitespace-pre-wrap text-muted-foreground select-text"
+					class="mt-6 px-4 text-center font-mono text-2xs break-all whitespace-pre-wrap text-muted-foreground select-text"
 				>
 					{version}
 				</span>

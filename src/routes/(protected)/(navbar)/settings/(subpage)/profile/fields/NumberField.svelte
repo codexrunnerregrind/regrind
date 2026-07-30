@@ -2,7 +2,8 @@
 	import { untrack } from "svelte";
 
 	import { Input } from "$lib/components/ui/input";
-	import Field from "./Field.svelte";
+	import InlineField from "./InlineField.svelte";
+	import { bareInputClass } from "./row";
 
 	let {
 		label,
@@ -67,24 +68,19 @@
 	}
 </script>
 
-<Field {label}>
-	<div class="relative">
-		<Input
-			type="text"
-			inputmode={allowsDecimal ? "decimal" : "numeric"}
-			bind:value={text}
-			oninput={handleInput}
-			onfocus={() => (focused = true)}
-			onblur={commit}
-			{placeholder}
-			class={{ "pr-10": unit }}
-		/>
-		{#if unit}
-			<span
-				class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-muted-foreground"
-			>
-				{unit}
-			</span>
-		{/if}
-	</div>
-</Field>
+<InlineField {label}>
+	<Input
+		type="text"
+		inputmode={allowsDecimal ? "decimal" : "numeric"}
+		bind:value={text}
+		oninput={handleInput}
+		onfocus={() => (focused = true)}
+		onblur={commit}
+		{placeholder}
+		aria-label={label}
+		class={[bareInputClass, "w-20"]}
+	/>
+	{#if unit}
+		<span class="shrink-0 text-body text-muted-foreground">{unit}</span>
+	{/if}
+</InlineField>

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Label } from "$lib/components/ui/label";
 	import { Textarea } from "$lib/components/ui/textarea";
+	import { stackedLabelClass, stackedRowClass } from "./row";
 
 	let {
 		label,
@@ -18,20 +19,25 @@
 	const over = $derived(remaining < 0);
 </script>
 
-<div class="flex flex-col gap-1.5">
-	<Label class="px-1">{label}</Label>
-	<Textarea bind:value {placeholder} aria-invalid={over} class="min-h-24" />
-	<div class="flex justify-between gap-2 px-1 text-xs">
-		<span class={{ "text-destructive": over, invisible: !over }}>
-			Too long, please shorten
-		</span>
+<div class={stackedRowClass}>
+	<div class="flex items-baseline justify-between gap-3">
+		<Label class={stackedLabelClass}>{label}</Label>
 		<span
 			class={[
-				"tabular-nums",
+				"shrink-0 text-caption tabular-nums",
 				over ? "text-destructive" : "text-muted-foreground",
 			]}
 		>
 			{remaining}
 		</span>
 	</div>
+	<Textarea
+		bind:value
+		{placeholder}
+		aria-invalid={over}
+		class="min-h-24 rounded-lg"
+	/>
+	{#if over}
+		<span class="text-caption text-destructive">Too long, please shorten</span>
+	{/if}
 </div>

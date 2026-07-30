@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ChatCircleDotsIcon, HandTapIcon } from "phosphor-svelte";
 	import { onMount } from "svelte";
 	import { toast } from "svelte-sonner";
 
@@ -7,7 +8,7 @@
 		getPreferences,
 		setPreferences,
 	} from "$lib/app-data/preferences.svelte";
-	import SwitchField from "$lib/components/ui/switch-field/SwitchField.svelte";
+	import SettingsSwitchRow from "$lib/components/settings/SettingsSwitchRow.svelte";
 	import { notifications } from "$lib/notifications/notifications.svelte";
 
 	let notifyMessages = $state(false);
@@ -48,7 +49,7 @@
 	}
 </script>
 
-<SwitchField
+<SettingsSwitchRow
 	title="Messages"
 	description="Get notified when someone sends you a message."
 	disabled={!loaded}
@@ -60,8 +61,13 @@
 			update("notifyMessages", next, () => (notifyMessages = previous));
 		}
 	}
-/>
-<SwitchField
+	tint="blue"
+>
+	{#snippet icon()}
+		<ChatCircleDotsIcon weight="fill" />
+	{/snippet}
+</SettingsSwitchRow>
+<SettingsSwitchRow
 	title="Taps"
 	description="Get notified when someone taps you."
 	disabled={!loaded}
@@ -73,4 +79,9 @@
 			update("notifyTaps", next, () => (notifyTaps = previous));
 		}
 	}
-/>
+	tint="pink"
+>
+	{#snippet icon()}
+		<HandTapIcon weight="fill" />
+	{/snippet}
+</SettingsSwitchRow>

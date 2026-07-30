@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Input } from "$lib/components/ui/input";
-	import Field from "./Field.svelte";
+	import InlineField from "./InlineField.svelte";
+	import { bareInputClass } from "./row";
 
 	let {
 		label,
@@ -28,12 +29,14 @@
 	const today = toInput(Date.now());
 </script>
 
-<Field {label}>
+<InlineField {label}>
 	<Input
 		type="date"
 		max={today}
+		aria-label={label}
+		class={[bareInputClass, "w-auto"]}
 		bind:value={
 			() => toInput(value), (newValue: string) => (value = fromInput(newValue))
 		}
 	/>
-</Field>
+</InlineField>

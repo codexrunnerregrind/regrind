@@ -1,32 +1,59 @@
 <script lang="ts">
-	import { CheckIcon, DesktopIcon, MoonIcon, SunIcon } from "phosphor-svelte";
+	import {
+		CheckIcon,
+		DesktopIcon,
+		MoonIcon,
+		PaperPlaneRightIcon,
+		SunIcon,
+	} from "phosphor-svelte";
 	import { onMount } from "svelte";
 
 	import {
 		type AccentColor,
 		accentColors,
+		type BubbleColor,
+		bubbleColors,
+		bubbleLabel,
+		surface,
+	} from "$lib/app-data/palette";
+	import {
 		getAccentColorSnapshot,
+		getIncomingBubbleColorSnapshot,
+		getOutgoingBubbleColorSnapshot,
 		getPreferences,
 		getThemeModeSnapshot,
 		setPreferences,
 		type ThemeMode,
 	} from "$lib/app-data/preferences.svelte";
-	import * as ToggleGroup from "$lib/components/ui/toggle-group";
+	import SectionFooter from "$lib/components/settings/SectionFooter.svelte";
+	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
+	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
+	import SettingsSegmented from "$lib/components/settings/SettingsSegmented.svelte";
 	import { hapticSelection } from "$lib/platform/haptics";
 
-	let value = $state<ThemeMode>(getThemeModeSnapshot());
+	let mode = $state<ThemeMode>(getThemeModeSnapshot());
 	let accent = $state<AccentColor>(getAccentColorSnapshot());
+	let outgoing = $state<BubbleColor>(getOutgoingBubbleColorSnapshot());
+	let incoming = $state<BubbleColor>(getIncomingBubbleColorSnapshot());
 
 	onMount(() => {
 		void getPreferences()
 			.then((preferences) => {
-				value = preferences.themeMode;
+				mode = preferences.themeMode;
 				accent = preferences.accentColor;
+				outgoing = preferences.outgoingBubbleColor;
+				incoming = preferences.incomingBubbleColor;
 			})
 			.catch((error) => {
 				console.error("Failed to load preferences", error);
 			});
 	});
+
+	function persist(values: Parameters<typeof setPreferences>[0]) {
+		setPreferences(values).catch((error) => {
+			console.error("Failed to save preferences", error);
+		});
+	}
 
 	const modes: { value: ThemeMode; label: string; icon: typeof SunIcon }[] = [
 		{ value: "light", label: "Light", icon: SunIcon },
@@ -34,90 +61,138 @@
 		{ value: "system", label: "System", icon: DesktopIcon },
 	];
 
-	// oklch swatch previews, matching the [data-accent="…"] blocks in layout.css.
-	const accentSwatches: Record<AccentColor, string> = {
-		green: "oklch(0.62 0.13 168)",
-		teal: "oklch(0.6 0.1 195)",
-		blue: "oklch(0.58 0.16 250)",
-		indigo: "oklch(0.52 0.17 275)",
-		purple: "oklch(0.55 0.18 305)",
-		pink: "oklch(0.6 0.2 350)",
-		red: "oklch(0.58 0.21 25)",
-		orange: "oklch(0.63 0.17 50)",
-		yellow: "oklch(0.85 0.16 92)",
-		brown: "oklch(0.5 0.08 50)",
-		slate: "oklch(0.52 0.03 250)",
+	/**
+	 * Three colours share one swatch grid. Showing three separate grids would put
+	 * 40-odd circles on the screen; this way the palette is rendered once and the
+	 * segmented control chooses which colour it edits, with the preview above
+	 * acting as the legend for all three at once.
+	 */
+	type Target = "app" | "sent" | "received";
+
+	const targets: { value: Target; label: string }[] = [
+		{ value: "app", label: "App" },
+		{ value: "sent", label: "Sent" },
+		{ value: "received", label: "Received" },
+	];
+
+	let target = $state<Target>("app");
+
+	// Bubbles can be left untinted; the app accent always has a colour.
+	const swatches = $derived<readonly BubbleColor[]>(
+		target === "app" ? accentColors : bubbleColors,
+	);
+
+	const selected = $derived<BubbleColor>(
+		target === "app" ? accent : target === "sent" ? outgoing : incoming,
+	);
+
+	const footnotes: Record<Target, string> = {
+		app: "Buttons, links, focus rings and other highlights.",
+		sent: "The bubbles for messages you send.",
+		received: "The bubbles for messages you receive.",
 	};
 
-	function selectAccent(next: AccentColor) {
-		if (next !== accent) hapticSelection();
-		accent = next;
-		setPreferences({ accentColor: next }).catch((error) => {
-			console.error("Failed to save preferences", error);
-		});
+	function select(color: BubbleColor) {
+		if (color !== selected) hapticSelection();
+		if (target === "app") {
+			if (color === "neutral") return;
+			accent = color;
+			persist({ accentColor: color });
+		} else if (target === "sent") {
+			outgoing = color;
+			persist({ outgoingBubbleColor: color });
+		} else {
+			incoming = color;
+			persist({ incomingBubbleColor: color });
+		}
 	}
 </script>
 
-<h2>Mode</h2>
-<ToggleGroup.Root
-	type="single"
-	variant="outline"
-	class="grid w-full grid-cols-3 gap-3"
-	bind:value={
-		() => value,
-		(next: string) => {
-			const themeMode = (next || "system") as ThemeMode;
-			if (themeMode !== value) hapticSelection();
-			value = themeMode;
-			setPreferences({ themeMode }).catch((error) => {
-				console.error("Failed to save preferences", error);
-			});
-		}
-	}
+<!-- Preview first, and it covers all three colours at once: an incoming bubble,
+     an outgoing bubble, and the accent on the send button. -->
+<div
+	class="flex flex-col gap-2.5 rounded-xl border border-border bg-chat-background p-3"
 >
-	{#each modes as mode (mode.value)}
-		<ToggleGroup.Item
-			value={mode.value}
-			class="flex h-auto flex-col items-center justify-center gap-2 rounded-2xl py-5 data-[state=on]:border-primary data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
+	<div
+		class="max-w-[80%] self-start rounded-xl rounded-bl-sm bg-message-bubble-in px-3 py-2 text-caption text-message-bubble-foreground"
+	>
+		How does this look?
+	</div>
+	<div
+		class="max-w-[80%] self-end rounded-xl rounded-br-sm bg-message-bubble-out px-3 py-2 text-caption text-message-bubble-out-foreground"
+	>
+		Just right.
+	</div>
+	<div class="mt-1 flex items-center gap-2">
+		<div
+			class="flex-1 rounded-full bg-card px-3 py-2 text-caption text-muted-foreground"
 		>
-			<mode.icon weight="fill" class="size-7" />
-			<span class="text-sm font-medium">{mode.label}</span>
-		</ToggleGroup.Item>
-	{/each}
-</ToggleGroup.Root>
-<p class="px-1 text-sm text-muted-foreground">
-	System matches your device's light or dark setting automatically.
-</p>
-
-<h2>Accent colour</h2>
-<div class="grid grid-cols-6 gap-3 px-1 py-1">
-	{#each accentColors as color (color)}
-		<button
-			type="button"
-			aria-label={color}
-			aria-pressed={accent === color}
-			onclick={() => selectAccent(color)}
-			class={[
-				"flex aspect-square items-center justify-center rounded-full transition",
-				"ring-2 ring-offset-2 ring-offset-background",
-				color === "yellow" ? "text-black/80" : "text-white",
-				accent === color
-					? "ring-foreground/70"
-					: "ring-transparent active:scale-95",
-			]}
-			style="background-color: {accentSwatches[color]}"
+			Message…
+		</div>
+		<div
+			class="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground"
 		>
-			{#if accent === color}
-				<CheckIcon weight="bold" class="size-5" />
-			{/if}
-		</button>
-	{/each}
+			<PaperPlaneRightIcon weight="fill" class="size-4.5" />
+		</div>
+	</div>
 </div>
 
-<style lang="postcss">
-	@reference "$layout";
+<SectionHeader>Mode</SectionHeader>
+<SettingsGroup divider="none">
+	<div class="p-3">
+		<SettingsSegmented
+			options={modes}
+			stacked
+			bind:value={
+				() => mode,
+				(next: ThemeMode) => {
+					if (next !== mode) hapticSelection();
+					mode = next;
+					persist({ themeMode: next });
+				}
+			}
+		/>
+	</div>
+</SettingsGroup>
+<SectionFooter>
+	System matches your device's light or dark setting automatically.
+</SectionFooter>
 
-	h2 {
-		@apply mt-2 truncate ps-4 text-xl font-semibold tracking-tight;
-	}
-</style>
+<SectionHeader>Colours</SectionHeader>
+<SettingsGroup divider="none">
+	<div class="flex flex-col gap-3 p-3">
+		<SettingsSegmented options={targets} bind:value={target} />
+		<!-- Left-aligned wrap: the row count depends on viewport width, so a
+		     centred final row drifts out of line with the ones above it. -->
+		<div class="flex flex-wrap justify-start gap-3 px-1 pt-1 pb-1">
+			{#each swatches as color (color)}
+				<button
+					type="button"
+					aria-label={bubbleLabel(color)}
+					aria-pressed={selected === color}
+					onclick={() => select(color)}
+					class={[
+						"flex size-10 items-center justify-center rounded-full transition",
+						"ring-2 ring-offset-2 ring-offset-card",
+						color === "neutral"
+							? "border border-border bg-muted text-foreground"
+							: undefined,
+						selected === color
+							? "ring-foreground/70"
+							: "ring-transparent active:scale-95",
+					]}
+					style={color === "neutral"
+						? undefined
+						: `background-color: ${surface(color).value}; color: ${surface(color).contrast}`}
+				>
+					{#if selected === color}
+						<CheckIcon weight="bold" class="size-5" />
+					{/if}
+				</button>
+			{/each}
+		</div>
+	</div>
+</SettingsGroup>
+<SectionFooter>
+	{bubbleLabel(selected)} — {footnotes[target]}
+</SectionFooter>

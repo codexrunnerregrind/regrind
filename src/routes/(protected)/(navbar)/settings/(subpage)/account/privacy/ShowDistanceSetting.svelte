@@ -1,9 +1,10 @@
 <script lang="ts">
+	import { MapPinIcon } from "phosphor-svelte";
 	import { onMount } from "svelte";
 
 	import { showErrorToast } from "$lib/api/error";
 	import { getMyProfile, patchOwnProfile } from "$lib/api/users/profiles";
-	import SwitchField from "$lib/components/ui/switch-field/SwitchField.svelte";
+	import SettingsSwitchRow from "$lib/components/settings/SettingsSwitchRow.svelte";
 
 	let value = $state(false);
 	let profileId = $state<number | null>(null);
@@ -20,7 +21,7 @@
 	});
 </script>
 
-<SwitchField
+<SettingsSwitchRow
 	title="Show my distance"
 	description="Reveal your approximate location to other users as distance, e.g. 1.2 km."
 	disabled={profileId === null}
@@ -38,4 +39,9 @@
 			);
 		}
 	}
-/>
+	tint="orange"
+>
+	{#snippet icon()}
+		<MapPinIcon weight="fill" />
+	{/snippet}
+</SettingsSwitchRow>

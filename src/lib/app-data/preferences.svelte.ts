@@ -9,28 +9,29 @@ import {
 import { geohashSchema } from "$lib/model/geohash";
 import { type UnitSystem, unitSystemSchema } from "$lib/util/units";
 import { existsAppDataFile, readAppDataFile, writeAppDataFileAtomic } from ".";
+import {
+	type AccentColor,
+	accentColors,
+	type BubbleColor,
+	bubbleColors,
+} from "./palette";
 
 export const themeModeSchema = z.enum(["light", "dark", "system"]);
 export type ThemeMode = z.infer<typeof themeModeSchema>;
 
-export const accentColors = [
-	"green",
-	"teal",
-	"blue",
-	"indigo",
-	"purple",
-	"pink",
-	"red",
-	"orange",
-	"yellow",
-	"brown",
-	"slate",
-] as const;
 export const accentColorSchema = z.enum(accentColors);
-export type AccentColor = z.infer<typeof accentColorSchema>;
+export const bubbleColorSchema = z.enum(bubbleColors);
 
 const preferencesSchema = z.object({
-	accentColor: accentColorSchema.default("green"),
+	// Defaults mirror the official app: yellow for the accent and your own
+	// messages, pale sky blue for theirs. `.catch` keeps a colour that has since
+	// been dropped from the palette from failing the whole parse — the file would
+	// otherwise be reported as corrupt and offer to reset every preference.
+	accentColor: accentColorSchema.default("yellow").catch("yellow"),
+	// Bubble colours are independent of the app accent: the accent drives
+	// controls, while these only affect the chat transcript.
+	outgoingBubbleColor: bubbleColorSchema.default("yellow").catch("yellow"),
+	incomingBubbleColor: bubbleColorSchema.default("sky").catch("sky"),
 	// The manually-picked ("mock") location. Preserved across mode switches so
 	// returning from current-location mode restores the last picked spot.
 	geohash: geohashSchema.nullable().default(null),
@@ -132,6 +133,14 @@ export function getThemeModeSnapshot(): ThemeMode {
 
 export function getAccentColorSnapshot(): AccentColor {
 	return preferencesSnapshot.accentColor;
+}
+
+export function getOutgoingBubbleColorSnapshot(): BubbleColor {
+	return preferencesSnapshot.outgoingBubbleColor;
+}
+
+export function getIncomingBubbleColorSnapshot(): BubbleColor {
+	return preferencesSnapshot.incomingBubbleColor;
 }
 
 export async function hydratePreferences(): Promise<void> {

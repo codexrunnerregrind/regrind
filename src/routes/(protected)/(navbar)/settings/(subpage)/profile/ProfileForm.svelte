@@ -17,6 +17,9 @@
 		type ProfileUpdate,
 		updateOwnProfile,
 	} from "$lib/api/users/profiles";
+	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
+	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
+	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import { WheelPicker } from "$lib/components/ui/carousel";
 	import { Spinner } from "$lib/components/ui/spinner";
@@ -281,14 +284,17 @@
 	}
 </script>
 
-<form class="flex flex-col gap-6" onsubmit={(event) => event.preventDefault()}>
+<form class="flex flex-col" onsubmit={(event) => event.preventDefault()}>
 	<fieldset disabled={saving} class="contents">
-		<section class="flex flex-col gap-3">
-			<h2>Photos</h2>
-			<ProfilePicturesUpload bind:medias />
-		</section>
+		<SectionHeader>Photos</SectionHeader>
+		<SettingsGroup divider="none">
+			<div class="p-3">
+				<ProfilePicturesUpload bind:medias />
+			</div>
+		</SettingsGroup>
 
-		<section class="flex flex-col gap-3">
+		<SectionHeader>About you</SectionHeader>
+		<SettingsGroup divider="full">
 			<TextField
 				label="Display name"
 				bind:value={displayName}
@@ -309,10 +315,10 @@
 				max={maxProfileTags}
 				searchPlaceholder="Search tags..."
 			/>
-		</section>
+		</SettingsGroup>
 
-		<section class="flex flex-col gap-3">
-			<h2>Identity</h2>
+		<SectionHeader>Identity</SectionHeader>
+		<SettingsGroup divider="full">
 			<ComboField
 				label="Gender"
 				bind:values={genderIds}
@@ -330,10 +336,10 @@
 				max={maxProfilePronouns}
 				searchPlaceholder="Search pronouns..."
 			/>
-		</section>
+		</SettingsGroup>
 
-		<section class="flex flex-col gap-3">
-			<h2>Stats</h2>
+		<SectionHeader>Stats</SectionHeader>
+		<SettingsGroup divider="full">
 			<Field label="Age">
 				<WheelPicker
 					bind:value={age}
@@ -382,10 +388,10 @@
 				bind:value={relationshipStatus}
 				options={relationshipOptions}
 			/>
-		</section>
+		</SettingsGroup>
 
-		<section class="flex flex-col gap-3">
-			<h2>Preferences</h2>
+		<SectionHeader>Preferences</SectionHeader>
+		<SettingsGroup divider="full">
 			<SwitchRow label="Show my tribes" bind:checked={showTribes} />
 			<MultiSelectField
 				label="My tribes"
@@ -412,10 +418,10 @@
 				bind:value={nsfw}
 				options={nsfwOptions}
 			/>
-		</section>
+		</SettingsGroup>
 
-		<section class="flex flex-col gap-3">
-			<h2>Health</h2>
+		<SectionHeader>Health</SectionHeader>
+		<SettingsGroup divider="full">
 			<SelectField
 				label="HIV status"
 				bind:value={hivStatus}
@@ -432,10 +438,10 @@
 				bind:values={vaccineIds}
 				options={vaccineOptions}
 			/>
-		</section>
+		</SettingsGroup>
 
-		<section class="flex flex-col gap-3">
-			<h2>Social</h2>
+		<SectionHeader>Social</SectionHeader>
+		<SettingsGroup divider="full">
 			<SocialField
 				label="Instagram"
 				bind:value={instagram}
@@ -447,34 +453,32 @@
 				bind:value={facebook}
 				icon={FacebookLogoIcon}
 			/>
-		</section>
+		</SettingsGroup>
 	</fieldset>
 
 	{#if dirty}
 		<div
-			class="sticky bottom-(--content-pb) z-10 -mx-4 px-4 py-3"
+			class="sticky bottom-(--content-pb) z-10 -mx-4 mt-4"
 			transition:fly={{ y: 80, duration: 300, easing: expoOut }}
 		>
-			<Button
-				type="submit"
-				size="lg"
-				class="h-12 w-full text-base"
-				disabled={saving || aboutMeOverLimit}
-				onclick={() => save()}
+			<ProgressiveBlur
+				direction="bottomToTop"
+				class="relative px-4 pt-6 pb-3"
+				bgClass="bg-linear-to-t from-background via-background to-transparent"
 			>
-				{#if saving}
-					<Spinner class="size-5" />
-				{/if}
-				Save changes
-			</Button>
+				<Button
+					type="submit"
+					size="lg"
+					class="h-12 w-full text-base"
+					disabled={saving || aboutMeOverLimit}
+					onclick={() => save()}
+				>
+					{#if saving}
+						<Spinner class="size-5" />
+					{/if}
+					Save changes
+				</Button>
+			</ProgressiveBlur>
 		</div>
 	{/if}
 </form>
-
-<style lang="postcss">
-	@reference "$layout";
-
-	h2 {
-		@apply truncate ps-1 text-xl font-semibold tracking-tight;
-	}
-</style>

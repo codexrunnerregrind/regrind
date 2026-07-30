@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ChecksIcon } from "phosphor-svelte";
 	import { onMount } from "svelte";
 
 	import { showErrorToast } from "$lib/api/error";
@@ -6,7 +7,7 @@
 		getPreferences,
 		setPreferences,
 	} from "$lib/app-data/preferences.svelte";
-	import SwitchField from "$lib/components/ui/switch-field/SwitchField.svelte";
+	import SettingsSwitchRow from "$lib/components/settings/SettingsSwitchRow.svelte";
 
 	let value = $state(false);
 	let loaded = $state(false);
@@ -22,7 +23,7 @@
 	});
 </script>
 
-<SwitchField
+<SettingsSwitchRow
 	title="Reveal message read status"
 	description="Let others know when you've read their messages. Your read receipts remain unaffected."
 	disabled={!loaded}
@@ -37,4 +38,9 @@
 			});
 		}
 	}
-/>
+	tint="blue"
+>
+	{#snippet icon()}
+		<ChecksIcon weight="fill" />
+	{/snippet}
+</SettingsSwitchRow>

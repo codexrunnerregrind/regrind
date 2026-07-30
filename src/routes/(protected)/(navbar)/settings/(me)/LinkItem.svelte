@@ -1,21 +1,20 @@
 <script lang="ts">
-	import { ArrowSquareOutIcon } from "phosphor-svelte";
-
+	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import * as Dialog from "$lib/components/ui/dialog";
-	import * as Item from "$lib/components/ui/item";
-	import Link from "$lib/components/ui/link/Link.svelte";
-	import ButtonItemContent from "./ButtonItemContent.svelte";
+	import type { Tint } from "$lib/components/settings/tints";
 
 	let {
 		label,
 		destination,
 		icon,
+		tint,
 		warning,
 	}: {
 		label: string;
 		destination: string;
 		icon: import("svelte").Snippet;
+		tint?: Tint;
 		warning?: {
 			title: string;
 			description: string;
@@ -33,38 +32,18 @@
 	let warningOpen = $state(false);
 </script>
 
-{#snippet content()}
-	<Item.Media>
-		{@render icon()}
-	</Item.Media>
-	<Item.Content class="min-w-0">
-		<Item.Title class="inline-block max-w-full truncate">{label}</Item.Title>
-	</Item.Content>
-	<Item.Actions>
-		<ArrowSquareOutIcon class="size-4" />
-	</Item.Actions>
-{/snippet}
-<Item.Root variant="default" size="sm">
-	{#snippet child({ props })}
-		{#if warning}
-			<ButtonItemContent
-				{...props}
-				variant="ghost"
-				onclick={() => (warningOpen = true)}
-			>
-				{@render content()}
-			</ButtonItemContent>
-		{:else}
-			<Link
-				href={destination}
-				{...props}
-				class={["truncate", props.class, "flex-nowrap!"]}
-			>
-				{@render content()}
-			</Link>
-		{/if}
-	{/snippet}
-</Item.Root>
+{#if warning}
+	<SettingsRow
+		title={label}
+		{icon}
+		{tint}
+		external
+		chevron
+		onclick={() => (warningOpen = true)}
+	/>
+{:else}
+	<SettingsRow title={label} {icon} {tint} href={destination} external />
+{/if}
 {#if warning}
 	{#snippet warningButton(link: {
 		variant: import("svelte").ComponentProps<typeof Button>["variant"];

@@ -108,7 +108,7 @@
 	}
 
 	const inputClass =
-		"bg-input/50 focus-visible:border-ring focus-visible:ring-ring/30 h-9 w-full rounded-3xl border border-transparent pl-3 pr-9 py-1 text-base transition-[color,box-shadow,background-color] focus-visible:ring-3 md:text-sm placeholder:text-muted-foreground min-w-0 outline-none";
+		"bg-input/50 focus-visible:border-ring focus-visible:ring-ring/30 h-9 w-full rounded-lg border border-transparent pl-3 pr-9 py-1 text-base transition-[color,box-shadow,background-color] focus-visible:ring-3 md:text-sm placeholder:text-muted-foreground min-w-0 outline-none";
 </script>
 
 <Field {label} hint={effectiveHint}>

@@ -1,5 +1,8 @@
+import { type BubbleColor, surface } from "./palette";
 import {
 	getAccentColorSnapshot,
+	getIncomingBubbleColorSnapshot,
+	getOutgoingBubbleColorSnapshot,
 	getThemeModeSnapshot,
 	type ThemeMode,
 } from "./preferences.svelte";
@@ -12,12 +15,47 @@ function resolvesToDark(mode: ThemeMode): boolean {
 	return systemQuery?.matches ?? false;
 }
 
+/**
+ * Paints one bubble side. `neutral` clears the properties instead of setting
+ * them, so the surface falls back to the themed grey defined in layout.css.
+ */
+function applyBubble(
+	root: HTMLElement,
+	side: "in" | "out",
+	color: BubbleColor,
+): void {
+	const property = `--message-bubble-${side}`;
+	const foreground =
+		side === "out"
+			? "--message-bubble-out-foreground"
+			: "--message-bubble-foreground";
+	if (color === "neutral") {
+		root.style.removeProperty(property);
+		root.style.removeProperty(foreground);
+		return;
+	}
+	const { value, contrast } = surface(color);
+	root.style.setProperty(property, value);
+	root.style.setProperty(foreground, contrast);
+}
+
 function apply(mode: ThemeMode): void {
 	const dark = resolvesToDark(mode);
 	const root = document.documentElement;
 	root.classList.toggle("dark", dark);
 	root.style.colorScheme = dark ? "dark" : "light";
-	root.dataset.accent = getAccentColorSnapshot();
+
+	// The attribute still gates the [data-accent] block in layout.css, which
+	// derives --accent/--ring/--sidebar-*/--chart-1 from --primary; the two
+	// properties below are what actually pick the colour.
+	const accent = getAccentColorSnapshot();
+	root.dataset.accent = accent;
+	const { value, contrast } = surface(accent);
+	root.style.setProperty("--primary", value);
+	root.style.setProperty("--primary-foreground", contrast);
+
+	applyBubble(root, "out", getOutgoingBubbleColorSnapshot());
+	applyBubble(root, "in", getIncomingBubbleColorSnapshot());
 }
 
 /**

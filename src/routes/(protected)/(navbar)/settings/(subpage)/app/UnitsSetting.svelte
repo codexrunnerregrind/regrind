@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { RulerIcon } from "phosphor-svelte";
 	import { onMount } from "svelte";
 
 	import {
@@ -6,8 +7,8 @@
 		getUnitsSnapshot,
 		setPreferences,
 	} from "$lib/app-data/preferences.svelte";
-	import * as Item from "$lib/components/ui/item";
-	import * as ToggleGroup from "$lib/components/ui/toggle-group";
+	import IconTile from "$lib/components/settings/IconTile.svelte";
+	import SettingsSegmented from "$lib/components/settings/SettingsSegmented.svelte";
 	import type { UnitSystem } from "$lib/util/units";
 
 	let value = $state<UnitSystem>(getUnitsSnapshot());
@@ -21,35 +22,35 @@
 				console.error("Failed to load preferences", error);
 			});
 	});
+
+	const options: { value: UnitSystem; label: string }[] = [
+		{ value: "metric", label: "Metric" },
+		{ value: "imperial", label: "Imperial" },
+	];
 </script>
 
-<Item.Root variant="outline" class="gap-3 p-4">
-	<Item.Content class="gap-1">
-		<Item.Title>Units</Item.Title>
-		<Item.Description>
-			Choose how distance, height, and weight are displayed.
-		</Item.Description>
-	</Item.Content>
-	<ToggleGroup.Root
-		type="single"
-		variant="outline"
-		class="w-full"
+<div class="flex flex-col gap-3 p-4">
+	<div class="flex items-center gap-3.5">
+		<IconTile tint="teal">
+			<RulerIcon weight="fill" />
+		</IconTile>
+		<div class="flex min-w-0 flex-1 flex-col gap-0.5">
+			<span class="truncate font-heading text-body font-medium"> Units </span>
+			<span class="text-caption leading-snug text-muted-foreground">
+				How distance, height, and weight are displayed.
+			</span>
+		</div>
+	</div>
+	<SettingsSegmented
+		{options}
 		bind:value={
 			() => value,
-			(next: string) => {
-				const units = (next || "metric") as UnitSystem;
+			(units: UnitSystem) => {
 				value = units;
 				setPreferences({ units }).catch((error) => {
 					console.error("Failed to save preferences", error);
 				});
 			}
 		}
-	>
-		<ToggleGroup.Item value="metric" class="flex-1 justify-center">
-			Metric
-		</ToggleGroup.Item>
-		<ToggleGroup.Item value="imperial" class="flex-1 justify-center">
-			Imperial
-		</ToggleGroup.Item>
-	</ToggleGroup.Root>
-</Item.Root>
+	/>
+</div>

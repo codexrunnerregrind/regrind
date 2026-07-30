@@ -16,5 +16,5 @@
 </script>
 
 <Field {label} hint="{value.length}/{maxLength}">
-	<Input bind:value {placeholder} maxlength={maxLength} />
+	<Input bind:value {placeholder} maxlength={maxLength} class="rounded-lg" />
 </Field>

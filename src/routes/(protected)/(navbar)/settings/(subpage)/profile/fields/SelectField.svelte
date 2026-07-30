@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { CaretUpDownIcon } from "phosphor-svelte";
 
-	import { Button } from "$lib/components/ui/button";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
 	import type { Option } from "../options";
-	import Field from "./Field.svelte";
+	import { inlineLabelClass, inlineRowClass, valueClass } from "./row";
 
 	let {
 		label,
@@ -25,40 +24,41 @@
 	const selected = $derived(options.find((option) => option.value === value));
 </script>
 
-<Field {label}>
-	<DropdownMenu.Root>
-		<DropdownMenu.Trigger>
-			{#snippet child({ props })}
-				<Button
-					{...props}
-					variant="outline"
-					class="w-full justify-between font-normal"
-				>
-					<span class={{ "text-muted-foreground": !selected }}>
+<!-- The row itself is the trigger, so the whole 56px band is tappable rather
+     than just a button on the trailing edge. -->
+<DropdownMenu.Root>
+	<DropdownMenu.Trigger>
+		{#snippet child({ props })}
+			<button
+				{...props}
+				type="button"
+				class={[inlineRowClass, "active:bg-muted can-hover:hover:bg-muted"]}
+			>
+				<span class={inlineLabelClass}>{label}</span>
+				<span class="ms-auto flex min-w-0 items-center gap-1">
+					<span class={[valueClass, !selected && "text-muted-foreground"]}>
 						{selected?.label ?? placeholder}
 					</span>
-					<CaretUpDownIcon class="size-4 shrink-0 opacity-60" />
-				</Button>
-			{/snippet}
-		</DropdownMenu.Trigger>
-		<DropdownMenu.Content
-			class="max-h-72 w-(--bits-dropdown-menu-anchor-width)"
+					<CaretUpDownIcon class="size-4 shrink-0 text-muted-foreground/70" />
+				</span>
+			</button>
+		{/snippet}
+	</DropdownMenu.Trigger>
+	<DropdownMenu.Content class="max-h-72 w-(--bits-dropdown-menu-anchor-width)">
+		<DropdownMenu.RadioGroup
+			bind:value={
+				() => (value === null ? "" : String(value)),
+				(next) => (value = next === "" ? null : Number(next))
+			}
 		>
-			<DropdownMenu.RadioGroup
-				bind:value={
-					() => (value === null ? "" : String(value)),
-					(next) => (value = next === "" ? null : Number(next))
-				}
-			>
-				{#if nullable}
-					<DropdownMenu.RadioItem value="">{clearLabel}</DropdownMenu.RadioItem>
-				{/if}
-				{#each options as option (option.value)}
-					<DropdownMenu.RadioItem value={String(option.value)}>
-						{option.label}
-					</DropdownMenu.RadioItem>
-				{/each}
-			</DropdownMenu.RadioGroup>
-		</DropdownMenu.Content>
-	</DropdownMenu.Root>
-</Field>
+			{#if nullable}
+				<DropdownMenu.RadioItem value="">{clearLabel}</DropdownMenu.RadioItem>
+			{/if}
+			{#each options as option (option.value)}
+				<DropdownMenu.RadioItem value={String(option.value)}>
+					{option.label}
+				</DropdownMenu.RadioItem>
+			{/each}
+		</DropdownMenu.RadioGroup>
+	</DropdownMenu.Content>
+</DropdownMenu.Root>

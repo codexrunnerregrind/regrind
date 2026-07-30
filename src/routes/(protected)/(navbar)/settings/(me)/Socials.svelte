@@ -9,23 +9,29 @@
 	import Link from "./LinkItem.svelte";
 </script>
 
-<Link destination="https://opengrind.org/" label="Open Grind Website">
+<Link
+	destination="https://opengrind.org/"
+	label="Open Grind Website"
+	tint="teal"
+>
 	{#snippet icon()}
-		<GlobeIcon weight="bold" class="size-5" />
+		<GlobeIcon weight="fill" />
 	{/snippet}
 </Link>
 
 <Link
 	destination="https://git.opengrind.org/open-grind/open-grind/"
 	label="Open Grind Source Code"
+	tint="slate"
 >
 	{#snippet icon()}
-		<CodeIcon weight="bold" class="size-5" />
+		<CodeIcon weight="fill" />
 	{/snippet}
 </Link>
 <Link
 	destination="https://t.me/opengrind"
 	label="Open Grind Announcements"
+	tint="orange"
 	warning={{
 		title: "Telegram channel is semiofficial",
 		description:
@@ -41,14 +47,15 @@
 	}}
 >
 	{#snippet icon()}
-		<MegaphoneIcon weight="bold" class="size-5" />
+		<MegaphoneIcon weight="fill" />
 	{/snippet}
 </Link>
 <Link
 	destination="https://matrix.to/#/#general:opengrind.org"
 	label="Open Grind Discussion"
+	tint="green"
 >
 	{#snippet icon()}
-		<ChatsCircleIcon weight="bold" class="size-5" />
+		<ChatsCircleIcon weight="fill" />
 	{/snippet}
 </Link>

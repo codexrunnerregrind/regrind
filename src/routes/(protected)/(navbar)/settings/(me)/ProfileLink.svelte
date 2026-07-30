@@ -5,7 +5,6 @@
 	import BrokenUserAvatar from "$lib/components/profile/BrokenUserAvatar.svelte";
 	import DisplayName from "$lib/components/profile/DisplayName.svelte";
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
-	import * as Item from "$lib/components/ui/item";
 	import { Skeleton } from "$lib/components/ui/skeleton";
 
 	let {
@@ -18,51 +17,43 @@
 	const myProfilePhotos = $derived(myProfile.then((profile) => profile.medias));
 </script>
 
-<Item.Root variant="outline">
-	{#snippet child({ props })}
-		<a
-			href="/profile/{id}"
-			{...props}
-			class={["rounded-full", props.class, "flex-nowrap!"]}
+<!-- Hero card for the signed-in user: the same neutral surface as the group
+     cards below it, distinguished by size rather than by tint. -->
+<a
+	href="/profile/{id}"
+	class="flex items-center gap-4 rounded-xl border border-border bg-card p-4 transition-colors active:bg-muted can-hover:hover:bg-muted"
+>
+	<span
+		class="size-16 shrink-0 overflow-hidden rounded-full bg-media-placeholder ring-2 ring-primary/25"
+	>
+		{#await myProfilePhotos then photos}
+			<UserAvatar
+				mediaHash={photos[0]?.mediaHash ?? null}
+				class="size-full *:rounded-full"
+				size="lg"
+			/>
+		{:catch}
+			<BrokenUserAvatar />
+		{/await}
+	</span>
+	<span class="flex min-w-0 flex-1 flex-col gap-1">
+		<span
+			class="min-w-0 truncate font-heading text-title leading-tight font-semibold"
 		>
-			<Item.Media
-				class="translate-y-none size-14 rounded-full bg-media-placeholder"
-			>
-				{#await myProfilePhotos then photos}
-					<UserAvatar
-						mediaHash={photos[0]?.mediaHash ?? null}
-						class="size-full *:rounded-full"
-						size="lg"
-					/>
-				{:catch}
-					<BrokenUserAvatar />
-				{/await}
-			</Item.Media>
-			<Item.Content class="min-w-0">
-				<Item.Title class="inline-block w-full min-w-0 truncate text-left">
-					{#await myProfile}
-						<Skeleton class="my-0.5 h-3.75 w-32" />
-					{:then profile}
-						<DisplayName name={profile.displayName} />
-					{:catch}
-						<span class="load-fail">Failed to load name</span>
-					{/await}
-				</Item.Title>
-				<Item.Description class="inline-block truncate">
-					View your profile
-				</Item.Description>
-			</Item.Content>
-			<Item.Actions class="max-cramped:hidden">
-				<CaretRightIcon class="size-4" />
-			</Item.Actions>
-		</a>
-	{/snippet}
-</Item.Root>
-
-<style lang="postcss">
-	@reference "$layout";
-
-	.load-fail {
-		@apply text-muted-foreground italic;
-	}
-</style>
+			{#await myProfile}
+				<Skeleton class="my-1 h-4 w-32" />
+			{:then profile}
+				<DisplayName name={profile.displayName} />
+			{:catch}
+				<span class="text-muted-foreground italic">Failed to load name</span>
+			{/await}
+		</span>
+		<span class="truncate text-caption text-muted-foreground">
+			View and edit your profile
+		</span>
+	</span>
+	<CaretRightIcon
+		weight="bold"
+		class="size-4 shrink-0 text-muted-foreground/60 max-cramped:hidden"
+	/>
+</a>

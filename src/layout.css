@@ -9,16 +9,18 @@
    the .dark block below and are toggled onto <html> by theme.svelte.ts. Both
    themes are always defined so the app renders correctly in either mode. */
 :root {
-	--radius: 1rem;
+	--radius: 0.75rem;
 	--background: oklch(1 0 0);
 	--foreground: oklch(0.21 0.02 220);
 	--card: oklch(1 0 0);
 	--card-foreground: oklch(0.21 0.02 220);
 	--popover: oklch(1 0 0);
 	--popover-foreground: oklch(0.21 0.02 220);
-	/* WhatsApp brand green (#00a884) drives primary actions, links, focus. */
-	--primary: oklch(0.68 0.13 172);
-	--primary-foreground: oklch(1 0 0);
+	/* Pre-hydration fallback for primary actions, links and focus. Matches the
+	   default accent (yellow) in palette.ts so a fresh install doesn't flash a
+	   different colour before preferences load. */
+	--primary: oklch(0.869 0.178 91);
+	--primary-foreground: oklch(0.22 0.02 91);
 	--secondary: oklch(0.94 0.006 220);
 	--secondary-foreground: oklch(0.21 0.02 220);
 	--muted: oklch(0.94 0.006 220);
@@ -44,12 +46,13 @@
 	--sidebar-ring: oklch(0.68 0.13 172);
 	/* Solid backdrop behind chat bubbles (no doodle wallpaper). WhatsApp beige. */
 	--chat-background: oklch(0.95 0.008 90);
-	/* Incoming = white, outgoing = WhatsApp light green (#d9fdd3). */
+	/* Untinted bubble surfaces. theme.svelte.ts overwrites these with the chosen
+	   bubble colours; they show through only before preferences hydrate, and as
+	   the "Neutral" bubble option, so the two sides stay distinguishable by
+	   shade alone. */
 	--message-bubble-in: oklch(1 0 0);
-	--message-bubble-out: oklch(0.94 0.06 145);
+	--message-bubble-out: oklch(0.93 0.008 220);
 	--message-bubble-foreground: oklch(0.21 0.02 220);
-	/* Text on the outgoing bubble. Follows the accent (see [data-accent]); this
-	   value is the pre-hydration fallback for the light-green default bubble. */
 	--message-bubble-out-foreground: oklch(0.21 0.02 220);
 	/* Neutral surface behind photos: avatar/grid placeholders, images that are
 	   still loading, locked media. Its foreground is for the icons and labels
@@ -65,8 +68,9 @@
 	--card-foreground: oklch(0.93 0.01 220);
 	--popover: oklch(0.25 0.02 220);
 	--popover-foreground: oklch(0.93 0.01 220);
-	--primary: oklch(0.68 0.13 172);
-	--primary-foreground: oklch(0.16 0.02 220);
+	/* See the :root block: pre-hydration fallback, matching the default accent. */
+	--primary: oklch(0.869 0.178 91);
+	--primary-foreground: oklch(0.22 0.02 91);
 	--secondary: oklch(0.28 0.02 220);
 	--secondary-foreground: oklch(0.93 0.01 220);
 	--muted: oklch(0.28 0.02 220);
@@ -91,71 +95,31 @@
 	--sidebar-border: oklch(1 0 0 / 10%);
 	--sidebar-ring: oklch(0.68 0.13 172);
 	--chat-background: oklch(0.15 0.015 220);
-	/* Incoming = dark slate, outgoing = WhatsApp dark green (#005c4b). */
+	/* Untinted bubble surfaces — see the :root block above. */
 	--message-bubble-in: oklch(0.27 0.02 220);
-	--message-bubble-out: oklch(0.45 0.08 165);
+	--message-bubble-out: oklch(0.35 0.02 220);
 	--message-bubble-foreground: oklch(0.93 0.01 220);
 	--message-bubble-out-foreground: oklch(0.93 0.01 220);
 	--media-placeholder: oklch(0.37 0.01 220);
 	--media-placeholder-foreground: oklch(0.6 0.01 220);
 }
 
-/* Accent presets. theme.svelte.ts sets data-accent on <html>; these override
-   the primary/accent/ring family in both light and dark (declared after .dark
-   so they win). Chosen at a lightness that pairs with white foreground. The
-   outgoing chat bubble follows the accent too (see the tail of this section). */
-[data-accent] {
-	--primary-foreground: oklch(1 0 0);
-	--accent-foreground: oklch(1 0 0);
-	--sidebar-primary-foreground: oklch(1 0 0);
-}
-[data-accent="green"] {
-	--primary: oklch(0.62 0.13 168);
-}
-[data-accent="teal"] {
-	--primary: oklch(0.6 0.1 195);
-}
-[data-accent="blue"] {
-	--primary: oklch(0.58 0.16 250);
-}
-[data-accent="indigo"] {
-	--primary: oklch(0.52 0.17 275);
-}
-[data-accent="purple"] {
-	--primary: oklch(0.55 0.18 305);
-}
-[data-accent="pink"] {
-	--primary: oklch(0.6 0.2 350);
-}
-[data-accent="red"] {
-	--primary: oklch(0.58 0.21 25);
-}
-[data-accent="orange"] {
-	--primary: oklch(0.63 0.17 50);
-}
-[data-accent="brown"] {
-	--primary: oklch(0.5 0.08 50);
-}
-[data-accent="slate"] {
-	--primary: oklch(0.52 0.03 250);
-}
-/* Grindr yellow (#f5c518-ish). Unlike the others it's light, so its foreground
-   flips to near-black for legible text on primary surfaces and bubbles. */
-[data-accent="yellow"] {
-	--primary: oklch(0.85 0.16 92);
-	--primary-foreground: oklch(0.22 0.02 90);
-	--accent-foreground: oklch(0.22 0.02 90);
-	--sidebar-primary-foreground: oklch(0.22 0.02 90);
-}
+/* Colour selections. theme.svelte.ts sets data-accent on <html> and writes
+   --primary/--primary-foreground and the two bubble pairs onto it as inline
+   properties, sourced from src/lib/app-data/palette.ts. This block is what
+   fans --primary out to the rest of the family, so a colour is defined in
+   exactly one place (the palette) rather than in a CSS block per colour.
+   Declared after .dark so it wins in both themes. */
 [data-accent] {
 	--accent: var(--primary);
 	--ring: var(--primary);
 	--sidebar-primary: var(--primary);
 	--sidebar-ring: var(--primary);
 	--chart-1: var(--primary);
-	/* Outgoing bubbles adopt the accent, with matching contrast text. */
-	--message-bubble-out: var(--primary);
-	--message-bubble-out-foreground: var(--primary-foreground);
+	/* Foregrounds follow --primary-foreground so the light accents (yellow,
+	   lime) flip to dark text everywhere the accent is used as a surface. */
+	--accent-foreground: var(--primary-foreground);
+	--sidebar-primary-foreground: var(--primary-foreground);
 }
 
 @theme inline {
@@ -199,18 +163,28 @@
 	--color-chat-background: var(--chat-background);
 	--color-media-placeholder: var(--media-placeholder);
 	--color-media-placeholder-foreground: var(--media-placeholder-foreground);
-	--radius-sm: calc(var(--radius) * 0.6);
-	--radius-md: calc(var(--radius) * 0.8);
+	/* Ladder tuned to native container radii: 6 / 8 / 12 / 16 / 20 / 24 / 28px at
+	   the 0.75rem base. Small controls sit at sm–md, list rows and cards at
+	   lg–xl, and only genuinely large surfaces (sheets, media tiles) reach 2xl+. */
+	--radius-sm: calc(var(--radius) * 0.5);
+	--radius-md: calc(var(--radius) * 0.6667);
 	--radius-lg: var(--radius);
-	--radius-xl: calc(var(--radius) * 1.4);
-	--radius-2xl: calc(var(--radius) * 1.8);
-	--radius-3xl: calc(var(--radius) * 2.2);
-	--radius-4xl: calc(var(--radius) * 2.6);
+	--radius-xl: calc(var(--radius) * 1.3333);
+	--radius-2xl: calc(var(--radius) * 1.6667);
+	--radius-3xl: calc(var(--radius) * 2);
+	--radius-4xl: calc(var(--radius) * 2.3333);
 
 	--container-row: 9rem;
 
 	--text-2xs: 0.6875rem; /* 11px */
 	--text-3xs: 0.625rem; /* 10px */
+
+	/* Settings/list type scale, sitting between Tailwind's xs and base. `caption`
+	   covers group labels, footnotes and row descriptions; `body` is a list row
+	   title; `title` is a card heading such as the profile hero name. */
+	--text-caption: 0.8125rem; /* 13px */
+	--text-body: 0.9375rem; /* 15px */
+	--text-title: 1.0625rem; /* 17px */
 
 	--spacing-avatar: 37.5px;
 	--spacing-list-rail: 117px;

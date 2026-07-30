@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { EyeIcon } from "phosphor-svelte";
 	import { onMount } from "svelte";
 
 	import { showErrorToast } from "$lib/api/error";
@@ -6,7 +7,7 @@
 		getPreferences,
 		setPreferences,
 	} from "$lib/app-data/preferences.svelte";
-	import SwitchField from "$lib/components/ui/switch-field/SwitchField.svelte";
+	import SettingsSwitchRow from "$lib/components/settings/SettingsSwitchRow.svelte";
 
 	let value = $state(false);
 	let loaded = $state(false);
@@ -22,7 +23,7 @@
 	});
 </script>
 
-<SwitchField
+<SettingsSwitchRow
 	title="Reveal profile views"
 	description="Let others know when you've viewed their profile. Your profile view history remains unaffected."
 	disabled={!loaded}
@@ -37,4 +38,9 @@
 			});
 		}
 	}
-/>
+	tint="indigo"
+>
+	{#snippet icon()}
+		<EyeIcon weight="fill" />
+	{/snippet}
+</SettingsSwitchRow>

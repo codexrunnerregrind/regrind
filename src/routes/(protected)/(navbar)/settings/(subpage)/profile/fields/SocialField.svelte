@@ -2,7 +2,8 @@
 	import type { Component } from "svelte";
 
 	import { Input } from "$lib/components/ui/input";
-	import Field from "./Field.svelte";
+	import InlineField from "./InlineField.svelte";
+	import { bareInputClass } from "./row";
 
 	let {
 		label,
@@ -17,27 +18,24 @@
 	} = $props();
 </script>
 
-<Field {label}>
-	<div class="relative">
+<InlineField {label}>
+	{#snippet icon()}
 		{#if Icon}
-			<span
-				class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-muted-foreground"
-			>
-				<Icon class="size-4" />
-			</span>
+			<Icon class="size-4.5" />
 		{/if}
-		<Input
-			bind:value={
-				() => value ?? "",
-				(newValue: string) =>
-					(value = newValue.trim() === "" ? null : newValue.trim())
-			}
-			maxlength={maxLength}
-			placeholder="username"
-			autocapitalize="off"
-			autocomplete="off"
-			spellcheck={false}
-			class={{ "pl-9": Icon }}
-		/>
-	</div>
-</Field>
+	{/snippet}
+	<Input
+		bind:value={
+			() => value ?? "",
+			(newValue: string) =>
+				(value = newValue.trim() === "" ? null : newValue.trim())
+		}
+		maxlength={maxLength}
+		placeholder="username"
+		autocapitalize="off"
+		autocomplete="off"
+		spellcheck={false}
+		aria-label={label}
+		class={[bareInputClass, "w-36"]}
+	/>
+</InlineField>

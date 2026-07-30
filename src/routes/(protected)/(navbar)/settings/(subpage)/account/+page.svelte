@@ -1,59 +1,79 @@
 <script lang="ts">
-	import { CaretRightIcon } from "phosphor-svelte";
+	import {
+		EnvelopeIcon,
+		EyeSlashIcon,
+		KeyIcon,
+		ProhibitIcon,
+		ShieldCheckIcon,
+		TrashIcon,
+	} from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
 	import ToastUnimplemented from "$lib/components/feedback/ToastUnimplemented.svelte";
-	import * as Item from "$lib/components/ui/item";
+	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
+	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
+	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
+
+	function unimplemented() {
+		toast(ToastUnimplemented, {
+			componentProps: { feature: "Account settings", issue: 47 },
+		});
+	}
 </script>
 
-{#snippet item({ title }: { title: string })}
-	<Item.Root variant="outline">
-		{#snippet child({ props })}
-			<a
-				href="#/"
-				{...props}
-				onclick={(event) => {
-					event.preventDefault();
-					toast(ToastUnimplemented, {
-						componentProps: {
-							feature: "Account settings",
-							issue: 47,
-						},
-					});
-				}}
-			>
-				<Item.Content class="max-cramped:min-w-0">
-					<Item.Title class="inline-block max-w-full min-w-0 truncate">
-						{title}
-					</Item.Title>
-				</Item.Content>
-				<Item.Actions class="min-w-0">
-					<!-- <Item.Description class="min-w-0">{value}</Item.Description> -->
-					<CaretRightIcon class="size-4 shrink-0" />
-				</Item.Actions>
-			</a>
+<SectionHeader>Privacy</SectionHeader>
+<SettingsGroup>
+	<SettingsRow
+		title="Privacy"
+		description="Control what other users can see about you."
+		href="/settings/account/privacy"
+		tint="green"
+	>
+		{#snippet icon()}
+			<ShieldCheckIcon weight="fill" />
 		{/snippet}
-	</Item.Root>
-{/snippet}
-{#snippet linkItem({ title, href }: { title: string; href: string })}
-	<Item.Root variant="outline">
-		{#snippet child({ props })}
-			<a {href} {...props}>
-				<Item.Content class="max-cramped:min-w-0">
-					<Item.Title class="inline-block max-w-full min-w-0 truncate">
-						{title}
-					</Item.Title>
-				</Item.Content>
-				<Item.Actions class="min-w-0">
-					<CaretRightIcon class="size-4 shrink-0" />
-				</Item.Actions>
-			</a>
+	</SettingsRow>
+</SettingsGroup>
+
+<SectionHeader>Sign-in</SectionHeader>
+<SettingsGroup>
+	<SettingsRow title="Email" tint="blue" onclick={unimplemented}>
+		{#snippet icon()}
+			<EnvelopeIcon weight="fill" />
 		{/snippet}
-	</Item.Root>
-{/snippet}
-{@render linkItem({ title: "Privacy", href: "/settings/account/privacy" })}
-{@render item({ title: "Email" })}
-{@render item({ title: "Password" })}
-{@render item({ title: "Blocked users" })}
-{@render item({ title: "Hidden users" })}
-{@render item({ title: "Delete account" })}
+	</SettingsRow>
+	<SettingsRow title="Password" tint="indigo" onclick={unimplemented}>
+		{#snippet icon()}
+			<KeyIcon weight="fill" />
+		{/snippet}
+	</SettingsRow>
+</SettingsGroup>
+
+<SectionHeader>People</SectionHeader>
+<SettingsGroup>
+	<SettingsRow title="Blocked users" tint="slate" onclick={unimplemented}>
+		{#snippet icon()}
+			<ProhibitIcon weight="fill" />
+		{/snippet}
+	</SettingsRow>
+	<SettingsRow title="Hidden users" tint="slate" onclick={unimplemented}>
+		{#snippet icon()}
+			<EyeSlashIcon weight="fill" />
+		{/snippet}
+	</SettingsRow>
+</SettingsGroup>
+
+<div class="mt-5">
+	<SettingsGroup>
+		<SettingsRow
+			title="Delete account"
+			destructive
+			chevron={false}
+			onclick={unimplemented}
+		>
+			{#snippet icon()}
+				<TrashIcon weight="fill" />
+			{/snippet}
+		</SettingsRow>
+	</SettingsGroup>
+</div>
