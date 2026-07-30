@@ -8,8 +8,8 @@
 
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
+	import ListRowSkeleton from "$lib/components/feedback/ListRowSkeleton.svelte";
 	import { nearestScrollableAncestor } from "$lib/components/feedback/refresh/scroll-chain";
-	import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
 	import EmptyTapsList from "./EmptyTapsList.svelte";
 	import TapReceivedProfile from "./TapReceivedProfile.svelte";
 	import { TapsState } from "./taps-state.svelte";
@@ -62,7 +62,7 @@
 		>
 			{#if taps.loading}
 				{#each Array(8)}
-					<Skeleton class="h-22 w-full shrink-0" />
+					<ListRowSkeleton />
 				{/each}
 			{:else if taps.error}
 				<div class="flex flex-1">

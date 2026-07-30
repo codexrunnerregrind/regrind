@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
+	import ListRowSkeleton from "$lib/components/feedback/ListRowSkeleton.svelte";
 	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
 	import RightNowEmptyFeed from "./RightNowEmptyFeed.svelte";
 	import RightNowPost from "./RightNowPost.svelte";
@@ -19,7 +19,7 @@
 <div class="mx-auto flex w-full max-w-120 flex-col gap-0">
 	{#if rightNowState.loading}
 		{#each Array.from({ length: 10 })}
-			<Skeleton class="h-22 w-full shrink-0" />
+			<ListRowSkeleton />
 		{/each}
 	{:else if rightNowState.error}
 		<div class="flex p-4">
