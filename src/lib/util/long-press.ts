@@ -47,11 +47,18 @@ type LongPressHandlers = Pick<
 	| "onpointerup"
 	| "onpointercancel"
 	| "oncontextmenu"
+	| "onclickcapture"
 >;
+
+// Marks a click we dispatched ourselves so the capture handler lets it through.
+const REPLAYED_CLICKS = new WeakSet<Event>();
 
 export function longPressHandlers(
 	onLongPress: () => void,
 	onDoubleTap?: () => void,
+	// Media messages open a lightbox on the first tap, which swallows the second
+	// one — so their tap action waits out the double-tap window before it runs.
+	options?: { deferTapAction?: boolean },
 ): LongPressHandlers {
 	let timer: ReturnType<typeof setTimeout> | null = null;
 	let originX = 0;
@@ -60,6 +67,18 @@ export function longPressHandlers(
 	let lastTapAt = 0;
 	let lastTapX = 0;
 	let lastTapY = 0;
+	let awaitingSecondTap = false;
+	let replayTimer: ReturnType<typeof setTimeout> | null = null;
+
+	const deferring = () => Boolean(options?.deferTapAction && onDoubleTap);
+
+	const cancelReplay = () => {
+		awaitingSecondTap = false;
+		if (replayTimer !== null) {
+			clearTimeout(replayTimer);
+			replayTimer = null;
+		}
+	};
 
 	const cancel = () => {
 		if (timer !== null) {
@@ -78,6 +97,7 @@ export function longPressHandlers(
 			timer = setTimeout(() => {
 				timer = null;
 				pressConsumed = true;
+				cancelReplay();
 				fireOnce(onLongPress);
 			}, LONG_PRESS_DURATION_MS);
 		},
@@ -95,6 +115,7 @@ export function longPressHandlers(
 			if (event.pointerType === "mouse") return;
 			if (pressConsumed) {
 				suppressNextClick();
+				cancelReplay();
 				lastTapAt = 0;
 				return;
 			}
@@ -107,6 +128,7 @@ export function longPressHandlers(
 				Math.abs(event.clientY - lastTapY) < DOUBLE_TAP_MOVE_TOLERANCE_PX
 			) {
 				lastTapAt = 0;
+				cancelReplay();
 				suppressNextClick();
 				onDoubleTap();
 				return;
@@ -114,8 +136,36 @@ export function longPressHandlers(
 			lastTapAt = Date.now();
 			lastTapX = event.clientX;
 			lastTapY = event.clientY;
+			if (deferring()) awaitingSecondTap = true;
 		},
-		onpointercancel: cancel,
+		onclickcapture(event) {
+			if (!awaitingSecondTap || REPLAYED_CLICKS.has(event)) return;
+			// Hold the tap action back: if a second tap lands inside the window this
+			// was half of a double-tap, otherwise the click is replayed as-is.
+			awaitingSecondTap = false;
+			const target = event.target;
+			const { clientX, clientY } = event;
+			event.preventDefault();
+			event.stopPropagation();
+			if (!(target instanceof Element)) return;
+			if (replayTimer !== null) clearTimeout(replayTimer);
+			replayTimer = setTimeout(() => {
+				replayTimer = null;
+				const replay = new MouseEvent("click", {
+					bubbles: true,
+					cancelable: true,
+					composed: true,
+					clientX,
+					clientY,
+				});
+				REPLAYED_CLICKS.add(replay);
+				target.dispatchEvent(replay);
+			}, DOUBLE_TAP_MAX_GAP_MS);
+		},
+		onpointercancel() {
+			cancel();
+			cancelReplay();
+		},
 		oncontextmenu(event) {
 			event.preventDefault();
 			cancel();

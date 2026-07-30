@@ -157,9 +157,28 @@
 		}
 	}
 
+	// Media messages open a lightbox on tap, which would cover the bubble before
+	// the second tap of a double-tap ever reaches it, so their tap action is held
+	// back until the double-tap window has passed. Text bubbles have no tap
+	// action, so they keep responding instantly.
+	const OPENS_ON_TAP = [
+		"Image",
+		"ExpiringImage",
+		"Album",
+		"ExpiringAlbum",
+		"ExpiringAlbumV2",
+		"Location",
+	];
+	const deferTapAction = untrack(
+		() =>
+			!isOut && onReact !== undefined && OPENS_ON_TAP.includes(message.type),
+	);
+
 	// iOS WebKit fires neither `contextmenu` (handled by the long-press synthesis)
 	// nor `dblclick` on touch, so the double-tap-to-react is synthesized here too.
-	const longPress = longPressHandlers(onContextMenu, reactOnDoubleTap);
+	const longPress = longPressHandlers(onContextMenu, reactOnDoubleTap, {
+		deferTapAction,
+	});
 
 	function observeRead(node: HTMLElement) {
 		if (!onVisible) return {};
