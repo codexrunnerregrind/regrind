@@ -13,6 +13,11 @@
 <div class="block" transition:fade={{ duration: 400, easing: expoOut }}>
 	<ComposerButton
 		{...props}
-		class={["absolute right-0 bottom-0 rounded-e-composer pe-3.5", className]}
+		class={[
+			"absolute right-0 bottom-0 rounded-e-composer pe-3.5",
+			// Reach into the composer's padding so a near-miss still counts
+			"after:absolute after:-inset-2 after:content-['']",
+			className,
+		]}
 	/>
 </div>

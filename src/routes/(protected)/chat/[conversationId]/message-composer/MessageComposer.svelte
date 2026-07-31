@@ -60,6 +60,12 @@
 		// painting the taller composer over the newest message once
 		if (form) height = form.clientHeight;
 	}}
+	onpointerdown={(event) => {
+		// Tapping the composer's own padding shouldn't dismiss the keyboard
+		const target = event.target as HTMLElement | null;
+		if (!target?.closest("textarea, input, button, a, [role='button']"))
+			event.preventDefault();
+	}}
 	onsubmit={(event) => {
 		event.preventDefault();
 		onSubmit().catch((error) => console.error(error));
