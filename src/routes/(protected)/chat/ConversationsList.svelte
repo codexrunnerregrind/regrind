@@ -13,7 +13,10 @@
 	import { below } from "$lib/util/breakpoints.svelte";
 	import { SelectionSet } from "$lib/util/selection.svelte";
 	import { swipeTabs } from "$lib/util/swipe-tabs";
-	import type { ConversationsState } from "$lib/chat/conversations-state.svelte";
+	import type {
+		ConversationsState,
+		InboxTab,
+	} from "$lib/chat/conversations-state.svelte";
 	import AlbumsTab from "./AlbumsTab.svelte";
 	import Conversation from "./Conversation.svelte";
 	import ConversationsSelectionBar from "./ConversationsSelectionBar.svelte";
@@ -54,16 +57,17 @@
 		class?: import("svelte/elements").ClassValue;
 	} = $props();
 
-	const tabs = [
+	const tabs: { value: InboxTab; label: string }[] = [
 		{ value: "inbox", label: "Inbox" },
 		{ value: "albums", label: "Albums" },
 	];
-	let activeTab = $state("inbox");
+	// Held on the shared state, not locally, so it survives leaving this screen.
+	const activeTab = $derived(conversations.activeTab);
 
 	function selectTab(value: string) {
 		if (value === activeTab) return;
 		hapticSelection();
-		activeTab = value;
+		conversations.activeTab = value as InboxTab;
 	}
 
 	function cycleTab(delta: number) {

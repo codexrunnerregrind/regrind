@@ -29,10 +29,9 @@
 	type="button"
 	class={[
 		"relative aspect-3/4 cursor-pointer rounded-lg",
-		unseen && "ring-2 ring-accent",
 		loading && "opacity-50",
 	]}
-	aria-label={`Open ${title}`}
+	aria-label={unseen ? `Open ${title}, new content` : `Open ${title}`}
 	{disabled}
 	{onclick}
 >
@@ -80,5 +79,13 @@
 		>
 			<LockSimpleIcon weight="fill" class="size-3.5" />
 		</span>
+	{/if}
+	{#if unseen}
+		<!-- Drawn *inside* the tile: `.photo-grid` clips to its own rounded box, so
+		     an outward ring loses the side that sits on the grid's edge, and what
+		     survives bleeds across the 2px gap into the neighbouring tile. -->
+		<span
+			class="pointer-events-none absolute inset-0 rounded-[inherit] border-2 border-accent"
+		></span>
 	{/if}
 </button>

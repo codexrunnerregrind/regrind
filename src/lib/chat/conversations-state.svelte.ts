@@ -23,6 +23,9 @@ import type { ApiResponseMessage } from "$lib/model/messaging/messages";
 
 type OptimisticFlagField = "pinned" | "muted";
 
+/** The two tabs of the inbox list. */
+export type InboxTab = "inbox" | "albums";
+
 export type CachedConversation = {
 	messages: ApiResponseMessage[];
 	profile: {
@@ -45,6 +48,12 @@ class ConversationsState {
 	inboxLastViewedAt = $state(0);
 	initial: Promise<void> = $state(Promise.resolve());
 	listScrollY = 0;
+	/**
+	 * Which tab the list shows. Lives here, next to {@link listScrollY}, so
+	 * leaving the inbox (into My Albums, or a conversation) and coming back
+	 * returns to the tab you left from instead of resetting to Inbox.
+	 */
+	activeTab = $state<InboxTab>("inbox");
 
 	readonly ourProfileId: number;
 	#activeConversationId: string | null = null;

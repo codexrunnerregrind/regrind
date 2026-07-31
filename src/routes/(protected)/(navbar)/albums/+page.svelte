@@ -15,7 +15,7 @@
 	<a
 		href="/chat"
 		class="flex h-full w-19 shrink-0 items-center justify-center"
-		aria-label="Back to inbox"
+		aria-label="Back to albums"
 	>
 		<ArrowLeftIcon size={32} />
 	</a>

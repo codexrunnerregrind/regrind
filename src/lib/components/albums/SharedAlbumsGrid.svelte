@@ -86,8 +86,8 @@
 				<AlbumTile
 					coverUrl={album.coverContent?.location ??
 						album.coverContent?.coverContent}
-					title={album.name || "Album"}
-					subtitle={album.profile?.name || undefined}
+					title={album.profile?.name || "Album"}
+					subtitle={album.name || undefined}
 					unseen={album.hasUnseenContent}
 					locked={!album.albumViewable}
 					loading={opener.openingId === album.albumId}

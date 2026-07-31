@@ -241,8 +241,15 @@
 				{:else}
 					<!-- Album summary -->
 					<div class="flex gap-4">
-						<div
-							class="relative aspect-3/4 w-28 shrink-0 overflow-hidden rounded-xl bg-card-foreground/10"
+						<button
+							type="button"
+							class={[
+								"relative aspect-3/4 w-28 shrink-0 cursor-pointer overflow-hidden rounded-xl bg-card-foreground/10",
+								opening && "opacity-50",
+							]}
+							aria-label="Open album"
+							disabled={opening || album.content.length === 0}
+							onclick={() => void view(0)}
 						>
 							{#if cover}
 								<img
@@ -258,7 +265,7 @@
 									<ImageIcon weight="fill" class="size-8" />
 								</div>
 							{/if}
-						</div>
+						</button>
 						<div class="flex min-w-0 flex-1 flex-col gap-1">
 							<span
 								class="text-xs tracking-wide text-muted-foreground uppercase"
