@@ -2,6 +2,10 @@
 	import ImageBrokenIcon from "phosphor-svelte/lib/ImageBrokenIcon";
 	import LockSimpleIcon from "phosphor-svelte/lib/LockSimpleIcon";
 
+	import { hapticImpact } from "$lib/platform/haptics";
+	import { longPressHandlers } from "$lib/util/long-press";
+	import AlbumContextMenu from "./AlbumContextMenu.svelte";
+
 	let {
 		coverUrl,
 		title,
@@ -12,6 +16,8 @@
 		loading = false,
 		disabled = false,
 		onclick,
+		onRemove,
+		removeLabel = "Remove Album",
 	}: {
 		coverUrl: string | null | undefined;
 		title: string;
@@ -22,19 +28,35 @@
 		loading?: boolean;
 		disabled?: boolean;
 		onclick: () => void;
+		// When provided, holding the tile lifts it over a blurred backdrop and
+		// offers this one action, the way the official app's albums screen does.
+		onRemove?: () => void;
+		removeLabel?: string;
 	} = $props();
+
+	let tileElement: HTMLElement | null = $state(null);
+	let contextMenuOpen:
+		| false
+		| { x: number; y: number; width: number; height: number } = $state(false);
+
+	function openContextMenu() {
+		if (!tileElement || !onRemove) return;
+		const rect = tileElement.getBoundingClientRect();
+		hapticImpact("medium");
+		contextMenuOpen = {
+			x: rect.x,
+			y: rect.y,
+			width: rect.width,
+			height: rect.height,
+		};
+	}
+
+	const longPress = $derived(
+		onRemove ? longPressHandlers(openContextMenu) : {},
+	);
 </script>
 
-<button
-	type="button"
-	class={[
-		"relative aspect-3/4 cursor-pointer rounded-lg",
-		loading && "opacity-50",
-	]}
-	aria-label={unseen ? `Open ${title}, new content` : `Open ${title}`}
-	{disabled}
-	{onclick}
->
+{#snippet tileContent()}
 	{#if coverUrl}
 		<img
 			src={coverUrl}
@@ -88,4 +110,36 @@
 			class="pointer-events-none absolute inset-0 rounded-[inherit] border-2 border-accent"
 		></span>
 	{/if}
+{/snippet}
+
+<button
+	type="button"
+	bind:this={tileElement}
+	class={[
+		"relative aspect-3/4 cursor-pointer rounded-lg [-webkit-touch-callout:none] **:[-webkit-touch-callout:none]",
+		loading && "opacity-50",
+	]}
+	aria-label={unseen ? `Open ${title}, new content` : `Open ${title}`}
+	{disabled}
+	{onclick}
+	{...longPress}
+	style:visibility={contextMenuOpen ? "hidden" : undefined}
+>
+	{@render tileContent()}
 </button>
+
+{#if contextMenuOpen && onRemove}
+	<AlbumContextMenu
+		{contextMenuOpen}
+		{removeLabel}
+		{onRemove}
+		style=""
+		onClose={() => (contextMenuOpen = false)}
+	>
+		{#snippet content()}
+			<div class="relative size-full rounded-lg">
+				{@render tileContent()}
+			</div>
+		{/snippet}
+	</AlbumContextMenu>
+{/if}

@@ -1,9 +1,11 @@
 <script lang="ts">
 	import LockKeyIcon from "phosphor-svelte/lib/LockKeyIcon";
 	import UsersIcon from "phosphor-svelte/lib/UsersIcon";
+	import { toast } from "svelte-sonner";
 
 	import { getSharedAlbumsFeed } from "$lib/api/messaging/albums";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
+	import ToastUnimplemented from "$lib/components/feedback/ToastUnimplemented.svelte";
 	import * as Empty from "$lib/components/ui/empty";
 	import { Skeleton } from "$lib/components/ui/skeleton";
 	import type { PressieSharedAlbum } from "$lib/model/messaging/albums";
@@ -21,6 +23,18 @@
 	let albums = $state<PressieSharedAlbum[] | null>(null);
 	let error = $state<unknown>(null);
 	const opener = new AlbumOpener();
+
+	// `/v3/pressie-albums/feed` has no companion endpoint for dismissing a share —
+	// the only album deletion the API offers is the owner's — so the action is
+	// offered but cannot do anything yet.
+	function remove() {
+		toast(ToastUnimplemented, {
+			componentProps: {
+				feature: "Removing a shared album",
+				issue: 33,
+			},
+		});
+	}
 
 	async function load() {
 		albums = null;
@@ -98,6 +112,7 @@
 							avatarUrl: album.profile?.profileUrl,
 							distanceKm: album.profile?.distanceKm,
 						})}
+					onRemove={remove}
 				/>
 			{/each}
 		</div>
