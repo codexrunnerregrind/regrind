@@ -15,7 +15,11 @@
 	import { sendMessage } from "$lib/api/messaging/messages";
 	import { getUnitsSnapshot } from "$lib/app-data/preferences.svelte";
 	import { registerLightboxDownloadButton } from "$lib/chat/lightbox-download";
-	import { registerMediaViewerChrome } from "$lib/chat/media-viewer-chrome";
+	import {
+		createViewerInsets,
+		type MediaViewerActions,
+		registerMediaViewerChrome,
+	} from "$lib/chat/media-viewer-chrome";
 	import DistanceFormatted from "$lib/components/profile/DistanceFormatted.svelte";
 	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
 	import Button from "$lib/components/ui/button/button.svelte";
@@ -104,8 +108,27 @@
 	// gallery would let you swipe from one person's photos straight into a
 	// stranger's, which reads as a single set when it isn't.
 	let mediaContainer = $state<HTMLElement | null>(null);
-	// Starting guesses; the mounted chrome measures its bars and reports back.
-	const insets = { top: 104, bottom: 88 };
+	let lightboxRef: PhotoSwipeLightbox | undefined;
+	// A post is not a message, so a reply here starts an ordinary chat rather
+	// than quoting anything; 🔥 is a Fire tap.
+	const actions: MediaViewerActions = {
+		onReply: async (text) => {
+			await sendMessage({
+				toUserId: profileId,
+				message: { type: "Text", body: { text } },
+			});
+		},
+		onReact: async () => {
+			await sendTap({ recipientId: profileId, tapType: TapType.Hot });
+		},
+		onOpenChat: async () => {
+			// Closing first: the lightbox is a body-level overlay, so it would sit
+			// on top of the conversation we navigate to.
+			lightboxRef?.pswp?.close();
+			await goto(`/chat/${conversationId}`);
+		},
+	};
+	const insets = createViewerInsets(actions);
 
 	$effect(() => {
 		if (!mediaContainer || media.length === 0) return;
@@ -170,6 +193,7 @@
 						},
 					},
 				});
+				lightboxRef = lightbox;
 				lightbox.init();
 			})
 			.catch((error: unknown) => console.error(error));
@@ -177,6 +201,7 @@
 			canceled = true;
 			lightbox?.destroy();
 			lightbox = undefined;
+			lightboxRef = undefined;
 		};
 	});
 

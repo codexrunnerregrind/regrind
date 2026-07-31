@@ -32,6 +32,35 @@ export type MediaViewerActions = {
 	onOpenChat?: () => void | Promise<void>;
 };
 
+const TOP_INSET = 104;
+const BOTTOM_BAR_INSET = 88;
+
+export function chromeHasBar(actions: MediaViewerActions): boolean {
+	return (
+		actions.onReply !== undefined ||
+		actions.onReact !== undefined ||
+		actions.onOpenChat !== undefined
+	);
+}
+
+/**
+ * Starting guesses for the padding that keeps the media clear of the chrome;
+ * the mounted chrome measures its bars and corrects them.
+ *
+ * With no bottom bar the top inset is mirrored rather than zeroed: padding at
+ * one end only centres the photo in the space below the header, which reads as
+ * the photo sitting too low.
+ */
+export function createViewerInsets(actions: MediaViewerActions): {
+	top: number;
+	bottom: number;
+} {
+	return {
+		top: TOP_INSET,
+		bottom: chromeHasBar(actions) ? BOTTOM_BAR_INSET : TOP_INSET,
+	};
+}
+
 export type MediaViewerChromeOptions = {
 	count: number;
 	/**

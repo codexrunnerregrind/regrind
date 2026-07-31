@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import ChatCircleIcon from "phosphor-svelte/lib/ChatCircleIcon";
+	import ImagesIcon from "phosphor-svelte/lib/ImagesIcon";
 	import PaperPlaneRightIcon from "phosphor-svelte/lib/PaperPlaneRightIcon";
 	import UserIcon from "phosphor-svelte/lib/UserIcon";
 	import type PhotoSwipe from "photoswipe";
@@ -151,7 +152,9 @@
 			if (!topBar) return;
 			onInsets({
 				top: topBar.offsetHeight,
-				bottom: bottomBar?.offsetHeight ?? 0,
+				// Mirrored when there's no bar: padding at the top alone would centre
+				// the media in the space below the header, leaving it visibly low.
+				bottom: bottomBar?.offsetHeight ?? topBar.offsetHeight,
 			});
 		};
 		report();
@@ -223,8 +226,12 @@
 				class="size-full object-cover"
 				draggable="false"
 			/>
-		{:else}
+		{:else if linksToProfile}
 			<UserIcon weight="fill" class="size-5 text-white/70" />
+		{:else}
+			<!-- Nobody's avatar to miss: an album of our own is identified by its
+			     name, so a person glyph beside it reads as a missing photo. -->
+			<ImagesIcon weight="fill" class="size-5 text-white/70" />
 		{/if}
 	</div>
 	<div class="flex min-w-0 flex-col">
@@ -260,15 +267,19 @@
 		bind:this={topBar}
 		class="pswp__hide-on-close pointer-events-none! flex flex-col gap-2 bg-linear-to-b from-black/70 to-transparent px-3 pt-(--safe-area-top) pb-6"
 	>
-		{#if progress && count > 1}
-			<!-- Each pill is a fixed size, so two photos and eight look alike and the
-			     row simply grows; stretching segments to the page width reads as a
-			     loading bar rather than as your place in a set. They shrink only past
-			     the point where the row would outgrow its cap. -->
-			<div
-				class="mx-auto flex max-w-64 items-center justify-center gap-1 pt-2"
-				aria-hidden="true"
-			>
+		<!-- Kept in the layout even with nothing to show — a single photo, or a feed
+		     whose slides aren't one set — so the name and avatar below sit at the
+		     same height in every viewer. h-3 is the row's own height (pt-2 + the
+		     4px pills) under border-box, so both states measure the same.
+		     Each pill is a fixed size, so two photos and eight look alike and the
+		     row simply grows; stretching segments to the page width reads as a
+		     loading bar rather than as your place in a set. They shrink only past
+		     the point where the row would outgrow its cap. -->
+		<div
+			class="mx-auto flex h-3 max-w-64 items-center justify-center gap-1 pt-2"
+			aria-hidden="true"
+		>
+			{#if progress && count > 1}
 				{#if count <= MAX_SEGMENTS}
 					{#each { length: count }, i}
 						<span
@@ -286,8 +297,8 @@
 						></span>
 					</span>
 				{/if}
-			</div>
-		{/if}
+			{/if}
+		</div>
 		<!-- Padded clear of the toolbar buttons (download, zoom, close) that
 		     PhotoSwipe draws in the same corner. Only this block takes pointer
 		     events back from the click-through header, and only as wide as its

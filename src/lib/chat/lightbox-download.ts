@@ -1,5 +1,5 @@
-import type PhotoSwipeLightbox from "photoswipe/lightbox";
 import { toast } from "svelte-sonner";
+import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
 import { saveMediaToDevice } from "$lib/platform/save-media";
 
@@ -23,7 +23,9 @@ export function registerLightboxDownloadButton(
 	lightbox.on("uiRegister", () => {
 		lightbox.pswp?.ui?.registerElement({
 			name: "download-button",
-			order: 9,
+			// Between PhotoSwipe's own zoom (10) and close (20), so every viewer
+			// reads zoom, download, close.
+			order: 15,
 			isButton: true,
 			tagName: "button",
 			title: "Download",

@@ -6,6 +6,7 @@ import type PhotoSwipeLightbox from "photoswipe/lightbox";
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 import { registerLightboxDownloadButton } from "./lightbox-download";
 import {
+	createViewerInsets,
 	type MediaViewerActions,
 	type MediaViewerHeader,
 	registerMediaViewerChrome,
@@ -20,11 +21,42 @@ export type GalleryImage = {
 };
 
 // Room left for PhotoSwipe's own toolbar when the gallery has no chrome of its
-// own, and the starting guesses for the chrome's two bars — the mounted chrome
-// measures itself and reports the real heights straight after.
+// own; with chrome the insets come from createViewerInsets.
 const TOOLBAR_INSET = 64;
-const CHROME_TOP_INSET = 104;
-const CHROME_BOTTOM_INSET = 88;
+
+/**
+ * PhotoSwipe lays a slide out from its intrinsic size, and given 0x0 it
+ * stretches the image over the whole viewport — under the chrome, ignoring the
+ * padding meant to keep it clear. Images whose dimensions the message didn't
+ * carry (an expiring photo, say) are measured here first; the browser then has
+ * them cached, so the viewer still opens straight away.
+ */
+async function measure(
+	image: GalleryImage,
+): Promise<{ width: number; height: number }> {
+	if (image.width !== null && image.height !== null) {
+		return { width: image.width, height: image.height };
+	}
+	const img = document.createElement("img");
+	img.src = image.url;
+	try {
+		return await new Promise((resolve) => {
+			const done = () =>
+				resolve({ width: img.naturalWidth, height: img.naturalHeight });
+			if (img.complete) {
+				done();
+				return;
+			}
+			img.addEventListener("load", done, { once: true });
+			// A photo we can't measure is no worse off than it was before.
+			img.addEventListener("error", () => resolve({ width: 0, height: 0 }), {
+				once: true,
+			});
+		});
+	} finally {
+		img.remove();
+	}
+}
 
 // Opens a swipeable lightbox spanning every loose image in a conversation,
 // starting at `startIndex`. Mirrors `openAlbumLightbox` so single photos and
@@ -46,12 +78,14 @@ export async function openImageGalleryLightbox(
 	if (images.length === 0) {
 		throw new Error("No images to display");
 	}
-	const { default: PhotoSwipeLightboxCtor } =
-		await import("photoswipe/lightbox");
+	const [{ default: PhotoSwipeLightboxCtor }, sizes] = await Promise.all([
+		import("photoswipe/lightbox"),
+		Promise.all(images.map(measure)),
+	]);
 	const insets =
 		chrome === undefined
 			? { top: TOOLBAR_INSET, bottom: 0 }
-			: { top: CHROME_TOP_INSET, bottom: CHROME_BOTTOM_INSET };
+			: createViewerInsets(chrome.actions);
 	const lightbox: PhotoSwipeLightbox = new PhotoSwipeLightboxCtor({
 		showHideAnimationType: "fade",
 		pswpModule: () => import("photoswipe"),
@@ -65,10 +99,10 @@ export async function openImageGalleryLightbox(
 		paddingFn: () => ({ ...insets, left: 0, right: 0 }),
 	});
 	lightbox.addFilter("numItems", () => images.length);
-	lightbox.addFilter("itemData", (_, index) => {
-		const { url, width, height } = images[index];
-		return { src: url, width: width ?? 0, height: height ?? 0 };
-	});
+	lightbox.addFilter("itemData", (_, index) => ({
+		src: images[index].url,
+		...sizes[index],
+	}));
 	registerLightboxDownloadButton(lightbox, (index) => {
 		const image = images[index];
 		return image ? { url: image.url } : null;

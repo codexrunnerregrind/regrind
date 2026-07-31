@@ -8,7 +8,10 @@
 	import { sendTap } from "$lib/api/interest/taps";
 	import { sendMessage } from "$lib/api/messaging/messages";
 	import { registerLightboxDownloadButton } from "$lib/chat/lightbox-download";
-	import { registerMediaViewerChrome } from "$lib/chat/media-viewer-chrome";
+	import {
+		createViewerInsets,
+		registerMediaViewerChrome,
+	} from "$lib/chat/media-viewer-chrome";
 	import { TapType } from "$lib/model/interest/taps";
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 	import { profileMediaUrl } from "$lib/util/media";
@@ -36,9 +39,6 @@
 	const conversationId = $derived(
 		[profileId, ourProfileId].toSorted((a, b) => a - b).join(":"),
 	);
-
-	// Starting guesses; the mounted chrome measures its bars and reports back.
-	const insets = { top: 104, bottom: 88 };
 
 	function dateLabel(index: number): string | null {
 		const createdAt = medias[index]?.createdAt;
@@ -78,6 +78,11 @@
 
 	$effect(() => {
 		if (!gallery) return;
+		// Built per lightbox rather than up front: `self` is read at this point,
+		// and the chrome mutates the insets object in place once it has measured
+		// its bars, so each viewer needs its own.
+		const actions = self ? {} : profileActions;
+		const insets = createViewerInsets(actions);
 		let lightbox: PhotoSwipeLightbox | undefined;
 		import("photoswipe/lightbox")
 			.then(({ default: PhotoSwipeLightbox }) => {
@@ -153,7 +158,7 @@
 							? profileMediaUrl(medias[0].mediaHash, "thumb")
 							: null,
 					}),
-					actions: self ? {} : profileActions,
+					actions,
 				});
 
 				lightboxRef = lightbox;

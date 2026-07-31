@@ -16,7 +16,11 @@ import {
 } from "$lib/api/messaging/messages";
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 import { registerLightboxDownloadButton } from "./lightbox-download";
-import { registerMediaViewerChrome } from "./media-viewer-chrome";
+import {
+	createViewerInsets,
+	type MediaViewerActions,
+	registerMediaViewerChrome,
+} from "./media-viewer-chrome";
 
 // Thrown when an album has no viewable content — typically a locked or expired
 // shared album. Callers can catch this to show a friendlier message.
@@ -113,20 +117,13 @@ export async function loadAlbum(albumId: number): Promise<LoadedAlbum> {
 	return { ...res, content };
 }
 
-// Room left for PhotoSwipe's own toolbar when the viewer has no chrome of its
-// own, and the starting guesses for the chrome's two bars — the mounted chrome
-// measures itself and reports the real heights straight after.
-const TOOLBAR_INSET = 64;
-const CHROME_TOP_INSET = 104;
-const CHROME_BOTTOM_INSET = 88;
-
 // Opens a measured album in a PhotoSwipe lightbox, wiring up video slides and
 // the platform back gesture. Resolves with a teardown function; call it to
 // destroy the lightbox (e.g. when the owning component unmounts).
 //
-// Pass `sharer` for an album somebody shared with us: it adds the story-style
-// chrome — who shared it, where in the album we are, and the reply bar. Own
-// albums leave it out and get the bare viewer.
+// Pass `sharer` for an album somebody shared with us and the viewer can reply
+// to it and react to it. Our own albums get the same header and progress, just
+// without a bar — there is nobody to reply to.
 export async function openAlbumLightbox(
 	album: LoadedAlbum,
 	options: {
@@ -143,10 +140,44 @@ export async function openAlbumLightbox(
 	}
 	const { default: PhotoSwipeLightboxCtor } =
 		await import("photoswipe/lightbox");
-	const insets =
+	// The album payload names its owner, so replies reach the right person even
+	// when the caller had no profile to hand.
+	const toUserId = album.profileId;
+	// Our own albums have nobody to reply to, so they get the header alone.
+	const actions: MediaViewerActions =
 		sharer === undefined
-			? { top: TOOLBAR_INSET, bottom: 0 }
-			: { top: CHROME_TOP_INSET, bottom: CHROME_BOTTOM_INSET };
+			? {}
+			: {
+					onReply: async (reply, index) => {
+						await sendAlbumContentReply({
+							toUserId,
+							albumId: album.albumId,
+							albumContentId: album.content[index].contentId,
+							reply,
+						});
+					},
+					onReact: async (index) => {
+						await sendAlbumContentReaction({
+							toUserId,
+							albumId: album.albumId,
+							albumContentId: album.content[index].contentId,
+						});
+					},
+					onOpenChat: async () => {
+						const ourProfileId = await callMethod("auth_state").catch(
+							() => null,
+						);
+						if (ourProfileId === null) return;
+						const conversationId = [toUserId, ourProfileId]
+							.toSorted((a, b) => a - b)
+							.join(":");
+						// Closing first: the lightbox is a body-level overlay, so it
+						// would sit on top of the conversation we're navigating to.
+						lightbox.pswp?.close();
+						await goto(`/chat/${conversationId}`);
+					},
+				};
+	const insets = createViewerInsets(actions);
 	const lightbox: PhotoSwipeLightbox = new PhotoSwipeLightboxCtor({
 		showHideAnimationType: "fade",
 		pswpModule: () => import("photoswipe"),
@@ -155,7 +186,7 @@ export async function openAlbumLightbox(
 		// letting the screen underneath show through a translucent backdrop.
 		bgOpacity: 1,
 		// The chrome's progress bar says where we are, so the counter is redundant.
-		counter: sharer === undefined,
+		counter: false,
 		// Keeps the media clear of the chrome rather than centred behind it.
 		paddingFn: () => ({ ...insets, left: 0, right: 0 }),
 	});
@@ -207,50 +238,23 @@ export async function openAlbumLightbox(
 			}
 		}
 	});
-	if (sharer !== undefined) {
-		// The album payload names its owner, so replies reach the right person even
-		// when the caller had no profile to hand.
-		const toUserId = album.profileId;
-		registerMediaViewerChrome(lightbox, {
-			count: album.content.length,
-			insets,
-			header: {
-				profileId: toUserId,
-				name: sharer.name,
-				avatarUrl: sharer.avatarUrl,
-				distanceKm: sharer.distanceKm,
-				fallbackName: album.albumName?.trim() || "Album",
-			},
-			actions: {
-				onReply: async (reply, index) => {
-					await sendAlbumContentReply({
-						toUserId,
-						albumId: album.albumId,
-						albumContentId: album.content[index].contentId,
-						reply,
-					});
-				},
-				onReact: async (index) => {
-					await sendAlbumContentReaction({
-						toUserId,
-						albumId: album.albumId,
-						albumContentId: album.content[index].contentId,
-					});
-				},
-				onOpenChat: async () => {
-					const ourProfileId = await callMethod("auth_state").catch(() => null);
-					if (ourProfileId === null) return;
-					const conversationId = [toUserId, ourProfileId]
-						.toSorted((a, b) => a - b)
-						.join(":");
-					// Closing first: the lightbox is a body-level overlay, so it would
-					// sit on top of the conversation we're navigating to.
-					lightbox.pswp?.close();
-					await goto(`/chat/${conversationId}`);
-				},
-			},
-		});
-	}
+	registerMediaViewerChrome(lightbox, {
+		count: album.content.length,
+		insets,
+		header:
+			sharer === undefined
+				? // Our own album: its name is what identifies it, and there is no
+					// profile to link to that we aren't already.
+					{ fallbackName: album.albumName?.trim() || "Your album" }
+				: {
+						profileId: toUserId,
+						name: sharer.name,
+						avatarUrl: sharer.avatarUrl,
+						distanceKm: sharer.distanceKm,
+						fallbackName: album.albumName?.trim() || "Album",
+					},
+		actions,
+	});
 	if (onClosed) {
 		lightbox.on("closingAnimationEnd", onClosed);
 	}
