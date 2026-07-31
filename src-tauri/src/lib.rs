@@ -4,6 +4,11 @@ mod error;
 mod logging;
 mod state;
 mod storage;
+// Only iOS needs the deferred-reload machinery (macOS reloads on the spot, and
+// no other webview loses its process this way), but the module stays in the
+// build everywhere so `webview_pong` is a command on every platform.
+#[cfg_attr(not(target_os = "ios"), allow(dead_code))]
+mod webview_recovery;
 
 use std::sync::OnceLock;
 
@@ -100,22 +105,16 @@ pub fn run() {
 	#[cfg(mobile)]
 	let builder = builder.plugin(tauri_plugin_haptics::init());
 
-	// On iOS/macOS the WKWebView renders our page in a separate web content
-	// process. While the app is backgrounded, iOS reclaims memory by jettisoning
-	// that process (easily triggered by opening other apps). WKWebView does not
-	// recover on its own: on return the view is blank and unresponsive, and the
-	// only cure is force-quitting and relaunching — which is the "UI freezes,
-	// I have to reopen the app" symptom. WKWebView delivers
-	// `webViewWebContentProcessDidTerminate`, which wry surfaces here; the
-	// documented fix is to reload, which respawns the content process.
+	// Recover a WKWebView whose web content process iOS jettisoned while we were
+	// backgrounded. Reloading here (we're still in the background) can't bring
+	// the process back, so both hooks only record state — `webview_recovery`
+	// reloads on the way back to the foreground. See that module for why.
 	#[cfg(any(target_os = "ios", target_os = "macos"))]
-	let builder =
-		builder.on_web_content_process_terminate(|webview| {
-			eprintln!("[webview] web content process terminated; reloading to recover");
-			if let Err(e) = webview.reload() {
-				eprintln!("[webview] reload after content-process termination failed: {e}");
-			}
-		});
+	let builder = builder
+		.on_web_content_process_terminate(
+			webview_recovery::on_content_process_terminated,
+		)
+		.on_page_load(|_webview, _payload| webview_recovery::on_page_load());
 
 	builder
         .plugin(open_grind_platform_plugin())
@@ -145,6 +144,7 @@ pub fn run() {
             api::ws::ws_connect,
             api::ws::ws_send,
             api::client::rotate_api_params,
+            webview_recovery::webview_pong,
         ])
         .setup(|app| {
             let user_agent = format!(
@@ -256,6 +256,22 @@ pub fn run() {
 
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app, _event| {
+            // `applicationWillEnterForeground`, which Tauri reports per-window
+            // rather than as the top-level `RunEvent::Resumed`. This is the
+            // point where a webview that lost its content process while we were
+            // away can actually be brought back.
+            #[cfg(target_os = "ios")]
+            if matches!(
+                _event,
+                tauri::RunEvent::WindowEvent {
+                    event: tauri::WindowEvent::Resumed,
+                    ..
+                }
+            ) {
+                webview_recovery::on_resumed(_app);
+            }
+        });
 }
