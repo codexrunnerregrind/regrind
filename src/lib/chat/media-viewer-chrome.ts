@@ -32,33 +32,12 @@ export type MediaViewerActions = {
 	onOpenChat?: () => void | Promise<void>;
 };
 
-const TOP_INSET = 104;
-const BOTTOM_BAR_INSET = 88;
-
 export function chromeHasBar(actions: MediaViewerActions): boolean {
 	return (
 		actions.onReply !== undefined ||
 		actions.onReact !== undefined ||
 		actions.onOpenChat !== undefined
 	);
-}
-
-/**
- * Starting guesses for the padding that keeps the media clear of the chrome;
- * the mounted chrome measures its bars and corrects them.
- *
- * With no bottom bar the top inset is mirrored rather than zeroed: padding at
- * one end only centres the photo in the space below the header, which reads as
- * the photo sitting too low.
- */
-export function createViewerInsets(actions: MediaViewerActions): {
-	top: number;
-	bottom: number;
-} {
-	return {
-		top: TOP_INSET,
-		bottom: chromeHasBar(actions) ? BOTTOM_BAR_INSET : TOP_INSET,
-	};
 }
 
 export type MediaViewerChromeOptions = {
@@ -75,22 +54,18 @@ export type MediaViewerChromeOptions = {
 	 * photos, so a position among them means nothing. Defaults to on.
 	 */
 	progress?: boolean;
-	/**
-	 * The lightbox's `paddingFn` insets, kept clear of the chrome. Mutated in
-	 * place once the bars have measured themselves — pass the same object the
-	 * `paddingFn` reads.
-	 */
-	insets: { top: number; bottom: number };
 };
 
 /**
  * Mounts the story-style chrome — progress, whose media this is, and the reply
- * bar — into a PhotoSwipe lightbox, and keeps the media padded clear of it.
+ * bar — into a PhotoSwipe lightbox. The bars float over the media rather than
+ * displacing it: padding the media clear of them shrinks it and, since the bars
+ * can only be measured once they exist, forces a re-layout you can see.
  * Shared by the album viewer and the conversation image gallery.
  */
 export function registerMediaViewerChrome(
 	lightbox: PhotoSwipeLightbox,
-	{ count, header, actions, insets, progress = true }: MediaViewerChromeOptions,
+	{ count, header, actions, progress = true }: MediaViewerChromeOptions,
 ): void {
 	// Mounted inside the lightbox's own root so it shares its stacking context
 	// and its open/close animation, and goes away with it.
@@ -106,18 +81,6 @@ export function registerMediaViewerChrome(
 				header,
 				actions,
 				progress,
-				onInsets: (measured) => {
-					// Sub-pixel churn would loop through updateSize forever.
-					if (
-						Math.abs(measured.top - insets.top) < 1 &&
-						Math.abs(measured.bottom - insets.bottom) < 1
-					) {
-						return;
-					}
-					insets.top = measured.top;
-					insets.bottom = measured.bottom;
-					pswp.updateSize();
-				},
 			},
 		});
 	});

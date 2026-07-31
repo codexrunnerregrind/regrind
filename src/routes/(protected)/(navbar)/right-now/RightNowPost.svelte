@@ -16,7 +16,6 @@
 	import { getUnitsSnapshot } from "$lib/app-data/preferences.svelte";
 	import { registerLightboxDownloadButton } from "$lib/chat/lightbox-download";
 	import {
-		createViewerInsets,
 		type MediaViewerActions,
 		registerMediaViewerChrome,
 	} from "$lib/chat/media-viewer-chrome";
@@ -128,7 +127,6 @@
 			await goto(`/chat/${conversationId}`);
 		},
 	};
-	const insets = createViewerInsets(actions);
 
 	$effect(() => {
 		if (!mediaContainer || media.length === 0) return;
@@ -146,7 +144,6 @@
 					// Matches the chat and album viewers.
 					bgOpacity: 1,
 					counter: false,
-					paddingFn: () => ({ ...insets, left: 0, right: 0 }),
 				});
 				const onBackGesture = () => {
 					lightbox?.pswp?.close();
@@ -164,7 +161,6 @@
 				});
 				registerMediaViewerChrome(lightbox, {
 					count: media.length,
-					insets,
 					header: {
 						profileId,
 						name: displayName,
@@ -173,25 +169,7 @@
 						// The feed reports metres, the viewer takes kilometres.
 						distanceKm: distance === null ? null : distance / 1000,
 					},
-					actions: {
-						// A post is not a message, so a reply here starts an ordinary
-						// chat rather than quoting anything; 🔥 is a Fire tap.
-						onReply: async (text) => {
-							await sendMessage({
-								toUserId: profileId,
-								message: { type: "Text", body: { text } },
-							});
-						},
-						onReact: async () => {
-							await sendTap({ recipientId: profileId, tapType: TapType.Hot });
-						},
-						onOpenChat: async () => {
-							// Closing first: the lightbox is a body-level overlay, so it
-							// would sit on top of the conversation we navigate to.
-							lightbox?.pswp?.close();
-							await goto(`/chat/${conversationId}`);
-						},
-					},
+					actions,
 				});
 				lightboxRef = lightbox;
 				lightbox.init();

@@ -17,7 +17,6 @@ import {
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 import { registerLightboxDownloadButton } from "./lightbox-download";
 import {
-	createViewerInsets,
 	type MediaViewerActions,
 	registerMediaViewerChrome,
 } from "./media-viewer-chrome";
@@ -177,7 +176,6 @@ export async function openAlbumLightbox(
 						await goto(`/chat/${conversationId}`);
 					},
 				};
-	const insets = createViewerInsets(actions);
 	const lightbox: PhotoSwipeLightbox = new PhotoSwipeLightboxCtor({
 		showHideAnimationType: "fade",
 		pswpModule: () => import("photoswipe"),
@@ -187,8 +185,6 @@ export async function openAlbumLightbox(
 		bgOpacity: 1,
 		// The chrome's progress bar says where we are, so the counter is redundant.
 		counter: false,
-		// Keeps the media clear of the chrome rather than centred behind it.
-		paddingFn: () => ({ ...insets, left: 0, right: 0 }),
 	});
 	lightbox.addFilter("numItems", () => album.content.length);
 	lightbox.addFilter("itemData", (_, index) => {
@@ -240,7 +236,6 @@ export async function openAlbumLightbox(
 	});
 	registerMediaViewerChrome(lightbox, {
 		count: album.content.length,
-		insets,
 		header:
 			sharer === undefined
 				? // Our own album: its name is what identifies it, and there is no

@@ -8,10 +8,7 @@
 	import { sendTap } from "$lib/api/interest/taps";
 	import { sendMessage } from "$lib/api/messaging/messages";
 	import { registerLightboxDownloadButton } from "$lib/chat/lightbox-download";
-	import {
-		createViewerInsets,
-		registerMediaViewerChrome,
-	} from "$lib/chat/media-viewer-chrome";
+	import { registerMediaViewerChrome } from "$lib/chat/media-viewer-chrome";
 	import { TapType } from "$lib/model/interest/taps";
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 	import { profileMediaUrl } from "$lib/util/media";
@@ -78,11 +75,8 @@
 
 	$effect(() => {
 		if (!gallery) return;
-		// Built per lightbox rather than up front: `self` is read at this point,
-		// and the chrome mutates the insets object in place once it has measured
-		// its bars, so each viewer needs its own.
+		// Built here rather than up front so `self` is read when the viewer opens.
 		const actions = self ? {} : profileActions;
-		const insets = createViewerInsets(actions);
 		let lightbox: PhotoSwipeLightbox | undefined;
 		import("photoswipe/lightbox")
 			.then(({ default: PhotoSwipeLightbox }) => {
@@ -97,7 +91,6 @@
 					// of the chrome.
 					bgOpacity: 1,
 					counter: false,
-					paddingFn: () => ({ ...insets, left: 0, right: 0 }),
 				});
 				lightbox.addFilter("itemData", (itemData) => {
 					const img = itemData.element?.querySelector("img");
@@ -145,7 +138,6 @@
 				});
 				registerMediaViewerChrome(lightbox, {
 					count: medias.length,
-					insets,
 					// The date each photo was taken replaces the old bottom label, which
 					// the reply bar now occupies.
 					header: (index) => ({

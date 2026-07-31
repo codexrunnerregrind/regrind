@@ -10,13 +10,14 @@
 	import { getProfile } from "$lib/api/users/profiles";
 	import { getUnitsSnapshot } from "$lib/app-data/preferences.svelte";
 	import fireEmoji from "$lib/assets/emojis/fire/32px.png";
+	import {
+		chromeHasBar,
+		type MediaViewerActions,
+		type MediaViewerHeader,
+	} from "$lib/chat/media-viewer-chrome";
 	import { hapticImpact, hapticNotification } from "$lib/platform/haptics";
 	import { profileMediaUrl } from "$lib/util/media";
 	import { formatDistance } from "$lib/util/units";
-	import type {
-		MediaViewerActions,
-		MediaViewerHeader,
-	} from "$lib/chat/media-viewer-chrome";
 
 	let {
 		pswp,
@@ -24,16 +25,12 @@
 		header: headerProp,
 		actions,
 		progress = true,
-		onInsets,
 	}: {
 		pswp: PhotoSwipe;
 		count: number;
 		header: MediaViewerHeader | ((index: number) => MediaViewerHeader);
 		actions: MediaViewerActions;
 		progress?: boolean;
-		// Reports the measured heights of the two bars so the lightbox can keep
-		// the media clear of them.
-		onInsets?: (insets: { top: number; bottom: number }) => void;
 	} = $props();
 
 	// A dozen segments is about where they stop being distinguishable on a phone;
@@ -44,18 +41,12 @@
 	let draft = $state("");
 	let sending = $state(false);
 	let reacting = $state(false);
-	let topBar = $state<HTMLElement | null>(null);
-	let bottomBar = $state<HTMLElement | null>(null);
 	// Confirmation lives in the viewer rather than in a toast: a bottom-centred
 	// toast lands right on top of the reply bar it is confirming.
 	let sentLabel = $state<string | null>(null);
 	let sentTimer: ReturnType<typeof setTimeout> | undefined;
 
-	const hasBar = $derived(
-		actions.onReply !== undefined ||
-			actions.onReact !== undefined ||
-			actions.onOpenChat !== undefined,
-	);
+	const hasBar = $derived(chromeHasBar(actions));
 	const header = $derived(
 		typeof headerProp === "function" ? headerProp(index) : headerProp,
 	);
@@ -142,26 +133,6 @@
 		onChange();
 		pswp.on("change", onChange);
 		return () => pswp.off("change", onChange);
-	});
-
-	// The bars are as tall as their content (a wrapped name, a bigger system font),
-	// so they're measured rather than assumed.
-	$effect(() => {
-		if (!topBar || !onInsets) return;
-		const report = () => {
-			if (!topBar) return;
-			onInsets({
-				top: topBar.offsetHeight,
-				// Mirrored when there's no bar: padding at the top alone would centre
-				// the media in the space below the header, leaving it visibly low.
-				bottom: bottomBar?.offsetHeight ?? topBar.offsetHeight,
-			});
-		};
-		report();
-		const observer = new ResizeObserver(report);
-		observer.observe(topBar);
-		if (bottomBar) observer.observe(bottomBar);
-		return () => observer.disconnect();
 	});
 
 	async function sendReply(event: SubmitEvent) {
@@ -264,7 +235,6 @@
 	     the width of PhotoSwipe's own toolbar (download, zoom, close), which sits
 	     underneath — so it overrides the class's pointer-events. -->
 	<header
-		bind:this={topBar}
 		class="pswp__hide-on-close pointer-events-none! flex flex-col gap-2 bg-linear-to-b from-black/70 to-transparent px-3 pt-(--safe-area-top) pb-6"
 	>
 		<!-- Kept in the layout even with nothing to show — a single photo, or a feed
@@ -322,7 +292,6 @@
 
 	{#if hasBar}
 		<form
-			bind:this={bottomBar}
 			class="pswp__hide-on-close pointer-events-auto relative flex items-center gap-2 bg-linear-to-t from-black/70 to-transparent px-3 pt-6 pb-[calc(0.75rem+var(--safe-area-bottom))]"
 			onpointerdown={stopPointer}
 			onsubmit={sendReply}

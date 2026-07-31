@@ -6,7 +6,6 @@ import type PhotoSwipeLightbox from "photoswipe/lightbox";
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 import { registerLightboxDownloadButton } from "./lightbox-download";
 import {
-	createViewerInsets,
 	type MediaViewerActions,
 	type MediaViewerHeader,
 	registerMediaViewerChrome,
@@ -21,7 +20,7 @@ export type GalleryImage = {
 };
 
 // Room left for PhotoSwipe's own toolbar when the gallery has no chrome of its
-// own; with chrome the insets come from createViewerInsets.
+// own. With chrome there is no padding at all: its bars float over the photo.
 const TOOLBAR_INSET = 64;
 
 /**
@@ -82,10 +81,6 @@ export async function openImageGalleryLightbox(
 		import("photoswipe/lightbox"),
 		Promise.all(images.map(measure)),
 	]);
-	const insets =
-		chrome === undefined
-			? { top: TOOLBAR_INSET, bottom: 0 }
-			: createViewerInsets(chrome.actions);
 	const lightbox: PhotoSwipeLightbox = new PhotoSwipeLightboxCtor({
 		showHideAnimationType: "fade",
 		pswpModule: () => import("photoswipe"),
@@ -95,8 +90,11 @@ export async function openImageGalleryLightbox(
 		bgOpacity: 1,
 		// The chrome's progress bar says where we are, so the counter is redundant.
 		counter: chrome === undefined,
-		// Keeps the photo clear of the chrome rather than centred behind it.
-		paddingFn: () => ({ ...insets, left: 0, right: 0 }),
+		// Only the bare viewer pads: the chrome's bars sit over the photo.
+		paddingFn: () =>
+			chrome === undefined
+				? { top: TOOLBAR_INSET, bottom: 0, left: 0, right: 0 }
+				: { top: 0, bottom: 0, left: 0, right: 0 },
 	});
 	lightbox.addFilter("numItems", () => images.length);
 	lightbox.addFilter("itemData", (_, index) => ({
@@ -120,7 +118,6 @@ export async function openImageGalleryLightbox(
 	if (chrome !== undefined) {
 		registerMediaViewerChrome(lightbox, {
 			count: images.length,
-			insets,
 			header: chrome.header,
 			actions: chrome.actions,
 		});
