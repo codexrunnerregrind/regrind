@@ -4,11 +4,18 @@ mod error;
 mod logging;
 mod state;
 mod storage;
-// Only iOS needs the deferred-reload machinery (macOS reloads on the spot, and
-// no other webview loses its process this way), but the module stays in the
-// build everywhere so `webview_pong` is a command on every platform.
-#[cfg_attr(not(target_os = "ios"), allow(dead_code))]
+#[cfg(any(target_os = "ios", target_os = "macos"))]
 mod webview_recovery;
+
+// Belt and braces for the deadlock described against the `devtools` feature in
+// Cargo.toml: nothing catches it at runtime, and it only bites on device, so
+// refuse to produce a release binary that carries it.
+#[cfg(all(not(debug_assertions), feature = "devtools"))]
+compile_error!(
+	"the `devtools` feature pulls in tauri/tracing, which makes Webview::eval \
+	 block on the main thread and deadlocks the app on foreground. It is for \
+	 `tauri dev` only — drop it from release builds."
+);
 
 use std::sync::OnceLock;
 
@@ -91,12 +98,12 @@ pub fn run() {
 	#[cfg(not(debug_assertions))]
 	logging::init();
 
-	#[cfg(debug_assertions)]
+	#[cfg(feature = "devtools")]
 	let devtools = tauri_plugin_devtools::init();
 
 	let builder = tauri::Builder::default();
 
-	#[cfg(debug_assertions)]
+	#[cfg(feature = "devtools")]
 	let builder = builder.plugin(devtools);
 
 	#[cfg(target_os = "android")]
@@ -144,7 +151,6 @@ pub fn run() {
             api::ws::ws_connect,
             api::ws::ws_send,
             api::client::rotate_api_params,
-            webview_recovery::webview_pong,
         ])
         .setup(|app| {
             let user_agent = format!(

@@ -21,6 +21,14 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [features]
 keychain = ["dep:apple-native-keyring-store"]
+# Debug-only, and load-bearing that it stays that way: tauri-plugin-devtools
+# turns on tauri/tracing, which swaps `Webview::eval` for a variant that blocks
+# the caller until the main thread answers. Emitting from a background thread
+# then holds Tauri's webview mutex across that wait, and the main thread
+# deadlocks against it the next time it emits — which it does on every
+# foreground. Cargo unifies features across the whole build, so a plain
+# dependency would enable tracing in release too; it has to be opt-in.
+devtools = ["dep:tauri-plugin-devtools"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -41,7 +49,7 @@ rmp-serde = "1.3.1"
 serde_bytes = "0.11"
 base64 = "0.22"
 keyring-core = "1.0.0"
-tauri-plugin-devtools = "2.0.0"
+tauri-plugin-devtools = { version = "2.0.0", optional = true }
 tauri-plugin-dialog = "2"
 tauri-plugin-notification = "2"
 tracing = "0.1"
