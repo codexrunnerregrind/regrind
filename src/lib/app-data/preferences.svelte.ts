@@ -8,7 +8,12 @@ import {
 } from "$lib/components/filters/filters";
 import { geohashSchema } from "$lib/model/geohash";
 import { type UnitSystem, unitSystemSchema } from "$lib/util/units";
-import { existsAppDataFile, readAppDataFile, writeAppDataFileAtomic } from ".";
+import {
+	existsAppDataFile,
+	readAppDataFile,
+	removeAppDataFile,
+	writeAppDataFileAtomic,
+} from ".";
 import {
 	type AccentColor,
 	accentColors,
@@ -49,7 +54,6 @@ const preferencesSchema = z.object({
 	revealProfileViews: z.boolean().default(false),
 	themeMode: themeModeSchema.default("system"),
 	units: unitSystemSchema.default("metric"),
-	warnBeforeCopyingErrorDetails: z.boolean().default(true),
 	rightNowFilters: rightNowFiltersSchema.optional(),
 });
 
@@ -179,13 +183,22 @@ const accountPreferenceKeys = [
 	"gridSearchFilters",
 ] as const;
 
+function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
+	return a.length === b.length && a.every((byte, index) => byte === b[index]);
+}
+
 export async function clearAccountPreferences(): Promise<void> {
 	await enqueueWrite(async () => {
 		const kept: Partial<Preferences> = { ...(await getPreferences()) };
 		for (const key of accountPreferenceKeys) delete kept[key];
 		const preferences = preferencesSchema.parse(kept);
-		await writeAppDataFileAtomic("preferences.data", encode(preferences));
 		cache = preferences;
 		preferencesSnapshot = preferences;
+		const encoded = encode(preferences);
+		if (bytesEqual(encoded, encode(preferencesSchema.parse({})))) {
+			await removeAppDataFile("preferences.data");
+		} else {
+			await writeAppDataFileAtomic("preferences.data", encoded);
+		}
 	});
 }

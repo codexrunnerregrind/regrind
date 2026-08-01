@@ -21,7 +21,8 @@
 				"theme": "Dark",
 				"create": false,
 				"titleBarStyle": "Visible",
-				"backgroundColor": "#1e1e1e"
+				"backgroundColor": "#1e1e1e",
+				"generalAutofillEnabled": false
 			}
 		],
 		"security": {
@@ -40,6 +41,9 @@
 		],
 		"macOS": {
 			"signingIdentity": "tauri-dev"
+		},
+		"windows": {
+			"minimumWebview2Version": "111.0.1661.34"
 		},
 		"android": {
 			"autoIncrementVersionCode": false,

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import z from "zod";
 
 const { fetchRestMock } = vi.hoisted(() => ({
 	fetchRestMock:
@@ -16,7 +17,6 @@ import {
 	applyProfileEdit,
 	clearProfileCaches,
 	deleteProfilePhotos,
-	getMyProfile,
 	getProfile,
 	getProfiles,
 	MAX_PROFILES_PER_REQUEST,
@@ -38,6 +38,10 @@ function ok(data: unknown) {
 		jsonParsed: () => data,
 		text: () => (data == null ? "" : JSON.stringify(data)),
 	};
+}
+
+function okValidated(data: unknown) {
+	return { ...ok(data), jsonParsed: (schema: z.ZodType) => schema.parse(data) };
 }
 
 function okRaw(text: string, status = 200) {
@@ -82,14 +86,6 @@ function fullProfile() {
 	};
 }
 
-function shortProfile() {
-	return {
-		profileId: PROFILE_ID,
-		showDistance: false,
-		medias: [{ mediaHash: "a" }, { mediaHash: "b" }],
-	};
-}
-
 beforeEach(() => {
 	clearProfileCaches();
 	fetchRestMock.mockReset();
@@ -104,9 +100,6 @@ beforeEach(() => {
 			}
 			if (path === "/v3.1/me/profile" && method === "PUT") {
 				return Promise.resolve(ok({}));
-			}
-			if (path === "/v4/me/profile") {
-				return Promise.resolve(ok({ profiles: [shortProfile()] }));
 			}
 			if (path === "/v3/me/profile/images") {
 				return Promise.resolve(ok(null));
@@ -143,18 +136,21 @@ describe("cache TTL", () => {
 		await getProfile(PROFILE_ID);
 		expect(countRequests("/v7/profiles/")).toBe(2);
 	});
+});
 
-	it("serves getMyProfile from cache within the TTL and refetches after it", async () => {
-		let clock = 1_000;
-		setNowForTesting(() => clock);
+describe("getProfile", () => {
+	it("rejects an empty profiles array instead of caching undefined", async () => {
+		fetchRestMock.mockImplementationOnce(() =>
+			Promise.resolve(okValidated({ profiles: [] })),
+		);
 
-		await getMyProfile();
-		await getMyProfile();
-		expect(countRequests("/v4/me/profile")).toBe(1);
+		const error = await getProfile(PROFILE_ID).catch((e: unknown) => e);
 
-		clock += 60_000;
-		await getMyProfile();
-		expect(countRequests("/v4/me/profile")).toBe(2);
+		expect(error).toBeInstanceOf(z.ZodError);
+		expect((error as z.ZodError).issues[0]?.code).toBe("too_small");
+
+		expect(await getProfile(PROFILE_ID)).toEqual(fullProfile());
+		expect(countRequests("/v7/profiles/")).toBe(2);
 	});
 });
 
@@ -295,14 +291,12 @@ describe("updateOwnProfile", () => {
 });
 
 describe("deleteProfilePhotos", () => {
-	it("removes the hash from both the full and short profile caches", async () => {
+	it("removes the hash from the cached profile", async () => {
 		await getProfile(PROFILE_ID);
-		await getMyProfile();
 
 		await deleteProfilePhotos(PROFILE_ID, ["a"]);
 
 		expect((await getProfile(PROFILE_ID)).medias).toEqual([{ mediaHash: "b" }]);
-		expect((await getMyProfile()).medias).toEqual([{ mediaHash: "b" }]);
 	});
 
 	it("does not send a request when there are no hashes to remove", async () => {
@@ -346,10 +340,10 @@ describe("getProfiles", () => {
 		const ids = Array.from({ length: 200 }, (_, i) => i);
 		fetchRestMock
 			.mockResolvedValueOnce(
-				ok({ profiles: [{ ...shortProfile(), profileId: 1 }] }),
+				ok({ profiles: [{ ...fullProfile(), profileId: 1 }] }),
 			)
 			.mockResolvedValueOnce(
-				ok({ profiles: [{ ...shortProfile(), profileId: 2 }] }),
+				ok({ profiles: [{ ...fullProfile(), profileId: 2 }] }),
 			);
 
 		const profiles = await getProfiles(ids);

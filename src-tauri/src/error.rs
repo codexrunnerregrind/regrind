@@ -44,6 +44,7 @@ pub enum AppError {
 	RateLimited,
 	RequestBlocked,
 	NotInitialized,
+	SessionCleared,
 }
 
 impl fmt::Display for AppError {
@@ -63,6 +64,9 @@ impl fmt::Display for AppError {
 			AppError::RateLimited => write!(f, "Rate limited"),
 			AppError::RequestBlocked => {
 				write!(f, "Request blocked by Cloudflare")
+			}
+			AppError::SessionCleared => {
+				write!(f, "Signed out while the request was in flight")
 			}
 			AppError::NotInitialized => {
 				write!(f, "GrindrClient not initialized")
@@ -87,6 +91,7 @@ impl From<grindr::GrindrError> for AppError {
 			grindr::GrindrError::Banned(info) => AppError::Banned(info.into()),
 			grindr::GrindrError::RateLimited => AppError::RateLimited,
 			grindr::GrindrError::Blocked => AppError::RequestBlocked,
+			grindr::GrindrError::SessionCleared => AppError::SessionCleared,
 			_ => AppError::Http(e.to_string()),
 		}
 	}

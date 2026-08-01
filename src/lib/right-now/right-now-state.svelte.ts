@@ -100,4 +100,4 @@ class RightNowState {
 
 export const rightNowState = new RightNowState();
 
-registerAccountCache(() => rightNowState.reset());
+registerAccountCache({ reset: () => rightNowState.reset() });

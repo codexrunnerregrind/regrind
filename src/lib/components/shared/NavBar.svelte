@@ -4,8 +4,9 @@
 	import DotsNineIcon from "phosphor-svelte/lib/DotsNineIcon";
 	import DropIcon from "phosphor-svelte/lib/DropIcon";
 	import FireIcon from "phosphor-svelte/lib/FireIcon";
+	import { untrack } from "svelte";
 
-	import { getMyProfile } from "$lib/api/users/profiles";
+	import { getProfile } from "$lib/api/users/profiles";
 	import { getOrCreateConversationsState } from "$lib/chat/conversations-context.svelte";
 	import BrokenUserAvatar from "$lib/components/profile/BrokenUserAvatar.svelte";
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
@@ -14,7 +15,8 @@
 	import { tabsListVariants } from "$lib/components/ui/tabs";
 	import { hapticSelection } from "$lib/platform/haptics";
 	import { scrollActiveViewToTop } from "$lib/util/scroll";
-	import type { ConversationsState } from "$lib/chat/conversations-state.svelte";
+
+	let { ourProfileId }: { ourProfileId: number } = $props();
 
 	function onTabClick(event: MouseEvent, currentTab: boolean) {
 		if (currentTab) {
@@ -27,16 +29,15 @@
 		}
 	}
 
-	const myProfile = getMyProfile();
-	const myProfilePhotos = myProfile.then((profile) => profile.medias);
 
-	let conversations = $state<ConversationsState | null>(null);
-	myProfile
-		.then((profile) => {
-			conversations = getOrCreateConversationsState(profile.profileId);
-		})
-		.catch(console.error);
-	const hasUnread = $derived(conversations?.hasUnread ?? false);
+	const myProfilePhotos = untrack(() =>
+		getProfile(ourProfileId).then((profile) => profile.medias),
+	);
+
+	const conversations = untrack(() =>
+		getOrCreateConversationsState(ourProfileId),
+	);
+	const hasUnread = $derived(conversations.hasUnread);
 </script>
 
 <ProgressiveBlur

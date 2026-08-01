@@ -6,7 +6,8 @@ export type ApiErrorKind =
 	| "Banned"
 	| "RateLimited"
 	| "RequestBlocked"
-	| "NotInitialized";
+	| "NotInitialized"
+	| "SessionCleared";
 
 export class ApiError extends Error {
 	readonly request: {
@@ -43,18 +44,5 @@ export class ApiError extends Error {
 			if (status === 401 || status === 408 || status === 429) return true;
 		}
 		return false;
-	}
-
-	copyableText(): string {
-		return JSON.stringify(
-			{
-				error: this.message,
-				kind: this.kind,
-				request: this.request,
-				response: this.response,
-			},
-			null,
-			2,
-		);
 	}
 }
