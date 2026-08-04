@@ -1,15 +1,23 @@
 <script lang="ts">
+	import {
+		ensureFavoriteNotes,
+		favoriteNote,
+	} from "$lib/api/users/favorite-notes-state.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import { nearestScrollableAncestor } from "$lib/components/feedback/refresh/scroll-chain";
 	import { gridState } from "$lib/grid/grid-state.svelte";
+	import type { FavoriteSearch } from "$lib/favorites/favorite-search.svelte";
 	import type { GridProfile } from "$lib/grid/grid";
 	import EmptyGrid from "./EmptyGrid.svelte";
 	import GridProfileMiniCard from "./GridProfileMiniCard.svelte";
+	import NoNoteMatches from "./NoNoteMatches.svelte";
 
 	let {
 		geohash,
+		search,
 	}: {
 		geohash: string;
+		search: FavoriteSearch;
 	} = $props();
 
 	const gridProfiles = $derived.by(() => {
@@ -21,6 +29,12 @@
 			}
 		}
 		return [...byId.values()];
+	});
+
+	// Notes belong to favorites, and any of the profiles here can be one, so the
+	// notes are read once for the whole grid rather than per card.
+	$effect(() => {
+		void ensureFavoriteNotes();
 	});
 
 	$effect.pre(() => {
@@ -64,7 +78,42 @@
 </script>
 
 <div class="photo-grid relative">
-	{#if gridState.loading}
+	{#if search.active}
+		<!-- Search replaces the cascade: matches come from every favorite, not
+		     only the ones this paged grid happens to have loaded. -->
+		{#if search.loading && search.results.length === 0}
+			{#each Array.from({ length: 6 })}
+				<div class="aspect-square animate-pulse bg-stone-700"></div>
+			{/each}
+		{:else if search.error}
+			<div class="col-span-full flex p-4">
+				<ApiErrorDisplay
+					error={search.error}
+					onRetry={() => search.search(search.query)}
+					class="m-auto"
+				/>
+			</div>
+		{:else}
+			{#each search.results as result (result.profileId)}
+				<GridProfileMiniCard
+					id={result.profileId}
+					displayName={result.displayName}
+					distance={result.distance}
+					onlineUntil={result.onlineUntil}
+					isFavorite={true}
+					rightNow={result.rightNow}
+					note={result.note}
+					medias={result.profileImageMediaHash === null
+						? []
+						: [{ mediaHash: result.profileImageMediaHash }]}
+				/>
+			{:else}
+				<div class="col-span-full">
+					<NoNoteMatches query={search.query} />
+				</div>
+			{/each}
+		{/if}
+	{:else if gridState.loading}
 		{#each Array.from({ length: 20 })}
 			<div class="aspect-square animate-pulse bg-stone-700"></div>
 		{/each}
@@ -92,6 +141,7 @@
 						mediaHash,
 					})) ?? []}
 					rightNow={item.rightNow}
+					note={favoriteNote(item.id)?.notes ?? null}
 				/>
 			{:else}
 				<div

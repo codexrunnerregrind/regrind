@@ -21,6 +21,11 @@ import {
 	demoUnshareAlbum,
 } from "./mock/conversations";
 import {
+	demoDeleteFavoriteNote,
+	demoFavoriteNote,
+	demoSetFavoriteNote,
+} from "./mock/favorite-notes";
+import {
 	buildFullProfile,
 	demoCascadeV4,
 	demoFavoriteNotes,
@@ -93,6 +98,32 @@ export function demoRoute(
 	if (rawPath === "/v7/views/list") return ok(demoViews());
 	if (method === "GET" && rawPath === "/v1/favorites/notes")
 		return ok(demoFavoriteNotes());
+	if (
+		segments[0] === "v1" &&
+		segments[1] === "favorites" &&
+		segments[2] === "notes" &&
+		segments.length === 4
+	) {
+		const profileId = Number(segments[3]);
+		if (method === "GET") {
+			const note = demoFavoriteNote(profileId);
+			// The real endpoint has no note resource for an un-annotated favorite.
+			if (note === null) return { status: 404, body: null };
+			// Content only, no `counterpartyId`: the real per-profile response omits
+			// it, unlike the entries in the list response.
+			return ok(note);
+		}
+		if (method === "PUT") {
+			const { notes = "", phoneNumber = "" } =
+				(body as { notes?: string; phoneNumber?: string }) ?? {};
+			demoSetFavoriteNote(profileId, { notes, phoneNumber });
+			return { status: 204, body: null };
+		}
+		if (method === "DELETE") {
+			demoDeleteFavoriteNote(profileId);
+			return { status: 204, body: null };
+		}
+	}
 	if (rawPath === "/v3.1/me/blocks") return ok({ blocking: [] });
 	if (method === "POST" && rawPath === "/v4/inbox") {
 		return ok(demoConversations(num(params.get("page")) ?? 1));

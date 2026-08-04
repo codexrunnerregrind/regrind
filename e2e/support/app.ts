@@ -65,6 +65,47 @@ export async function installTauriShim(page: Page): Promise<void> {
 	});
 }
 
+/**
+ * Makes the app believe it is on a phone that knows where it is, which is what
+ * the browse grid needs before it will load: the "use current location" button
+ * only shows on mobile, and the position comes from the Tauri geolocation
+ * plugin rather than the browser. Call after {@link installTauriShim}, then
+ * click "Use current location".
+ */
+export async function installMobileLocation(
+	page: Page,
+	{ latitude = 41.5454, longitude = -8.4265 } = {},
+): Promise<void> {
+	await page.addInitScript(
+		([lat, lon]) => {
+			const win = window as unknown as Record<string, Record<string, unknown>>;
+			const internals = win.__TAURI_INTERNALS__;
+			const original = internals.invoke as (
+				cmd: string,
+				args?: unknown,
+				opts?: unknown,
+			) => unknown;
+			internals.invoke = (cmd: string, args?: unknown, opts?: unknown) => {
+				if (cmd.startsWith("plugin:geolocation|")) {
+					if (cmd.endsWith("get_current_position")) {
+						return Promise.resolve({
+							coords: { latitude: lat, longitude: lon, accuracy: 10 },
+							timestamp: 0,
+						});
+					}
+					return Promise.resolve({
+						location: "granted",
+						coarseLocation: "granted",
+					});
+				}
+				return original(cmd, args, opts);
+			};
+			win.__TAURI_OS_PLUGIN_INTERNALS__.platform = "ios";
+		},
+		[latitude, longitude],
+	);
+}
+
 export class TrustedTouch {
 	constructor(private readonly cdp: CDPSession) {}
 

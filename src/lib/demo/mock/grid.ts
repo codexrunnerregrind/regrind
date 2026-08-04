@@ -18,6 +18,7 @@ import {
 	MINUTE,
 	NOW,
 } from "../config";
+import { demoFavoriteNote } from "./favorite-notes";
 import {
 	type DemoSeed,
 	distanceForId,
@@ -222,7 +223,10 @@ export function demoGetProfiles(profileIds: number[]): DemoShortProfile[] {
 export function demoFavoriteNotes() {
 	return demoGridOrder
 		.filter((id) => profileSeed(id).favorite)
-		.map((id) => ({ counterpartyId: id, notes: "", phoneNumber: "" }));
+		.map((id) => ({
+			counterpartyId: id,
+			...(demoFavoriteNote(id) ?? { notes: "", phoneNumber: "" }),
+		}));
 }
 
 export function demoSearchProfiles(params: URLSearchParams) {

@@ -14,6 +14,7 @@
 		isVisiting = false,
 		hadRecentChat = false,
 		rightNow = null,
+		note = null,
 	}: {
 		id: number;
 		displayName?: string | null;
@@ -26,6 +27,7 @@
 		isVisiting?: boolean;
 		hadRecentChat?: boolean;
 		rightNow?: RightNowStatus | null;
+		note?: string | null;
 	} = $props();
 </script>
 
@@ -40,5 +42,6 @@
 	{isVisiting}
 	{hadRecentChat}
 	{rightNow}
+	{note}
 	href="/profile/{id}"
 />

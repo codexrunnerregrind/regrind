@@ -1,14 +1,13 @@
 <script lang="ts">
-	import { ChatIcon, StarIcon } from "phosphor-svelte";
+	import { ChatIcon, NotePencilIcon, StarIcon } from "phosphor-svelte";
 	import type { Snippet } from "svelte";
 
-	import type { RightNowStatus } from "$lib/model/right-now";
-
 	import DistanceFormatted from "$lib/components/profile/DistanceFormatted.svelte";
-	import ProfileStatusIndicator from "$lib/components/profile/ProfileStatusIndicator.svelte";
 	import ProfileRightNowIndicator from "$lib/components/profile/ProfileRightNowIndicator.svelte";
+	import ProfileStatusIndicator from "$lib/components/profile/ProfileStatusIndicator.svelte";
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
 	import { Badge } from "$lib/components/ui/badge";
+	import type { RightNowStatus } from "$lib/model/right-now";
 
 	let {
 		mediaHash = null,
@@ -20,6 +19,7 @@
 		isFavorite = false,
 		isVisiting = false,
 		hadRecentChat = false,
+		note = null,
 		href = null,
 		class: className,
 		rightNow = null,
@@ -34,11 +34,24 @@
 		isFavorite?: boolean;
 		isVisiting?: boolean;
 		hadRecentChat?: boolean;
+		/** The note the user attached to this favorite, if any. */
+		note?: string | null;
 		href?: string | null;
 		class?: import("svelte/elements").ClassValue;
 		rightNow?: RightNowStatus | null;
 		overlay?: Snippet;
 	} = $props();
+
+	const noteText = $derived(note?.trim() ?? "");
+
+	// Whether the card has anything to say about who this is — what the note
+	// stacks on top of when it does.
+	const hasIdentity = $derived(
+		displayName !== null ||
+			age !== null ||
+			isVisiting ||
+			(rightNow !== null && rightNow !== "NOT_ACTIVE"),
+	);
 </script>
 
 {#snippet content()}
@@ -69,38 +82,61 @@
 			{/if}
 		</div>
 	{/if}
-	{#if displayName !== null || age !== null || isVisiting || (rightNow !== null && rightNow !== "NOT_ACTIVE")}
-		<div class="z-1 flex w-full items-center gap-0.5 p-0.5">
-			<Badge
-				variant="outline"
-				class="max-w-full min-w-0 shrink gap-0 bg-popover/20 backdrop-blur-2xl"
-			>
-				<ProfileStatusIndicator {onlineUntil} {isVisiting} class="me-1" />
-
-				<ProfileRightNowIndicator {rightNow} class="me-1" />
-
-				{#if displayName !== null}
-					<span class="block shrink truncate font-semibold">{displayName}</span>
-				{/if}
-				{#if displayName !== null && age !== null}
-					,&nbsp;
-				{/if}
-				{#if age !== null}
-					<span class="line-clamp-1 block max-w-full shrink-0 truncate">
-						{age}
-					</span>
-				{/if}
-			</Badge>
-			{#if unread !== null && unread > 0}
-				<span
-					class="flex size-5 shrink-0 items-center justify-center rounded-full border border-black/20 bg-primary text-2xs font-semibold text-primary-foreground"
+	<!-- The note and who this is share one stack along the bottom edge: the note
+	     sits directly above the name, or on the edge itself when there is no
+	     name for it to sit above. -->
+	{#if noteText !== "" || hasIdentity}
+		<div class="z-1 flex w-full min-w-0 flex-col items-start gap-0.5 p-0.5">
+			{#if noteText !== ""}
+				<Badge
+					variant="outline"
+					class="max-w-full min-w-0 gap-1 bg-popover/20 text-2xs backdrop-blur-2xl"
 				>
-					{#if unread > 99}
-						<span class="text-3xs">99+</span>
-					{:else}
-						{unread}
+					<NotePencilIcon
+						weight="fill"
+						role="img"
+						aria-label="Has a note"
+						class="size-3 shrink-0 text-primary"
+					/>
+					<span class="truncate">{noteText}</span>
+				</Badge>
+			{/if}
+			{#if hasIdentity}
+				<div class="flex w-full min-w-0 items-center gap-0.5">
+					<Badge
+						variant="outline"
+						class="max-w-full min-w-0 shrink gap-0 bg-popover/20 backdrop-blur-2xl"
+					>
+						<ProfileStatusIndicator {onlineUntil} {isVisiting} class="me-1" />
+
+						<ProfileRightNowIndicator {rightNow} class="me-1" />
+
+						{#if displayName !== null}
+							<span class="block shrink truncate font-semibold">
+								{displayName}
+							</span>
+						{/if}
+						{#if displayName !== null && age !== null}
+							,&nbsp;
+						{/if}
+						{#if age !== null}
+							<span class="line-clamp-1 block max-w-full shrink-0 truncate">
+								{age}
+							</span>
+						{/if}
+					</Badge>
+					{#if unread !== null && unread > 0}
+						<span
+							class="flex size-5 shrink-0 items-center justify-center rounded-full border border-black/20 bg-primary text-2xs font-semibold text-primary-foreground"
+						>
+							{#if unread > 99}
+								<span class="text-3xs">99+</span>
+							{:else}
+								{unread}
+							{/if}
+						</span>
 					{/if}
-				</span>
+				</div>
 			{/if}
 		</div>
 	{/if}

@@ -8,6 +8,7 @@
 		setPreferences,
 	} from "$lib/app-data/preferences.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
+	import { FavoriteSearch } from "$lib/favorites/favorite-search.svelte";
 	import { gridState } from "$lib/grid/grid-state.svelte";
 	import Grid from "./Grid.svelte";
 	import LocationChooser from "./LocationEmpty.svelte";
@@ -32,8 +33,17 @@
 				console.error(error);
 			}
 		}
+		favoriteSearch.invalidate();
 		await gridState.refresh();
 	}
+
+	// Owned here so the top bar's search field and the grid below it are the same
+	// search: the field is in the header, the results replace the grid.
+	const favoriteSearch = new FavoriteSearch();
+
+	// The header grows by a row when the favorites filter adds the search field,
+	// so the scroller has to clear more of it or the first cards sit underneath.
+	const searchable = $derived(gridState.filters.value?.isFavorite ?? false);
 
 	let gridContainer: HTMLElement | null = $state(null);
 
@@ -61,16 +71,19 @@
 		</main>
 	{:else}
 		<main class="screen-nav-host">
-			<TopBar />
+			<TopBar search={favoriteSearch} />
 			<div
 				class="pull-scroller"
 				bind:this={gridContainer}
 				onscroll={() => (gridState.scrollY = gridContainer?.scrollTop ?? 0)}
 			>
 				<div
-					class="@container/photo-grid flex min-h-overscrollable flex-col gap-4 pt-17 pb-nav-clear"
+					class={[
+						"@container/photo-grid flex min-h-overscrollable flex-col gap-4 pb-nav-clear",
+						searchable ? "pt-28" : "pt-17",
+					]}
 				>
-					<Grid {geohash} />
+					<Grid {geohash} search={favoriteSearch} />
 				</div>
 			</div>
 			{#if !gridState.loading && !gridState.error}

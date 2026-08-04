@@ -1,16 +1,15 @@
 <script lang="ts">
-	import { onDestroy, untrack } from "svelte";
-
+	import { favoriteNote } from "$lib/api/users/favorite-notes-state.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import { nearestScrollableAncestor } from "$lib/components/feedback/refresh/scroll-chain";
 	import ProfileMiniCard from "$lib/components/profile/ProfileMiniCard.svelte";
 	import { Skeleton } from "$lib/components/ui/skeleton";
+	import NoNoteMatches from "../(root)/NoNoteMatches.svelte";
 	import EmptyFavorites from "./EmptyFavorites.svelte";
-	import { FavoritesState } from "./favorites-state.svelte";
+	import type { FavoritesState } from "./favorites-state.svelte";
 
-	const favorites = untrack(() => new FavoritesState());
-	onDestroy(() => favorites.destroy());
+	let { favorites }: { favorites: FavoritesState } = $props();
 
 	let container: HTMLDivElement | null = $state(null);
 
@@ -50,7 +49,11 @@
 					/>
 				</div>
 			{:else if favorites.favorites.length === 0}
-				<EmptyFavorites />
+				{#if favorites.filtered}
+					<NoNoteMatches query={favorites.query} />
+				{:else}
+					<EmptyFavorites />
+				{/if}
 			{:else}
 				<div class="photo-grid">
 					{#each favorites.favorites as entry (entry.profileId)}
@@ -63,6 +66,7 @@
 								onlineUntil={entry.onlineUntil}
 								isFavorite={entry.isFavorite}
 								rightNow={entry.rightNow}
+								note={favoriteNote(entry.profileId)?.notes ?? null}
 								href="/profile/{entry.profileId}"
 							/>
 						{:else}

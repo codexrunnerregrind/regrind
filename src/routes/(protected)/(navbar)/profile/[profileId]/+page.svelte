@@ -35,6 +35,7 @@
 	import ImageCarousel from "./ImageCarousel.svelte";
 	import OnlineStatus from "./OnlineStatus.svelte";
 	import ProfileAlbums from "./ProfileAlbums.svelte";
+	import ProfileNote from "./ProfileNote.svelte";
 	import ProfileTags from "./ProfileTags.svelte";
 	import SexualPosition from "./SexualPosition.svelte";
 	import ProfileTopNavBar from "./top-nav/ProfileTopNavBar.svelte";
@@ -204,13 +205,18 @@
 						socialNetworks,
 						medias,
 					} = profile}
-					<ImageCarousel
-						{medias}
-						{profileId}
-						{ourProfileId}
-						{displayName}
-						self={ourProfile}
-					/>
+					<div class="relative">
+						<ImageCarousel
+							{medias}
+							{profileId}
+							{ourProfileId}
+							{displayName}
+							self={ourProfile}
+						/>
+						{#if !ourProfile}
+							<ProfileNote {profileId} isFavorite={profile.isFavorite} />
+						{/if}
+					</div>
 					<ProfileTopNavBar
 						{ourProfileId}
 						{profile}

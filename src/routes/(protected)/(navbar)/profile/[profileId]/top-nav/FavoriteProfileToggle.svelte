@@ -2,6 +2,7 @@
 	import { StarIcon } from "phosphor-svelte";
 
 	import { showErrorToast } from "$lib/api/error";
+	import { forgetFavoriteNote } from "$lib/api/users/favorite-notes-state.svelte";
 	import {
 		addFavoriteUser,
 		removeFavoriteUser,
@@ -29,6 +30,9 @@
 			if (isFavorite) {
 				await removeFavoriteUser({ profileId });
 				isFavorite = false;
+				// Unfavoriting drops the note server-side, so the cached copy would
+				// otherwise reappear if the profile is favorited again.
+				forgetFavoriteNote(profileId);
 			} else {
 				await addFavoriteUser({ profileId });
 				isFavorite = true;

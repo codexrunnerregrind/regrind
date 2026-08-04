@@ -1,7 +1,12 @@
 import { showErrorToast } from "$lib/api/error";
+import {
+	cacheFavoriteNotes,
+	favoriteNote,
+} from "$lib/api/users/favorite-notes-state.svelte";
 import { getFavoriteNotes } from "$lib/api/users/favorites";
 import { getProfiles } from "$lib/api/users/profiles";
 import type { RightNowStatus } from "$lib/model/right-now";
+import type { FavoriteNoteContent } from "$lib/model/users/favorites";
 
 const PAGE_SIZE = 24;
 
@@ -34,6 +39,9 @@ export type FavoriteEntry = FavoriteProfile | FavoritePlaceholder;
 // where possible, otherwise as a placeholder.
 async function loadFavorites(): Promise<FavoriteEntry[]> {
 	const notes = await getFavoriteNotes();
+	// The same response the notes cache is built from, so the grid can search
+	// notes and a profile screen opened from it already has its note.
+	cacheFavoriteNotes(notes);
 	const ids = notes.map((note) => note.counterpartyId);
 	if (ids.length === 0) return [];
 
@@ -57,6 +65,30 @@ async function loadFavorites(): Promise<FavoriteEntry[]> {
 	});
 }
 
+/**
+ * Whether a favorite matches what was typed in the search field. Notes are the
+ * point of the search — they are the only text the user wrote themselves — but
+ * the display name is matched too, since that is what the card shows and
+ * looking someone up by name is the obvious other thing to try.
+ *
+ * Placeholders (favorites the profile batch could not serve) carry no text at
+ * all, so a search drops them.
+ */
+export function favoriteMatchesQuery(
+	entry: FavoriteEntry,
+	note: FavoriteNoteContent | null,
+	query: string,
+): boolean {
+	const needle = query.trim().toLowerCase();
+	if (needle === "") return true;
+	const haystack = [
+		note?.notes,
+		note?.phoneNumber,
+		entry.type === "profile" ? entry.displayName : null,
+	];
+	return haystack.some((value) => value?.toLowerCase().includes(needle));
+}
+
 // Persists the last-loaded favorites across navigations so re-entering the
 // screen shows content immediately (refreshed silently in the background)
 // instead of flashing the loading skeletons.
@@ -67,15 +99,42 @@ export class FavoritesState {
 	refreshing = $state(false);
 	error: Error | null = $state(null);
 	visibleCount = $state(PAGE_SIZE);
+	query = $state("");
 
 	#profiles: FavoriteEntry[] = $state([]);
 
+	// Notes come from a reactive cache, so editing one on a profile screen
+	// re-runs the filter without the list being reloaded.
+	#matching: FavoriteEntry[] = $derived(
+		this.query.trim() === ""
+			? this.#profiles
+			: this.#profiles.filter((entry) =>
+					favoriteMatchesQuery(
+						entry,
+						favoriteNote(entry.profileId),
+						this.query,
+					),
+				),
+	);
+
 	get favorites(): FavoriteEntry[] {
-		return this.#profiles.slice(0, this.visibleCount);
+		return this.#matching.slice(0, this.visibleCount);
 	}
 
 	get hasMore(): boolean {
-		return this.visibleCount < this.#profiles.length;
+		return this.visibleCount < this.#matching.length;
+	}
+
+	/** Whether the list being shown is a search result rather than everything. */
+	get filtered(): boolean {
+		return this.query.trim() !== "";
+	}
+
+	search(query: string): void {
+		this.query = query;
+		// A new search starts at the top; paging in from an earlier one would
+		// otherwise leave the first screenful of matches scrolled past.
+		this.visibleCount = PAGE_SIZE;
 	}
 
 	#initial: Promise<void>;
