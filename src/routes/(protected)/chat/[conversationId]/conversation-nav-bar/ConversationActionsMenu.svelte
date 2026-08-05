@@ -1,9 +1,11 @@
 <script lang="ts">
-	import { DotsThreeIcon, ImageIcon } from "phosphor-svelte";
+	import { goto } from "$app/navigation";
+	import { DotsThreeIcon, ImageIcon, ProhibitIcon } from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
 	import { showErrorToast } from "$lib/api/error";
 	import { openImageGalleryLightbox } from "$lib/chat/image-gallery";
+	import BlockProfileDialog from "$lib/components/profile/BlockProfileDialog.svelte";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
 	import { profileMediaUrl } from "$lib/util/media";
 	import { getConversationState } from "../conversation-state.svelte";
@@ -104,6 +106,8 @@
 			});
 	}
 
+	let blockOpen = $state(false);
+
 	$effect(() => () => teardown?.());
 </script>
 
@@ -120,10 +124,34 @@
 			</button>
 		{/snippet}
 	</DropdownMenu.Trigger>
-	<DropdownMenu.Content class="w-48" align="end">
-		<DropdownMenu.Item onSelect={() => void openReceivedPhotos()}>
-			<ImageIcon class="size-5" />
+	<!-- Laid out as a row of tall icon-over-label targets, like the official app's
+	     action strip: two stacked rows this short read as one cramped block. -->
+	<DropdownMenu.Content class="flex w-auto min-w-fit gap-1 p-1.5" align="end">
+		<DropdownMenu.Item
+			class="w-22 flex-col gap-1.5 px-2 py-3 text-center text-caption leading-tight"
+			onSelect={() => void openReceivedPhotos()}
+		>
+			<ImageIcon class="size-6" />
 			Received photos
+		</DropdownMenu.Item>
+		<DropdownMenu.Item
+			variant="destructive"
+			class="w-22 flex-col gap-1.5 px-2 py-3 text-center text-caption leading-tight"
+			onSelect={() => (blockOpen = true)}
+		>
+			<ProhibitIcon class="size-6" />
+			Block
 		</DropdownMenu.Item>
 	</DropdownMenu.Content>
 </DropdownMenu.Root>
+
+<BlockProfileDialog
+	bind:open={blockOpen}
+	{profileId}
+	name={conversationState.profile?.name ?? null}
+	onBlocked={() => {
+		// Their profile stops resolving once blocked, so the conversation view has
+		// nothing left to show — leave it rather than sit on a broken header.
+		void goto("/chat");
+	}}
+/>

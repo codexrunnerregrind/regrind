@@ -24,6 +24,6 @@
 		<EditProfileButton />
 	{:else}
 		<FavoriteProfileToggle {profileId} bind:isFavorite={profile.isFavorite} />
-		<ProfileActionsMenu {profileId} {onBlocked} />
+		<ProfileActionsMenu {profileId} name={profile.displayName} {onBlocked} />
 	{/if}
 </nav>

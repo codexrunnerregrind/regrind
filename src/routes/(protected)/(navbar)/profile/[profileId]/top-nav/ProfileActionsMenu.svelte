@@ -7,21 +7,24 @@
 	} from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
-	import { blockUser } from "$lib/api/browse/blocks";
 	import { showErrorToast } from "$lib/api/error";
 	import ToastUnimplemented from "$lib/components/feedback/ToastUnimplemented.svelte";
+	import BlockProfileDialog from "$lib/components/profile/BlockProfileDialog.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
 
 	let {
 		profileId,
+		name = null,
 		onBlocked,
 	}: {
 		profileId: number;
+		name?: string | null;
 		onBlocked: () => void;
 	} = $props();
 
 	let submitting = $state(false);
+	let blockOpen = $state(false);
 </script>
 
 <DropdownMenu.Root>
@@ -70,18 +73,13 @@
 			Report profile
 		</DropdownMenu.Item>
 		<DropdownMenu.Item
-			onSelect={async () => {
-				try {
-					await blockUser({ profileId });
-					onBlocked();
-				} catch (error) {
-					console.error(error);
-					showErrorToast({ label: "Failed to block user", error });
-				}
-			}}
+			variant="destructive"
+			onSelect={() => (blockOpen = true)}
 		>
 			<ProhibitIcon class="size-5" />
 			Block profile
 		</DropdownMenu.Item>
 	</DropdownMenu.Content>
 </DropdownMenu.Root>
+
+<BlockProfileDialog bind:open={blockOpen} {profileId} {name} {onBlocked} />
