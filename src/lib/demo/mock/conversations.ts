@@ -8,10 +8,16 @@ import { DAY, demoMeProfileId, HOUR, MINUTE, NOW } from "../config";
 import { demoMediaUrl, hashFromSeed } from "./avatars";
 import { lastOnlineOf, onlineUntilOf, photosOf, profileSeed } from "./profiles";
 
-type DemoMessage = { fromMe: boolean; reactions?: number } & (
+type DemoMessage = {
+	fromMe: boolean;
+	reactions?: number;
+	// Quoted line shown above the bubble, as if replying to that message.
+	replyToText?: string;
+} & (
 	| { kind?: "text"; text: string }
 	| { kind: "image" }
 	| { kind: "expiringImage"; expired?: boolean }
+	| { kind: "video"; expired?: boolean; needsLoad?: boolean }
 	| {
 			kind: "album";
 			albumId: number;
@@ -96,6 +102,21 @@ const demoConversationSeeds: DemoConversation[] = [
 			{ fromMe: true, kind: "expiringImage" },
 			{ fromMe: false, kind: "expiringImage", expired: true },
 			{ fromMe: false, text: "Did you catch it? 🔥" },
+			{
+				fromMe: true,
+				text: "https://example.com/a/very/long/link/with/no/spaces/in/it/at/all?utm_source=demo&utm_campaign=wrapping",
+			},
+			{
+				fromMe: false,
+				replyToText:
+					"A quoted line long enough that it has to be truncated rather than widen the conversation past the screen",
+				text: "Sed ut perspiciatis unde omnis.",
+			},
+			{ fromMe: false, kind: "video" },
+			{ fromMe: true, kind: "video", needsLoad: true },
+			{ fromMe: false, kind: "video", expired: true },
+			// Kept last so this conversation's preview stays an Image, which
+			// demo.test.ts asserts.
 			{ fromMe: false, kind: "image", reactions: 1 },
 		],
 	},
@@ -163,6 +184,8 @@ const demoConversationSeeds: DemoConversation[] = [
 
 const MESSAGE_GAP = 7 * MINUTE;
 const DEMO_IMAGE_URL = "https://picsum.photos/seed/opengrind-demo/600/800";
+const DEMO_VIDEO_URL =
+	"https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4";
 
 function picsum(seed: string, width = 600, height = 800): string {
 	return `https://picsum.photos/seed/${encodeURIComponent(seed)}/${width}/${height}`;
@@ -219,7 +242,27 @@ function buildMessage(
 		profileId: message.fromMe ? conv.withId : demoMeProfileId,
 		reactionType: 1,
 	}));
-	const base = { messageId, conversationId, senderId, timestamp, reactions };
+	const replyToMessage: ApiResponseMessage | null =
+		message.replyToText === undefined
+			? null
+			: {
+					type: "Text",
+					body: { text: message.replyToText },
+					messageId: `${messageId}-quoted`,
+					conversationId,
+					senderId: message.fromMe ? conv.withId : demoMeProfileId,
+					timestamp: timestamp - MINUTE,
+					reactions: [],
+					unsent: false,
+				};
+	const base = {
+		messageId,
+		conversationId,
+		senderId,
+		timestamp,
+		reactions,
+		replyToMessage,
+	};
 	switch (message.kind) {
 		case "image":
 			return {
@@ -244,6 +287,23 @@ function buildMessage(
 					width: 600,
 					height: 800,
 					url: picsum(`expiring-${conv.withId}-${index}`),
+					viewsRemaining: message.expired ? 0 : 1,
+				},
+				...base,
+				unsent: false,
+			};
+		case "video":
+			return {
+				type: message.needsLoad ? "Video" : "NonExpiringVideo",
+				body: {
+					mediaId: 920_000 + conv.withId + index,
+					// A view-once video arrives without its URL: it is fetched, and
+					// the view spent, only when the bubble is tapped.
+					url: message.needsLoad ? null : DEMO_VIDEO_URL,
+					contentType: "video/mp4",
+					length: 12,
+					maxViews: message.needsLoad ? 1 : null,
+					looping: false,
 					viewsRemaining: message.expired ? 0 : 1,
 				},
 				...base,

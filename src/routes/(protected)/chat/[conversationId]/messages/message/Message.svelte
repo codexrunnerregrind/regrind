@@ -22,6 +22,7 @@
 	import TextMessage from "./TextMessage.svelte";
 	import UnsentMessage from "./UnsentMessage.svelte";
 	import UnsupportedMessage from "./UnsupportedMessage.svelte";
+	import VideoMessage from "./VideoMessage.svelte";
 
 	let {
 		message,
@@ -241,6 +242,12 @@
 			/>
 		{:else if message.type === "Album" || message.type === "ExpiringAlbum" || message.type === "ExpiringAlbumV2"}
 			<AlbumMessage message={message.body} />
+		{:else if message.type === "Video" || message.type === "PrivateVideo" || message.type === "NonExpiringVideo"}
+			<VideoMessage
+				message={message.body}
+				conversationId={message.conversationId}
+				messageId={message.messageId}
+			/>
 		{:else if message.type === "Location"}
 			<LocationMessage message={message.body} />
 		{:else if message.type === "AlbumContentReply" || message.type === "AlbumContentReaction"}
@@ -280,10 +287,14 @@
 		{/if}
 		<div
 			class={[
-				"[-webkit-touch-callout:none] **:[-webkit-touch-callout:none]",
+				// Flex rather than floats: a float whose content has a wider
+				// min-content size (a long URL, a nowrap quoted line) overflows the
+				// row and gives the whole list a horizontal scrollbar. A flex item
+				// with `min-w-0` shrinks to the row instead.
+				"flex [-webkit-touch-callout:none] *:min-w-0 **:[-webkit-touch-callout:none]",
 				{
-					"pe-3 *:float-start *:me-auto": !isOut,
-					"ps-3 *:float-end *:ms-auto": isOut,
+					"justify-start pe-3": !isOut,
+					"justify-end ps-3": isOut,
 				},
 			]}
 			role="button"

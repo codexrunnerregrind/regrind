@@ -137,9 +137,20 @@ export const videoMessageSchema = messageBaseSchema.safeExtend({
 
 export type VideoMessage = z.infer<typeof videoMessageSchema>;
 
+// The payload has only been observed second-hand, so every field is optional
+// and an unexpected shape falls back to an empty body rather than failing the
+// parse — one odd message must not take the whole conversation down with it.
 export const nonExpiringVideoMessageSchema = messageBaseSchema.safeExtend({
 	type: z.literal("NonExpiringVideo"),
-	body: z.unknown(),
+	body: z
+		.looseObject({
+			mediaId: z.int().nonnegative().nullish(),
+			url: mediaUrlSchema.nullish(),
+			contentType: z.string().nullish(),
+			length: z.int().nonnegative().nullish(),
+			looping: z.boolean().nullish(),
+		})
+		.catch({}),
 });
 
 export type NonExpiringVideoMessage = z.infer<
@@ -329,6 +340,10 @@ export const apiResponseMessageSchema: z.ZodType<ApiResponseMessage> = z
 	.intersection(messageSchema, apiResponseMessageOverlaySchema)
 	.or(unsentMessageSchema);
 
+// The three shapes a chat video arrives in. They differ only in how long the
+// media stays viewable, so everything downstream treats them alike.
+export const VIDEO_MESSAGE_TYPES = ["Video", "PrivateVideo", "NonExpiringVideo"];
+
 export type MessagePreview = {
 	type: string;
 	text: string | null;
@@ -373,6 +388,9 @@ export function previewFromMessage(
 			};
 		case "Location":
 		case "ExpiringImage":
+		case "Video":
+		case "PrivateVideo":
+		case "NonExpiringVideo":
 		default:
 			return {
 				type: message.type,
@@ -389,5 +407,6 @@ export function previewLabel(preview: MessagePreview | null): string | null {
 	if (preview.albumId !== null) return "Album";
 	if (preview.imageHash !== null || preview.type === "Image") return "Photo";
 	if (preview.type === "Location") return "Location";
+	if (VIDEO_MESSAGE_TYPES.includes(preview.type)) return "Video";
 	return null;
 }

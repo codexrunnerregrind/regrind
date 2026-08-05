@@ -40,7 +40,7 @@
 	{#if replyLabel !== null}
 		<div
 			class={[
-				"mb-1 flex items-end",
+				"mb-1 flex max-w-full items-end",
 				{
 					"ms-4": !isOut,
 					"me-4": isOut,
@@ -50,7 +50,7 @@
 		>
 			<div
 				class={[
-					"h-4 w-5 border-muted-foreground/50",
+					"h-4 w-5 shrink-0 border-muted-foreground/50",
 					{
 						"ms-3 rounded-tl-[8px] border-t-2 border-l-2": !isOut && !clone,
 						"me-3 self-end rounded-tr-[8px] border-t-2 border-r-2":
@@ -60,7 +60,7 @@
 			></div>
 			<div
 				class={[
-					"w-fit max-w-100 truncate rounded-xl bg-muted px-3 py-1.5 text-sm text-muted-foreground",
+					"w-fit min-w-0 max-w-100 truncate rounded-xl bg-muted px-3 py-1.5 text-sm text-muted-foreground",
 					{
 						"ms-1": !isOut && !clone,
 						"me-1": isOut && !clone,
@@ -95,7 +95,9 @@
 				}}
 			/>
 		{/if}
-		<span class="whitespace-pre-wrap">{message.text}</span>
+		<!-- `wrap-anywhere` so a pasted link with no spaces in it breaks mid-word
+	     instead of setting the bubble's minimum width to the whole URL. -->
+	<span class="whitespace-pre-wrap wrap-anywhere">{message.text}</span>
 		{@render adornments?.()}
 	</div>
 </div>
