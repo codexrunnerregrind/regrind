@@ -7,6 +7,10 @@
 	const base = "/(protected)/(navbar)/settings/(subpage)";
 	const routes: Record<string, { title: string; back: string }> = {
 		[`${base}/account`]: { title: "Account Settings", back: "/settings" },
+		[`${base}/account/blocked`]: {
+			title: "Blocked Users",
+			back: "/settings/account",
+		},
 		[`${base}/account/privacy`]: {
 			title: "Privacy",
 			back: "/settings/account",

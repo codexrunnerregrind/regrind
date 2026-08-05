@@ -1,4 +1,5 @@
 import { demoMeProfileId } from "./config";
+import { demoBlockedUsers, demoSetBlocked } from "./mock/blocks";
 import {
 	demoAlbumContent,
 	demoAlbumSharesFor,
@@ -124,7 +125,18 @@ export function demoRoute(
 			return { status: 204, body: null };
 		}
 	}
-	if (rawPath === "/v3.1/me/blocks") return ok({ blocking: [] });
+	if (rawPath === "/v3.1/me/blocks")
+		return ok({ blocking: demoBlockedUsers() });
+	if (
+		segments[0] === "v3" &&
+		segments[1] === "me" &&
+		segments[2] === "blocks" &&
+		segments.length === 4 &&
+		(method === "POST" || method === "DELETE")
+	) {
+		demoSetBlocked(Number(segments[3]), method === "POST");
+		return ok({});
+	}
 	if (method === "POST" && rawPath === "/v4/inbox") {
 		return ok(demoConversations(num(params.get("page")) ?? 1));
 	}

@@ -53,6 +53,9 @@ export async function blockUser({
 	await fetchRest(`/v3/me/blocks/${profileId}`, {
 		method: "POST",
 	}).then((res) => res.assertOk());
+	// The list this invalidates decides whether a profile reads as blocked by us,
+	// so a stale entry would show the wrong side of the block for up to the TTL.
+	blockedUsersCache = null;
 }
 
 export async function unblockUser({
@@ -63,4 +66,5 @@ export async function unblockUser({
 	await fetchRest(`/v3/me/blocks/${profileId}`, {
 		method: "DELETE",
 	}).then((res) => res.assertOk());
+	blockedUsersCache = null;
 }

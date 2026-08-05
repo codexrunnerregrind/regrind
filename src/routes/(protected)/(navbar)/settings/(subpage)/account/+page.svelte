@@ -51,7 +51,11 @@
 
 <SectionHeader>People</SectionHeader>
 <SettingsGroup>
-	<SettingsRow title="Blocked users" tint="slate" onclick={unimplemented}>
+	<SettingsRow
+		title="Blocked users"
+		tint="slate"
+		href="/settings/account/blocked"
+	>
 		{#snippet icon()}
 			<ProhibitIcon weight="fill" />
 		{/snippet}
