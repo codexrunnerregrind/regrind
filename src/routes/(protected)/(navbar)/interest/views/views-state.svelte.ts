@@ -1,4 +1,6 @@
+import { accountScoped } from "$lib/api/account-caches";
 import { getViews } from "$lib/api/interest/views";
+import { onProfileEdit } from "$lib/api/users/profiles";
 import { ReconcilingListState } from "$lib/util/reconciling-list-state.svelte";
 import { viewedMeV1NewViewReceivedEventSchema, ws } from "$lib/ws.svelte";
 import type { ViewerProfile, ViewPreview } from "$lib/model/interest/views";
@@ -26,6 +28,10 @@ export class ViewsState extends ReconcilingListState<
 > {
 	#profiles: ViewerProfile[] = $state([]);
 	#previews: ViewPreview[] = $state([]);
+	#unsubscribeProfileEdits = onProfileEdit(({ profileId, patch }) => {
+		if (patch.isFavorite === undefined) return;
+		this.setFavorite({ profileId, isFavorite: patch.isFavorite });
+	});
 
 	constructor() {
 		super({
@@ -33,6 +39,19 @@ export class ViewsState extends ReconcilingListState<
 			refreshErrorLabel: "Failed to refresh views",
 		});
 		this.start();
+	}
+
+	setFavorite({
+		profileId,
+		isFavorite,
+	}: {
+		profileId: number;
+		isFavorite: boolean;
+	}): void {
+		const index = this.#profiles.findIndex((v) => v.profileId === profileId);
+		const profile = this.#profiles[index];
+		if (!profile) return;
+		this.#profiles = this.#profiles.with(index, { ...profile, isFavorite });
 	}
 
 	get views(): ViewGridEntry[] {
@@ -78,9 +97,10 @@ export class ViewsState extends ReconcilingListState<
 		const index = this.#profiles.findIndex(
 			(v) => v.profileId === fresh.profileId,
 		);
+		const prev = this.#profiles[index];
 		let next = fresh;
-		if (index !== -1) {
-			const [prev] = this.#profiles.splice(index, 1);
+		if (prev) {
+			this.#profiles.splice(index, 1);
 			next = {
 				...prev,
 				...fresh,
@@ -102,6 +122,11 @@ export class ViewsState extends ReconcilingListState<
 
 	protected keyOf(view: ViewerProfile): number {
 		return view.profileId;
+	}
+
+	override destroy(): void {
+		this.#unsubscribeProfileEdits();
+		super.destroy();
 	}
 
 	protected subscribeEvents(): Promise<() => void> {
@@ -126,3 +151,5 @@ export class ViewsState extends ReconcilingListState<
 		);
 	}
 }
+
+export const getViewsState = accountScoped(() => new ViewsState());

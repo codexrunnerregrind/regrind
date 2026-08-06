@@ -2,7 +2,7 @@
 	import { MapPinIcon } from "phosphor-svelte";
 	import { onMount } from "svelte";
 
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import { getProfile, patchOwnProfile } from "$lib/api/users/profiles";
 	import SettingsSwitchRow from "$lib/components/settings/SettingsSwitchRow.svelte";
 
@@ -33,12 +33,13 @@
 			if (!loaded) return;
 			const previous = value;
 			value = newValue;
-			void patchOwnProfile(ourProfileId, { showDistance: newValue }).catch(
-				(error) => {
-					value = previous;
-					showErrorToast({ label: "Failed to update setting", error });
-				},
-			);
+			void patchOwnProfile({
+				cacheProfileId: ourProfileId,
+				patch: { showDistance: newValue },
+			}).catch((error) => {
+				value = previous;
+				showErrorToast({ label: "Failed to update setting", error });
+			});
 		}
 	}
 	tint="orange"

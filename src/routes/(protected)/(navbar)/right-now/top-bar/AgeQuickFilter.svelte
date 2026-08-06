@@ -1,14 +1,14 @@
 <script lang="ts">
 	import AgeFilterSlider from "$lib/components/filters/age/AgeFilterSlider.svelte";
-	import {
-		ageRangeLabel,
-		defaultRightNowFilters,
-	} from "$lib/components/filters/filters";
 	import { Button, buttonVariants } from "$lib/components/ui/button";
 	import * as Drawer from "$lib/components/ui/drawer";
 	import { Switch } from "$lib/components/ui/switch";
-	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
+	import {
+		ageRangeLabel,
+		defaultRightNowFilters,
+	} from "$lib/model/browse/grid/filters";
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
 
 	let {
 		open = $bindable(),

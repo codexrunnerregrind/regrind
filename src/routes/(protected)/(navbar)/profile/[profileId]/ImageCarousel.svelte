@@ -10,8 +10,12 @@
 	import { registerLightboxDownloadButton } from "$lib/chat/lightbox-download";
 	import { registerMediaViewerChrome } from "$lib/chat/media-viewer-chrome";
 	import { TapType } from "$lib/model/interest/taps";
-	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 	import { profileMediaUrl } from "$lib/util/media";
+	import {
+		applyPhotoSwipeBackGesture,
+		applyPhotoSwipeErrorUi,
+		applyPhotoSwipeThumbDimensions,
+	} from "$lib/util/photoswipe";
 	import ImageCarouselItem from "./ImageCarouselItem.svelte";
 
 	let {
@@ -83,7 +87,7 @@
 				if (!gallery) return;
 				lightbox = new PhotoSwipeLightbox({
 					gallery,
-					children: ".item",
+					children: ".item[href]",
 					pswpModule: () => import("photoswipe"),
 					mainClass: `pswp--buttons-visible`,
 					// Matches the chat and album viewers: opaque backdrop, no counter
@@ -92,21 +96,9 @@
 					bgOpacity: 1,
 					counter: false,
 				});
-				lightbox.addFilter("itemData", (itemData) => {
-					const img = itemData.element?.querySelector("img");
-					if (img?.naturalWidth) {
-						itemData.width = img.naturalWidth;
-						itemData.height = img.naturalHeight;
-					}
-					return itemData;
-				});
-				const onBackGesture = () => {
-					lightbox?.pswp?.close();
-					return false;
-				};
-				lightbox.on("beforeOpen", () => {
-					backGestureEventHandlers.add(onBackGesture);
-				});
+				applyPhotoSwipeErrorUi(lightbox);
+				applyPhotoSwipeThumbDimensions(lightbox);
+				applyPhotoSwipeBackGesture(lightbox);
 				lightbox.on("openingAnimationStart", () => {
 					gallery?.querySelectorAll(".item").forEach((item) => {
 						if (item instanceof HTMLElement) {
@@ -120,9 +112,6 @@
 						behavior: "instant",
 					});
 				});
-				lightbox.on("close", () => {
-					backGestureEventHandlers.delete(onBackGesture);
-				});
 				lightbox.on("destroy", () => {
 					gallery?.querySelectorAll(".item").forEach((item) => {
 						if (item instanceof HTMLElement) {
@@ -133,7 +122,12 @@
 				registerLightboxDownloadButton(lightbox, (index) => {
 					const media = medias[index];
 					return media
-						? { url: profileMediaUrl(media.mediaHash, "full") }
+						? {
+								url: profileMediaUrl({
+									mediaHash: media.mediaHash,
+									size: "full",
+								}),
+							}
 						: null;
 				});
 				registerMediaViewerChrome(lightbox, {
@@ -147,7 +141,10 @@
 						// profileId: this viewer opens from that profile already, so
 						// there is nowhere for the header to link to.
 						avatarUrl: medias[0]
-							? profileMediaUrl(medias[0].mediaHash, "thumb")
+							? profileMediaUrl({
+									mediaHash: medias[0].mediaHash,
+									size: "thumb",
+								})
 							: null,
 					}),
 					actions,
@@ -190,9 +187,14 @@
 					(item > 0 && item < medias.length - 1 ? indicatorStretch : 0);
 			}}
 		>
-			{#each medias as { mediaHash, createdAt }}
-				{@const src = profileMediaUrl(mediaHash, "full")}
-				<ImageCarouselItem {src} thumb={src} {createdAt} />
+			{#each medias as { mediaHash, createdAt }, index}
+				{@const src = profileMediaUrl({ mediaHash, size: "full" })}
+				<ImageCarouselItem
+					{src}
+					thumb={src}
+					{createdAt}
+					label="Profile photo {index + 1} of {medias.length}"
+				/>
 			{/each}
 		</div>
 		<div
@@ -205,7 +207,7 @@
 			{/each}
 			<span
 				class="absolute left-2 block w-2 rounded-full bg-neutral-300"
-				style="top: {indicatorY}px; height: {BULLET_SIZE}px"
+				style:top="{indicatorY}px"
 				style:height="{indicatorHeight}px"
 			></span>
 		</div>

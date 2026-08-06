@@ -1,9 +1,9 @@
 <script lang="ts">
 	import {
 		type ApiResponseMessage,
-		type TextMessage,
 		previewFromMessage,
 		previewLabel,
+		type TextMessage,
 	} from "$lib/model/messaging/messages";
 	import { getMessageContext, getMessageMetaContext } from "./context";
 	import MessageTail from "./MessageTail.svelte";
@@ -60,7 +60,7 @@
 			></div>
 			<div
 				class={[
-					"w-fit min-w-0 max-w-100 truncate rounded-xl bg-muted px-3 py-1.5 text-sm text-muted-foreground",
+					"w-fit max-w-100 min-w-0 truncate rounded-xl bg-muted px-3 py-1.5 text-sm text-muted-foreground",
 					{
 						"ms-1": !isOut && !clone,
 						"me-1": isOut && !clone,
@@ -97,7 +97,7 @@
 		{/if}
 		<!-- `wrap-anywhere` so a pasted link with no spaces in it breaks mid-word
 	     instead of setting the bubble's minimum width to the whole URL. -->
-	<span class="whitespace-pre-wrap wrap-anywhere">{message.text}</span>
+		<span class="wrap-anywhere whitespace-pre-wrap">{message.text}</span>
 		{@render adornments?.()}
 	</div>
 </div>

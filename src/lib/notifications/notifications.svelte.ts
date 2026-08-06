@@ -1,10 +1,10 @@
-import { goto } from "$app/navigation";
 import {
 	isPermissionGranted,
 	onAction,
 	requestPermission,
 	sendNotification,
 } from "@tauri-apps/plugin-notification";
+import { goto } from "$app/navigation";
 import z from "zod";
 
 import { getPreferences } from "$lib/app-data/preferences.svelte";

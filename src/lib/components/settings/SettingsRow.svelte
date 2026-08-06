@@ -65,9 +65,11 @@
 	{onclick}
 	class={[
 		"flex min-h-14 w-full items-center gap-3.5 px-4 py-3 text-start transition-colors",
-		interactive && !disabled && "cursor-pointer active:bg-muted",
-		interactive && !disabled && "can-hover:hover:bg-muted",
-		disabled && "opacity-55",
+		{
+			"cursor-pointer active:bg-muted": interactive && !disabled,
+			"can-hover:hover:bg-muted": interactive && !disabled,
+			"opacity-55": disabled,
+		},
 		"outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset",
 	]}
 >
@@ -80,7 +82,7 @@
 		<span
 			class={[
 				"truncate font-heading text-body leading-snug font-medium",
-				destructive && "text-destructive",
+				{ "text-destructive": destructive },
 			]}
 		>
 			{title}

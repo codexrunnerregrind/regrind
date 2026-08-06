@@ -1,11 +1,10 @@
 <script lang="ts">
+	import { ClockIcon, RulerIcon } from "phosphor-svelte";
 	import type z from "zod";
 
 	import RadioGroup from "$lib/components/ui/radio/RadioGroup.svelte";
 	import RadioItem from "$lib/components/ui/radio/RadioItem.svelte";
-	import { RulerIcon, ClockIcon } from "phosphor-svelte";
-
-	import { filterRightNowSortSchema } from "$lib/components/filters/filters";
+	import type { filterRightNowSortSchema } from "$lib/model/browse/grid/filters";
 
 	let {
 		value = $bindable(),

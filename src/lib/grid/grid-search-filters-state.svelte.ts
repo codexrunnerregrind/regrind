@@ -1,6 +1,4 @@
-import { isEqual } from "lodash-es";
-
-import { showErrorToast } from "$lib/api/error";
+import { showErrorToast } from "$lib/api/error-toast";
 import {
 	getPreferences,
 	setPreferences,
@@ -8,7 +6,8 @@ import {
 import {
 	defaultFilters,
 	type GridSearchFilters,
-} from "$lib/components/filters/filters";
+} from "$lib/model/browse/grid/filters";
+import { deepEqual } from "$lib/util/deep-equal";
 
 export class GridSearchFiltersState {
 	value: GridSearchFilters | null = $state(null);
@@ -23,7 +22,7 @@ export class GridSearchFiltersState {
 	set(gridSearchFilters: Partial<GridSearchFilters>) {
 		const oldValue = this.value;
 		const newValue = Object.assign({}, oldValue, gridSearchFilters);
-		if (!isEqual(oldValue, newValue)) {
+		if (!deepEqual(oldValue, newValue)) {
 			this.value = newValue;
 			void this.#save();
 			this.onRefresh();

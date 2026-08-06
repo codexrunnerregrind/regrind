@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { HouseIcon, DropIcon } from "phosphor-svelte";
+	import { DropIcon, HouseIcon } from "phosphor-svelte";
 
 	import type { RightNowStatus } from "$lib/model/right-now";
 

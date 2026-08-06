@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { StarIcon } from "phosphor-svelte";
 
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import { forgetFavoriteNote } from "$lib/api/users/favorite-notes-state.svelte";
 	import {
 		addFavoriteUser,
@@ -11,10 +11,12 @@
 
 	let {
 		profileId,
-		isFavorite = $bindable(),
+		isFavorite,
+		onFavorite,
 	}: {
 		profileId: number;
 		isFavorite: boolean;
+		onFavorite: (isFavorite: boolean) => void;
 	} = $props();
 
 	let submitting = $state(false);
@@ -29,13 +31,13 @@
 		try {
 			if (isFavorite) {
 				await removeFavoriteUser({ profileId });
-				isFavorite = false;
+				onFavorite(false);
 				// Unfavoriting drops the note server-side, so the cached copy would
 				// otherwise reappear if the profile is favorited again.
 				forgetFavoriteNote(profileId);
 			} else {
 				await addFavoriteUser({ profileId });
-				isFavorite = true;
+				onFavorite(true);
 			}
 		} catch (error) {
 			console.error(error);

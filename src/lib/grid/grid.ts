@@ -1,8 +1,8 @@
-import { registerAccountCache } from "$lib/api/account-caches";
 import { getCascadeV4 } from "$lib/api/browse/grid";
+import { TtlCache } from "$lib/api/cache";
 import { getProfiles } from "$lib/api/users/profiles";
-import type { RightNowStatus } from "$lib/model/right-now";
 import { now } from "$lib/util/clock";
+import type { RightNowStatus } from "$lib/model/right-now";
 
 function primaryImageHashes(url: string | null | undefined): string[] | null {
 	const hash = url?.split("/").pop();
@@ -83,26 +83,27 @@ export async function getGrid(query: Parameters<typeof getCascadeV4>[0]) {
 	};
 }
 
-const PROFILE_CACHE_TTL_MS = 60_000;
-
-const profileCache = new Map<
-	number,
-	{ profile: RenderedGridProfile; updatedAt: number }
->();
+const profileCache = new TtlCache<number, RenderedGridProfile>({
+	ttlMs: 60_000,
+});
 
 export function getCachedProfile(id: number): RenderedGridProfile | null {
-	const cached = profileCache.get(id);
-	if (!cached || now() - cached.updatedAt >= PROFILE_CACHE_TTL_MS) {
-		return null;
-	}
-	return cached.profile;
+	return profileCache.get(id);
 }
 
 export function setCachedProfile(profile: RenderedGridProfile): void {
-	profileCache.set(profile.id, { profile, updatedAt: now() });
+	profileCache.set(profile.id, profile);
 }
 
-registerAccountCache({ reset: () => profileCache.clear() });
+export function patchCachedProfile({
+	id,
+	patch,
+}: {
+	id: number;
+	patch: Partial<RenderedGridProfile>;
+}): void {
+	profileCache.update(id, (profile) => ({ ...profile, ...patch }));
+}
 
 export async function resolveLazyProfile(
 	profile: LazyGridProfile,

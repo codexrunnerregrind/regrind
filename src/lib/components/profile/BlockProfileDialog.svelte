@@ -2,7 +2,7 @@
 	import { toast } from "svelte-sonner";
 
 	import { blockUser } from "$lib/api/browse/blocks";
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import * as AlertDialog from "$lib/components/ui/alert-dialog";
 
 	let {

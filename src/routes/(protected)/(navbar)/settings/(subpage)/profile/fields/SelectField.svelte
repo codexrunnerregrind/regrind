@@ -36,7 +36,7 @@
 			>
 				<span class={inlineLabelClass}>{label}</span>
 				<span class="ms-auto flex min-w-0 items-center gap-1">
-					<span class={[valueClass, !selected && "text-muted-foreground"]}>
+					<span class={[valueClass, { "text-muted-foreground": !selected }]}>
 						{selected?.label ?? placeholder}
 					</span>
 					<CaretUpDownIcon class="size-4 shrink-0 text-muted-foreground/70" />

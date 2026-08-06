@@ -21,7 +21,7 @@ const {
 	viewHandlers: [] as ((event: unknown) => void)[],
 }));
 
-vi.mock("$lib/api/error", () => ({ showErrorToast: showErrorToastMock }));
+vi.mock("$lib/api/error-toast", () => ({ showErrorToast: showErrorToastMock }));
 vi.mock("$lib/api/interest/views", () => ({ getViews: getViewsMock }));
 vi.mock("$lib/util/reconcile", () => ({
 	reconciler: {
@@ -31,8 +31,14 @@ vi.mock("$lib/util/reconcile", () => ({
 		},
 	},
 }));
+import { clearAccountCaches } from "$lib/api/account-caches";
+import { mergeProfileEditIntoCaches } from "$lib/api/users/profiles";
 import type { ViewerProfile, ViewPreview } from "$lib/model/interest/views";
-import { resetViewsCacheForTesting, ViewsState } from "./views-state.svelte";
+import {
+	getViewsState,
+	resetViewsCacheForTesting,
+	ViewsState,
+} from "./views-state.svelte";
 
 vi.mock("$lib/ws.svelte", async (importOriginal) => ({
 	...(await importOriginal<typeof import("$lib/ws.svelte")>()),
@@ -120,6 +126,9 @@ function viewEvent(profileId: number) {
 type ViewsSnapshot = { profiles: ViewerProfile[]; previews: ViewPreview[] };
 
 beforeEach(() => {
+	// Both layers: the account-scoped instance, and the module-level snapshot
+	// that seeds the list on a revisit. Leaving either behind leaks state.
+	clearAccountCaches();
 	resetViewsCacheForTesting();
 	getViewsMock.mockReset();
 	showErrorToastMock.mockReset();
@@ -287,6 +296,32 @@ describe("ViewsState", () => {
 		});
 	});
 
+	it("follows a favorite change made elsewhere, and stops after destroy", async () => {
+		getViewsMock.mockResolvedValue({ profiles: [profile(1)], previews: [] });
+		const state = new ViewsState();
+		await waitForLoaded(state);
+
+		mergeProfileEditIntoCaches({
+			cacheProfileId: 1,
+			patch: { isFavorite: true },
+		});
+		expect(state.views[0]).toMatchObject({
+			type: "profile",
+			profile: { isFavorite: true },
+		});
+
+		state.destroy();
+		mergeProfileEditIntoCaches({
+			cacheProfileId: 1,
+			patch: { isFavorite: false },
+		});
+
+		expect(state.views[0]).toMatchObject({
+			type: "profile",
+			profile: { isFavorite: true },
+		});
+	});
+
 	it("cleans up subscriptions on destroy", async () => {
 		getViewsMock.mockResolvedValue({ profiles: [profile(1)], previews: [] });
 		const state = new ViewsState();
@@ -310,5 +345,27 @@ describe("ViewsState", () => {
 		expect(unsubscribeReconcileMock).toHaveBeenCalledOnce();
 		await vi.waitFor(() => expect(unlistenViewMock).toHaveBeenCalledOnce());
 		expect(state.views).toHaveLength(1);
+	});
+});
+
+describe("getViewsState", () => {
+	it("keeps one loaded state per account across revisits", async () => {
+		getViewsMock.mockResolvedValue({ profiles: [profile(1)], previews: [] });
+
+		const state = getViewsState(99);
+		await waitForLoaded(state);
+		state.scrollY = 320;
+
+		const revisited = getViewsState(99);
+		revisited.load();
+
+		expect(revisited).toBe(state);
+		expect(revisited.scrollY).toBe(320);
+		expect(getViewsMock).toHaveBeenCalledTimes(1);
+
+		clearAccountCaches();
+
+		expect(getViewsState(99)).not.toBe(state);
+		expect(unsubscribeReconcileMock).toHaveBeenCalledOnce();
 	});
 });

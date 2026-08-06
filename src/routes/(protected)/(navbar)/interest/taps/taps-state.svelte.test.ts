@@ -21,7 +21,7 @@ const {
 	unlistenTapMock: vi.fn(),
 }));
 
-vi.mock("$lib/api/error", () => ({ showErrorToast: showErrorToastMock }));
+vi.mock("$lib/api/error-toast", () => ({ showErrorToast: showErrorToastMock }));
 vi.mock("$lib/api/interest/taps", () => ({
 	getReceivedTaps: getReceivedTapsMock,
 }));
@@ -33,8 +33,13 @@ vi.mock("$lib/util/reconcile", () => ({
 		},
 	},
 }));
+import { clearAccountCaches } from "$lib/api/account-caches";
 import type { TapProfile } from "$lib/model/interest/tap-profile";
-import { resetTapsCacheForTesting, TapsState } from "./taps-state.svelte";
+import {
+	getTapsState,
+	resetTapsCacheForTesting,
+	TapsState,
+} from "./taps-state.svelte";
 
 vi.mock("$lib/ws.svelte", async (importOriginal) => ({
 	...(await importOriginal<typeof import("$lib/ws.svelte")>()),
@@ -112,6 +117,9 @@ function tapEvent(senderId: number, recipientId: number) {
 }
 
 beforeEach(() => {
+	// Both layers: the account-scoped instance, and the module-level snapshot
+	// that seeds the list on a revisit. Leaving either behind leaks state.
+	clearAccountCaches();
 	resetTapsCacheForTesting();
 	getReceivedTapsMock.mockReset();
 	showErrorToastMock.mockReset();
@@ -269,5 +277,27 @@ describe("TapsState", () => {
 		expect(unsubscribeReconcileMock).toHaveBeenCalledOnce();
 		await vi.waitFor(() => expect(unlistenTapMock).toHaveBeenCalledOnce());
 		expect(state.taps).toEqual([tap(2)]);
+	});
+});
+
+describe("getTapsState", () => {
+	it("keeps one loaded state per account across revisits", async () => {
+		getReceivedTapsMock.mockResolvedValue({ profiles: [tap(1)] });
+
+		const state = getTapsState(99);
+		await waitForLoaded(state);
+		state.visibleCount = 40;
+
+		const revisited = getTapsState(99);
+		revisited.load();
+
+		expect(revisited).toBe(state);
+		expect(revisited.visibleCount).toBe(40);
+		expect(getReceivedTapsMock).toHaveBeenCalledTimes(1);
+
+		clearAccountCaches();
+
+		expect(getTapsState(99)).not.toBe(state);
+		expect(unsubscribeReconcileMock).toHaveBeenCalledOnce();
 	});
 });

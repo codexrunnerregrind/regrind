@@ -5,7 +5,6 @@ import "photoswipe/style.css";
 import { goto } from "$app/navigation";
 import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
-import { callMethod } from "$lib/api";
 import {
 	type AlbumContentResponse,
 	getAlbumContent,
@@ -14,6 +13,7 @@ import {
 	sendAlbumContentReaction,
 	sendAlbumContentReply,
 } from "$lib/api/messaging/messages";
+import { callMethod } from "$lib/api/methods";
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 import { registerLightboxDownloadButton } from "./lightbox-download";
 import {
@@ -148,18 +148,22 @@ export async function openAlbumLightbox(
 			? {}
 			: {
 					onReply: async (reply, index) => {
+						const slide = album.content[index];
+						if (!slide) return;
 						await sendAlbumContentReply({
 							toUserId,
 							albumId: album.albumId,
-							albumContentId: album.content[index].contentId,
+							albumContentId: slide.contentId,
 							reply,
 						});
 					},
 					onReact: async (index) => {
+						const slide = album.content[index];
+						if (!slide) return;
 						await sendAlbumContentReaction({
 							toUserId,
 							albumId: album.albumId,
-							albumContentId: album.content[index].contentId,
+							albumContentId: slide.contentId,
 						});
 					},
 					onOpenChat: async () => {
@@ -187,9 +191,10 @@ export async function openAlbumLightbox(
 		counter: false,
 	});
 	lightbox.addFilter("numItems", () => album.content.length);
-	lightbox.addFilter("itemData", (_, index) => {
-		const { url, width, height } = album.content[index];
-		return { src: url, width, height };
+	lightbox.addFilter("itemData", (itemData, index) => {
+		const slide = album.content[index];
+		if (!slide) return itemData;
+		return { src: slide.url, width: slide.width, height: slide.height };
 	});
 	// A video draws its own poster; PhotoSwipe's placeholder would only sit
 	// behind it as a stretched blur.

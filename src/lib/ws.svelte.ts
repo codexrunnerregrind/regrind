@@ -2,7 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import z from "zod";
 
-import { tapTypeSchema } from "$lib/model/interest/taps";
+import { tapTypeOrNoneSchema } from "$lib/model/interest/taps";
 import { mediaHashPublicSchema } from "$lib/model/media";
 import { apiResponseMessageSchema } from "$lib/model/messaging/messages";
 import { unixTimestampMsSchema } from "$lib/model/types";
@@ -43,7 +43,7 @@ export const tapV1TapSentEventSchema = notificationEventSchema.safeExtend({
 		timestamp: unixTimestampMsSchema,
 		senderId: z.number(),
 		recipientId: z.number(),
-		tapType: tapTypeSchema.or(z.literal(3).transform(() => null)).nullable(),
+		tapType: tapTypeOrNoneSchema.nullable(),
 		senderProfileImageHash: mediaHashPublicSchema.nullable(),
 		senderDisplayName: z.string().nullable(),
 		isMutual: z.boolean(),
@@ -79,7 +79,7 @@ export type ChatV1ConversationReadEventPayload = z.infer<
 	typeof chatV1ConversationReadEventSchema
 >;
 
-export type WsStatus = "disconnected" | "connecting" | "connected" | "error";
+export type WsStatus = "disconnected" | "connected";
 
 // A hidden window shorter than this (opening the OS share sheet, a permission
 // prompt, a quick app switch) leaves the socket healthy, so we skip the liveness
@@ -101,16 +101,11 @@ class WsState {
 			this.status = "disconnected";
 		}).catch(console.error);
 
-		listen<string>("ws:ws_error", (event) => {
-			console.error("[ws] server error", event.payload);
-		}).catch(console.error);
-
 		this.#registerLifecycle();
 	}
 
 	connect(): void {
 		console.log("[ws] connecting...");
-		if (this.status === "disconnected") this.status = "connecting";
 		invoke("ws_connect").catch((e: unknown) => {
 			console.error("[ws] connect failed", e);
 		});

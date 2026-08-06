@@ -1,6 +1,22 @@
 import type { CDPSession, Page } from "@playwright/test";
 
 export const DEMO_CONVERSATION = "/chat/100001:123456000";
+export const DEMO_GEOHASH = "u33dc0cpgp00";
+
+export async function ensureGridLocation(page: Page): Promise<void> {
+	const allFilters = page.locator('[aria-label="All filters"]');
+	if ((await allFilters.count()) === 0) {
+		await page.keyboard.press("Meta+k");
+		const palette = page.getByRole("combobox");
+		await palette.waitFor();
+		await palette.fill(`@${DEMO_GEOHASH}`);
+		await page
+			.locator(`[role="option"][data-value="@${DEMO_GEOHASH}"]`)
+			.waitFor();
+		await page.keyboard.press("Enter");
+	}
+	await allFilters.waitFor({ timeout: 60_000 });
+}
 
 export async function installTauriShim(page: Page): Promise<void> {
 	await page.addInitScript(() => {
@@ -80,6 +96,8 @@ export async function installMobileLocation(
 		([lat, lon]) => {
 			const win = window as unknown as Record<string, Record<string, unknown>>;
 			const internals = win.__TAURI_INTERNALS__;
+			// The shim installs these before this script runs, so both are present.
+			if (!internals || !win.__TAURI_OS_PLUGIN_INTERNALS__) return;
 			const original = internals.invoke as (
 				cmd: string,
 				args?: unknown,

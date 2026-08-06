@@ -3,8 +3,8 @@
 	import PlusIcon from "phosphor-svelte/lib/PlusIcon";
 	import { toast } from "svelte-sonner";
 
-	import { ApiError } from "$lib/api";
-	import { showErrorToast } from "$lib/api/error";
+	import { ApiError } from "$lib/api/api-error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import {
 		createAlbum,
 		deleteAlbum,

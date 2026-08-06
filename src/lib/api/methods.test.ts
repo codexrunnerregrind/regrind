@@ -1,20 +1,25 @@
 import { describe, expect, it, vi } from "vitest";
-import z from "zod";
 
 import {
 	asAppError,
 	asBanned,
 	banInfoSchema,
-	parseApiResponse,
+	callMethod,
+	methods,
 	restrictionSchema,
-} from "$lib/api";
+} from "$lib/api/methods";
+import { demoCallMethod } from "$lib/demo";
+
+const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }));
+
+vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeMock }));
 
 describe("asAppError", () => {
 	it("formats string messages from structured app errors", () => {
-		expect(asAppError({ kind: "Auth", message: "Not logged in" })).toEqual({
+		expect(asAppError({ kind: "Auth", message: "Sign-in canceled" })).toEqual({
 			kind: "Auth",
-			message: "Not logged in",
-			prettyMessage: "Not logged in",
+			message: "Sign-in canceled",
+			prettyMessage: "Sign-in canceled",
 		});
 	});
 
@@ -29,6 +34,10 @@ describe("asAppError", () => {
 			message: { code: 429, message: "Rate limited" },
 			prettyMessage: "Error 429: Rate limited",
 		});
+	});
+
+	it("recognizes the message-less kinds the backend serializes as a bare tag", () => {
+		expect(asAppError({ kind: "NotLoggedIn" })?.kind).toBe("NotLoggedIn");
 	});
 
 	it("ignores unknown errors", () => {
@@ -92,45 +101,42 @@ describe("simulated account-status responses", () => {
 	});
 });
 
-describe("parseApiResponse", () => {
-	it("returns schema-parsed response data", () => {
-		const parsed = parseApiResponse({
-			path: "/v8/sessions",
-			method: "POST",
-			schema: z.object({
-				profileId: z.coerce.number().int().nonnegative(),
-			}),
-			data: { profileId: "123" },
-		});
+describe("callMethod", () => {
+	it("returns the response parsed by the declared schema", async () => {
+		invokeMock.mockResolvedValueOnce({ profileId: "42", restriction: null });
 
-		expect(parsed).toEqual({ profileId: 123 });
+		await expect(
+			callMethod("login", { email: "a@b.co", password: "hunter2" }),
+		).resolves.toEqual({ profileId: 42, restriction: null });
 	});
 
-	it("logs endpoint context before throwing validation errors", () => {
-		const consoleError = vi
-			.spyOn(console, "error")
-			.mockImplementation(() => {});
+	it("resolves the unit response of a command that returns nothing", async () => {
+		invokeMock.mockResolvedValueOnce(null);
 
-		expect(() =>
-			parseApiResponse({
-				path: "/v5/chat/conversation/abc/message",
-				method: "GET",
-				schema: z.object({
-					messages: z.array(z.object({ messageId: z.string() })),
-				}),
-				data: { messages: [{ messageId: 123 }] },
-			}),
-		).toThrow(z.ZodError);
+		await expect(callMethod("logout")).resolves.toBeNull();
+	});
 
-		expect(consoleError).toHaveBeenCalledWith(
-			"API response schema validation failed",
-			expect.objectContaining({
-				path: "/v5/chat/conversation/abc/message",
-				method: "GET",
-				response: { messages: [{ messageId: 123 }] },
-			}),
-		);
+	it("rejects a response that does not match the declared schema", async () => {
+		invokeMock.mockResolvedValueOnce({ profileId: "not a number" });
 
-		consoleError.mockRestore();
+		await expect(
+			callMethod("login", { email: "a@b.co", password: "hunter2" }),
+		).rejects.toThrow();
+	});
+
+	it("passes backend errors through untouched", async () => {
+		invokeMock.mockRejectedValueOnce({ kind: "Auth", message: "nope" });
+
+		await expect(callMethod("auth_state")).rejects.toEqual({
+			kind: "Auth",
+			message: "nope",
+		});
+	});
+});
+
+describe("demo command responses", () => {
+	it.each(Object.keys(methods))("%s matches its declared schema", (method) => {
+		const { response } = methods[method as keyof typeof methods];
+		expect(response.safeParse(demoCallMethod(method)).error).toBeUndefined();
 	});
 });

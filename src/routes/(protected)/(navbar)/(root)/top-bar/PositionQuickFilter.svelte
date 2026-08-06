@@ -1,16 +1,14 @@
 <script lang="ts">
 	import type z from "zod";
 
-	import {
-		defaultFilters,
-		filterPositionSchema,
-	} from "$lib/components/filters/filters";
 	import PositionFilterToggle from "$lib/components/filters/position/PositionFilterToggle.svelte";
 	import { Button, buttonVariants } from "$lib/components/ui/button";
 	import * as Drawer from "$lib/components/ui/drawer";
 	import { Switch } from "$lib/components/ui/switch";
 	import { gridState } from "$lib/grid/grid-state.svelte";
+	import { defaultFilters } from "$lib/model/browse/grid/filters";
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+	import type { filterPositionSchema } from "$lib/model/browse/grid/filters";
 
 	let {
 		open = $bindable(),
@@ -60,7 +58,7 @@
 			</div>
 			<Drawer.Title>Positions</Drawer.Title>
 			<div class="flex flex-1 justify-end">
-				<Switch id="positions-filter-enabled" bind:checked={enabled} />
+				<Switch aria-label="Filter by position" bind:checked={enabled} />
 			</div>
 		</Drawer.Header>
 		<div class="mb-2 flex flex-col gap-1.5 px-4">

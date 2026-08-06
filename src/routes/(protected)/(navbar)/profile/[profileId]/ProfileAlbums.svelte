@@ -3,8 +3,8 @@
 	import FolderOpenIcon from "phosphor-svelte/lib/FolderOpenIcon";
 	import PlusIcon from "phosphor-svelte/lib/PlusIcon";
 
-	import { ApiError } from "$lib/api";
-	import { showErrorToast } from "$lib/api/error";
+	import { ApiError } from "$lib/api/api-error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import {
 		createAlbum,
 		getAlbumsSharedByProfile,

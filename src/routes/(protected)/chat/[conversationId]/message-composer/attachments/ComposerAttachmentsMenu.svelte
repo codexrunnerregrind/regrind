@@ -176,9 +176,10 @@
 						type="button"
 						class={[
 							"pointer-events-auto flex h-11 items-center gap-1.5 rounded-full px-4 font-medium shadow-lg transition-colors",
-							expiring
-								? "bg-foreground text-background"
-								: "bg-popover text-foreground",
+							{
+								"bg-foreground text-background": expiring,
+								"bg-popover text-foreground": !expiring,
+							},
 						]}
 						aria-pressed={expiring}
 						aria-label="Toggle expiring photo"

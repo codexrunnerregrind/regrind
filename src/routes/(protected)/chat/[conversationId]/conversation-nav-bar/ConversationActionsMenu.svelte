@@ -3,7 +3,7 @@
 	import { DotsThreeIcon, ImageIcon, ProhibitIcon } from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import { openImageGalleryLightbox } from "$lib/chat/image-gallery";
 	import BlockProfileDialog from "$lib/components/profile/BlockProfileDialog.svelte";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
@@ -32,7 +32,7 @@
 				avatarUrl:
 					profile?.mediaHash === undefined || profile.mediaHash === null
 						? null
-						: profileMediaUrl(profile.mediaHash, "thumb"),
+						: profileMediaUrl({ mediaHash: profile.mediaHash, size: "thumb" }),
 				// The conversation profile reports metres, the viewer takes kilometres.
 				distanceKm:
 					profile?.distance === undefined || profile.distance === null
@@ -49,7 +49,10 @@
 				onReact: async (index: number) => {
 					const target = photos[index]?.message;
 					if (!target) return;
-					await conversationState.reactTo(target.messageId, FIRE_REACTION);
+					await conversationState.reactTo({
+						messageId: target.messageId,
+						reactionType: FIRE_REACTION,
+					});
 				},
 			},
 		};

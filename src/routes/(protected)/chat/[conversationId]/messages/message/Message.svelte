@@ -271,12 +271,13 @@
 	{#if firstInStack && dayStart !== undefined}
 		<MessageDateGroup {dayStart} />
 	{/if}
+
 	<div class="relative" {...swipe?.handlers}>
 		{#if swipe}
 			<div
 				class={[
 					"pointer-events-none absolute flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground",
-					isOut ? "right-0" : "left-0",
+					{ "right-0": isOut, "left-0": !isOut },
 				]}
 				style:top={bubbleCenterY !== null ? `${bubbleCenterY}px` : "50%"}
 				style:opacity={swipe.progress}

@@ -1,27 +1,17 @@
 <script lang="ts">
 	import { RulerIcon } from "phosphor-svelte";
-	import { onMount } from "svelte";
 
+	import { showErrorToast } from "$lib/api/error-toast";
 	import {
-		getPreferences,
-		getUnitsSnapshot,
+		getPreferencesSnapshot,
 		setPreferences,
 	} from "$lib/app-data/preferences.svelte";
 	import IconTile from "$lib/components/settings/IconTile.svelte";
 	import SettingsSegmented from "$lib/components/settings/SettingsSegmented.svelte";
 	import type { UnitSystem } from "$lib/util/units";
 
-	let value = $state<UnitSystem>(getUnitsSnapshot());
-
-	onMount(() => {
-		void getPreferences()
-			.then(({ units }) => {
-				value = units;
-			})
-			.catch((error) => {
-				console.error("Failed to load preferences", error);
-			});
-	});
+	let pending = $state<UnitSystem | null>(null);
+	const value = $derived(pending ?? getPreferencesSnapshot().units);
 
 	const options: { value: UnitSystem; label: string }[] = [
 		{ value: "metric", label: "Metric" },
@@ -45,10 +35,12 @@
 		{options}
 		bind:value={
 			() => value,
-			(units: UnitSystem) => {
-				value = units;
+			(next: string) => {
+				const units = (next || "metric") as UnitSystem;
+				pending = units;
 				setPreferences({ units }).catch((error) => {
-					console.error("Failed to save preferences", error);
+					pending = null;
+					showErrorToast({ label: "Failed to save preferences", error });
 				});
 			}
 		}

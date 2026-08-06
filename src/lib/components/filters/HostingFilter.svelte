@@ -1,11 +1,10 @@
 <script lang="ts">
+	import { HouseIcon } from "phosphor-svelte";
 	import type z from "zod";
 
 	import RadioGroup from "$lib/components/ui/radio/RadioGroup.svelte";
 	import RadioItem from "$lib/components/ui/radio/RadioItem.svelte";
-	import { HouseIcon } from "phosphor-svelte";
-
-	import { filterHostingSchema } from "$lib/components/filters/filters";
+	import type { filterHostingSchema } from "$lib/model/browse/grid/filters";
 
 	let { value = $bindable() }: { value: z.infer<typeof filterHostingSchema> } =
 		$props();

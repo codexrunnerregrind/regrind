@@ -1,24 +1,17 @@
 import z from "zod";
 
-import { fetchRest } from "$lib/api";
-import {
-	accountEpoch,
-	isAccountEpochCurrent,
-	registerAccountCache,
-} from "$lib/api/account-caches";
 import { ApiError } from "$lib/api/api-error";
 import { getBlockedUsers } from "$lib/api/browse/blocks";
+import { FetchCache } from "$lib/api/cache";
+import { fetchRest } from "$lib/api/transport";
 import { mediaHashPublicSchema } from "$lib/model/media";
 import { rightNowAttributionStatusSchema } from "$lib/model/right-now";
 import {
-	genderSchema,
 	type Profile,
 	profileRightNowSchema,
 	profileSchema,
 	profileShortSchema,
-	pronounSchema,
 } from "$lib/model/users/profiles";
-import { now } from "$lib/util/clock";
 
 function isProbablyUnavailable(profile: Profile) {
 	const nullFields = [
@@ -96,38 +89,16 @@ const profileResponseSchema = z.object({
 	profiles: z.array(profileSchema).length(1),
 });
 
-const profilesCache = new Map<
-	number,
-	{ profile: Profile; updatedAt: number }
->();
-
-const profilesInFlight = new Map<number, Promise<Profile>>();
-
-export async function getProfile(profileId: number): Promise<Profile> {
-	const cached = profilesCache.get(profileId);
-	if (cached && now() - cached.updatedAt < 1000 * 60) {
-		return cached.profile;
-	}
-	let request = profilesInFlight.get(profileId);
-	if (!request) {
-		request = fetchProfile(profileId).finally(() => {
-			profilesInFlight.delete(profileId);
-		});
-		profilesInFlight.set(profileId, request);
-	}
-	return request;
-}
-
 const MAGIC_PROFILE_UNAVAILABLE_DISPLAY_NAME = "3";
 const MAGIC_PROFILE_BLOCK_DISPLAY_NAME = "4";
 
 async function fetchProfile(profileId: number): Promise<Profile> {
-	const epoch = accountEpoch();
-	const profile = (
+	const [profile] = (
 		await fetchRest(`/v7/profiles/${profileId}`, {
 			method: "GET",
 		}).then((res) => res.jsonParsed(profileResponseSchema))
-	).profiles[0];
+	).profiles;
+	if (!profile) throw new ProfileUnavailableError();
 	if (isProbablyUnavailable(profile)) {
 		if (profile.displayName === MAGIC_PROFILE_BLOCK_DISPLAY_NAME) {
 			const blockedByUs = await getBlockedUsers().then((blocking) =>
@@ -138,10 +109,13 @@ async function fetchProfile(profileId: number): Promise<Profile> {
 			throw new ProfileUnavailableError();
 		}
 	}
-	if (isAccountEpochCurrent(epoch)) {
-		profilesCache.set(profileId, { profile, updatedAt: now() });
-	}
 	return profile;
+}
+
+const profiles = new FetchCache(fetchProfile, { ttlMs: 60_000 });
+
+export function getProfile(profileId: number): Promise<Profile> {
+	return profiles.fetch(profileId);
 }
 
 const profileShortWithRightNowSchema = z.object({
@@ -181,14 +155,11 @@ export async function getProfiles(
 }
 
 export function clearProfileCaches() {
-	profilesCache.clear();
-	profilesInFlight.clear();
+	profiles.clear();
 }
 
-registerAccountCache({ reset: clearProfileCaches });
-
 export function invalidateProfile(profileId: number) {
-	profilesCache.delete(profileId);
+	profiles.delete(profileId);
 }
 
 export type ProfileEdit = Partial<
@@ -225,10 +196,13 @@ export type ProfileEdit = Partial<
 export type ProfileUpdate = ProfileEdit &
 	Pick<Profile, "approximateDistance" | "profileTags">;
 
-export function applyProfileEdit(
-	base: Profile,
-	patch: Partial<Profile>,
-): Profile {
+export function applyProfileEdit({
+	base,
+	patch,
+}: {
+	base: Profile;
+	patch: Partial<Profile>;
+}): Profile {
 	const merged = { ...base, ...patch };
 	if (patch.socialNetworks) {
 		merged.socialNetworks = { ...base.socialNetworks, ...patch.socialNetworks };
@@ -236,29 +210,48 @@ export function applyProfileEdit(
 	return merged;
 }
 
-export function mergeProfileEditIntoCaches(
-	cacheProfileId: number,
-	patch: Partial<Profile>,
-) {
-	const cached = profilesCache.get(cacheProfileId);
-	if (cached) {
-		profilesCache.set(cacheProfileId, {
-			profile: applyProfileEdit(cached.profile, patch),
-			updatedAt: now(),
-		});
+export type ProfileEditListener = (edit: {
+	profileId: number;
+	patch: Partial<Profile>;
+}) => void;
+
+const profileEditListeners = new Set<ProfileEditListener>();
+
+export function onProfileEdit(listener: ProfileEditListener): () => void {
+	profileEditListeners.add(listener);
+	return () => {
+		profileEditListeners.delete(listener);
+	};
+}
+
+export function mergeProfileEditIntoCaches({
+	cacheProfileId,
+	patch,
+}: {
+	cacheProfileId: number;
+	patch: Partial<Profile>;
+}) {
+	profiles.update(cacheProfileId, (profile) =>
+		applyProfileEdit({ base: profile, patch }),
+	);
+	for (const listener of profileEditListeners) {
+		listener({ profileId: cacheProfileId, patch });
 	}
 }
 
-export async function patchOwnProfile(
-	cacheProfileId: number,
-	patch: ProfileEdit,
-) {
+export async function patchOwnProfile({
+	cacheProfileId,
+	patch,
+}: {
+	cacheProfileId: number;
+	patch: ProfileEdit;
+}) {
 	const res = await fetchRest("/v4/me/profile", {
 		method: "PATCH",
 		body: patch,
 	});
 	res.assertOk();
-	mergeProfileEditIntoCaches(cacheProfileId, patch);
+	mergeProfileEditIntoCaches({ cacheProfileId, patch });
 }
 
 const bannedTermsSchema = z
@@ -319,17 +312,20 @@ function readBannedTerms(body: string): ModeratedField[] | null {
 		.filter((entry) => entry.terms.length > 0);
 }
 
-export async function updateOwnProfile(
-	cacheProfileId: number,
-	profile: ProfileUpdate,
-) {
+export async function updateOwnProfile({
+	cacheProfileId,
+	profile,
+}: {
+	cacheProfileId: number;
+	profile: ProfileUpdate;
+}) {
 	const res = await fetchRest("/v3.1/me/profile", {
 		method: "PUT",
 		body: profile,
 	});
 
 	if (res.status === 200) {
-		mergeProfileEditIntoCaches(cacheProfileId, profile);
+		mergeProfileEditIntoCaches({ cacheProfileId, patch: profile });
 		return;
 	}
 
@@ -347,10 +343,13 @@ export async function updateOwnProfile(
 	});
 }
 
-export async function deleteProfilePhotos(
-	cacheProfileId: number,
-	mediaHashes: string[],
-) {
+export async function deleteProfilePhotos({
+	cacheProfileId,
+	mediaHashes,
+}: {
+	cacheProfileId: number;
+	mediaHashes: string[];
+}) {
 	if (mediaHashes.length === 0) return;
 	const res = await fetchRest("/v3/me/profile/images", {
 		method: "DELETE",
@@ -358,32 +357,10 @@ export async function deleteProfilePhotos(
 	});
 	res.assertOk();
 	const removed = new Set(mediaHashes);
-	const cached = profilesCache.get(cacheProfileId);
-	if (cached) {
-		profilesCache.set(cacheProfileId, {
-			profile: {
-				...cached.profile,
-				medias: cached.profile.medias.filter((m) => !removed.has(m.mediaHash)),
-			},
-			updatedAt: now(),
-		});
-	}
-}
-
-const gendersResponseSchema = z.array(genderSchema);
-
-export async function getGenders() {
-	return await fetchRest("/public/v2/genders").then((res) =>
-		res.jsonParsed(gendersResponseSchema),
-	);
-}
-
-const pronounsResponseSchema = z.array(pronounSchema);
-
-export async function getPronouns() {
-	return await fetchRest("/v1/pronouns").then((res) =>
-		res.jsonParsed(pronounsResponseSchema),
-	);
+	profiles.update(cacheProfileId, (profile) => ({
+		...profile,
+		medias: profile.medias.filter((m) => !removed.has(m.mediaHash)),
+	}));
 }
 
 export async function getProfileUploadedPhotos() {

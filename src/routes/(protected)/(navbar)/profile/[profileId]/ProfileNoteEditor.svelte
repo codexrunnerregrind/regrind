@@ -2,7 +2,7 @@
 	import { untrack } from "svelte";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import {
 		EMPTY_FAVORITE_NOTE,
 		favoriteNote,
@@ -159,7 +159,10 @@
 					<span
 						class={[
 							"shrink-0 text-caption tabular-nums",
-							tooLong ? "text-destructive" : "text-muted-foreground",
+							{
+								"text-destructive": tooLong,
+								"text-muted-foreground": !tooLong,
+							},
 						]}
 					>
 						{notesRemaining}

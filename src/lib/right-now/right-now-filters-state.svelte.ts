@@ -1,6 +1,6 @@
 import { isEqual } from "lodash-es";
 
-import { showErrorToast } from "$lib/api/error";
+import { showErrorToast } from "$lib/api/error-toast";
 import {
 	getPreferences,
 	setPreferences,
@@ -8,7 +8,7 @@ import {
 import {
 	defaultRightNowFilters,
 	type RightNowFilters,
-} from "$lib/components/filters/filters";
+} from "$lib/model/browse/grid/filters";
 
 export class RightNowSearchFiltersState {
 	value: RightNowFilters | null = $state(null);

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { toast } from "svelte-sonner";
 
-	import { callMethod } from "$lib/api";
+	import { callMethod } from "$lib/api/methods";
 	import { requestBlockedAlertState } from "$lib/api/request-blocked-state.svelte";
 	import * as AlertDialog from "$lib/components/ui/alert-dialog";
 	import { Checkbox } from "$lib/components/ui/checkbox";
@@ -42,28 +42,10 @@
 					submitting = true;
 					try {
 						const oldHeaders = await callMethod("rotate_api_params");
-						toast.success(
-							"Done. If you'd like to help investigate the issue, click 'Copy' and send this information to the developers.",
-							{
-								id: "rotate-api-params-success",
-								action: {
-									label: "Copy",
-									onClick: async () => {
-										const clipboard =
-											await import("@tauri-apps/plugin-clipboard-manager");
-										void clipboard
-											.writeText(
-												"Failed request parameters:\n" +
-													JSON.stringify(oldHeaders, null, 2),
-											)
-											.then(() => {
-												toast.success("Debug information copied to clipboard");
-											});
-										toast.dismiss("rotate-api-params-success");
-									},
-								},
-							},
-						);
+						toast.success("Successfully rotated device parameters", {
+							id: "rotate-api-params-success",
+						});
+						console.log("Rotated parameters from", oldHeaders);
 					} catch (error) {
 						console.error(error);
 					} finally {

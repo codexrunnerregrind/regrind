@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { Snippet } from "svelte";
 	import { setContext } from "svelte";
+	import type { Snippet } from "svelte";
 
 	let {
 		value = $bindable(""),

@@ -1,6 +1,6 @@
 import z from "zod";
 
-import { tapTypeSchema } from "$lib/model/interest/taps";
+import { tapTypeOrNoneSchema } from "$lib/model/interest/taps";
 import { viewSourceEnumSchema } from "$lib/model/interest/view-source";
 import { mediaHashPublicSchema } from "$lib/model/media";
 import {
@@ -254,25 +254,6 @@ export const vaccinesSchema = z.enum(Vaccine);
 
 export type VaccineId = z.infer<typeof vaccinesSchema>;
 
-export const genderSchema = z.object({
-	genderId: z.int(),
-	gender: z.string(),
-	displayGroup: z.int().optional(),
-	sortProfile: z.int().nullable().optional(),
-	genderPlural: z.string().nullable().optional(),
-	excludeOnProfileSelection: z.array(z.int()).nullable().optional(),
-	alsoClassifiedAs: z.array(z.int()).optional(),
-});
-
-export type Gender = z.infer<typeof genderSchema>;
-
-export const pronounSchema = z.object({
-	pronounId: z.int(),
-	pronoun: z.string(),
-});
-
-export type Pronoun = z.infer<typeof pronounSchema>;
-
 export const socialNetworksSchema = z.object({
 	twitter: z
 		.object({
@@ -399,7 +380,7 @@ export const profileSchema = profileShortSchema
 		hashtags: z.array(z.unknown()),
 		profileTags: z.array(z.string()),
 		tapped: z.boolean(),
-		tapType: tapTypeSchema.or(z.literal(3).transform(() => null)).nullable(),
+		tapType: tapTypeOrNoneSchema.nullable(),
 		lastReceivedTapTimestamp: z.number().nullable(),
 		isTeleporting: z.boolean(),
 		isRoaming: z.boolean(),

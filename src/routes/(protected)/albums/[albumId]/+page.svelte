@@ -11,7 +11,7 @@
 	} from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import {
 		type AlbumContentResponse,
 		deleteAlbum,
@@ -245,7 +245,7 @@
 							type="button"
 							class={[
 								"relative aspect-3/4 w-28 shrink-0 cursor-pointer overflow-hidden rounded-xl bg-card-foreground/10",
-								opening && "opacity-50",
+								{ "opacity-50": opening },
 							]}
 							aria-label="Open album"
 							disabled={opening || album.content.length === 0}

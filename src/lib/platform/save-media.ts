@@ -54,7 +54,7 @@ async function fetchMedia(
 	}
 	const mimeType =
 		hintMimeType ??
-		contentType?.split(";")[0].trim() ??
+		contentType?.split(";")[0]?.trim() ??
 		"application/octet-stream";
 	const isVideo = mimeType.startsWith("video/");
 	const extension =

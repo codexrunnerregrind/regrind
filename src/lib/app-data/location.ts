@@ -3,18 +3,14 @@ import {
 	getCurrentPosition,
 	requestPermissions,
 } from "@tauri-apps/plugin-geolocation";
-import { platform } from "@tauri-apps/plugin-os";
 
 import { encodeGeohash } from "$lib/model/geohash";
+import { isMobilePlatform } from "$lib/platform/os";
 import { setPreferences } from "./preferences.svelte";
 
 /** Whether the geolocation API is available on this platform (mobile only). */
 export function geoApiSupported(): boolean {
-	try {
-		return ["android", "ios"].includes(platform());
-	} catch {
-		return false;
-	}
+	return isMobilePlatform();
 }
 
 /** Thrown by {@link fetchCurrentGeohash} when location access is not granted. */
@@ -48,7 +44,7 @@ export async function fetchCurrentGeohash(request = true): Promise<string> {
 	const {
 		coords: { latitude, longitude },
 	} = await getCurrentPosition();
-	return encodeGeohash(latitude, longitude);
+	return encodeGeohash({ lat: latitude, lon: longitude });
 }
 
 /**

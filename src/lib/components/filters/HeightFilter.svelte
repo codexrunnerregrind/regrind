@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { getUnitsSnapshot } from "$lib/app-data/preferences.svelte";
+	import { getPreferencesSnapshot } from "$lib/app-data/preferences.svelte";
 	import FilterDropdown from "$lib/components/filters/FilterDropdown.svelte";
 	import { Slider } from "$lib/components/ui/slider";
+	import { HEIGHT_CM_MAX, HEIGHT_CM_MIN } from "$lib/model/browse/grid/filters";
 	import { formatHeight } from "$lib/util/units";
 
 	let {
@@ -9,7 +10,9 @@
 		value = $bindable(),
 	}: { checked: boolean; value: number[] } = $props();
 
-	const units = $derived(getUnitsSnapshot());
+	const units = $derived(getPreferencesSnapshot().units);
+	const min = $derived(value[0] ?? HEIGHT_CM_MIN);
+	const max = $derived(value[1] ?? HEIGHT_CM_MAX);
 </script>
 
 <div class="block w-full space-y-3">
@@ -17,8 +20,8 @@
 		id="height"
 		label="Height"
 		bind:checked
-		endLabel={`${value[0] === 120 ? "No min" : formatHeight(value[0], units)} - ${
-			value[1] === 242 ? "No max" : formatHeight(value[1], units)
+		endLabel={`${min === HEIGHT_CM_MIN ? "No min" : formatHeight(min, units)} - ${
+			max === HEIGHT_CM_MAX ? "No max" : formatHeight(max, units)
 		}`}
 		contentClass="ps-7 h-5"
 	>
@@ -31,9 +34,10 @@
 					value = v;
 				}
 			}
-			min={120}
-			max={242}
+			min={HEIGHT_CM_MIN}
+			max={HEIGHT_CM_MAX}
 			step={1}
+			thumbLabels={["Minimum height", "Maximum height"]}
 		/>
 	</FilterDropdown>
 </div>

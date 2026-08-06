@@ -7,7 +7,7 @@
 	} from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import {
 		AlbumLockedError,
 		type AlbumSharer,
@@ -16,7 +16,7 @@
 		openAlbumLightbox,
 	} from "$lib/chat/album-viewer";
 	import { profileMediaUrl } from "$lib/util/media";
-	import { getNow, subscribeNow } from "$lib/util/now.svelte";
+	import { getNow } from "$lib/util/now";
 	import type { AlbumMessage } from "$lib/model/messaging/messages";
 	import { getConversationState } from "../../conversation-state.svelte";
 	import { albumExpiry } from "./album-expiry";
@@ -29,12 +29,6 @@
 	const conversation = $derived(getConversationState()());
 
 	const expiry = $derived(albumExpiry(message, getNow()));
-
-	// Only tick the shared clock while an expiring album is on screen.
-	$effect(() => {
-		if (expiry === null) return;
-		return subscribeNow();
-	});
 
 	const className: import("svelte/elements").ClassValue = $derived([
 		"aspect-3/4 h-auto relative",
@@ -61,7 +55,7 @@
 			avatarUrl:
 				profile?.mediaHash === undefined || profile.mediaHash === null
 					? null
-					: profileMediaUrl(profile.mediaHash, "thumb"),
+					: profileMediaUrl({ mediaHash: profile.mediaHash, size: "thumb" }),
 			// The conversation profile reports metres, the viewer takes kilometres.
 			distanceKm:
 				profile?.distance === undefined || profile.distance === null
@@ -117,6 +111,7 @@
 				"opacity-50": phase === "loading",
 			},
 		]}
+		aria-label="Open album"
 		onclick={() => void openAlbum()}
 		disabled={phase !== "idle"}
 		bind:this={media.el}
@@ -144,7 +139,10 @@
 				<div
 					class={[
 						"absolute top-1.5 left-1.5 flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-white",
-						expiry.expired ? "bg-destructive/80" : "bg-black/60",
+						{
+							"bg-destructive/80": expiry.expired,
+							"bg-black/60": !expiry.expired,
+						},
 					]}
 				>
 					<ClockIcon weight="fill" class="size-3.5 shrink-0" />

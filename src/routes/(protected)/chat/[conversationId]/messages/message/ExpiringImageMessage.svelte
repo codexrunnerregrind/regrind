@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { ImagesIcon } from "phosphor-svelte";
 
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import { getSingleMessage } from "$lib/api/messaging/messages";
 	import { openImageGalleryLightbox } from "$lib/chat/image-gallery";
 	import {
@@ -108,7 +108,7 @@
 				avatarUrl:
 					profile?.mediaHash === undefined || profile.mediaHash === null
 						? null
-						: profileMediaUrl(profile.mediaHash, "thumb"),
+						: profileMediaUrl({ mediaHash: profile.mediaHash, size: "thumb" }),
 				// The conversation profile reports metres, the viewer takes kilometres.
 				distanceKm:
 					profile?.distance === undefined || profile.distance === null
@@ -125,7 +125,10 @@
 					return Promise.resolve();
 				},
 				onReact: async () => {
-					await conversation.reactTo(messageId, FIRE_REACTION);
+					await conversation.reactTo({
+						messageId,
+						reactionType: FIRE_REACTION,
+					});
 				},
 			},
 		};

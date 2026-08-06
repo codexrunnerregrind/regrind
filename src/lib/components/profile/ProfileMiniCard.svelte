@@ -52,6 +52,12 @@
 			isVisiting ||
 			(rightNow !== null && rightNow !== "NOT_ACTIVE"),
 	);
+
+	// Only the text actually rendered on the card, so the card gets an
+	// aria-label exactly when it would otherwise announce nothing.
+	const hasVisibleText = $derived(
+		displayName !== null || age !== null || distance !== null,
+	);
 </script>
 
 {#snippet content()}
@@ -146,6 +152,7 @@
 {#if href !== null}
 	<a
 		{href}
+		aria-label={hasVisibleText ? undefined : "Profile"}
 		class={["relative flex aspect-square items-end overflow-hidden", className]}
 	>
 		{@render content()}

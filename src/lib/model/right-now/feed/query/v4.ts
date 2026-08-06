@@ -1,10 +1,10 @@
 import z from "zod";
 
 import {
-	filterPositionSchema,
 	filterHostingSchema,
+	filterPositionSchema,
 	filterRightNowSortSchema,
-} from "$lib/components/filters/filters";
+} from "$lib/model/browse/grid/filters";
 
 export const rightNowV4QuerySchema = z.object({
 	sort: filterRightNowSortSchema,

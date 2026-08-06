@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
-	import TopBar from "./top-bar/TopBar.svelte";
+	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
 	import RightNowFeed from "./RightNowFeed.svelte";
+	import TopBar from "./top-bar/TopBar.svelte";
 
 	let { data }: import("./$types").PageProps = $props();
 

@@ -5,7 +5,7 @@
 	import ImageBrokenIcon from "phosphor-svelte/lib/ImageBrokenIcon";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import {
 		ensureAlbumSharesSwept,
 		getAlbumShared,
@@ -22,10 +22,10 @@
 	import * as Empty from "$lib/components/ui/empty";
 	import { Skeleton } from "$lib/components/ui/skeleton";
 	import {
-		AlbumExpiration,
 		type AlbumExpirationType,
 		type MyAlbum,
 	} from "$lib/model/messaging/albums";
+	import type { AlbumExpiration } from "$lib/model/messaging/albums";
 	import { getConversationState } from "../../conversation-state.svelte";
 
 	// Expiry choices, ordered to match the official app.
@@ -200,7 +200,10 @@
 					type="button"
 					class={[
 						"relative aspect-3/4 rounded-[inherit] outline-3 -outline-offset-3 transition-[outline]",
-						isSelected ? "outline-primary" : "outline-transparent",
+						{
+							"outline-primary": isSelected,
+							"outline-transparent": !isSelected,
+						},
 					]}
 					aria-pressed={isSelected}
 					aria-label={isSelected ? "Deselect album" : "Select album"}

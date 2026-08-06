@@ -41,7 +41,7 @@
 	bgClass="bg-linear-to-b from-background to-transparent"
 	contentClass="w-full"
 >
-	<PillTabs {tabs} value={tabs[activeIndex].value} onSelect={select} />
+	<PillTabs {tabs} value={tabs[activeIndex]?.value ?? ""} onSelect={select} />
 </ProgressiveBlur>
 <div
 	class="contents"

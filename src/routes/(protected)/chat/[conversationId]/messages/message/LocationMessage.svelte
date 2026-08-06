@@ -27,7 +27,7 @@
 	// to a web URL (browser) on desktop where no maps app scheme exists.
 	function mapsUrl(): string {
 		const { lat, lon } = message;
-		let os = "";
+		let os: string;
 		try {
 			os = platform();
 		} catch {

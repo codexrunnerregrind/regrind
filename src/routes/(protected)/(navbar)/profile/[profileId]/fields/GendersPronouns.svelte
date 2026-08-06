@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { getGenders } from "$lib/api/users/genders";
-	import { fetchPronouns } from "$lib/api/users/pronouns";
+	import { getPronouns } from "$lib/api/users/pronouns";
 	import Separator from "$lib/components/ui/separator/separator.svelte";
 	import { Spinner } from "$lib/components/ui/spinner";
 	import ProfileField from "./ProfileField.svelte";
 
-	let allGenders = $derived(getGenders());
-	let allPronouns = $derived(fetchPronouns());
+	const allGenders = $derived(getGenders());
+	const allPronouns = $derived(getPronouns());
 
 	let {
 		genders = null,
@@ -24,6 +24,7 @@
 			width="1em"
 			height="1em"
 			viewBox="0 0 24 24"
+			aria-hidden="true"
 			class="shrink-0"
 		>
 			<!-- Icon from Lucide by Lucide Contributors - https://github.com/lucide-icons/lucide/blob/main/LICENSE -->

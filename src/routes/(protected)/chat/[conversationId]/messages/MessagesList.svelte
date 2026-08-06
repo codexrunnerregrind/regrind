@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import {
 		getAlbumShared,
 		setAlbumShared,
@@ -72,7 +72,7 @@
 		stackLength={message.stackLength}
 		dayStart={message.dayStart}
 		status={message.status}
-		isRead={isOut && message.messageId === messages[0].messageId
+		isRead={isOut && message.messageId === messages[0]?.messageId
 			? conversationState.lastReadTimestamp === message.timestamp
 			: null}
 		onVisible={!isOut
@@ -103,7 +103,10 @@
 		onReply={() => conversationState.setReplyTo(message)}
 		onReact={async (reactionType: number) => {
 			try {
-				await conversationState.reactTo(message.messageId, reactionType);
+				await conversationState.reactTo({
+					messageId: message.messageId,
+					reactionType,
+				});
 			} catch (error) {
 				console.error(error);
 				showErrorToast({

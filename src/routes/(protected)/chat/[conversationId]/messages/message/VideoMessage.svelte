@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { VideoIcon } from "phosphor-svelte";
 
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import { getSingleMessage } from "$lib/api/messaging/messages";
 	import {
 		apiResponseMessageSchema,
@@ -123,7 +123,7 @@
 			"border border-border bg-input",
 			className,
 			contentClass,
-			loading ? "opacity-50" : "cursor-pointer",
+			{ "opacity-50": loading, "cursor-pointer": !loading },
 		]}
 		onclick={() => void loadVideo()}
 		disabled={loading}

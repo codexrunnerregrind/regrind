@@ -1,13 +1,17 @@
-export type ApiErrorKind =
-	| "Http"
-	| "Auth"
-	| "Api"
-	| "Unauthorized"
-	| "Banned"
-	| "RateLimited"
-	| "RequestBlocked"
-	| "NotInitialized"
-	| "SessionCleared";
+export const apiErrorKinds = [
+	"Http",
+	"Auth",
+	"NotLoggedIn",
+	"Api",
+	"Unauthorized",
+	"Banned",
+	"RateLimited",
+	"RequestBlocked",
+	"NotInitialized",
+	"SessionCleared",
+] as const;
+
+export type ApiErrorKind = (typeof apiErrorKinds)[number];
 
 export class ApiError extends Error {
 	readonly request: {
@@ -38,6 +42,7 @@ export class ApiError extends Error {
 	get retryable(): boolean {
 		if (this.kind === "Http") return true;
 		if (this.kind === "Auth" || this.kind === "Unauthorized") return true;
+		if (this.kind === "RequestBlocked") return true;
 		if (this.response !== null) {
 			const { status } = this.response;
 			if (status >= 500) return true;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import z from "zod";
 
+import { myAlbumsResponseSchema } from "$lib/api/messaging/albums";
 import { demoRoute } from "$lib/demo";
 import { demoMeProfileId } from "$lib/demo/config";
 import { cascadeV4ResponseSchema } from "$lib/model/browse/grid/cascade/response/v4";
@@ -10,7 +11,6 @@ import {
 	viewerProfileSchema,
 	viewPreviewSchema,
 } from "$lib/model/interest/views";
-import { myAlbumsResponseSchema } from "$lib/api/messaging/albums";
 import {
 	albumContentSchema,
 	albumDetailsSchema,
@@ -22,12 +22,15 @@ import {
 	expiringImageMessageSchema,
 	previewLabel,
 } from "$lib/model/messaging/messages";
+import { favoriteNotesResponseSchema } from "$lib/model/users/favorites";
+import { gendersSchema } from "$lib/model/users/genders";
 import {
 	profileRightNowSchema,
 	profileSchema,
 	profileShortSchema,
 } from "$lib/model/users/profiles";
-import { favoriteNotesResponseSchema } from "$lib/model/users/favorites";
+import { pronounsSchema } from "$lib/model/users/pronouns";
+import { profileTagsResponseSchema } from "$lib/model/users/tags";
 
 const shortProfileSchema = z.object({
 	...profileShortSchema.shape,
@@ -35,7 +38,7 @@ const shortProfileSchema = z.object({
 });
 
 const route = (path: string, method = "GET", body?: unknown) =>
-	demoRoute(path, method, body).body;
+	demoRoute({ path, method, body }).body;
 
 describe("demo route data matches the real schemas", () => {
 	const firstProfileId = (
@@ -123,10 +126,10 @@ describe("demo route data matches the real schemas", () => {
 				`/v5/chat/conversation/${id}/message?profile=true`,
 			) as { messages: unknown[]; lastReadTimestamp: number | null };
 			const messages = z.array(apiResponseMessageSchema).parse(body.messages);
-			expect(messages.length).toBeGreaterThan(0);
-			expect(messages[0].timestamp).toBeGreaterThanOrEqual(
-				messages[messages.length - 1].timestamp,
-			);
+			const [newest] = messages;
+			const oldest = messages.at(-1);
+			if (!newest || !oldest) throw new Error(`no messages in ${id}`);
+			expect(newest.timestamp).toBeGreaterThanOrEqual(oldest.timestamp);
 		}
 	});
 
@@ -191,16 +194,20 @@ describe("demo route data matches the real schemas", () => {
 
 	it("sharing an album succeeds", () => {
 		const { albums } = myAlbumsResponseSchema.parse(route("/v1/albums"));
-		const albumId = albums[0].albumId;
-		const response = demoRoute(`/v4/albums/${albumId}/shares`, "POST", {
-			profiles: [{ profileId: 100001, expirationType: "INDEFINITE" }],
+		const albumId = albums[0]?.albumId;
+		const response = demoRoute({
+			path: `/v4/albums/${albumId}/shares`,
+			method: "POST",
+			body: { profiles: [{ profileId: 100001, expirationType: "INDEFINITE" }] },
 		});
 		expect(response.status).toBe(200);
 	});
 
 	it("unsharing an album succeeds", () => {
-		const response = demoRoute("/v1/albums/294604/unshares", "PUT", {
-			profiles: [{ profileId: 100001, shareId: 0 }],
+		const response = demoRoute({
+			path: "/v1/albums/294604/unshares",
+			method: "PUT",
+			body: { profiles: [{ profileId: 100001, shareId: 0 }] },
 		});
 		expect(response.status).toBe(200);
 	});
@@ -250,18 +257,30 @@ describe("demo route data matches the real schemas", () => {
 	});
 
 	it("reference data validates and mutations are accepted no-ops", () => {
-		expect(Array.isArray(route("/public/v2/genders"))).toBe(true);
-		expect(Array.isArray(route("/v1/pronouns"))).toBe(true);
-		expect(Array.isArray(route("/v1/tags"))).toBe(true);
-		expect(demoRoute("/v4/me/profile", "PATCH", { aboutMe: "x" }).status).toBe(
-			200,
-		);
-		expect(demoRoute("/v3/me/blocks/100001", "POST", undefined).status).toBe(
-			200,
-		);
-		expect(demoRoute("/v3/me/favorites/100001", "POST", undefined).status).toBe(
-			200,
-		);
+		gendersSchema.parse(route("/public/v2/genders"));
+		pronounsSchema.parse(route("/v1/pronouns"));
+		profileTagsResponseSchema.parse(route("/v1/tags"));
+		expect(
+			demoRoute({
+				path: "/v4/me/profile",
+				method: "PATCH",
+				body: { aboutMe: "x" },
+			}).status,
+		).toBe(200);
+		expect(
+			demoRoute({
+				path: "/v3/me/blocks/100001",
+				method: "POST",
+				body: undefined,
+			}).status,
+		).toBe(200);
+		expect(
+			demoRoute({
+				path: "/v3/me/favorites/100001",
+				method: "POST",
+				body: undefined,
+			}).status,
+		).toBe(200);
 	});
 
 	it("conversation pin/mute/delete mutations persist across inbox fetches", () => {
@@ -270,6 +289,8 @@ describe("demo route data matches the real schemas", () => {
 			return z.array(fullConversationSchema).parse(body.entries);
 		};
 		const [first, second, third] = inbox();
+		if (!first || !second || !third)
+			throw new Error("the demo inbox has fewer than three conversations");
 
 		route(
 			`/v4/chat/conversation/${first.data.conversationId}/${first.data.pinned ? "unpin" : "pin"}`,

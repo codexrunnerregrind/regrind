@@ -12,6 +12,7 @@
 		getDrawerMedia,
 	} from "$lib/api/messaging/drawer";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
+	import MediaImage from "$lib/components/shared/MediaImage.svelte";
 	import SelectionCheck from "$lib/components/shared/SelectionCheck.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import * as ContextMenu from "$lib/components/ui/context-menu";
@@ -85,6 +86,7 @@
 		const index = media.findIndex((item) => item.id === id);
 		if (index === -1) return;
 		const [removed] = media.splice(index, 1);
+		if (!removed) return;
 		if (selected.has(id)) {
 			selected.delete(id);
 			onSelectionChange(selected.size);
@@ -200,11 +202,10 @@
 							aria-pressed={isSelected}
 							onclick={() => toggleSelected(item.id)}
 						>
-							<img
+							<MediaImage
 								src={item.url}
-								alt=""
-								class="size-full rounded-[inherit] bg-card-foreground/10 object-cover"
-								draggable="false"
+								class="size-full rounded-[inherit]"
+								imgClass="bg-card-foreground/10"
 							/>
 							{#if isSelected}
 								<div

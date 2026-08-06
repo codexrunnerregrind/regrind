@@ -1,14 +1,14 @@
 import z from "zod";
 
-import { fetchRest } from "$lib/api";
+import { fetchRest } from "$lib/api/transport";
 import {
 	type ApiResponseMessage,
 	apiResponseMessageSchema,
-	messageSchema,
 } from "$lib/model/messaging/messages";
 import { unixTimestampMsSchema } from "$lib/model/types";
 import { ws } from "$lib/ws.svelte";
 import type { Conversation } from "$lib/model/messaging/conversations";
+import type { messageSchema } from "$lib/model/messaging/messages";
 
 const conversationMessagesSchema = z.object({
 	lastReadTimestamp: unixTimestampMsSchema.nullable(),
@@ -23,6 +23,30 @@ const conversationMessagesSchema = z.object({
 	}),
 });
 
+const unauthorizedActionSchema = z.object({
+	type: z.literal("urn:gr:err:unauthorized_action"),
+});
+
+export class ConversationUnavailableError extends Error {
+	readonly conversationId: string;
+
+	constructor(conversationId: string) {
+		super(`Conversation ${conversationId} is no longer available`);
+		this.name = "ConversationUnavailableError";
+		this.conversationId = conversationId;
+	}
+}
+
+function isUnauthorizedAction(body: string): boolean {
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(body);
+	} catch {
+		return false;
+	}
+	return unauthorizedActionSchema.safeParse(parsed).success;
+}
+
 export async function getConversationMessages({
 	conversationId,
 	pageKey,
@@ -32,11 +56,15 @@ export async function getConversationMessages({
 }) {
 	const params = new URLSearchParams({ profile: "true" });
 	if (pageKey !== undefined) params.set("pageKey", pageKey);
-	const messages = await fetchRest(
+	const res = await fetchRest(
 		`/v5/chat/conversation/${conversationId}/message?` + params.toString(),
 		{ method: "GET" },
-	).then((res) => res.jsonParsed(conversationMessagesSchema));
-	return messages;
+	);
+	if (res.status === 403 && isUnauthorizedAction(res.text())) {
+		throw new ConversationUnavailableError(conversationId);
+	}
+	res.assertOk();
+	return res.jsonParsed(conversationMessagesSchema);
 }
 
 export async function getSingleMessage({

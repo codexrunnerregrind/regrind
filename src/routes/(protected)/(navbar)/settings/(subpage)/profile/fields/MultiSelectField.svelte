@@ -38,7 +38,7 @@
 						class={[
 							valueClass,
 							"text-end",
-							!selectedLabels.length && "text-muted-foreground",
+							{ "text-muted-foreground": !selectedLabels.length },
 						]}
 					>
 						{selectedLabels.length ? selectedLabels.join(", ") : placeholder}

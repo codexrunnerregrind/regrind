@@ -45,8 +45,8 @@
 
 	onMount(() => {
 		void conversations.initial.then(tick).then(() => {
-			if (container && conversations.listScrollY > 0) {
-				container.scrollTop = conversations.listScrollY;
+			if (container && conversations.scrollY > 0) {
+				container.scrollTop = conversations.scrollY;
 			}
 		});
 	});
@@ -161,14 +161,14 @@
 		const conversationIds = selection.values();
 		const pinned = !allPinned;
 		exitSelection();
-		void conversations.setPinned(conversationIds, pinned);
+		void conversations.setPinned({ conversationIds, pinned });
 	}
 
 	function muteSelected() {
 		const conversationIds = selection.values();
 		const muted = !allMuted;
 		exitSelection();
-		void conversations.setMuted(conversationIds, muted);
+		void conversations.setMuted({ conversationIds, muted });
 	}
 
 	function requestDelete(conversationIds: string[]) {
@@ -193,7 +193,7 @@
 	function observeSentinel(node: HTMLElement) {
 		const observer = new IntersectionObserver(
 			(es) => {
-				if (es[0].isIntersecting)
+				if (es[0]?.isIntersecting)
 					conversations.loadMore().catch((error) => console.error(error));
 			},
 			{ rootMargin: "400px" },
@@ -246,10 +246,10 @@
 			data-scroll-root
 			class={[
 				"flex min-h-0 flex-1 flex-col gap-0 overflow-auto overscroll-contain px-0 pt-1 pb-0",
-				selecting && "pt-(--selection-bar-height)",
+				{ "pt-(--selection-bar-height)": selecting },
 				className,
 			]}
-			onscroll={() => (conversations.listScrollY = container?.scrollTop ?? 0)}
+			onscroll={() => (conversations.scrollY = container?.scrollTop ?? 0)}
 		>
 			{#await conversations.initial}
 				{#each Array(8)}

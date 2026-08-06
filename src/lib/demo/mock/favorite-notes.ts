@@ -18,7 +18,10 @@ const notes = new Map<number, Note>(
 		.filter((id) => profileSeed(id).favorite)
 		.sort((a, b) => distanceForId(a) - distanceForId(b) || a - b)
 		.slice(0, SEEDED.length)
-		.map((id, index): [number, Note] => [id, SEEDED[index]]),
+		.flatMap((id, index): [number, Note][] => {
+			const note = SEEDED[index];
+			return note ? [[id, note]] : [];
+		}),
 );
 
 export function demoFavoriteNote(profileId: number): Note | null {

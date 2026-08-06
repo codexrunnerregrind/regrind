@@ -8,8 +8,8 @@ const { fetchRestMock } = vi.hoisted(() => ({
 		>(),
 }));
 
-vi.mock("$lib/api", async (importOriginal) => ({
-	...(await importOriginal<typeof import("$lib/api")>()),
+vi.mock("$lib/api/transport", async (importOriginal) => ({
+	...(await importOriginal<typeof import("$lib/api/transport")>()),
 	fetchRest: fetchRestMock,
 }));
 
@@ -36,7 +36,7 @@ function ok(data: unknown) {
 		assertOk() {},
 		json: () => data,
 		jsonParsed: () => data,
-		text: () => (data == null ? "" : JSON.stringify(data)),
+		text: () => (data ? JSON.stringify(data) : ""),
 	};
 }
 
@@ -164,9 +164,12 @@ describe("applyProfileEdit", () => {
 			},
 		} as unknown as Profile;
 
-		const merged = applyProfileEdit(base, {
-			age: 21,
-			socialNetworks: { instagram: { userId: "ig" } },
+		const merged = applyProfileEdit({
+			base,
+			patch: {
+				age: 21,
+				socialNetworks: { instagram: { userId: "ig" } },
+			},
 		});
 
 		expect(merged.age).toBe(21);
@@ -186,8 +189,9 @@ describe("patchOwnProfile", () => {
 	it("merges a partial socialNetworks patch into the cached profile", async () => {
 		await getProfile(PROFILE_ID);
 
-		await patchOwnProfile(PROFILE_ID, {
-			socialNetworks: { instagram: { userId: "ig" } },
+		await patchOwnProfile({
+			cacheProfileId: PROFILE_ID,
+			patch: { socialNetworks: { instagram: { userId: "ig" } } },
 		});
 
 		expect((await getProfile(PROFILE_ID)).socialNetworks).toEqual({
@@ -200,7 +204,10 @@ describe("patchOwnProfile", () => {
 
 describe("updateOwnProfile", () => {
 	it("uses the full-replace PUT endpoint", async () => {
-		await updateOwnProfile(PROFILE_ID, update({ displayName: "Neo" }));
+		await updateOwnProfile({
+			cacheProfileId: PROFILE_ID,
+			profile: update({ displayName: "Neo" }),
+		});
 
 		expect(fetchRestMock).toHaveBeenCalledWith(
 			"/v3.1/me/profile",
@@ -211,21 +218,39 @@ describe("updateOwnProfile", () => {
 	it("merges free-text fields the PATCH endpoint ignores into the cache", async () => {
 		await getProfile(PROFILE_ID);
 
-		await updateOwnProfile(
-			PROFILE_ID,
-			update({ displayName: "Neo", aboutMe: "the one" }),
-		);
+		await updateOwnProfile({
+			cacheProfileId: PROFILE_ID,
+			profile: update({ displayName: "Neo", aboutMe: "the one" }),
+		});
 
 		const cached = await getProfile(PROFILE_ID);
 		expect(cached.displayName).toBe("Neo");
 		expect(cached.aboutMe).toBe("the one");
 	});
 
+	it("merges a moderated edit made after the cache entry expired", async () => {
+		let clock = 1_000;
+		setNowForTesting(() => clock);
+		await getProfile(PROFILE_ID);
+
+		clock += 60_000;
+		await updateOwnProfile({
+			cacheProfileId: PROFILE_ID,
+			profile: update({ displayName: "Neo" }),
+		});
+
+		expect((await getProfile(PROFILE_ID)).displayName).toBe("Neo");
+		expect(countRequests("/v7/profiles/")).toBe(1);
+	});
+
 	it("merges into the cache when the server answers with an empty body", async () => {
 		await getProfile(PROFILE_ID);
 		fetchRestMock.mockImplementationOnce(() => Promise.resolve(okRaw("")));
 
-		await updateOwnProfile(PROFILE_ID, update({ displayName: "Trinity" }));
+		await updateOwnProfile({
+			cacheProfileId: PROFILE_ID,
+			profile: update({ displayName: "Trinity" }),
+		});
 
 		expect((await getProfile(PROFILE_ID)).displayName).toBe("Trinity");
 	});
@@ -243,10 +268,10 @@ describe("updateOwnProfile", () => {
 			),
 		);
 
-		const error = await updateOwnProfile(
-			PROFILE_ID,
-			update({ displayName: "BANNED_TERM" }),
-		).catch((e: unknown) => e);
+		const error = await updateOwnProfile({
+			cacheProfileId: PROFILE_ID,
+			profile: update({ displayName: "BANNED_TERM" }),
+		}).catch((e: unknown) => e);
 
 		expect(error).toBeInstanceOf(ProfileModerationError);
 		expect((error as ProfileModerationError).rejected).toEqual([
@@ -262,7 +287,10 @@ describe("updateOwnProfile", () => {
 		);
 
 		await expect(
-			updateOwnProfile(PROFILE_ID, update({ displayName: "Neo" })),
+			updateOwnProfile({
+				cacheProfileId: PROFILE_ID,
+				profile: update({ displayName: "Neo" }),
+			}),
 		).rejects.toThrow("status 400");
 
 		expect((await getProfile(PROFILE_ID)).displayName).toBeUndefined();
@@ -274,7 +302,10 @@ describe("updateOwnProfile", () => {
 		);
 
 		await expect(
-			updateOwnProfile(PROFILE_ID, update({ displayName: "Neo" })),
+			updateOwnProfile({
+				cacheProfileId: PROFILE_ID,
+				profile: update({ displayName: "Neo" }),
+			}),
 		).rejects.toThrow("status 500");
 	});
 
@@ -283,7 +314,10 @@ describe("updateOwnProfile", () => {
 		fetchRestMock.mockImplementationOnce(() => Promise.resolve(okRaw("", 204)));
 
 		await expect(
-			updateOwnProfile(PROFILE_ID, update({ displayName: "Neo" })),
+			updateOwnProfile({
+				cacheProfileId: PROFILE_ID,
+				profile: update({ displayName: "Neo" }),
+			}),
 		).rejects.toBeInstanceOf(Error);
 
 		expect((await getProfile(PROFILE_ID)).displayName).toBeUndefined();
@@ -294,13 +328,16 @@ describe("deleteProfilePhotos", () => {
 	it("removes the hash from the cached profile", async () => {
 		await getProfile(PROFILE_ID);
 
-		await deleteProfilePhotos(PROFILE_ID, ["a"]);
+		await deleteProfilePhotos({
+			cacheProfileId: PROFILE_ID,
+			mediaHashes: ["a"],
+		});
 
 		expect((await getProfile(PROFILE_ID)).medias).toEqual([{ mediaHash: "b" }]);
 	});
 
 	it("does not send a request when there are no hashes to remove", async () => {
-		await deleteProfilePhotos(PROFILE_ID, []);
+		await deleteProfilePhotos({ cacheProfileId: PROFILE_ID, mediaHashes: [] });
 
 		expect(fetchRestMock).not.toHaveBeenCalled();
 	});

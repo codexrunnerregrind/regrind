@@ -7,7 +7,7 @@
 	} from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import ToastUnimplemented from "$lib/components/feedback/ToastUnimplemented.svelte";
 	import BlockProfileDialog from "$lib/components/profile/BlockProfileDialog.svelte";
 	import { Button } from "$lib/components/ui/button";

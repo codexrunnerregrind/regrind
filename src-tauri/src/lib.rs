@@ -203,20 +203,7 @@ pub fn run() {
 
             storage::init_keyring();
 
-            let device = match DeviceStorage::load() {
-                Ok(Some(d)) => d,
-                Ok(None) => {
-                    let d = grindr::DeviceInfo::generate();
-                    if let Err(e) = DeviceStorage::save(&d) {
-                        tracing::error!("[setup] could not persist device info: {e}");
-                    }
-                    d
-                }
-                Err(e) => {
-                    tracing::warn!("[setup] could not load device info, regenerating: {e}");
-                    grindr::DeviceInfo::generate()
-                }
-            };
+            let device = DeviceStorage::load_or_create();
 
             let session = match AuthStorage::get_session() {
                 Ok(s) => s,
@@ -246,13 +233,10 @@ pub fn run() {
             }
 
             {
-                let saved_key = SigningKeyStorage::load().unwrap_or(None);
                 let client = client.clone();
                 let mut key_rx = client.signing_key_receiver();
                 tauri::async_runtime::spawn(async move {
-                    if let Some(k) = saved_key {
-                        client.restore_signing_key(k).await;
-                    }
+                    SigningKeyStorage::restore(&client).await;
                     while key_rx.changed().await.is_ok() {
                         match key_rx.borrow().clone() {
                             Some(k) => {

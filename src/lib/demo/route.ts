@@ -1,26 +1,28 @@
 import { demoMeProfileId } from "./config";
-import { demoBlockedUsers, demoSetBlocked } from "./mock/blocks";
 import {
 	demoAlbumContent,
 	demoAlbumSharesFor,
 	demoAlbumsSharedByProfile,
-	demoConversationMessages,
-	demoConversations,
 	demoCreateAlbum,
 	demoDeleteAlbum,
 	demoDeleteAlbumContent,
-	demoDeleteConversation,
-	demoDrawerMedia,
 	demoMyAlbums,
 	demoRenameAlbum,
 	demoReorderAlbumContent,
+	demoSharedAlbumsFeed,
+	demoUnshareAlbum,
+} from "./mock/albums";
+import { demoBlockedUsers, demoSetBlocked } from "./mock/blocks";
+import {
+	demoConversationMessages,
+	demoConversations,
+	demoDeleteConversation,
 	demoSentMessage,
 	demoSetConversationMuted,
 	demoSetConversationPinned,
-	demoSharedAlbumsFeed,
 	demoSingleMessage,
-	demoUnshareAlbum,
 } from "./mock/conversations";
+import { demoDrawerMedia } from "./mock/drawer";
 import {
 	demoDeleteFavoriteNote,
 	demoFavoriteNote,
@@ -51,26 +53,33 @@ export function demoCallMethod(method: string): unknown {
 		case "auth_state":
 			return demoMeProfileId;
 		case "login":
+		case "login_with_google":
 		case "google_sign_in":
 		case "refresh_token":
-			return { profileId: demoMeProfileId };
+			return { profileId: demoMeProfileId, restriction: null };
 		case "rotate_api_params":
 			return { "user-agent": "demo", "l-device-info": "demo" };
 		case "recaptcha_first_party_enabled":
 			return false;
 		default:
-			return undefined;
+			return null;
 	}
 }
 
-export function demoRoute(
-	path: string,
-	method: string,
-	body: unknown,
-): DemoResponse {
-	const [rawPath, queryString = ""] = path.split("?");
+export function demoRoute({
+	path,
+	method,
+	body,
+}: {
+	path: string;
+	method: string;
+	body: unknown;
+}): DemoResponse {
+	const [rawPath = "", queryString = ""] = path.split("?");
 	const params = new URLSearchParams(queryString);
 	const segments = rawPath.split("/").filter(Boolean);
+	const conversationId = segments[3] ?? "";
+	const messageId = segments[5] ?? "";
 
 	if (method === "GET" && rawPath === "/v4/cascade") {
 		return ok(demoCascadeV4(params));
@@ -145,12 +154,11 @@ export function demoRoute(
 		rawPath.startsWith("/v5/chat/conversation/") &&
 		rawPath.endsWith("/message")
 	) {
-		const conversationId = segments[3];
 		return ok(
-			demoConversationMessages(
+			demoConversationMessages({
 				conversationId,
-				params.get("pageKey") ?? undefined,
-			),
+				pageKey: params.get("pageKey") ?? undefined,
+			}),
 		);
 	}
 	if (
@@ -160,7 +168,7 @@ export function demoRoute(
 		segments[4] === "message" &&
 		segments.length === 6
 	) {
-		return ok(demoSingleMessage(segments[3], segments[5]));
+		return ok(demoSingleMessage({ conversationId, messageId }));
 	}
 	if (method === "POST" && rawPath === "/v3/pressie-albums/feed") {
 		return ok(demoSharedAlbumsFeed());
@@ -262,7 +270,10 @@ export function demoRoute(
 		segments.length === 5 &&
 		(segments[4] === "pin" || segments[4] === "unpin")
 	) {
-		demoSetConversationPinned(segments[3], segments[4] === "pin");
+		demoSetConversationPinned({
+			conversationId,
+			pinned: segments[4] === "pin",
+		});
 		return ok({});
 	}
 	if (
@@ -273,7 +284,10 @@ export function demoRoute(
 		segments.length === 5 &&
 		(segments[4] === "mute" || segments[4] === "unmute")
 	) {
-		demoSetConversationMuted(segments[3], segments[4] === "mute");
+		demoSetConversationMuted({
+			conversationId,
+			muted: segments[4] === "mute",
+		});
 		return ok({});
 	}
 	if (
@@ -283,7 +297,7 @@ export function demoRoute(
 		segments[2] === "conversation" &&
 		segments.length === 4
 	) {
-		demoDeleteConversation(segments[3]);
+		demoDeleteConversation(conversationId);
 		return ok({});
 	}
 	if (method === "GET" && rawPath.startsWith("/v4/chat/media/drawer/")) {

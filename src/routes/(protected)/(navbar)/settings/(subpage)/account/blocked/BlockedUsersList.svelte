@@ -2,7 +2,7 @@
 	import { toast } from "svelte-sonner";
 
 	import { getBlockedUsers, unblockUser } from "$lib/api/browse/blocks";
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import { getProfiles } from "$lib/api/users/profiles";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import ProfileItem from "$lib/components/profile/ProfileItem.svelte";

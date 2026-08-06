@@ -18,7 +18,11 @@
 	contentClass="flex items-center h-full"
 	tag="nav"
 >
-	<a href="/chat" class="flex h-full items-center py-4 pr-1 pl-3">
+	<a
+		href="/chat"
+		aria-label="Back to chats"
+		class="flex h-full items-center py-4 pr-1 pl-3"
+	>
 		<ArrowLeftIcon size={26} />
 	</a>
 	{#if conversationState.loading || conversationState.profile === null}

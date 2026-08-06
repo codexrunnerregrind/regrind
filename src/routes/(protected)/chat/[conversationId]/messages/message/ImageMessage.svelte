@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import { openImageGalleryLightbox } from "$lib/chat/image-gallery";
+	import MediaImage from "$lib/components/shared/MediaImage.svelte";
 	import { profileMediaUrl } from "$lib/util/media";
 	import type {
 		MediaViewerActions,
@@ -41,6 +42,9 @@
 			.reverse(),
 	);
 
+	let failedSrc: string | null = $state(null);
+	const failed = $derived(failedSrc === message.url);
+
 	let teardown: (() => void) | undefined;
 
 	// Their photos get the reply bar; our own side is browse-only, since there is
@@ -67,7 +71,7 @@
 				avatarUrl:
 					profile?.mediaHash === undefined || profile.mediaHash === null
 						? null
-						: profileMediaUrl(profile.mediaHash, "thumb"),
+						: profileMediaUrl({ mediaHash: profile.mediaHash, size: "thumb" }),
 				// The conversation profile reports metres, the viewer takes kilometres.
 				distanceKm:
 					profile?.distance === undefined || profile.distance === null
@@ -88,7 +92,10 @@
 				onReact: async (index) => {
 					const target = sideImages[index];
 					if (!target) return;
-					await conversationState.reactTo(target.messageId, FIRE_REACTION);
+					await conversationState.reactTo({
+						messageId: target.messageId,
+						reactionType: FIRE_REACTION,
+					});
 				},
 			},
 		};
@@ -132,23 +139,21 @@
 	bind:this={media.el}
 >
 	<a
-		href={message.url}
+		href={failed ? undefined : message.url}
 		rel="noreferrer"
 		aria-label="Open image"
+		aria-disabled={failed ? "true" : undefined}
 		class="item block"
 		onclick={openGallery}
 	>
-		<img
+		<MediaImage
 			src={message.url}
-			alt=""
-			class={[
-				"w-full rounded-lg bg-card-foreground/10 object-cover",
-				media.cornerClass,
-			]}
-			style:aspect-ratio={message.width !== null && message.height !== null
+			class={["w-full rounded-lg", media.cornerClass]}
+			imgClass="bg-card-foreground/10"
+			aspectRatio={message.width !== null && message.height !== null
 				? `${message.width} / ${message.height}`
 				: undefined}
-			draggable="false"
+			bind:failedSrc
 		/>
 	</a>
 	{@render media.adornments?.()}

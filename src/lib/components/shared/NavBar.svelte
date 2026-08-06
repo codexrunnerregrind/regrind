@@ -29,7 +29,6 @@
 		}
 	}
 
-
 	const myProfilePhotos = untrack(() =>
 		getProfile(ourProfileId).then((profile) => profile.medias),
 	);
@@ -97,6 +96,7 @@
 	</div>
 	<a
 		href="/settings"
+		aria-label="Me"
 		onclick={(e) =>
 			onTabClick(e, page.route.id === "/(protected)/(navbar)/settings/(me)")}
 		class={[

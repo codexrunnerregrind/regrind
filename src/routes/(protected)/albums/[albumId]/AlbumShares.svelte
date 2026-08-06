@@ -2,7 +2,7 @@
 	import { UsersThreeIcon } from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import { setAlbumShared } from "$lib/api/messaging/album-shares-state.svelte";
 	import { getAlbumShares, unshareAlbum } from "$lib/api/messaging/albums";
 	import { getProfiles } from "$lib/api/users/profiles";

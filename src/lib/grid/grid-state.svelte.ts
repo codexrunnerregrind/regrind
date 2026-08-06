@@ -1,13 +1,17 @@
 import { untrack } from "svelte";
-import z from "zod";
+import type z from "zod";
 
 import { registerAccountCache } from "$lib/api/account-caches";
-import { showErrorToast } from "$lib/api/error";
+import { showErrorToast } from "$lib/api/error-toast";
+import { onProfileEdit } from "$lib/api/users/profiles";
+import { WEIGHT_KG_MAX, WEIGHT_KG_MIN } from "$lib/model/browse/grid/filters";
+import { reconciler } from "$lib/util/reconcile";
 import type { cascadeV4QuerySchema } from "$lib/model/browse/grid/cascade/query/v4";
 import {
 	getCachedProfile,
 	getGrid,
 	type GridProfile,
+	patchCachedProfile,
 	resolveLazyProfile,
 	setCachedProfile,
 } from "./grid";
@@ -15,7 +19,7 @@ import { GridSearchFiltersState } from "./grid-search-filters-state.svelte";
 
 class GridState {
 	filters = new GridSearchFiltersState({ onRefresh: () => this.retry() });
-	items: GridProfile[] = $state([]);
+	items: GridProfile[] = $state.raw([]);
 	nextPage: number | null = $state(0);
 	loadingMore = $state(false);
 	loading = $state(false);
@@ -31,6 +35,20 @@ class GridState {
 	#geohash: string | null = null;
 	#resolvingIds = new Set<number>();
 	#fetchToken = 0;
+
+	setFavorite({
+		profileId,
+		isFavorite,
+	}: {
+		profileId: number;
+		isFavorite: boolean;
+	}): void {
+		patchCachedProfile({ id: profileId, patch: { isFavorite } });
+		const index = this.items.findIndex((item) => item.id === profileId);
+		const item = this.items[index];
+		if (!item || item.type !== "rendered") return;
+		this.items = this.items.with(index, { ...item, isFavorite });
+	}
 
 	load(geohash: string): void {
 		if (untrack(() => this.#geohash === geohash && this.items.length > 0))
@@ -88,7 +106,7 @@ class GridState {
 				pageNumber: this.nextPage,
 			});
 			if (token !== this.#fetchToken) return;
-			this.items.push(...result.items);
+			this.items = [...this.items, ...result.items];
 			this.nextPage = result.nextPage;
 		} catch (error) {
 			console.error(error);
@@ -112,7 +130,7 @@ class GridState {
 			const cached = getCachedProfile(id);
 			if (cached) {
 				const idx = this.items.findIndex((i) => i.id === id);
-				if (idx !== -1) this.items[idx] = cached;
+				if (idx !== -1) this.items = this.items.with(idx, cached);
 				return;
 			}
 
@@ -122,9 +140,9 @@ class GridState {
 			if (idx === -1) return;
 			if (resolved) {
 				setCachedProfile(resolved);
-				this.items[idx] = resolved;
+				this.items = this.items.with(idx, resolved);
 			} else {
-				this.items.splice(idx, 1);
+				this.items = this.items.toSpliced(idx, 1);
 			}
 		} catch (error) {
 			console.error(id, error);
@@ -184,8 +202,8 @@ class GridState {
 					heightCmMax: filters?.height[1],
 				}),
 				...(filters?.weightEnabled && {
-					weightGramsMin: filters?.weight[0] * 1000,
-					weightGramsMax: filters?.weight[1] * 1000,
+					weightGramsMin: (filters?.weight[0] ?? WEIGHT_KG_MIN) * 1000,
+					weightGramsMax: (filters?.weight[1] ?? WEIGHT_KG_MAX) * 1000,
 				}),
 				...(filters?.relationshipStatusesEnabled && {
 					relationshipStatuses: filters?.relationshipStatuses,
@@ -240,3 +258,8 @@ class GridState {
 export const gridState = new GridState();
 
 registerAccountCache({ reset: () => gridState.reset() });
+reconciler.subscribe(() => gridState.refresh());
+onProfileEdit(({ profileId, patch }) => {
+	if (patch.isFavorite === undefined) return;
+	gridState.setFavorite({ profileId, isFavorite: patch.isFavorite });
+});

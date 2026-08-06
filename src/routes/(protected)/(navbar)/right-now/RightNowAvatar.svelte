@@ -1,7 +1,7 @@
 <script lang="ts">
-	import * as Avatar from "$lib/components/ui/avatar";
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
-	import { getNow, subscribeNow } from "$lib/util/now.svelte";
+	import * as Avatar from "$lib/components/ui/avatar";
+	import { getNow } from "$lib/util/now";
 
 	let {
 		profileId,
@@ -15,9 +15,7 @@
 		onlineUntil: number | null;
 	} = $props();
 
-	$effect(() => subscribeNow());
-
-	const online = $derived(onlineUntil != null && onlineUntil > getNow());
+	const online = $derived(onlineUntil !== null && onlineUntil > getNow());
 </script>
 
 <a class="relative isolate inline-block" href="/profile/{profileId}">
@@ -28,7 +26,7 @@
 			class="size-16 overflow-hidden rounded-full bg-media-placeholder *:rounded-full"
 		/>
 		{#if online}
-			<Avatar.Badge class="right-1 bottom-1 bg-green-500"></Avatar.Badge>
+			<Avatar.Badge class="right-1 bottom-1 bg-green-500" />
 			<span class="sr-only">Online</span>
 		{/if}
 		<span class="sr-only">View profile</span>

@@ -97,10 +97,11 @@ export async function openImageGalleryLightbox(
 				: { top: 0, bottom: 0, left: 0, right: 0 },
 	});
 	lightbox.addFilter("numItems", () => images.length);
-	lightbox.addFilter("itemData", (_, index) => ({
-		src: images[index].url,
-		...sizes[index],
-	}));
+	lightbox.addFilter("itemData", (itemData, index) => {
+		const image = images[index];
+		if (!image) return itemData;
+		return { src: image.url, ...sizes[index] };
+	});
 	registerLightboxDownloadButton(lightbox, (index) => {
 		const image = images[index];
 		return image ? { url: image.url } : null;

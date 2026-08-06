@@ -1,15 +1,9 @@
-import type z from "zod";
-
-import { fetchRest } from "$lib/api";
+import { cachedFetch } from "$lib/api/cache";
+import { fetchRest } from "$lib/api/transport";
 import { profileTagsResponseSchema } from "$lib/model/users/tags";
 
-let cachedTags: z.infer<typeof profileTagsResponseSchema> | null = null;
-
-export async function getTags() {
-	if (cachedTags) return cachedTags;
-	const tags = await fetchRest("/v1/tags").then((res) =>
+export const getTags = cachedFetch(() =>
+	fetchRest("/v1/tags").then((res) =>
 		res.jsonParsed(profileTagsResponseSchema),
-	);
-	cachedTags = tags;
-	return tags;
-}
+	),
+);

@@ -74,8 +74,8 @@
 	variant={active ? "muted" : "default"}
 	class={[
 		"@container relative flex min-w-24 flex-nowrap items-stretch gap-0 rounded-none p-0",
-		!selected && !active && "can-hover:hover:bg-muted/40",
 		{
+			"can-hover:hover:bg-muted/40": !selected && !active,
 			"outline-2 -outline-offset-2 outline-primary outline-solid": selected,
 			"[-webkit-touch-callout:none] **:[-webkit-touch-callout:none]":
 				!!onLongPress,
@@ -86,7 +86,8 @@
 	{#if avatar.link}
 		<a
 			href={avatar.link}
-			class="flex items-center py-3 ps-4 pe-3 @max-row:hidden"
+			aria-label="{title.value ?? 'Someone'}'s profile"
+			class="flex items-center rounded-l-2xl py-3 ps-4 pe-3 @max-row:hidden"
 			tabindex={linkTabindex}
 		>
 			{@render avatarNode()}
@@ -100,6 +101,7 @@
 		</a>
 		<a
 			href={link}
+			aria-label={title.value ?? "Someone"}
 			class="min-w-24 rounded-2xl @row:hidden"
 			tabindex={linkTabindex}
 		>

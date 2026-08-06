@@ -1,11 +1,11 @@
 import { untrack } from "svelte";
-import z from "zod";
+import type z from "zod";
 
 import { registerAccountCache } from "$lib/api/account-caches";
+import { showErrorToast } from "$lib/api/error-toast";
 import type { rightNowV4QuerySchema } from "$lib/model/right-now/feed/query/v4";
-import { getPosts, type FeedPost } from "./posts";
+import { type FeedPost, getPosts } from "./posts";
 import { RightNowSearchFiltersState } from "./right-now-filters-state.svelte";
-import { showErrorToast } from "$lib/api/error";
 
 class RightNowState {
 	filters = new RightNowSearchFiltersState({ onRefresh: () => this.refresh() });

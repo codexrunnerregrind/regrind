@@ -1,7 +1,7 @@
 <script lang="ts">
+	import { CheckIcon } from "phosphor-svelte";
 	import { getContext } from "svelte";
 	import type { Snippet } from "svelte";
-	import { CheckIcon } from "phosphor-svelte";
 
 	let {
 		value: itemValue,
@@ -17,7 +17,7 @@
 		allowDeselect: boolean;
 	}>("radio-group");
 
-	function handleChange(e: Event) {
+	function handleChange() {
 		context.value = itemValue;
 	}
 
@@ -26,7 +26,7 @@
 			return;
 		}
 		const target = e.target as HTMLInputElement;
-		if (target.tagName != "INPUT") {
+		if (target.tagName !== "INPUT") {
 			return;
 		}
 		context.value = "";
@@ -39,7 +39,7 @@
 		}
 
 		const target = e.target as HTMLInputElement;
-		if (target.tagName != "INPUT") {
+		if (target.tagName !== "INPUT") {
 			return;
 		}
 

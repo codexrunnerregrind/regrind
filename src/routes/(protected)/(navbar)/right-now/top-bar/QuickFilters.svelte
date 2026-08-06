@@ -1,12 +1,13 @@
 <script lang="ts">
-	import { defaultRightNowFilters } from "$lib/components/filters/filters";
-	import { Button } from "$lib/components/ui/button";
-	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
-	import SortQuickFilter from "./SortQuickFilter.svelte";
-	import AgeQuickFilter from "./AgeQuickFilter.svelte";
-	import PositionQuickFilter from "./PositionQuickFilter.svelte";
-	import HostingQuickFilter from "./HostingQuickFilter.svelte";
 	import { SortAscendingIcon } from "phosphor-svelte";
+
+	import { Button } from "$lib/components/ui/button";
+	import { defaultRightNowFilters } from "$lib/model/browse/grid/filters";
+	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
+	import AgeQuickFilter from "./AgeQuickFilter.svelte";
+	import HostingQuickFilter from "./HostingQuickFilter.svelte";
+	import PositionQuickFilter from "./PositionQuickFilter.svelte";
+	import SortQuickFilter from "./SortQuickFilter.svelte";
 
 	let {
 		openFilters = $bindable(),

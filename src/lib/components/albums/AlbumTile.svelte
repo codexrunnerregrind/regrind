@@ -117,7 +117,7 @@
 	bind:this={tileElement}
 	class={[
 		"relative aspect-3/4 cursor-pointer rounded-lg [-webkit-touch-callout:none] **:[-webkit-touch-callout:none]",
-		loading && "opacity-50",
+		{ "opacity-50": loading },
 	]}
 	aria-label={unseen ? `Open ${title}, new content` : `Open ${title}`}
 	{disabled}

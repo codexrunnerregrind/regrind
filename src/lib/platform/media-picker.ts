@@ -1,9 +1,9 @@
 import { open } from "@tauri-apps/plugin-dialog";
 import { readFile } from "@tauri-apps/plugin-fs";
-import { platform } from "@tauri-apps/plugin-os";
 import { AndroidFs, type AndroidFsUri } from "tauri-plugin-android-fs-api";
 
 import { demoEnabled } from "$lib/demo";
+import { isAndroidPlatform } from "$lib/platform/os";
 
 type MediaFilter = {
 	name: string;
@@ -50,12 +50,12 @@ export type PickedMedia = { key: string; mimeType: string | null } & (
 );
 
 export async function pickMedia(kind: MediaKind): Promise<PickedMedia | null> {
-	const picked = await pick(kind, false);
+	const picked = await pick({ kind, multiple: false });
 	return picked[0] ?? null;
 }
 
 export function pickMultipleMedia(kind: MediaKind): Promise<PickedMedia[]> {
-	return pick(kind, true);
+	return pick({ kind, multiple: true });
 }
 
 export async function readMediaBytes(
@@ -71,14 +71,17 @@ export async function readMediaBytes(
 	}
 }
 
-async function pick(
-	kind: MediaKind,
-	multiple: boolean,
-): Promise<PickedMedia[]> {
+async function pick({
+	kind,
+	multiple,
+}: {
+	kind: MediaKind;
+	multiple: boolean;
+}): Promise<PickedMedia[]> {
 	const filter = filtersByKind[kind];
 
 	if (demoEnabled) {
-		const files = await pickWebFiles(filter, multiple);
+		const files = await pickWebFiles({ filter, multiple });
 		return files.map(
 			(file): PickedMedia => ({
 				source: "web",
@@ -89,7 +92,7 @@ async function pick(
 		);
 	}
 
-	if (platform() === "android") {
+	if (isAndroidPlatform()) {
 		const uris = await AndroidFs.showOpenFilePicker({
 			pickerType: "Gallery",
 			mimeTypes: filter.mimeTypes,
@@ -112,7 +115,11 @@ async function pick(
 		? await open({ filters, multiple: true })
 		: await open({ filters, multiple: false });
 	const paths =
-		selection == null ? [] : Array.isArray(selection) ? selection : [selection];
+		selection === null
+			? []
+			: Array.isArray(selection)
+				? selection
+				: [selection];
 	return paths.map(
 		(path): PickedMedia => ({
 			source: "desktop",
@@ -128,7 +135,13 @@ function mimeTypeFromPath(path: string): string | null {
 	return mimeTypesByExtension[extension] ?? null;
 }
 
-function pickWebFiles(filter: MediaFilter, multiple: boolean): Promise<File[]> {
+function pickWebFiles({
+	filter,
+	multiple,
+}: {
+	filter: MediaFilter;
+	multiple: boolean;
+}): Promise<File[]> {
 	return new Promise((resolve) => {
 		const input = document.createElement("input");
 		input.type = "file";

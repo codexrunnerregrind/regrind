@@ -1,8 +1,8 @@
 import z from "zod";
 
 import { mediaUrlSchema } from "$lib/model/media";
-import { unixTimestampMsSchema } from "$lib/model/types";
 import { rightNowStatusSchema } from "$lib/model/right-now";
+import { unixTimestampMsSchema } from "$lib/model/types";
 
 export const cascadeResponseProfileSchema = z.object({
 	profileId: z.int().nonnegative(),

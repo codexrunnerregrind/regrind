@@ -91,9 +91,11 @@
 	});
 
 	function markLoaded(img: HTMLImageElement, imgIndex: number) {
-		mediaStates[imgIndex].loaded = true;
-		mediaStates[imgIndex].width = img.naturalWidth;
-		mediaStates[imgIndex].height = img.naturalHeight;
+		const state = mediaStates[imgIndex];
+		if (!state) return;
+		state.loaded = true;
+		state.width = img.naturalWidth;
+		state.height = img.naturalHeight;
 	}
 
 	// When a post re-mounts on tab switch, an already-cached image is complete
@@ -165,7 +167,9 @@
 						profileId,
 						name: displayName,
 						fallbackName: "Right Now",
-						avatarUrl: mediaHash ? profileMediaUrl(mediaHash, "thumb") : null,
+						avatarUrl: mediaHash
+							? profileMediaUrl({ mediaHash: mediaHash, size: "thumb" })
+							: null,
 						// The feed reports metres, the viewer takes kilometres.
 						distanceKm: distance === null ? null : distance / 1000,
 					},
@@ -223,20 +227,21 @@
 				bind:this={mediaContainer}
 			>
 				{#each media as image, imgIndex (image.fullImageUrl)}
+					{@const state = mediaStates[imgIndex]}
 					<a
 						href={image.fullImageUrl}
 						aria-label="Open image"
-						data-pswp-width={mediaStates[imgIndex].width}
-						data-pswp-height={mediaStates[imgIndex].height}
+						data-pswp-width={state?.width}
+						data-pswp-height={state?.height}
 						class={[
 							"pswp-trigger overflow-hidden",
 							{
-								"pointer-events-none w-full": !mediaStates[imgIndex].loaded,
-								"cursor-pointer": mediaStates[imgIndex].loaded,
+								"pointer-events-none w-full": !state?.loaded,
+								"cursor-pointer": state?.loaded,
 							},
 						]}
 					>
-						{#if !mediaStates[imgIndex].loaded}
+						{#if !state?.loaded}
 							<div class="h-64 w-full animate-pulse rounded-lg bg-muted"></div>
 						{/if}
 
@@ -249,8 +254,8 @@
 							class={[
 								"max-h-64 w-full rounded-lg object-contain transition-opacity duration-300",
 								{
-									"opacity-0": !mediaStates[imgIndex].loaded,
-									"opacity-100": mediaStates[imgIndex].loaded,
+									"opacity-0": !state?.loaded,
+									"opacity-100": state?.loaded,
 									"blur-2xl": env.PUBLIC_ENABLE_BLUR_EFFECTS,
 								},
 							]}

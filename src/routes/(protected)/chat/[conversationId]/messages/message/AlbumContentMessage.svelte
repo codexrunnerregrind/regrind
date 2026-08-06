@@ -1,6 +1,6 @@
 <script lang="ts">
 	import fireEmoji from "$lib/assets/emojis/fire/32px.png";
-	import { getNow, subscribeNow } from "$lib/util/now.svelte";
+	import { getNow } from "$lib/util/now";
 	import type {
 		AlbumContentReactionMessage,
 		AlbumContentReplyMessage,
@@ -37,12 +37,6 @@
 		message.expiresAt !== null && message.expiresAt <= getNow(),
 	);
 
-	// Only tick the shared clock while an item that can lapse is on screen.
-	$effect(() => {
-		if (message.expiresAt === null || expired) return;
-		return subscribeNow();
-	});
-
 	const locked = $derived(
 		!message.viewable || message.previewUrl === null || expired,
 	);
@@ -67,7 +61,7 @@
 			// The preview references which album photo this is about; it is not the
 			// message itself, so it stays a thumbnail rather than matching the size
 			// of a shared album.
-			media.clone ? "w-full" : "w-24",
+			{ "w-full": media.clone, "w-24": !media.clone },
 			media.cornerClass,
 		]}
 	>

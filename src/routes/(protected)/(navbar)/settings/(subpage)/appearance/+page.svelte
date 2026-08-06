@@ -174,12 +174,12 @@
 					class={[
 						"flex size-10 items-center justify-center rounded-full transition",
 						"ring-2 ring-offset-2 ring-offset-card",
-						color === "neutral"
-							? "border border-border bg-muted text-foreground"
-							: undefined,
-						selected === color
-							? "ring-foreground/70"
-							: "ring-transparent active:scale-95",
+						{
+							"border border-border bg-muted text-foreground":
+								color === "neutral",
+							"ring-foreground/70": selected === color,
+							"ring-transparent active:scale-95": selected !== color,
+						},
 					]}
 					style={color === "neutral"
 						? undefined

@@ -1,15 +1,13 @@
 <script lang="ts">
 	import type z from "zod";
 
-	import {
-		defaultRightNowFilters,
-		filterRightNowSortSchema,
-	} from "$lib/components/filters/filters";
 	import RightNowSortFilter from "$lib/components/filters/RightNowSortFilter.svelte";
 	import { buttonVariants } from "$lib/components/ui/button";
 	import * as Drawer from "$lib/components/ui/drawer";
-	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
+	import { defaultRightNowFilters } from "$lib/model/browse/grid/filters";
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
+	import type { filterRightNowSortSchema } from "$lib/model/browse/grid/filters";
 
 	let {
 		open = $bindable(),

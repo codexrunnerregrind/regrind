@@ -21,6 +21,7 @@
 >
 	<ComposerButton
 		class="static ps-3.5 pe-1.5"
+		aria-label="Add attachment"
 		onclick={() => {
 			onClick?.();
 		}}

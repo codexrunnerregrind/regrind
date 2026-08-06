@@ -1,9 +1,9 @@
-import z from "zod";
+import type z from "zod";
 
-import { fetchRest } from "$lib/api";
+import { fetchRest } from "$lib/api/transport";
 import { rightNowV4QuerySchema } from "$lib/model/right-now/feed/query/v4";
 import { RightNowFeedResponseSchema } from "$lib/model/right-now/feed/response/v4";
-import { urlSearchParamsCodec } from "$lib/util/utils";
+import { urlSearchParamsCodec } from "$lib/util/url-search-params";
 
 export async function getRightNowFeedV4(
 	query: z.infer<typeof rightNowV4QuerySchema>,

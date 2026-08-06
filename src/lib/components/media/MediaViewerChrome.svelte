@@ -6,7 +6,7 @@
 	import UserIcon from "phosphor-svelte/lib/UserIcon";
 	import type PhotoSwipe from "photoswipe";
 
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import { getProfile } from "$lib/api/users/profiles";
 	import { getUnitsSnapshot } from "$lib/app-data/preferences.svelte";
 	import fireEmoji from "$lib/assets/emojis/fire/32px.png";
@@ -88,7 +88,10 @@
 	);
 	const avatarUrl = $derived(
 		profile?.profileImageMediaHash
-			? profileMediaUrl(profile.profileImageMediaHash, "thumb")
+			? profileMediaUrl({
+					mediaHash: profile.profileImageMediaHash,
+					size: "thumb",
+				})
 			: header.avatarUrl,
 	);
 	// The profile reports metres, the header prop kilometres.
@@ -255,7 +258,7 @@
 						<span
 							class={[
 								"h-1 w-6 min-w-1 rounded-full transition-colors",
-								i === index ? "bg-white" : "bg-white/35",
+								{ "bg-white": i === index, "bg-white/35": i !== index },
 							]}
 						></span>
 					{/each}
@@ -263,7 +266,7 @@
 					<span class="h-1 w-32 rounded-full bg-white/35">
 						<span
 							class="block h-full rounded-full bg-white transition-[width]"
-							style="width: {((index + 1) / count) * 100}%"
+							style:width="{((index + 1) / count) * 100}%"
 						></span>
 					</span>
 				{/if}
@@ -326,8 +329,10 @@
 							event.preventDefault();
 							event.currentTarget.form?.requestSubmit();
 						}}
-						class="h-11 w-full rounded-full bg-white/15 px-4 text-sm text-white backdrop-blur-md outline-none placeholder:text-white/60 focus-visible:ring-2 focus-visible:ring-white/40 disabled:opacity-60"
-						class:pe-12={draft.trim() !== ""}
+						class={[
+							"h-11 w-full rounded-full bg-white/15 px-4 text-sm text-white backdrop-blur-md outline-none placeholder:text-white/60 focus-visible:ring-2 focus-visible:ring-white/40 disabled:opacity-60",
+							{ "pe-12": draft.trim() !== "" },
+						]}
 					/>
 					{#if draft.trim() !== ""}
 						<button

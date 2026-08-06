@@ -1,9 +1,12 @@
 import { createContext } from "svelte";
 
-import { ApiError } from "$lib/api";
-import { showErrorToast } from "$lib/api/error";
+import { showErrorToast } from "$lib/api/error-toast";
 import { markConversationAsRead } from "$lib/api/messaging/conversations";
-import { reactToMessage, sendMessage } from "$lib/api/messaging/messages";
+import {
+	ConversationUnavailableError,
+	reactToMessage,
+	sendMessage,
+} from "$lib/api/messaging/messages";
 import { getPreferences } from "$lib/app-data/preferences.svelte";
 import { previewFromMessage } from "$lib/model/messaging/messages";
 import { now } from "$lib/util/clock";
@@ -139,6 +142,7 @@ export class ConversationState {
 	#wsPromises: Promise<() => void>[] = [];
 
 	#destroyed = false;
+	#refreshRequestedSinceFetchStart = false;
 	get destroyed(): boolean {
 		return this.#destroyed;
 	}
@@ -156,8 +160,13 @@ export class ConversationState {
 	}
 
 	async #reconcileMessages(): Promise<void> {
-		if (this.loading || this.#destroyed || this.refreshing) return;
+		if (this.#destroyed) return;
+		if (this.loading || this.refreshing) {
+			this.#refreshRequestedSinceFetchStart = true;
+			return;
+		}
 		this.refreshing = true;
+		this.#refreshRequestedSinceFetchStart = false;
 		try {
 			const result = await getConversation({
 				conversationId: this.conversationId,
@@ -170,9 +179,7 @@ export class ConversationState {
 				result.messages.map((m) => [m.messageId, m] as const),
 			);
 			const oldestServerTs =
-				result.messages.length > 0
-					? result.messages[result.messages.length - 1].timestamp
-					: Number.POSITIVE_INFINITY;
+				result.messages.at(-1)?.timestamp ?? Number.POSITIVE_INFINITY;
 
 			const newValue: OptimisticMessage[] = [];
 			const seenLocalIds = new Set<string>();
@@ -231,7 +238,7 @@ export class ConversationState {
 		} catch (error) {
 			if (this.#destroyed) return;
 			console.error("Failed to reconcile messages", error);
-			if (error instanceof ApiError && error.response?.status === 403) {
+			if (error instanceof ConversationUnavailableError) {
 				this.error = error;
 			} else {
 				showErrorToast({
@@ -241,7 +248,14 @@ export class ConversationState {
 			}
 		} finally {
 			this.refreshing = false;
+			this.#runRequestedRefresh();
 		}
+	}
+
+	#runRequestedRefresh(): void {
+		if (!this.#refreshRequestedSinceFetchStart) return;
+		this.#refreshRequestedSinceFetchStart = false;
+		void this.refresh();
 	}
 
 	refresh(): Promise<void> {
@@ -254,6 +268,7 @@ export class ConversationState {
 	}
 
 	async #initialLoad(): Promise<void> {
+		this.error = null;
 		const cached = this.#conversations.getCachedConversation(
 			this.conversationId,
 		);
@@ -271,7 +286,6 @@ export class ConversationState {
 			return;
 		}
 		this.loading = true;
-		this.error = null;
 		try {
 			const result = await getConversation({
 				conversationId: this.conversationId,
@@ -294,6 +308,7 @@ export class ConversationState {
 			this.error = err instanceof Error ? err : new Error(String(err));
 		} finally {
 			this.loading = false;
+			this.#runRequestedRefresh();
 		}
 	}
 
@@ -316,7 +331,7 @@ export class ConversationState {
 		} catch (error) {
 			if (this.#destroyed) return;
 			console.error(error);
-			if (error instanceof ApiError && error.response?.status === 403) {
+			if (error instanceof ConversationUnavailableError) {
 				this.error = error;
 			} else {
 				showErrorToast({
@@ -400,7 +415,7 @@ export class ConversationState {
 		let fallback: OptimisticMessage | undefined;
 		for (let i = this.messages.length - 1; i >= 0; i--) {
 			const candidate = this.messages[i];
-			if (candidate.status !== "pending") continue;
+			if (candidate?.status !== "pending") continue;
 			if (candidate.type === incoming.type) return candidate;
 			fallback ??= candidate;
 		}
@@ -423,11 +438,14 @@ export class ConversationState {
 				void _status;
 				return rest;
 			});
-		this.#conversations.setCachedConversation(this.conversationId, {
-			messages: cachedMessages,
-			profile: this.profile,
-			pageKey: this.pageKey,
-			lastReadTimestamp: this.lastReadTimestamp,
+		this.#conversations.setCachedConversation({
+			conversationId: this.conversationId,
+			data: {
+				messages: cachedMessages,
+				profile: this.profile,
+				pageKey: this.pageKey,
+				lastReadTimestamp: this.lastReadTimestamp,
+			},
 		});
 	}
 
@@ -444,8 +462,9 @@ export class ConversationState {
 
 		let revert = () => {};
 		const index = this.messages.findIndex((m) => m.messageId === messageId);
-		if (index > -1) {
-			const [removed] = this.messages.splice(index, 1);
+		const removed = this.messages[index];
+		if (removed) {
+			this.messages.splice(index, 1);
 			if (isLatest) this.#updatePreview(this.messages.at(0));
 			this.#syncCache();
 			const revertDeleteMessage = () => {
@@ -500,9 +519,9 @@ export class ConversationState {
 		this.#readQueue = [];
 		this.#readTimer = null;
 		this.#readDeadline = null;
-		if (queue.length === 0) return;
 		queue.sort((a, b) => a.timestamp - b.timestamp);
-		const highest = queue[queue.length - 1];
+		const highest = queue.at(-1);
+		if (!highest) return;
 		const { revealMessageRead } = await getPreferences();
 		if (revealMessageRead) {
 			try {
@@ -520,7 +539,13 @@ export class ConversationState {
 		}
 	}
 
-	async reactTo(messageId: string, reactionType: number): Promise<void> {
+	async reactTo({
+		messageId,
+		reactionType,
+	}: {
+		messageId: string;
+		reactionType: number;
+	}): Promise<void> {
 		const msg = this.messages.find((m) => m.messageId === messageId);
 		// The received-photos viewer reaches back past what the chat has loaded,
 		// so a message we can't show optimistically still gets its reaction sent.

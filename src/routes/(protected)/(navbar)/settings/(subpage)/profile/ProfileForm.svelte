@@ -1,5 +1,4 @@
 <script lang="ts">
-	import isEqual from "lodash-es/isEqual";
 	import {
 		FacebookLogoIcon,
 		InstagramLogoIcon,
@@ -10,7 +9,7 @@
 	import { expoOut } from "svelte/easing";
 	import { fly } from "svelte/transition";
 
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import {
 		deleteProfilePhotos,
 		ProfileModerationError,
@@ -27,18 +26,19 @@
 		acceptNSFWPics,
 		bodyTypes,
 		ethnicities,
-		type Gender,
 		healthPractices,
 		hivStatuses,
 		lookingFor as lookingForLabels,
 		meetAt as meetAtLabels,
 		type Profile,
-		type Pronoun,
 		relationshipStatuses,
 		sexualPositions,
 		tribes,
 		vaccines as vaccineLabels,
 	} from "$lib/model/users/profiles";
+	import { deepEqual } from "$lib/util/deep-equal";
+	import type { Gender } from "$lib/model/users/genders";
+	import type { Pronoun } from "$lib/model/users/pronouns";
 	import type { ProfileTagsResponse } from "$lib/model/users/tags";
 	import ComboField from "./fields/ComboField.svelte";
 	import DateField from "./fields/DateField.svelte";
@@ -217,8 +217,8 @@
 		};
 	}
 
-	let savedForm = $state(formSnapshot());
-	const dirty = $derived(!isEqual(formSnapshot(), savedForm));
+	let savedForm = $state.raw(formSnapshot());
+	const dirty = $derived(!deepEqual(formSnapshot(), savedForm));
 
 	async function save() {
 		if (saving || aboutMeOverLimit || !dirty) return;
@@ -262,8 +262,11 @@
 		);
 		try {
 			await Promise.all([
-				updateOwnProfile(ourProfileId, body),
-				deleteProfilePhotos(ourProfileId, removedHashes),
+				updateOwnProfile({ cacheProfileId: ourProfileId, profile: body }),
+				deleteProfilePhotos({
+					cacheProfileId: ourProfileId,
+					mediaHashes: removedHashes,
+				}),
 			]);
 			savedForm = formSnapshot();
 			toast.success("Profile updated");

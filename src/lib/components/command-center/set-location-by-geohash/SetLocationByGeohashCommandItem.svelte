@@ -2,7 +2,7 @@
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import { setPreferences } from "$lib/app-data/preferences.svelte";
 	import * as Command from "$lib/components/ui/command";
 	import { commandCenterClose } from "../command-center-state.svelte";
@@ -30,7 +30,10 @@
 <Command.Item
 	value={geohash === null ? "@" : `@${geohash}`}
 	disabled={geohash === null || geohash.length !== 12}
-	class={geohash === null ? "text-muted-foreground" : "gap-0 font-mono"}
+	class={{
+		"text-muted-foreground": geohash === null,
+		"gap-0 font-mono": geohash !== null,
+	}}
 	onSelect={() => {
 		if (geohash === null || geohash.length !== 12) return;
 		void setLocation(geohash);

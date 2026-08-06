@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { isTauri } from "@tauri-apps/api/core";
-	import { platform } from "@tauri-apps/plugin-os";
 	import "@fontsource-variable/ibm-plex-sans/wght.css";
 	import "@fontsource-variable/ibm-plex-sans/wght-italic.css";
 
@@ -19,6 +17,7 @@
 	} from "$lib/platform/android-native-bridge";
 	import { blockZoom } from "$lib/platform/block-zoom";
 	import { applyKeyboardInset } from "$lib/platform/keyboard-inset";
+	import { isAndroidPlatform } from "$lib/platform/os";
 	import { applySwipeBackGesture } from "$lib/platform/swipe-back-gesture";
 
 	onMount(() => {
@@ -45,7 +44,7 @@
 		const releaseZoomBlock = blockZoom();
 		const releaseSwipeBack = applySwipeBackGesture();
 		const releaseTheme = initTheme();
-		if (isTauri() && platform() === "android") {
+		if (isAndroidPlatform()) {
 			void registerAndroidBackButtonListener().catch((error) => {
 				console.error("Failed to register back button listener", error);
 			});
@@ -97,7 +96,7 @@
 			"bg-red-900": env.PUBLIC_TEST_INSETS,
 		},
 	]}
-	style="height: var(--safe-area-top)"
+	style:height="var(--safe-area-top)"
 ></div>
 <div
 	class={[
@@ -107,23 +106,23 @@
 			"bg-red-900": env.PUBLIC_TEST_INSETS,
 		},
 	]}
-	style="height: var(--safe-area-bottom)"
+	style:height="var(--safe-area-bottom)"
 ></div>
-<Toaster
-	position="bottom-center"
-	offset={toastOffset}
-	mobileOffset={toastOffset}
-	toastOptions={{
-		class: "toast",
-	}}
-	expand
-/>
-<IconContext values={{}}>
+<IconContext values={{ "aria-hidden": true }}>
+	<Toaster
+		position="bottom-center"
+		offset={toastOffset}
+		mobileOffset={toastOffset}
+		toastOptions={{
+			class: "toast",
+		}}
+		expand
+	/>
 	<div id="screen-nav-root">
 		{@render children?.()}
 	</div>
+	<RequestBlockedAlert />
+	<SessionErrorAlert />
+	<AccountStatusAlert />
+	<CopyErrorConfirmAlert />
 </IconContext>
-<RequestBlockedAlert />
-<SessionErrorAlert />
-<AccountStatusAlert />
-<CopyErrorConfirmAlert />

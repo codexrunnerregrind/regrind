@@ -108,7 +108,7 @@ export const swipeTabs: Action<HTMLElement, SwipeTabsOptions | undefined> = (
 		samples.push({ x: event.clientX, t: event.timeStamp });
 		while (
 			samples.length > 2 &&
-			event.timeStamp - samples[0].t > VELOCITY_WINDOW
+			event.timeStamp - (samples[0]?.t ?? 0) > VELOCITY_WINDOW
 		)
 			samples.shift();
 

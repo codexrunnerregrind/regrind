@@ -1,14 +1,14 @@
-import { NOW } from "../config";
 import type {
+	LockedPostV1,
 	RightNowFeedResponse,
 	RightNowPostMediaItem,
 	RightNowV3Post,
-	LockedPostV1,
 } from "$lib/model/right-now/feed/response/v4";
+import { NOW } from "../config";
 import {
-	photosOf,
 	distanceForId,
 	onlineUntilOf,
+	photosOf,
 	profileSeed,
 } from "./profiles";
 
@@ -129,7 +129,7 @@ export function textOf(profileId: number): string | undefined {
 
 	const out: string[] = [];
 	for (let i = 0; i < count; i++) {
-		out.push(WORDS[Math.floor(rand() * WORDS.length)]);
+		out.push(WORDS[Math.floor(rand() * WORDS.length)] ?? "lorem");
 	}
 	return out.join(" ");
 }

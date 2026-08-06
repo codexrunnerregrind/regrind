@@ -1,3 +1,4 @@
+import { accountScoped } from "$lib/api/account-caches";
 import { getReceivedTaps } from "$lib/api/interest/taps";
 import { ReconcilingListState } from "$lib/util/reconciling-list-state.svelte";
 import { tapV1TapSentEventSchema, ws } from "$lib/ws.svelte";
@@ -81,3 +82,7 @@ export class TapsState extends ReconcilingListState<TapProfile, TapsSnapshot> {
 		});
 	}
 }
+
+export const getTapsState = accountScoped(
+	(ourProfileId) => new TapsState({ ourProfileId }),
+);

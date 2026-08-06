@@ -48,7 +48,7 @@
 			>
 				Double tap to <img
 					src={fireEmoji}
-					alt="Fire Emoji"
+					alt="react with fire"
 					width="16"
 					height="16"
 					class="inline align-middle"

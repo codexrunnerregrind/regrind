@@ -9,7 +9,7 @@ import {
 	albumExpirationSchema,
 	albumPreviewSchema,
 } from "$lib/model/messaging/albums";
-import { unixTimestampMsSchema } from "$lib/model/types";
+import { unixTimestampMsSchema, unmodeledSchema } from "$lib/model/types";
 
 const messageBaseSchema = z.object({
 	type: z.string(),
@@ -28,9 +28,10 @@ const apiResponseMessageOverlayBaseSchema = z.object({
 			reactionType: z.int().nonnegative(),
 		}),
 	),
-	// dynamic: z.boolean(),
-	// chat1Type: z.string(),
-	// replyPreview: z.unknown().nullable(),
+	replyToMessage: unmodeledSchema,
+	dynamic: unmodeledSchema,
+	chat1Type: unmodeledSchema,
+	replyPreview: unmodeledSchema,
 });
 
 export type ApiResponseMessageOverlay = z.infer<
@@ -342,7 +343,11 @@ export const apiResponseMessageSchema: z.ZodType<ApiResponseMessage> = z
 
 // The three shapes a chat video arrives in. They differ only in how long the
 // media stays viewable, so everything downstream treats them alike.
-export const VIDEO_MESSAGE_TYPES = ["Video", "PrivateVideo", "NonExpiringVideo"];
+export const VIDEO_MESSAGE_TYPES = [
+	"Video",
+	"PrivateVideo",
+	"NonExpiringVideo",
+];
 
 export type MessagePreview = {
 	type: string;

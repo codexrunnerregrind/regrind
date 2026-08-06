@@ -1,11 +1,7 @@
 import z from "zod";
 
-import { fetchRest } from "$lib/api";
-import {
-	accountEpoch,
-	isAccountEpochCurrent,
-	registerAccountCache,
-} from "$lib/api/account-caches";
+import { cachedFetch } from "$lib/api/cache";
+import { fetchRest } from "$lib/api/transport";
 import type { Profile } from "$lib/model/users/profiles";
 
 const getBlockedUsersResponseSchema = z.object({
@@ -17,33 +13,13 @@ const getBlockedUsersResponseSchema = z.object({
 	),
 });
 
-let blockedUsersCache: {
-	blocking: z.infer<typeof getBlockedUsersResponseSchema>["blocking"];
-	updatedAt: number;
-} | null = null;
-
-registerAccountCache({
-	reset: () => {
-		blockedUsersCache = null;
-	},
-});
-
-export async function getBlockedUsers() {
-	if (
-		blockedUsersCache &&
-		Date.now() - blockedUsersCache.updatedAt < 1000 * 5
-	) {
-		return blockedUsersCache.blocking;
-	}
-	const epoch = accountEpoch();
-	const { blocking } = await fetchRest("/v3.1/me/blocks").then((res) =>
-		res.jsonParsed(getBlockedUsersResponseSchema),
-	);
-	if (isAccountEpochCurrent(epoch)) {
-		blockedUsersCache = { blocking, updatedAt: Date.now() };
-	}
-	return blocking;
-}
+export const getBlockedUsers = cachedFetch(
+	() =>
+		fetchRest("/v3.1/me/blocks").then(
+			(res) => res.jsonParsed(getBlockedUsersResponseSchema).blocking,
+		),
+	{ ttlMs: 5_000 },
+);
 
 export async function blockUser({
 	profileId,
@@ -53,9 +29,10 @@ export async function blockUser({
 	await fetchRest(`/v3/me/blocks/${profileId}`, {
 		method: "POST",
 	}).then((res) => res.assertOk());
-	// The list this invalidates decides whether a profile reads as blocked by us,
-	// so a stale entry would show the wrong side of the block for up to the TTL.
-	blockedUsersCache = null;
+	// This list decides whether a profile reads as blocked by us, and backs the
+	// blocked-users screen, so a stale entry would show the wrong side of the
+	// block for up to the TTL.
+	getBlockedUsers.invalidate();
 }
 
 export async function unblockUser({
@@ -66,5 +43,5 @@ export async function unblockUser({
 	await fetchRest(`/v3/me/blocks/${profileId}`, {
 		method: "DELETE",
 	}).then((res) => res.assertOk());
-	blockedUsersCache = null;
+	getBlockedUsers.invalidate();
 }

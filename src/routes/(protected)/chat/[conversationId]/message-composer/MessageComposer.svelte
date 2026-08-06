@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import { hapticImpact } from "$lib/platform/haptics";
 	import type {
 		ApiResponseMessage,

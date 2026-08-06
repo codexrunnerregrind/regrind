@@ -3,7 +3,7 @@
 	import { onMount } from "svelte";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error";
+	import { showErrorToast } from "$lib/api/error-toast";
 	import {
 		getPreferences,
 		setPreferences,

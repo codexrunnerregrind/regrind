@@ -1,5 +1,6 @@
 import z from "zod";
 
+import { gridQuerySchema } from "$lib/model/browse/grid";
 import {
 	filterAcceptNSFWPicsSchema,
 	filterBodyTypeSchema,
@@ -8,8 +9,7 @@ import {
 	filterPositionSchema,
 	filterRelationshipStatusSchema,
 	filterTribesSchema,
-} from "$lib/components/filters/filters";
-import { gridQuerySchema } from "$lib/model/browse/grid";
+} from "$lib/model/browse/grid/filters";
 import { mediaHashPublicSchema } from "$lib/model/media";
 
 export const searchQuerySchema = gridQuerySchema.extend({
@@ -39,4 +39,8 @@ export const searchProfileSchema = z.object({
 	age: z.int().nonnegative().nullable(),
 	distance: z.number().nullable(),
 	medias: z.array(z.object({ mediaHash: mediaHashPublicSchema })).nullable(),
+});
+
+export const searchProfilesResponseSchema = z.object({
+	profiles: z.array(searchProfileSchema),
 });
