@@ -99,7 +99,7 @@
 	}
 
 	// When a post re-mounts on tab switch, an already-cached image is complete
-	// immediately — mark it loaded before paint so we never flash the grey
+	// immediately — mark it loaded before paint so we never flash the gray
 	// placeholder for images the browser already has.
 	function trackCached(node: HTMLImageElement, imgIndex: number) {
 		if (node.complete && node.naturalWidth > 0) markLoaded(node, imgIndex);

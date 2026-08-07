@@ -26,7 +26,7 @@
 	// iconography and `currentColor` along with every other button. A tap that has
 	// actually been sent or received is the emoji itself — it is the thing the
 	// other person sees, it needs no accent behind it to read as done, and the
-	// three types stay told apart by their own colours.
+	// three types stay told apart by their own colors.
 	const icons = {
 		[TapType.Friendly]: CookieIcon,
 		[TapType.Hot]: FireIcon,

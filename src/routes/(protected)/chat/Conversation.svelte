@@ -117,7 +117,7 @@
 		{#snippet actions()}
 			<Item.Actions class="flex min-w-0 flex-col items-end gap-1">
 				<!-- Unread is carried by the timestamp turning accent, the preview
-				     going solid, and a dot — no coloured row background. -->
+				     going solid, and a dot — no colored row background. -->
 				<span
 					class={[
 						"flex max-w-full items-center gap-1 text-meta font-medium",

@@ -17,7 +17,7 @@ function resolvesToDark(mode: ThemeMode): boolean {
 
 /**
  * Paints one bubble side. `neutral` clears the properties instead of setting
- * them, so the surface falls back to the themed grey defined in layout.css.
+ * them, so the surface falls back to the themed gray defined in layout.css.
  */
 function applyBubble(
 	root: HTMLElement,
@@ -47,7 +47,7 @@ function apply(mode: ThemeMode): void {
 
 	// The attribute still gates the [data-accent] block in layout.css, which
 	// derives --accent/--ring/--sidebar-*/--chart-1 from --primary; the two
-	// properties below are what actually pick the colour.
+	// properties below are what actually pick the color.
 	const accent = getAccentColorSnapshot();
 	root.dataset.accent = accent;
 	const { value, contrast } = surface(accent);

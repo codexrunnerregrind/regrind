@@ -62,9 +62,9 @@
 	];
 
 	/**
-	 * Three colours share one swatch grid. Showing three separate grids would put
+	 * Three colors share one swatch grid. Showing three separate grids would put
 	 * 40-odd circles on the screen; this way the palette is rendered once and the
-	 * segmented control chooses which colour it edits, with the preview above
+	 * segmented control chooses which color it edits, with the preview above
 	 * acting as the legend for all three at once.
 	 */
 	type Target = "app" | "sent" | "received";
@@ -77,7 +77,7 @@
 
 	let target = $state<Target>("app");
 
-	// Bubbles can be left untinted; the app accent always has a colour.
+	// Bubbles can be left untinted; the app accent always has a color.
 	const swatches = $derived<readonly BubbleColor[]>(
 		target === "app" ? accentColors : bubbleColors,
 	);
@@ -108,7 +108,7 @@
 	}
 </script>
 
-<!-- Preview first, and it covers all three colours at once: an incoming bubble,
+<!-- Preview first, and it covers all three colors at once: an incoming bubble,
      an outgoing bubble, and the accent on the send button. -->
 <div
 	class="flex flex-col gap-2.5 rounded-xl border border-border bg-chat-background p-3"
@@ -158,12 +158,12 @@
 	System matches your device's light or dark setting automatically.
 </SectionFooter>
 
-<SectionHeader>Colours</SectionHeader>
+<SectionHeader>Colors</SectionHeader>
 <SettingsGroup divider="none">
 	<div class="flex flex-col gap-3 p-3">
 		<SettingsSegmented options={targets} bind:value={target} />
 		<!-- Left-aligned wrap: the row count depends on viewport width, so a
-		     centred final row drifts out of line with the ones above it. -->
+		     centered final row drifts out of line with the ones above it. -->
 		<div class="flex flex-wrap justify-start gap-3 px-1 pt-1 pb-1">
 			{#each swatches as color (color)}
 				<button

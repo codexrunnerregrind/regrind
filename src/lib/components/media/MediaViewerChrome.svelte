@@ -44,7 +44,7 @@
 	let draft = $state("");
 	let sending = $state(false);
 	let reacting = $state(false);
-	// Confirmation lives in the viewer rather than in a toast: a bottom-centred
+	// Confirmation lives in the viewer rather than in a toast: a bottom-centered
 	// toast lands right on top of the reply bar it is confirming.
 	let sentLabel = $state<string | null>(null);
 	let sentTimer: ReturnType<typeof setTimeout> | undefined;
@@ -213,7 +213,7 @@
 
 {#snippet identity()}
 	<!-- Centring the fallback glyph needs the flexbox: `margin: auto` alone
-	     centres it horizontally and leaves it sitting against the top. -->
+	     centers it horizontally and leaves it sitting against the top. -->
 	<div
 		class="flex size-9.5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-viewer-chip"
 	>
@@ -438,7 +438,7 @@
 					class="flex size-11 shrink-0 items-center justify-center rounded-full bg-viewer-chip/80 text-viewer-ink backdrop-blur-md transition-transform active:scale-90 disabled:opacity-60"
 				>
 					<!-- A line glyph, not the emoji the chat reactions use: this is one of
-					     the viewer's controls, and a colour illustration among line icons
+					     the viewer's controls, and a color illustration among line icons
 					     reads as content rather than as a button. -->
 					<FireIcon class="size-5" />
 				</button>
@@ -464,7 +464,7 @@
 	   still swallow. Same remedy as the tile overlays: a shadow on the text and
 	   glyphs rather than a heavier fill, so more of the photo shows through.
 	   One tight drop only, matching `.profile-card-distance`: a wide ambient
-	   glow behind a short line of text reads as a grey box around it rather
+	   glow behind a short line of text reads as a gray box around it rather
 	   than as depth. */
 	.viewer-label {
 		text-shadow: 0 1px 3px rgb(0 0 0 / 0.6);

@@ -11,7 +11,7 @@ import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelt
  *
  * Back navigation is routed through {@link backGestureEventHandlers} so a
  * swipe first dismisses any open sheet/dialog (mirroring the Android
- * hardware-back behaviour) before falling through to `history.back()`.
+ * hardware-back behavior) before falling through to `history.back()`.
  */
 
 // Width of the left-edge zone (px) where a drag may begin.

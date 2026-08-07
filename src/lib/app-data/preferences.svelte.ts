@@ -29,11 +29,11 @@ export const bubbleColorSchema = z.enum(bubbleColors);
 
 const preferencesSchema = z.object({
 	// Defaults mirror the official app: yellow for the accent and your own
-	// messages, pale sky blue for theirs. `.catch` keeps a colour that has since
+	// messages, pale sky blue for theirs. `.catch` keeps a color that has since
 	// been dropped from the palette from failing the whole parse — the file would
 	// otherwise be reported as corrupt and offer to reset every preference.
 	accentColor: accentColorSchema.default("yellow").catch("yellow"),
-	// Bubble colours are independent of the app accent: the accent drives
+	// Bubble colors are independent of the app accent: the accent drives
 	// controls, while these only affect the chat transcript.
 	outgoingBubbleColor: bubbleColorSchema.default("yellow").catch("yellow"),
 	incomingBubbleColor: bubbleColorSchema.default("sky").catch("sky"),

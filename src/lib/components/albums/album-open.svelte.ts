@@ -10,7 +10,7 @@ import {
 import { hapticImpact } from "$lib/platform/haptics";
 
 // Shared "tap an album cover → load its content → open the PhotoSwipe viewer"
-// behaviour, used by both the my-albums and shared-with-me grids. Tracks which
+// behavior, used by both the my-albums and shared-with-me grids. Tracks which
 // album is currently loading so the grid can show a pending state and block
 // concurrent opens.
 export class AlbumOpener {

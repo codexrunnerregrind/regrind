@@ -21,7 +21,7 @@
 	isFavorite={preview.isFavorite}
 >
 	{#snippet overlay()}
-		<!-- Centred, because it stands for the whole tile: this viewer's photo is
+		<!-- Centered, because it stands for the whole tile: this viewer's photo is
 		     the one thing the tile cannot show. -->
 		<div class="absolute inset-0 flex items-center justify-center">
 			<div

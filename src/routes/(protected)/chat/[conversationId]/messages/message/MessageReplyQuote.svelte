@@ -66,7 +66,7 @@
 
 <!-- Sits inside the bubble, above the reply's own body, so a reply and what it
      answers stay one block. The bar and fill are drawn from the bubble's own
-     text colour, so this works on either side without knowing the theme. -->
+     text color, so this works on either side without knowing the theme. -->
 <!-- The min-width is load-bearing: the bubble is `w-fit`, and both lines here
      truncate, so their min-content width is zero — without it a one-emoji reply
      would squeeze the quote down to "R… / Ph…". -->

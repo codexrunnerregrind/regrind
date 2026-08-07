@@ -23,7 +23,7 @@
 	--popover-foreground: #111519;
 	/* Pre-hydration fallback for primary actions, links and focus. Matches the
 	   default accent (yellow) in palette.ts so a fresh install doesn't flash a
-	   different colour before preferences load. The handoff's own accent is
+	   different color before preferences load. The handoff's own accent is
 	   #0B62E0 here / #3D8BFF dark — pick "Blue" in Appearance to get it. */
 	--primary: oklch(0.869 0.178 91);
 	--primary-foreground: oklch(0.22 0.02 91);
@@ -58,7 +58,7 @@
 	/* Chat sits on the plain screen background — no wallpaper. */
 	--chat-background: #fafbfd;
 	/* Untinted bubble surfaces. theme.svelte.ts overwrites these with the chosen
-	   bubble colours; they show through only before preferences hydrate, and as
+	   bubble colors; they show through only before preferences hydrate, and as
 	   the "Neutral" bubble option, so the two sides stay distinguishable by
 	   shade alone. */
 	--message-bubble-in: #eff2f6;
@@ -155,11 +155,11 @@
 	--viewer-ink3: #68727f;
 }
 
-/* Colour selections. theme.svelte.ts sets data-accent on <html> and writes
+/* Color selections. theme.svelte.ts sets data-accent on <html> and writes
    --primary/--primary-foreground and the two bubble pairs onto it as inline
    properties, sourced from src/lib/app-data/palette.ts. This block is what
-   fans --primary out to the rest of the family, so a colour is defined in
-   exactly one place (the palette) rather than in a CSS block per colour.
+   fans --primary out to the rest of the family, so a color is defined in
+   exactly one place (the palette) rather than in a CSS block per color.
    Declared after .dark so it wins in both themes. */
 [data-accent] {
 	--accent: var(--primary);

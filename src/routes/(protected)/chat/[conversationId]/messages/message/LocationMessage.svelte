@@ -13,7 +13,7 @@
 
 	let map: LeafletMap | undefined = $state();
 
-	// Keep the preview centred on the shared point even if the container is
+	// Keep the preview centered on the shared point even if the container is
 	// resized (e.g. the bubble grows a tail once it becomes last in stack).
 	$effect(() => {
 		map?.setView([message.lat, message.lon], 15);

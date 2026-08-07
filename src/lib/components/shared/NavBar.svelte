@@ -112,7 +112,7 @@
 					{:then mediaHash}
 						{#if mediaHash}
 							<!-- Ringed only while active: at 21pt the photo is too small for a
-							     colour shift to register, so the ring stands in for the tint
+							     color shift to register, so the ring stands in for the tint
 							     the glyph tabs get. -->
 							<span
 								class={[
@@ -151,7 +151,7 @@
 <style lang="postcss">
 	@reference "$layout";
 
-	/* No active pill or fill: the item is coloured, and that is the whole
+	/* No active pill or fill: the item is colored, and that is the whole
 	   active state. min-h keeps every item at a 44pt hit target. */
 	.tab {
 		@apply relative flex min-h-11 flex-1 flex-col items-center justify-center gap-[5px] text-ink3 outline-none focus-visible:ring-2 focus-visible:ring-ring/50 data-[active=true]:text-primary;
