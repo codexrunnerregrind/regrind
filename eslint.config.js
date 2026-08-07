@@ -38,6 +38,9 @@ export default defineConfig(
 			"scripts/",
 			"test-results/",
 			"playwright-report/",
+			// Design references, not source: prototype-runtime JS shipped with the
+			// redesign handoff. Read them, don't port them.
+			"design_handoff_nearby_app/",
 		],
 	},
 	js.configs.recommended,

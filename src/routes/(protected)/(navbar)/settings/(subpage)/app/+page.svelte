@@ -39,7 +39,6 @@
 	<SettingsRow
 		title="Discreet app icon"
 		description="Disguise Open Grind on your home screen."
-		tint="slate"
 		onclick={unimplemented("Discreet app icon", 97)}
 	>
 		{#snippet icon()}
@@ -49,7 +48,6 @@
 	<SettingsRow
 		title="PIN"
 		description="Require a passcode to open the app."
-		tint="red"
 		onclick={unimplemented("PIN", 50)}
 	>
 		{#snippet icon()}

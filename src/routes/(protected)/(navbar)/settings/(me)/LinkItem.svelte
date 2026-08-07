@@ -2,19 +2,16 @@
 	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import * as Dialog from "$lib/components/ui/dialog";
-	import type { Tint } from "$lib/components/settings/tints";
 
 	let {
 		label,
 		destination,
 		icon,
-		tint,
 		warning,
 	}: {
 		label: string;
 		destination: string;
 		icon: import("svelte").Snippet;
-		tint?: Tint;
 		warning?: {
 			title: string;
 			description: string;
@@ -36,13 +33,12 @@
 	<SettingsRow
 		title={label}
 		{icon}
-		{tint}
 		external
 		chevron
 		onclick={() => (warningOpen = true)}
 	/>
 {:else}
-	<SettingsRow title={label} {icon} {tint} href={destination} external />
+	<SettingsRow title={label} {icon} href={destination} external />
 {/if}
 {#if warning}
 	{#snippet warningButton(link: {

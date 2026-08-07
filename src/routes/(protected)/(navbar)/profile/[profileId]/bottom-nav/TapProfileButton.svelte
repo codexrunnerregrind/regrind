@@ -46,9 +46,14 @@
 	const sent = $derived(tapType !== null);
 </script>
 
+<!-- The round action beside the field, on the media viewer's 44pt circle. The
+     circle stays muted throughout — the glyph alone carries the state, going from
+     a line icon (a tap you can send) to the emoji itself (the tap they got). No
+     accent fill: this is a thing that happened, not the screen's primary action,
+     and the emoji is already the more legible of the two. -->
 <Button
-	size="icon-lg"
-	variant={sent ? "default" : "outline"}
+	size="icon"
+	variant="secondary"
 	aria-label={tapType === null
 		? `Send a ${tapTypes[defaultTapType]} tap`
 		: `${tapTypes[tapType]} tap sent`}
@@ -59,12 +64,12 @@
 	}}
 	onclick={() => send(defaultTapType)}
 	disabled={sent || sending}
-	class={{ "disabled:opacity-100": sent }}
+	class={["size-11 rounded-full", { "disabled:opacity-100": sent }]}
 >
 	{#if tapType === null}
 		<TapIcon tapType={defaultTapType} />
 	{:else}
-		<TapIcon {tapType} />
+		<TapIcon {tapType} sent />
 	{/if}
 </Button>
 {#snippet tapOption(tapType: TapType)}

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import LockKeyIcon from "phosphor-svelte/lib/LockKeyIcon";
+	import LockSimpleIcon from "phosphor-svelte/lib/LockSimpleIcon";
 	import UsersIcon from "phosphor-svelte/lib/UsersIcon";
 	import { toast } from "svelte-sonner";
 
@@ -53,13 +53,15 @@
 
 {#snippet myAlbumsTile()}
 	{#if onOpenMyAlbums}
+		<!-- Dashed rather than filled: it is the way into your own albums, not an
+		     album, and a filled card in the first cell reads as one. -->
 		<button
 			type="button"
-			class="relative flex aspect-3/4 cursor-pointer flex-col items-center justify-center gap-2 rounded-lg bg-muted/60 text-muted-foreground transition-colors hover:bg-muted/80"
+			class="relative flex aspect-album cursor-pointer flex-col items-center justify-center gap-2.5 rounded-lg border border-dashed border-border text-muted-foreground transition-colors can-hover:hover:bg-muted/40"
 			onclick={onOpenMyAlbums}
 		>
-			<LockKeyIcon weight="fill" class="size-8 text-foreground" />
-			<span class="text-xs font-medium text-foreground">My Albums</span>
+			<LockSimpleIcon class="size-5.5" />
+			<span class="text-xs font-medium">My albums</span>
 		</button>
 	{/if}
 {/snippet}
@@ -70,15 +72,15 @@
 			<ApiErrorDisplay {error} onRetry={() => void load()} class="m-auto" />
 		</div>
 	{:else if albums === null}
-		<div class="photo-grid">
+		<div class="object-grid">
 			{@render myAlbumsTile()}
 			{#each Array(6)}
-				<Skeleton class="aspect-3/4 rounded-lg" />
+				<Skeleton class="aspect-album rounded-lg" />
 			{/each}
 		</div>
 	{:else if albums.length === 0}
 		{#if onOpenMyAlbums}
-			<div class="photo-grid">
+			<div class="object-grid">
 				{@render myAlbumsTile()}
 			</div>
 		{/if}
@@ -94,7 +96,7 @@
 			</Empty.Header>
 		</Empty.Root>
 	{:else}
-		<div class="photo-grid">
+		<div class="object-grid">
 			{@render myAlbumsTile()}
 			{#each albums as album (album.albumId)}
 				<AlbumTile

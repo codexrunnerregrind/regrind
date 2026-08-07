@@ -13,9 +13,33 @@ const DOWNLOAD_ICON = `
 
 export type DownloadTarget = { url: string; mimeType?: string };
 
+/**
+ * Saves media to the device, reporting progress in one toast. Shared by the
+ * built-in toolbar button below and the media viewer's own save control, so a
+ * download behaves the same wherever it was started from.
+ */
+export function downloadMedia(target: DownloadTarget): void {
+	const toastId = toast.loading("Downloading…");
+	saveMediaToDevice(target.url, target.mimeType)
+		.then((saved) => {
+			if (saved) {
+				toast.success("Saved to your device", { id: toastId });
+			} else {
+				toast.dismiss(toastId);
+			}
+		})
+		.catch((error) => {
+			console.error(error);
+			toast.error("Failed to save media", { id: toastId });
+		});
+}
+
 // Adds a "Download" button to a PhotoSwipe lightbox's top toolbar. `resolve`
 // maps the currently-viewed slide index to the media to save, or `null` to skip
 // (e.g. a locked slide).
+//
+// Only for viewers without the story chrome: that hides the toolbar and carries
+// its own save control, wired to `downloadMedia` above.
 export function registerLightboxDownloadButton(
 	lightbox: PhotoSwipeLightbox,
 	resolve: (index: number) => DownloadTarget | null,
@@ -35,19 +59,7 @@ export function registerLightboxDownloadButton(
 				if (index === undefined) return;
 				const target = resolve(index);
 				if (!target) return;
-				const toastId = toast.loading("Downloading…");
-				saveMediaToDevice(target.url, target.mimeType)
-					.then((saved) => {
-						if (saved) {
-							toast.success("Saved to your device", { id: toastId });
-						} else {
-							toast.dismiss(toastId);
-						}
-					})
-					.catch((error) => {
-						console.error(error);
-						toast.error("Failed to save media", { id: toastId });
-					});
+				downloadMedia(target);
 			},
 		});
 	});

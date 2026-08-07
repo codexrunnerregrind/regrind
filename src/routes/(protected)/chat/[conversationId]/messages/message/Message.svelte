@@ -325,7 +325,7 @@
 	{#if lastInStack}
 		<span
 			class={[
-				"mx-3 mt-0.5 text-xs text-muted-foreground",
+				"mt-1.75 text-distance leading-none text-ink3",
 				{ "text-right": isOut },
 			]}
 		>

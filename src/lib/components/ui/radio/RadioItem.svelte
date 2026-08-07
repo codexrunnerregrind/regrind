@@ -73,10 +73,10 @@
 			checked={context.value === itemValue}
 			onchange={handleChange}
 			onkeydown={handleKeyPress}
-			class="peer size-5 cursor-pointer appearance-none rounded-full border-2 border-gray-300 bg-transparent transition-all outline-none checked:border-yellow-400 checked:bg-primary focus-visible:ring-2 focus-visible:ring-offset-2"
+			class="peer size-5 cursor-pointer appearance-none rounded-full border-2 border-border bg-transparent transition-all outline-none checked:border-primary checked:bg-primary focus-visible:ring-2 focus-visible:ring-offset-2"
 		/>
 		<CheckIcon
-			class="pointer-events-none absolute size-3.5 scale-50 text-black opacity-0 transition-all duration-200 peer-checked:scale-100 peer-checked:opacity-100"
+			class="pointer-events-none absolute size-3.5 scale-50 text-primary-foreground opacity-0 transition-all duration-200 peer-checked:scale-100 peer-checked:opacity-100"
 		/>
 	</div>
 </label>

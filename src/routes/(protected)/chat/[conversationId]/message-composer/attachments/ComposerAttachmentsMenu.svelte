@@ -168,7 +168,7 @@
 
 			{#if selectedCount > 0}
 				<div
-					class="pointer-events-none absolute inset-x-0 bottom-18 flex justify-center gap-2 px-4"
+					class="pointer-events-none absolute inset-x-0 bottom-20 flex justify-center gap-2 px-4"
 					in:fly={{ duration: 600, y: 100, easing: expoOut }}
 					out:fly={{ duration: 400, y: 100, easing: sineIn }}
 				>

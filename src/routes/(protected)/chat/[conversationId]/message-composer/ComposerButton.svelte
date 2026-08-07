@@ -15,16 +15,12 @@
 
 <Button
 	type="button"
-	variant="ghost"
+	variant="secondary"
 	size="icon"
-	class={[
-		"absolute bottom-0 h-11 w-fit cursor-pointer rounded-none px-2",
-		className,
-	]}
+	class={["size-10 shrink-0 cursor-pointer rounded-md p-0", className]}
 	{...props}
 >
 	{@render icon({
-		color: "var(--muted-foreground)",
 		class: "size-4.5",
 	})}
 </Button>

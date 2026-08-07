@@ -15,7 +15,7 @@ import {
 } from "$lib/api/messaging/messages";
 import { callMethod } from "$lib/api/methods";
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
-import { registerLightboxDownloadButton } from "./lightbox-download";
+import { downloadMedia } from "./lightbox-download";
 import {
 	type MediaViewerActions,
 	registerMediaViewerChrome,
@@ -142,9 +142,16 @@ export async function openAlbumLightbox(
 	// The album payload names its owner, so replies reach the right person even
 	// when the caller had no profile to hand.
 	const toUserId = album.profileId;
-	// Our own albums have nobody to reply to, so they get the header alone.
-	const actions: MediaViewerActions =
-		sharer === undefined
+	// Saving is offered either way — it is the viewer's own control, in the sender
+	// row rather than the reply bar. Our own albums have nobody to reply to, so
+	// that is all they get.
+	const actions: MediaViewerActions = {
+		onSave: (index) => {
+			const slide = album.content[index];
+			if (!slide) return;
+			downloadMedia({ url: slide.url, mimeType: slide.contentType });
+		},
+		...(sharer === undefined
 			? {}
 			: {
 					onReply: async (reply, index) => {
@@ -179,7 +186,8 @@ export async function openAlbumLightbox(
 						lightbox.pswp?.close();
 						await goto(`/chat/${conversationId}`);
 					},
-				};
+				}),
+	};
 	const lightbox: PhotoSwipeLightbox = new PhotoSwipeLightboxCtor({
 		showHideAnimationType: "fade",
 		pswpModule: () => import("photoswipe"),
@@ -203,10 +211,8 @@ export async function openAlbumLightbox(
 			? false
 			: usePlaceholder,
 	);
-	registerLightboxDownloadButton(lightbox, (index) => {
-		const slide = album.content[index];
-		return slide ? { url: slide.url, mimeType: slide.contentType } : null;
-	});
+	// No download button on PhotoSwipe's toolbar: the chrome hides it and puts
+	// saving in its sender row (see `actions.onSave` above).
 	const onBackGesture = () => {
 		lightbox.pswp?.close();
 		return false;

@@ -42,7 +42,7 @@
 			onkeydown={(event) => {
 				if (event.key === "Escape") stopSearching();
 			}}
-			class="min-w-0 flex-1"
+			class="min-w-0 flex-1 rounded-md border-transparent bg-muted"
 		/>
 		<Button
 			variant="ghost"
@@ -54,7 +54,7 @@
 			<XIcon class="size-6" />
 		</Button>
 	{:else}
-		<span class="min-w-0 flex-1 truncate text-lg font-semibold">Favorites</span>
+		<span class="screen-title min-w-0 flex-1 truncate">Favorites</span>
 		<Button
 			variant="ghost"
 			size="icon-lg"

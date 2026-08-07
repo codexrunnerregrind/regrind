@@ -58,5 +58,8 @@
 	class="size-12"
 	disabled={submitting}
 >
-	<StarIcon weight={isFavorite ? "fill" : "bold"} class="size-6" />
+	<StarIcon
+		weight={isFavorite ? "fill" : "bold"}
+		class={["size-6", { "text-yellow-400": isFavorite }]}
+	/>
 </Button>

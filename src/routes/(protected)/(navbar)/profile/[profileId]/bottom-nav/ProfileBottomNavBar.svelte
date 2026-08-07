@@ -19,12 +19,13 @@
 </script>
 
 {#if !isOurProfile}
+	<!-- The same bar the media viewer replies with (MediaViewerChrome.svelte): a
+	     pill field and a 44pt round action beside it, on the screen background and
+	     separated by a hairline, sitting directly on top of the tab bar. -->
 	<div
-		class="fixed bottom-[calc(0.5rem+var(--safe-area-bottom)+var(--nav-height))] left-1/2 w-90.5 max-w-full -translate-x-1/2 px-2"
+		class="fixed bottom-[calc(var(--safe-area-bottom)+var(--nav-height))] left-0 z-20 w-full border-t border-border bg-background px-screen py-3.5"
 	>
-		<nav
-			class="flex flex-row items-center gap-2 rounded-full bg-muted p-2 shadow-xl backdrop-blur-lg"
-		>
+		<nav class="flex w-full flex-row items-center gap-2.5">
 			<OpenConversationButton {profileId} {ourProfileId} />
 			<TapProfileButton {profileId} {tapType} {onTap} />
 		</nav>

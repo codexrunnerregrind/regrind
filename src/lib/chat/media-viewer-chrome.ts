@@ -22,14 +22,19 @@ export type MediaViewerHeader = {
 };
 
 /**
- * What the bottom bar can do. Each handler is optional and its control only
- * renders when provided, so a viewer with none of them gets a header alone.
- * `index` is the slide the viewer is on when the control is used.
+ * What the viewer's own controls can do. Each handler is optional and its
+ * control only renders when provided, so a viewer with none of them gets a
+ * header alone. `index` is the slide the viewer is on when the control is used.
  */
 export type MediaViewerActions = {
 	onReply?: (text: string, index: number) => Promise<void>;
 	onReact?: (index: number) => Promise<void>;
 	onOpenChat?: () => void | Promise<void>;
+	/**
+	 * Save the current slide to the device. Sits in the sender row rather than
+	 * the reply bar, beside zoom and close, and so does not imply a bar.
+	 */
+	onSave?: (index: number) => void | Promise<void>;
 };
 
 export function chromeHasBar(actions: MediaViewerActions): boolean {
@@ -57,11 +62,15 @@ export type MediaViewerChromeOptions = {
 };
 
 /**
- * Mounts the story-style chrome — progress, whose media this is, and the reply
- * bar — into a PhotoSwipe lightbox. The bars float over the media rather than
- * displacing it: padding the media clear of them shrinks it and, since the bars
- * can only be measured once they exist, forces a re-layout you can see.
- * Shared by the album viewer and the conversation image gallery.
+ * Mounts the story-style chrome — progress, whose media this is, zoom/save/close
+ * and the reply bar — into a PhotoSwipe lightbox. Shared by the album viewer and
+ * the conversation image gallery.
+ *
+ * The bars float over the media rather than displacing it: the photo fills the
+ * screen, and the bars lean on a scrim and a text shadow to stay legible over
+ * it. It also marks the root `pswp--chrome`, which is what hides PhotoSwipe's
+ * own toolbar (the sender row carries those three actions) and sets the
+ * viewer's palette.
  */
 export function registerMediaViewerChrome(
 	lightbox: PhotoSwipeLightbox,
@@ -73,6 +82,7 @@ export function registerMediaViewerChrome(
 	lightbox.on("firstUpdate", () => {
 		const { pswp } = lightbox;
 		if (!pswp?.element) return;
+		pswp.element.classList.add("pswp--chrome");
 		chrome = mount(MediaViewerChrome, {
 			target: pswp.element,
 			props: {

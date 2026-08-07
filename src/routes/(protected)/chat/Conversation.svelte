@@ -38,6 +38,11 @@
 	const previewText = $derived(previewLabel(preview));
 	const conversationId = $derived(conversation.data.conversationId);
 
+	// A muted conversation still counts unread, it just doesn't shout about it.
+	const unreadSignal = $derived(
+		conversation.data.unreadCount > 0 && !conversation.data.muted,
+	);
+
 	const active = $derived(page.params.conversationId === conversationId);
 	const isSelected = $derived(selection?.has(conversationId) ?? false);
 
@@ -95,10 +100,10 @@
 	>
 		{#snippet description()}
 			<Item.Description
-				class={{
-					"font-medium text-foreground":
-						conversation.data.unreadCount > 0 && !conversation.data.muted,
-				}}
+				class={[
+					"text-preview",
+					{ "font-semibold text-foreground": unreadSignal },
+				]}
 			>
 				{#if previewText !== null}
 					{previewText}
@@ -109,8 +114,13 @@
 		{/snippet}
 		{#snippet actions()}
 			<Item.Actions class="flex min-w-0 flex-col items-end gap-1">
+				<!-- Unread is carried by the timestamp turning accent, the preview
+				     going solid, and a dot — no coloured row background. -->
 				<span
-					class="flex max-w-full items-center gap-1 font-medium text-muted-foreground"
+					class={[
+						"flex max-w-full items-center gap-1 text-meta font-medium",
+						{ "text-primary": unreadSignal, "text-ink3": !unreadSignal },
+					]}
 				>
 					{#if conversation.data.pinned}
 						<PushPinIcon weight="fill" class="size-4 shrink-0" />
@@ -120,6 +130,9 @@
 							date={conversation.data.lastActivityTimestamp}
 						/>
 					</span>
+					{#if unreadSignal}
+						<span class="size-dot shrink-0 rounded-full bg-primary"></span>
+					{/if}
 				</span>
 				{#if conversation.data.unreadCount > 0}
 					<Badge

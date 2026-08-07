@@ -19,40 +19,33 @@
 
 <main class="screen-nav-host">
 	<div class="h-full w-full overflow-y-auto overscroll-none">
-		<div class="flex w-full p-4 pb-nav-clear">
+		<div class="flex w-full px-screen pt-4 pb-nav-clear">
 			<div class="m-auto flex w-full max-w-120 flex-col pb-16">
+				<!-- Titled like the other roots (Inbox, Interest): the screen's own name
+				     in the content, not in a nav bar, with the profile card 16pt under
+				     it. This tab has no nav bar of its own to carry it. -->
+				<h1 class="screen-title mb-4">Settings</h1>
+
 				<ProfileLink id={data.ourProfileId} />
 
 				<SectionHeader>Preferences</SectionHeader>
 				<SettingsGroup>
-					<SettingsRow
-						title="Edit Profile"
-						href="/settings/profile"
-						tint="blue"
-					>
+					<SettingsRow title="Edit Profile" href="/settings/profile">
 						{#snippet icon()}
 							<IdentificationCardIcon weight="fill" />
 						{/snippet}
 					</SettingsRow>
-					<SettingsRow
-						title="Account Settings"
-						href="/settings/account"
-						tint="indigo"
-					>
+					<SettingsRow title="Account Settings" href="/settings/account">
 						{#snippet icon()}
 							<UserCircleIcon weight="fill" />
 						{/snippet}
 					</SettingsRow>
-					<SettingsRow title="App Settings" href="/settings/app" tint="slate">
+					<SettingsRow title="App Settings" href="/settings/app">
 						{#snippet icon()}
 							<GearIcon weight="fill" />
 						{/snippet}
 					</SettingsRow>
-					<SettingsRow
-						title="Appearance"
-						href="/settings/appearance"
-						tint="purple"
-					>
+					<SettingsRow title="Appearance" href="/settings/appearance">
 						{#snippet icon()}
 							<PaletteIcon weight="fill" />
 						{/snippet}

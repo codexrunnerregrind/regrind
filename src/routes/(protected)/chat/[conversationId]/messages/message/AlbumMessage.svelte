@@ -34,7 +34,7 @@
 		"aspect-3/4 h-auto relative",
 		{
 			"ring ring-accent": message.hasUnseenContent,
-			"w-2/5 min-w-35 max-w-60 ms-3": !media.clone,
+			"w-2/5 min-w-35 max-w-60": !media.clone,
 			"size-full": media.clone,
 		},
 	]);

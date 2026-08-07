@@ -5,9 +5,8 @@
 	import { showErrorToast } from "$lib/api/error-toast";
 	import { getProfiles } from "$lib/api/users/profiles";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import ProfileItem from "$lib/components/profile/ProfileItem.svelte";
+	import ProfileActionRow from "$lib/components/profile/ProfileActionRow.svelte";
 	import { Button } from "$lib/components/ui/button";
-	import * as Item from "$lib/components/ui/item";
 	import { Skeleton } from "$lib/components/ui/skeleton";
 
 	type BlockedUser = {
@@ -106,7 +105,7 @@
 {:else if blockedIds === null}
 	<div class="flex flex-col gap-2">
 		{#each Array(3)}
-			<Skeleton class="h-22 w-full rounded-xl" />
+			<Skeleton class="h-21 w-full rounded-xl" />
 		{/each}
 	</div>
 {:else if blockedIds.length === 0}
@@ -114,39 +113,28 @@
 		You haven't blocked anyone.
 	</span>
 {:else}
+	<div class="section-label pb-3">
+		{blockedIds.length} blocked
+	</div>
 	<div class="flex flex-col">
 		{#each blocked as user (user.profileId)}
-			<ProfileItem
-				avatar={{ mediaHash: user.mediaHash }}
-				title={{ value: user.name }}
-				link="/profile/{user.profileId}"
+			<ProfileActionRow
+				profileId={user.profileId}
+				name={user.name}
+				mediaHash={user.mediaHash}
+				actionLabel="Unblock"
+				actionDescription="Unblock {user.name ?? `profile ${user.profileId}`}"
+				disabled={unblocking !== null}
+				onAction={() => void unblock(user.profileId)}
 			>
 				{#snippet description()}
 					{#if user.unresolved}
-						<Item.Description class="text-muted-foreground">
+						<span class="truncate text-2xs text-ink3">
 							Profile {user.profileId}
-						</Item.Description>
+						</span>
 					{/if}
 				{/snippet}
-				{#snippet actions()}
-					<Item.Actions class="pe-4">
-						<Button
-							variant="outline"
-							size="sm"
-							disabled={unblocking !== null}
-							onclick={(event) => {
-								// The row is a link to the profile, and this button sits inside
-								// it — without this, unblocking would navigate away too.
-								event.preventDefault();
-								event.stopPropagation();
-								void unblock(user.profileId);
-							}}
-						>
-							Unblock
-						</Button>
-					</Item.Actions>
-				{/snippet}
-			</ProfileItem>
+			</ProfileActionRow>
 		{/each}
 	</div>
 	{#if remaining > 0}

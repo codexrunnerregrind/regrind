@@ -4,7 +4,10 @@ import "photoswipe/style.css";
 import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
-import { registerLightboxDownloadButton } from "./lightbox-download";
+import {
+	downloadMedia,
+	registerLightboxDownloadButton,
+} from "./lightbox-download";
 import {
 	type MediaViewerActions,
 	type MediaViewerHeader,
@@ -77,6 +80,18 @@ export async function openImageGalleryLightbox(
 	if (images.length === 0) {
 		throw new Error("No images to display");
 	}
+	// Saving moves into the chrome's sender row wherever the chrome is mounted —
+	// it hides the toolbar the download button would otherwise sit on.
+	const actions: MediaViewerActions | undefined =
+		chrome === undefined
+			? undefined
+			: {
+					...chrome.actions,
+					onSave: (index) => {
+						const image = images[index];
+						if (image) downloadMedia({ url: image.url });
+					},
+				};
 	const [{ default: PhotoSwipeLightboxCtor }, sizes] = await Promise.all([
 		import("photoswipe/lightbox"),
 		Promise.all(images.map(measure)),
@@ -92,7 +107,7 @@ export async function openImageGalleryLightbox(
 		counter: chrome === undefined,
 		// Only the bare viewer pads: the chrome's bars sit over the photo.
 		paddingFn: () =>
-			chrome === undefined
+			actions === undefined
 				? { top: TOOLBAR_INSET, bottom: 0, left: 0, right: 0 }
 				: { top: 0, bottom: 0, left: 0, right: 0 },
 	});
@@ -102,10 +117,12 @@ export async function openImageGalleryLightbox(
 		if (!image) return itemData;
 		return { src: image.url, ...sizes[index] };
 	});
-	registerLightboxDownloadButton(lightbox, (index) => {
-		const image = images[index];
-		return image ? { url: image.url } : null;
-	});
+	if (actions === undefined) {
+		registerLightboxDownloadButton(lightbox, (index) => {
+			const image = images[index];
+			return image ? { url: image.url } : null;
+		});
+	}
 	const onBackGesture = () => {
 		lightbox.pswp?.close();
 		return false;
@@ -116,11 +133,11 @@ export async function openImageGalleryLightbox(
 	lightbox.on("close", () => {
 		backGestureEventHandlers.delete(onBackGesture);
 	});
-	if (chrome !== undefined) {
+	if (chrome !== undefined && actions !== undefined) {
 		registerMediaViewerChrome(lightbox, {
 			count: images.length,
 			header: chrome.header,
-			actions: chrome.actions,
+			actions,
 		});
 	}
 	if (onClosed) {

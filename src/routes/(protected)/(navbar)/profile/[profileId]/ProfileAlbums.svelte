@@ -102,7 +102,7 @@
 {#if self || error !== null || albums === null || albums.length > 0}
 	<div class="mt-4 flex flex-col gap-2">
 		<div class="flex items-center justify-between gap-2">
-			<span class="text-sm text-muted-foreground uppercase">Albums</span>
+			<span class="section-label">Albums</span>
 			{#if self}
 				<Button
 					variant="ghost"

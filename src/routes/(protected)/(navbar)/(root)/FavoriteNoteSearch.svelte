@@ -11,10 +11,10 @@
 
 <!-- Sits under the filter chips, and only while the favorites filter is on:
      notes exist for favorites, so there is nothing to search anywhere else. -->
-<div class="flex items-center gap-2 px-4 pb-2">
+<div class="flex items-center gap-2 px-4 pb-3">
 	<div class="relative flex-1">
 		<MagnifyingGlassIcon
-			class="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+			class="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-ink3"
 		/>
 		<Input
 			type="search"
@@ -25,7 +25,7 @@
 			onkeydown={(event) => {
 				if (event.key === "Escape") search.clear();
 			}}
-			class="rounded-full ps-9"
+			class="rounded-md border-transparent bg-muted ps-9"
 		/>
 	</div>
 	{#if search.loading}

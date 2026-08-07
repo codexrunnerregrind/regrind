@@ -33,17 +33,30 @@ describe("ProfileMiniCard", () => {
 		expect(container.textContent).toContain("Henry");
 	});
 
-	// With nothing known about who this is, the note is the whole bottom row
-	// rather than floating above an empty one.
+	// With nothing known about who this is, the note is the only line in the
+	// label band rather than sitting under an empty name row.
 	it("puts the note on the bottom edge when there is no name", () => {
 		const { container } = render(ProfileMiniCard, {
 			props: { displayName: null, age: null, note: "Met in Braga" },
 		});
 
-		const badge = noteBadge(container)?.closest("[data-slot='badge']");
-		const stack = badge?.parentElement;
-		expect(stack?.children).toHaveLength(1);
-		expect(stack?.textContent).toContain("Met in Braga");
+		const label = noteBadge(container)?.closest(".tile-scrim");
+		expect(label?.firstElementChild?.children).toHaveLength(1);
+		expect(label?.textContent).toContain("Met in Braga");
+	});
+
+	// Name and note share one band — two lines in a single gradient overlay, not
+	// two separate chips stacked on the photo.
+	it("carries the name and the note on one label band", () => {
+		const { container } = render(ProfileMiniCard, {
+			props: { displayName: "Henry", note: "Met in Braga" },
+		});
+
+		const label = noteBadge(container)?.closest(".tile-scrim");
+		expect(container.querySelectorAll(".tile-scrim")).toHaveLength(1);
+		expect(label?.firstElementChild?.children).toHaveLength(2);
+		expect(label?.textContent).toContain("Henry");
+		expect(label?.textContent).toContain("Met in Braga");
 	});
 
 	it("treats a blank note as none, rather than an empty badge", () => {

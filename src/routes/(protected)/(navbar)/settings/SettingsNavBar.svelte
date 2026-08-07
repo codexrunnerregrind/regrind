@@ -8,7 +8,7 @@
 	const routes: Record<string, { title: string; back: string }> = {
 		[`${base}/account`]: { title: "Account Settings", back: "/settings" },
 		[`${base}/account/blocked`]: {
-			title: "Blocked Users",
+			title: "Blocked users",
 			back: "/settings/account",
 		},
 		[`${base}/account/privacy`]: {
@@ -42,7 +42,7 @@
 	>
 		<ArrowLeftIcon size={32} />
 	</a>
-	<span class="min-w-0 truncate">
+	<span class="detail-title min-w-0 truncate">
 		{current.title}
 	</span>
 </ProgressiveBlur>

@@ -14,7 +14,7 @@
 	import { sendTap } from "$lib/api/interest/taps";
 	import { sendMessage } from "$lib/api/messaging/messages";
 	import { getUnitsSnapshot } from "$lib/app-data/preferences.svelte";
-	import { registerLightboxDownloadButton } from "$lib/chat/lightbox-download";
+	import { downloadMedia } from "$lib/chat/lightbox-download";
 	import {
 		type MediaViewerActions,
 		registerMediaViewerChrome,
@@ -128,6 +128,12 @@
 			lightboxRef?.pswp?.close();
 			await goto(`/chat/${conversationId}`);
 		},
+		// In the chrome's sender row beside zoom and close, where the viewer's own
+		// controls live — the toolbar that used to carry it is hidden.
+		onSave: (index) => {
+			const image = media[index];
+			if (image) downloadMedia({ url: image.fullImageUrl });
+		},
 	};
 
 	$effect(() => {
@@ -156,10 +162,6 @@
 				});
 				lightbox.on("close", () => {
 					backGestureEventHandlers.delete(onBackGesture);
-				});
-				registerLightboxDownloadButton(lightbox, (index) => {
-					const image = media[index];
-					return image ? { url: image.fullImageUrl } : null;
 				});
 				registerMediaViewerChrome(lightbox, {
 					count: media.length,

@@ -5,103 +5,151 @@
 @custom-variant dark (&:is(.dark *));
 @custom-variant can-hover (@media (hover: hover) and (pointer: fine));
 
-/* WhatsApp-inspired palette. Light is the default (:root); dark values live in
-   the .dark block below and are toggled onto <html> by theme.svelte.ts. Both
-   themes are always defined so the app renders correctly in either mode. */
+/* The "Nearby" palette (design_handoff_nearby_app/README.md § Design tokens).
+   Hex values are copied verbatim from the handoff table so the two can be
+   diffed by eye; the handoff's names are given in the comments.
+
+   Light is the default (:root); dark values live in the .dark block below and
+   are toggled onto <html> by theme.svelte.ts. Both themes are always defined
+   so the app renders correctly in either mode. The handoff's rule is that the
+   two themes are a straight token swap with no layout differences. */
 :root {
 	--radius: 0.75rem;
-	--background: oklch(1 0 0);
-	--foreground: oklch(0.21 0.02 220);
-	--card: oklch(1 0 0);
-	--card-foreground: oklch(0.21 0.02 220);
-	--popover: oklch(1 0 0);
-	--popover-foreground: oklch(0.21 0.02 220);
+	--background: #fafbfd; /* bg */
+	--foreground: #111519; /* ink */
+	--card: #ffffff; /* surface */
+	--card-foreground: #111519;
+	--popover: #ffffff;
+	--popover-foreground: #111519;
 	/* Pre-hydration fallback for primary actions, links and focus. Matches the
 	   default accent (yellow) in palette.ts so a fresh install doesn't flash a
-	   different colour before preferences load. */
+	   different colour before preferences load. The handoff's own accent is
+	   #0B62E0 here / #3D8BFF dark — pick "Blue" in Appearance to get it. */
 	--primary: oklch(0.869 0.178 91);
 	--primary-foreground: oklch(0.22 0.02 91);
-	--secondary: oklch(0.94 0.006 220);
-	--secondary-foreground: oklch(0.21 0.02 220);
-	--muted: oklch(0.94 0.006 220);
-	--muted-foreground: oklch(0.5 0.025 220);
-	--accent: oklch(0.68 0.13 172);
-	--accent-foreground: oklch(1 0 0);
-	--destructive: oklch(0.58 0.22 27);
-	--border: oklch(0.87 0.008 220);
-	--input: oklch(0.87 0.008 220);
-	--ring: oklch(0.68 0.13 172);
-	--chart-1: oklch(0.68 0.13 172);
-	--chart-2: oklch(0.7 0.12 200);
-	--chart-3: oklch(0.65 0.14 145);
-	--chart-4: oklch(0.75 0.13 90);
-	--chart-5: oklch(0.6 0.15 40);
-	--sidebar: oklch(0.98 0.004 220);
-	--sidebar-foreground: oklch(0.21 0.02 220);
-	--sidebar-primary: oklch(0.68 0.13 172);
-	--sidebar-primary-foreground: oklch(1 0 0);
-	--sidebar-accent: oklch(0.94 0.006 220);
-	--sidebar-accent-foreground: oklch(0.21 0.02 220);
-	--sidebar-border: oklch(0.87 0.008 220);
-	--sidebar-ring: oklch(0.68 0.13 172);
-	/* Solid backdrop behind chat bubbles (no doodle wallpaper). WhatsApp beige. */
-	--chat-background: oklch(0.95 0.008 90);
+	--secondary: #eff2f6; /* surface2 */
+	--secondary-foreground: #111519;
+	--muted: #eff2f6; /* surface2 */
+	--muted-foreground: #5d6672; /* ink2 */
+	--accent: oklch(0.869 0.178 91);
+	--accent-foreground: oklch(0.22 0.02 91);
+	--destructive: #d93f52;
+	--border: #dfe4eb; /* line */
+	--input: #eff2f6; /* surface2 — chips and inputs share one fill */
+	--ring: oklch(0.869 0.178 91);
+	--chart-1: oklch(0.869 0.178 91);
+	--chart-2: #1e9e52;
+	--chart-3: #5d6672;
+	--chart-4: #8b95a1;
+	--chart-5: #d93f52;
+	--sidebar: #ffffff;
+	--sidebar-foreground: #111519;
+	--sidebar-primary: oklch(0.869 0.178 91);
+	--sidebar-primary-foreground: oklch(0.22 0.02 91);
+	--sidebar-accent: #eff2f6;
+	--sidebar-accent-foreground: #111519;
+	--sidebar-border: #dfe4eb;
+	--sidebar-ring: oklch(0.869 0.178 91);
+	/* Tertiary text and inactive icons — tab bar labels, timestamps, captions.
+	   Sits between --muted-foreground (ink2) and the surfaces. */
+	--ink3: #8b95a1;
+	/* The one green in the design: the online dot, and nothing else. */
+	--online: #1e9e52;
+	/* Chat sits on the plain screen background — no wallpaper. */
+	--chat-background: #fafbfd;
 	/* Untinted bubble surfaces. theme.svelte.ts overwrites these with the chosen
 	   bubble colours; they show through only before preferences hydrate, and as
 	   the "Neutral" bubble option, so the two sides stay distinguishable by
 	   shade alone. */
-	--message-bubble-in: oklch(1 0 0);
-	--message-bubble-out: oklch(0.93 0.008 220);
-	--message-bubble-foreground: oklch(0.21 0.02 220);
-	--message-bubble-out-foreground: oklch(0.21 0.02 220);
+	--message-bubble-in: #eff2f6;
+	--message-bubble-out: #eff2f6;
+	--message-bubble-foreground: #111519;
+	--message-bubble-out-foreground: #111519;
 	/* Neutral surface behind photos: avatar/grid placeholders, images that are
 	   still loading, locked media. Its foreground is for the icons and labels
 	   drawn on top of it. */
-	--media-placeholder: oklch(0.87 0.008 220);
-	--media-placeholder-foreground: oklch(0.58 0.015 220);
+	--media-placeholder: #eff2f6;
+	--media-placeholder-foreground: #8b95a1;
 }
 
 .dark {
-	--background: oklch(0.19 0.02 220);
-	--foreground: oklch(0.93 0.01 220);
-	--card: oklch(0.25 0.02 220);
-	--card-foreground: oklch(0.93 0.01 220);
-	--popover: oklch(0.25 0.02 220);
-	--popover-foreground: oklch(0.93 0.01 220);
+	--background: #0c0e11; /* bg */
+	--foreground: #eef2f7; /* ink */
+	--card: #14171c; /* surface */
+	--card-foreground: #eef2f7;
+	--popover: #14171c;
+	--popover-foreground: #eef2f7;
 	/* See the :root block: pre-hydration fallback, matching the default accent. */
 	--primary: oklch(0.869 0.178 91);
 	--primary-foreground: oklch(0.22 0.02 91);
-	--secondary: oklch(0.28 0.02 220);
-	--secondary-foreground: oklch(0.93 0.01 220);
-	--muted: oklch(0.28 0.02 220);
-	--muted-foreground: oklch(0.68 0.02 220);
-	--accent: oklch(0.68 0.13 172);
-	--accent-foreground: oklch(0.16 0.02 220);
-	--destructive: oklch(0.7 0.19 22);
-	--border: oklch(1 0 0 / 10%);
-	--input: oklch(1 0 0 / 15%);
-	--ring: oklch(0.68 0.13 172);
-	--chart-1: oklch(0.68 0.13 172);
-	--chart-2: oklch(0.7 0.12 200);
-	--chart-3: oklch(0.65 0.14 145);
-	--chart-4: oklch(0.75 0.13 90);
-	--chart-5: oklch(0.6 0.15 40);
-	--sidebar: oklch(0.22 0.02 220);
-	--sidebar-foreground: oklch(0.93 0.01 220);
-	--sidebar-primary: oklch(0.68 0.13 172);
-	--sidebar-primary-foreground: oklch(0.16 0.02 220);
-	--sidebar-accent: oklch(0.28 0.02 220);
-	--sidebar-accent-foreground: oklch(0.93 0.01 220);
-	--sidebar-border: oklch(1 0 0 / 10%);
-	--sidebar-ring: oklch(0.68 0.13 172);
-	--chat-background: oklch(0.15 0.015 220);
+	--secondary: #1d2229; /* surface2 */
+	--secondary-foreground: #eef2f7;
+	--muted: #1d2229; /* surface2 */
+	--muted-foreground: #97a1ae; /* ink2 */
+	--accent: oklch(0.869 0.178 91);
+	--accent-foreground: oklch(0.22 0.02 91);
+	--destructive: #f0596b;
+	--border: #272d35; /* line */
+	--input: #1d2229; /* surface2 */
+	--ring: oklch(0.869 0.178 91);
+	--chart-1: oklch(0.869 0.178 91);
+	--chart-2: #4ed17f;
+	--chart-3: #97a1ae;
+	--chart-4: #68727f;
+	--chart-5: #f0596b;
+	--sidebar: #14171c;
+	--sidebar-foreground: #eef2f7;
+	--sidebar-primary: oklch(0.869 0.178 91);
+	--sidebar-primary-foreground: oklch(0.22 0.02 91);
+	--sidebar-accent: #1d2229;
+	--sidebar-accent-foreground: #eef2f7;
+	--sidebar-border: #272d35;
+	--sidebar-ring: oklch(0.869 0.178 91);
+	--ink3: #68727f;
+	--online: #4ed17f;
+	--chat-background: #0c0e11;
 	/* Untinted bubble surfaces — see the :root block above. */
-	--message-bubble-in: oklch(0.27 0.02 220);
-	--message-bubble-out: oklch(0.35 0.02 220);
-	--message-bubble-foreground: oklch(0.93 0.01 220);
-	--message-bubble-out-foreground: oklch(0.93 0.01 220);
-	--media-placeholder: oklch(0.37 0.01 220);
-	--media-placeholder-foreground: oklch(0.6 0.01 220);
+	--message-bubble-in: #1d2229;
+	--message-bubble-out: #1d2229;
+	--message-bubble-foreground: #eef2f7;
+	--message-bubble-out-foreground: #eef2f7;
+	--media-placeholder: #1d2229;
+	--media-placeholder-foreground: #68727f;
+}
+
+/* Photo-tile overlays. Deliberately theme-independent: a translucent plate over
+   a photo has to work against the photo, not the screen behind it, so the
+   handoff fixes one dark plate for both themes. `plate` is the feed weight,
+   `plate-strong` the saved-tile / circular-button weight. */
+:root,
+.dark {
+	--plate: rgb(8 10 13 / 0.66);
+	--plate-strong: rgb(8 10 13 / 0.72);
+	--plate-foreground: #eef2f7;
+	--plate-muted: #c2cbd6;
+	/* The foot of a tile's label gradient — see the .tile-scrim* classes. The
+	   people grids ramp to the heavier weight because a name and a note have to
+	   survive a bright photo; album covers carry a shorter label and take the
+	   lighter one. */
+	--plate-scrim: rgb(8 10 13 / 0.9);
+	--plate-scrim-soft: rgb(8 10 13 / 0.82);
+	/* The pencil glyph on a note line, and the only accent that stays light in
+	   both themes because it sits on a dark plate. */
+	--plate-accent: #7fb2ff;
+}
+
+/* The full-screen media viewer (handoff § 09 Album viewer). Always dark, in both
+   themes — it is a media surface, and a light frame around somebody's photo
+   changes how the photo reads. The photo fills the screen and the chrome's bars
+   float over it, so `surface` is only what shows where the photo's aspect ratio
+   leaves room; `chip` is the reply field and the two round buttons beside it. */
+:root,
+.dark {
+	--viewer-surface: #14171c;
+	--viewer-chip: #1d2229;
+	--viewer-ink: #eef2f7;
+	--viewer-ink2: #97a1ae;
+	--viewer-ink3: #68727f;
 }
 
 /* Colour selections. theme.svelte.ts sets data-accent on <html> and writes
@@ -163,6 +211,20 @@
 	--color-chat-background: var(--chat-background);
 	--color-media-placeholder: var(--media-placeholder);
 	--color-media-placeholder-foreground: var(--media-placeholder-foreground);
+	--color-ink3: var(--ink3);
+	--color-online: var(--online);
+	--color-plate: var(--plate);
+	--color-plate-strong: var(--plate-strong);
+	--color-plate-foreground: var(--plate-foreground);
+	--color-plate-muted: var(--plate-muted);
+	--color-plate-accent: var(--plate-accent);
+	--color-plate-scrim: var(--plate-scrim);
+	--color-plate-scrim-soft: var(--plate-scrim-soft);
+	--color-viewer-surface: var(--viewer-surface);
+	--color-viewer-chip: var(--viewer-chip);
+	--color-viewer-ink: var(--viewer-ink);
+	--color-viewer-ink2: var(--viewer-ink2);
+	--color-viewer-ink3: var(--viewer-ink3);
 	/* Ladder tuned to native container radii: 6 / 8 / 12 / 16 / 20 / 24 / 28px at
 	   the 0.75rem base. Small controls sit at sm–md, list rows and cards at
 	   lg–xl, and only genuinely large surfaces (sheets, media tiles) reach 2xl+. */
@@ -176,15 +238,43 @@
 
 	--container-row: 9rem;
 
+	/* An album cover is taller than it is wide but shallower than a photo — the
+	   handoff's .78 for a cover in a grid, .82 for a photo inside an album. */
+	--aspect-album: 0.78;
+	--aspect-album-photo: 0.82;
+
 	--text-2xs: 0.6875rem; /* 11px */
 	--text-3xs: 0.625rem; /* 10px */
+
+	/* The redesign's type scale (handoff § Typography). These are the half-pixel
+	   sizes the mocks are drawn at; the roles they name are the ones in the
+	   handoff table, so a screen can be checked against it by class name. */
+	--text-screen-title: 1.6875rem; /* 27px — Nearby / Inbox / Settings */
+	--text-section: 0.59375rem; /* 9.5px — ACCOUNT / PINNED / ABOUT */
+	--text-row: 0.90625rem; /* 14.5px — list row title, bubble text */
+	--text-preview: 0.78125rem; /* 12.5px — message preview, chip label */
+	--text-meta: 0.71875rem; /* 11.5px — timestamp, tile name plate */
+	--text-distance: 0.65625rem; /* 10.5px — distance overlay, bubble time */
 
 	/* Settings/list type scale, sitting between Tailwind's xs and base. `caption`
 	   covers group labels, footnotes and row descriptions; `body` is a list row
 	   title; `title` is a card heading such as the profile hero name. */
 	--text-caption: 0.8125rem; /* 13px */
+	/* Pushed-screen title, and the album name on the album editor. */
+	--text-detail: 1.25rem; /* 20px */
+	--text-album-name: 1.375rem; /* 22px */
 	--text-body: 0.9375rem; /* 15px */
 	--text-title: 1.0625rem; /* 17px */
+
+	/* Horizontal screen padding for lists and headers, and the gap either side
+	   of a screen title. */
+	--spacing-screen: 18px;
+	/* Inset of a tile's label plate and corner marker from the tile edge. */
+	--spacing-plate: 7px;
+	/* The unread dot. */
+	--spacing-dot: 7px;
+	/* Tile label plate corner. */
+	--radius-plate: 7px;
 
 	--spacing-avatar: 37.5px;
 	--spacing-list-rail: 117px;
@@ -203,9 +293,23 @@
 }
 
 @theme {
-	--radius-grid: 17px;
+	/* Chat bubbles: 14pt all round, with the corner nearest the sender pulled in
+	   to 4pt on the last bubble of a stack — the redesign's replacement for a
+	   drawn tail. */
+	--radius-bubble: 14px;
+	--radius-bubble-tail: 4px;
+
+	/* Photo grids are edge-to-edge in the redesign, so the container's corners
+	   are square. The per-cell rounding rules below still run — they just
+	   resolve to 0 — so restoring a rounded grid is a one-token change. */
+	--radius-grid: 0px;
 
 	--radius-composer: 22px;
+
+	/* The gutter between photo tiles, and the grid's own margin wherever it sits
+	   inside a padded container (the attachments sheet) rather than edge to
+	   edge, so the spacing around the tiles reads as one value. */
+	--spacing-gutter: 2px;
 }
 
 /* .photo-grid column-count thresholds, queried against the nearest
@@ -269,11 +373,11 @@ a {
 	background: red;
 }
 
+/* Distance sits bare on the photo — no plate — so it leans on a shadow rather
+   than a fill to stay legible over a bright image. */
 .profile-card-distance {
-	@apply text-2xs font-medium tracking-tight text-white/85;
-	text-shadow:
-		0px 1px 1px rgba(0, 0, 0, 0.2),
-		0px 0px 2px rgba(0, 0, 0, 0.2);
+	@apply text-distance leading-none font-medium text-plate-foreground;
+	text-shadow: 0 1px 3px rgb(0 0 0 / 0.6);
 }
 
 /* Push the whole toolbar (counter + buttons) below the notch/status bar so
@@ -314,15 +418,124 @@ a {
 	@apply top-1.5 left-1.5 size-8;
 }
 
+/* A viewer with the story chrome (see MediaViewerChrome.svelte) owns its own
+   frame: zoom, save and close live in its sender row, the bars are opaque and
+   the slide is padded clear of them, so the built-in toolbar would both draw a
+   second set of those buttons and land on top of the row. */
+.pswp--chrome .pswp__top-bar {
+	display: none;
+}
+
+/* The photo fills the screen, so the backdrop shows only where its aspect ratio
+   leaves room. `--pswp-bg` is PhotoSwipe's own hook for it, so this survives the
+   opacity animation. Doubled class: PhotoSwipe's own stylesheet arrives with the
+   lightbox chunk, so it lands after this file and would otherwise win the
+   default on equal specificity. */
+.pswp.pswp--chrome {
+	--pswp-bg: var(--viewer-surface);
+}
+
 @layer components {
 	.scrollbar-thin {
 		scrollbar-width: thin;
 	}
 
+	/* Group heading above a list or card section — PINNED, ACCOUNT, ABOUT. */
+	.section-label {
+		@apply text-section leading-none font-semibold tracking-[0.16em] text-ink3 uppercase;
+	}
+
+	/* Screen title — Nearby, Inbox, Settings, and a profile name. */
+	.screen-title {
+		@apply text-screen-title leading-none font-semibold tracking-[-0.03em];
+	}
+
+	/* Title of a pushed detail screen — Edit album, Blocked users. Same family as
+	   a screen title, a step down in size because it sits beside a back arrow. */
+	.detail-title {
+		@apply text-detail leading-none font-semibold tracking-[-0.02em];
+	}
+
+	/* An album's own name, on its edit screen: the one thing on the screen that
+	   is a title rather than a label, so it sits above .detail-title. */
+	.album-name {
+		@apply text-album-name leading-none font-semibold tracking-[-0.02em];
+	}
+
+	/* A tile's label band: full tile width, flush to the bottom edge, with a tall
+	   top padding that is the gradient's ramp. The gradient is what carries the
+	   text over a bright photo — no plate, no blur, and the rest of the tile
+	   stays uncovered. */
+	.tile-scrim {
+		@apply pointer-events-none absolute inset-x-0 bottom-0 px-2.25 pt-6 pb-2 text-plate-foreground;
+
+		background: linear-gradient(transparent, var(--plate-scrim));
+	}
+
+	/* Two lines of label (a name over a note) need a slightly longer ramp. */
+	.tile-scrim-tall {
+		@apply pt-6.5;
+	}
+
+	/* An album cover's label: one short line, so a lighter ramp. */
+	.tile-scrim-soft {
+		@apply pointer-events-none absolute inset-x-0 bottom-0 px-2.25 pt-5 pb-2 text-plate-foreground;
+
+		background: linear-gradient(transparent, var(--plate-scrim-soft));
+	}
+
+	/* The grid for objects rather than faces — albums, an album's photos. Wider
+	   gutters and rounded corners than .photo-grid, and it keeps the screen's
+	   side padding instead of running edge to edge. Column counts follow the
+	   same @container/photo-grid thresholds. */
+	/* A grid whose tiles can be picked up and dropped elsewhere (drag-reorder.ts).
+	   The lifted tile rides above its neighbours and follows the finger with no
+	   transition; the cell it would land in is outlined, so the drop target is
+	   visible without the grid reflowing under the hand. */
+	.reorder-grid {
+		/* Without these, holding a photo pops WebKit's image callout and the
+		   selection magnifier, and the pointer is cancelled before the tile ever
+		   lifts — the drag looks like it simply does not work. */
+		[data-reorder-item] {
+			@apply transition-transform select-none [-webkit-touch-callout:none];
+
+			-webkit-user-drag: none;
+
+			& * {
+				@apply select-none [-webkit-touch-callout:none];
+
+				-webkit-user-drag: none;
+			}
+		}
+
+		[data-reorder-target] {
+			@apply outline-2 outline-offset-2 outline-primary;
+		}
+
+		[data-reorder-dragging] {
+			@apply relative z-10 scale-105 transition-none;
+			filter: drop-shadow(0 8px 20px rgb(0 0 0 / 0.35));
+		}
+	}
+
+	.object-grid {
+		@apply mx-auto grid w-full max-w-400 grid-cols-3 content-start gap-2 @grid4/photo-grid:grid-cols-4 @grid5/photo-grid:grid-cols-5 @grid6/photo-grid:grid-cols-6 @grid7/photo-grid:grid-cols-7;
+
+		/* Three tiles across is half again as many covers on screen as the old
+		   two, so tiles that have scrolled out of view skip their paint and
+		   layout. The cells keep their size either way — every tile carries an
+		   aspect ratio and the grid gives it a definite width — so this changes
+		   nothing about where anything sits. Not on a reorder grid: a drag reads
+		   every tile's box, including the ones off screen. */
+		&:not(.reorder-grid) > * {
+			content-visibility: auto;
+		}
+	}
+
 	/* Requires an ancestor with @container/photo-grid — column counts follow
 	   that container's width, not the viewport. */
 	.photo-grid {
-		@apply mx-auto grid w-full max-w-400 flex-1 grid-cols-2 content-start gap-0.5 overflow-clip rounded-grid @grid3/photo-grid:grid-cols-3 @grid4/photo-grid:grid-cols-4 @grid5/photo-grid:grid-cols-5 @grid6/photo-grid:grid-cols-6 @grid7/photo-grid:grid-cols-7;
+		@apply mx-auto grid w-full max-w-400 flex-1 grid-cols-2 content-start gap-gutter overflow-clip rounded-grid @grid3/photo-grid:grid-cols-3 @grid4/photo-grid:grid-cols-4 @grid5/photo-grid:grid-cols-5 @grid6/photo-grid:grid-cols-6 @grid7/photo-grid:grid-cols-7;
 
 		> :first-child {
 			border-top-left-radius: var(--radius-grid);

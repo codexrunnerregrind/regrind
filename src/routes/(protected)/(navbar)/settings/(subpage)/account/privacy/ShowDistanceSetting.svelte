@@ -42,7 +42,6 @@
 			});
 		}
 	}
-	tint="orange"
 >
 	{#snippet icon()}
 		<MapPinIcon weight="fill" />

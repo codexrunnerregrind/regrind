@@ -2,13 +2,11 @@
 	import { ArrowSquareOutIcon, CaretRightIcon } from "phosphor-svelte";
 
 	import IconTile from "./IconTile.svelte";
-	import type { Tint } from "./tints";
 
 	let {
 		title,
 		description,
 		icon,
-		tint = "slate",
 		href,
 		external = false,
 		onclick,
@@ -22,7 +20,6 @@
 		title: string;
 		description?: string;
 		icon?: import("svelte").Snippet;
-		tint?: Tint;
 		href?: string;
 		/** Renders an outward-link glyph and opens in the system browser. */
 		external?: boolean;
@@ -74,14 +71,16 @@
 	]}
 >
 	{#if icon}
-		<IconTile tint={destructive ? "red" : tint}>
-			{@render icon()}
-		</IconTile>
+		<span class={{ "text-destructive": destructive }}>
+			<IconTile>
+				{@render icon()}
+			</IconTile>
+		</span>
 	{/if}
 	<span class="flex min-w-0 flex-1 flex-col gap-0.5">
 		<span
 			class={[
-				"truncate font-heading text-body leading-snug font-medium",
+				"truncate font-heading text-row leading-snug font-medium",
 				{ "text-destructive": destructive },
 			]}
 		>

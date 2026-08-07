@@ -1,0 +1,167 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script src="./support.js"></script>
+	</head>
+	<body>
+		<x-dc>
+			<div
+				style="
+					display: flex;
+					align-items: stretch;
+					justify-content: space-between;
+					padding: 10px 18px 26px;
+					background: var(--bg);
+					border-top: 1px solid var(--line);
+					flex: none;
+				"
+			>
+				<div
+					style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;color: {{ cBrowse }}"
+				>
+					<svg
+						width="21"
+						height="21"
+						viewBox="0 0 21 21"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.6"
+					>
+						<rect x="1.6" y="1.6" width="7" height="7" rx="1.6"></rect>
+						<rect x="12.4" y="1.6" width="7" height="7" rx="1.6"></rect>
+						<rect x="1.6" y="12.4" width="7" height="7" rx="1.6"></rect>
+						<rect x="12.4" y="12.4" width="7" height="7" rx="1.6"></rect>
+					</svg>
+					<span
+						style="
+							font:
+								500 10px/1 &quot;Public Sans&quot;,
+								sans-serif;
+							letter-spacing: 0.02em;
+						"
+						>Browse</span
+					>
+				</div>
+				<div
+					style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;color: {{ cNow }}"
+				>
+					<svg
+						width="21"
+						height="21"
+						viewBox="0 0 21 21"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.6"
+						stroke-linejoin="round"
+					>
+						<path d="M11.6 1.8 4.4 11.7h4.6l-.9 7.5 8-10.2h-4.8z"></path>
+					</svg>
+					<span
+						style="
+							font:
+								500 10px/1 &quot;Public Sans&quot;,
+								sans-serif;
+							letter-spacing: 0.02em;
+						"
+						>Right Now</span
+					>
+				</div>
+				<div
+					style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;color: {{ cInterest }}"
+				>
+					<svg
+						width="21"
+						height="21"
+						viewBox="0 0 21 21"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.6"
+						stroke-linejoin="round"
+					>
+						<path
+							d="M10.5 2.2 13 7.4l5.7.8-4.1 4 1 5.7-5.1-2.7-5.1 2.7 1-5.7-4.1-4 5.7-.8z"
+						></path>
+					</svg>
+					<span
+						style="
+							font:
+								500 10px/1 &quot;Public Sans&quot;,
+								sans-serif;
+							letter-spacing: 0.02em;
+						"
+						>Interest</span
+					>
+				</div>
+				<div
+					style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;color: {{ cInbox }}"
+				>
+					<svg
+						width="21"
+						height="21"
+						viewBox="0 0 21 21"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.6"
+						stroke-linejoin="round"
+					>
+						<path d="M2.6 4.3h15.8v10.2H7.9L2.6 18.4z"></path>
+					</svg>
+					<span
+						style="
+							font:
+								500 10px/1 &quot;Public Sans&quot;,
+								sans-serif;
+							letter-spacing: 0.02em;
+						"
+						>Inbox</span
+					>
+				</div>
+				<div
+					style="display:flex;flex-direction:column;align-items:center;gap:5px;flex:1;color: {{ cMe }}"
+				>
+					<svg
+						width="21"
+						height="21"
+						viewBox="0 0 21 21"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.6"
+					>
+						<circle cx="10.5" cy="7.3" r="3.6"></circle>
+						<path d="M3.6 18.6a7 7 0 0 1 13.8 0"></path>
+					</svg>
+					<span
+						style="
+							font:
+								500 10px/1 &quot;Public Sans&quot;,
+								sans-serif;
+							letter-spacing: 0.02em;
+						"
+						>You</span
+					>
+				</div>
+			</div>
+		</x-dc>
+		<script
+			type="text/x-dc"
+			data-dc-script
+			data-props='{"$preview":{"width":390,"height":80},"active":{"editor":"enum","options":["browse","now","interest","inbox","me"],"default":"browse","tsType":"string"}}'
+		>
+			class Component extends DCLogic {
+			  renderVals() {
+			    const a = this.props.active || "browse";
+			    const on = "var(--accent)", off = "var(--ink3)";
+			    return {
+			      cBrowse: a === "browse" ? on : off,
+			      cNow: a === "now" ? on : off,
+			      cInterest: a === "interest" ? on : off,
+			      cInbox: a === "inbox" ? on : off,
+			      cMe: a === "me" ? on : off
+			    };
+			  }
+			}
+		</script>
+	</body>
+</html>

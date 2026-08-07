@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { UsersThreeIcon } from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
 	import { showErrorToast } from "$lib/api/error-toast";
@@ -7,7 +6,7 @@
 	import { getAlbumShares, unshareAlbum } from "$lib/api/messaging/albums";
 	import { getProfiles } from "$lib/api/users/profiles";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import ProfileItem from "$lib/components/profile/ProfileItem.svelte";
+	import ProfileActionRow from "$lib/components/profile/ProfileActionRow.svelte";
 	import * as AlertDialog from "$lib/components/ui/alert-dialog";
 	import { Button } from "$lib/components/ui/button";
 	import { Skeleton } from "$lib/components/ui/skeleton";
@@ -154,21 +153,21 @@
 	<!-- The action sits by the heading, not under the list: the list can run to
 	     hundreds of profiles, and anything below it is effectively unreachable. -->
 	<div class="flex min-h-8 items-center justify-between gap-2">
-		<span class="text-sm text-muted-foreground uppercase">
+		<span class="section-label">
 			Shared with{#if sharedIds !== null && sharedIds.length > 0}
 				&nbsp;({sharedIds.length}){/if}
 		</span>
 		{#if error === null && sharedIds !== null && sharedIds.length > 0}
-			<Button
-				variant="ghost"
-				size="sm"
-				class="-me-2 shrink-0 gap-1.5 text-destructive hover:text-destructive"
+			<!-- Bare destructive text, no icon and no fill: it sits beside a section
+			     label, and anything heavier reads as the section's primary action. -->
+			<button
+				type="button"
+				class="shrink-0 text-preview font-semibold text-destructive disabled:opacity-50"
 				disabled={unsharingAll || revoking !== null}
 				onclick={() => (unshareAllOpen = true)}
 			>
-				<UsersThreeIcon class="size-4" />
 				Unshare all
-			</Button>
+			</button>
 		{/if}
 	</div>
 	{#if error !== null}
@@ -176,7 +175,7 @@
 	{:else if sharedIds === null}
 		<div class="flex flex-col gap-2">
 			{#each Array(2)}
-				<Skeleton class="h-14 w-full rounded-xl" />
+				<Skeleton class="h-21 w-full rounded-xl" />
 			{/each}
 		</div>
 	{:else if sharedIds.length === 0}
@@ -184,24 +183,17 @@
 			This album isn't shared with anyone.
 		</span>
 	{:else}
-		<div class="flex flex-col gap-2">
+		<div class="flex flex-col">
 			{#each shares as share (share.profileId)}
-				<ProfileItem
-					avatar={{ mediaHash: share.mediaHash }}
-					title={{ value: share.name }}
-					link="/profile/{share.profileId}"
-				>
-					{#snippet actions()}
-						<Button
-							variant="outline"
-							size="sm"
-							disabled={revoking !== null || unsharingAll}
-							onclick={() => void revoke(share.profileId)}
-						>
-							Unshare
-						</Button>
-					{/snippet}
-				</ProfileItem>
+				<ProfileActionRow
+					profileId={share.profileId}
+					name={share.name}
+					mediaHash={share.mediaHash}
+					actionLabel="Unshare"
+					actionDescription="Unshare with {share.name ?? 'this profile'}"
+					disabled={revoking !== null || unsharingAll}
+					onAction={() => void revoke(share.profileId)}
+				/>
 			{/each}
 		</div>
 		{#if remaining > 0}

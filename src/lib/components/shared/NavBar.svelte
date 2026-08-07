@@ -1,18 +1,13 @@
 <script lang="ts">
 	import { page } from "$app/state";
 	import ChatCircleIcon from "phosphor-svelte/lib/ChatCircleIcon";
-	import DotsNineIcon from "phosphor-svelte/lib/DotsNineIcon";
-	import DropIcon from "phosphor-svelte/lib/DropIcon";
-	import FireIcon from "phosphor-svelte/lib/FireIcon";
+	import LightningIcon from "phosphor-svelte/lib/LightningIcon";
+	import SquaresFourIcon from "phosphor-svelte/lib/SquaresFourIcon";
+	import StarIcon from "phosphor-svelte/lib/StarIcon";
+	import UserIcon from "phosphor-svelte/lib/UserIcon";
 	import { untrack } from "svelte";
 
-	import { getProfile } from "$lib/api/users/profiles";
 	import { getOrCreateConversationsState } from "$lib/chat/conversations-context.svelte";
-	import BrokenUserAvatar from "$lib/components/profile/BrokenUserAvatar.svelte";
-	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
-	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
-	import { Badge } from "$lib/components/ui/badge";
-	import { tabsListVariants } from "$lib/components/ui/tabs";
 	import { hapticSelection } from "$lib/platform/haptics";
 	import { scrollActiveViewToTop } from "$lib/util/scroll";
 
@@ -29,103 +24,88 @@
 		}
 	}
 
-	const myProfilePhotos = untrack(() =>
-		getProfile(ourProfileId).then((profile) => profile.medias),
-	);
-
 	const conversations = untrack(() =>
 		getOrCreateConversationsState(ourProfileId),
 	);
 	const hasUnread = $derived(conversations.hasUnread);
+
+	// Each tab owns a route prefix rather than an exact id so subpages (a
+	// settings subpage, an interest sub-tab) keep their tab lit.
+	const tabs = [
+		{
+			href: "/",
+			label: "Browse",
+			icon: SquaresFourIcon,
+			match: (id: string) => id === "/(protected)/(navbar)/(root)",
+		},
+		{
+			href: "/right-now",
+			label: "Right Now",
+			icon: LightningIcon,
+			match: (id: string) => id === "/(protected)/(navbar)/right-now",
+		},
+		{
+			href: "/interest",
+			label: "Interest",
+			icon: StarIcon,
+			match: (id: string) =>
+				id.startsWith("/(protected)/(navbar)/interest") ||
+				id.startsWith("/(protected)/(navbar)/favorites"),
+		},
+		{
+			href: "/chat",
+			label: "Inbox",
+			icon: ChatCircleIcon,
+			match: (id: string) => id.startsWith("/(protected)/chat"),
+		},
+		{
+			href: "/settings",
+			label: "You",
+			icon: UserIcon,
+			match: (id: string) => id.startsWith("/(protected)/(navbar)/settings"),
+		},
+	];
 </script>
 
-<ProgressiveBlur
-	direction="bottomToTop"
-	tag="nav"
-	class="fixed bottom-0 z-50 w-full pt-2 pb-fixed-nav"
-	bgClass="bg-linear-to-t from-background to-transparent"
-	contentClass="overflow-auto no-scrollbar left-1/2 -translate-x-1/2 m-auto flex justify-center gap-2 px-2"
+<!-- Hairline on top and an opaque background — the redesign drops the blurred
+     float in favour of a plain bar the grid scrolls up to.
+     Height is pinned to --nav-height rather than left to the content: that token
+     is what everything else offsets against (--content-pb for scroll padding,
+     and the profile composer, which sits directly on top of this bar). Letting
+     padding decide the height instead left the bar 2pt short of the token, and
+     the page showed through the seam. -->
+<nav
+	class="fixed bottom-0 z-50 flex h-[calc(var(--nav-height)+var(--safe-area-bottom,0px))] w-full border-t border-border bg-background px-screen pb-(--safe-area-bottom)"
 >
-	<div
-		class={[
-			tabsListVariants({ variant: "default" }),
-			"links shrink-0 [&>a>svg]:size-5!",
-		]}
-	>
+	{#each tabs as tab (tab.href)}
+		{@const active = tab.match(page.route.id ?? "")}
 		<a
-			href="/"
-			data-active={page.route.id === "/(protected)/(navbar)/(root)"}
-			onclick={(e) =>
-				onTabClick(e, page.route.id === "/(protected)/(navbar)/(root)")}
+			href={tab.href}
+			data-active={active}
+			onclick={(e) => onTabClick(e, active)}
+			class="tab"
 		>
-			<DotsNineIcon weight="fill" />
-			Browse
+			<span class="relative">
+				<tab.icon class="size-5.25" />
+				{#if tab.href === "/chat" && hasUnread}
+					<span
+						class="absolute -top-0.5 -right-1 size-2 rounded-full bg-primary"
+					></span>
+				{/if}
+			</span>
+			<span class="text-3xs leading-none font-medium tracking-[0.02em]">
+				{tab.label}
+			</span>
 		</a>
-		<a
-			href="/right-now"
-			data-active={page.route.id === "/(protected)/(navbar)/right-now"}
-			onclick={(e) =>
-				onTabClick(e, page.route.id === "/(protected)/(navbar)/right-now")}
-		>
-			<DropIcon weight="fill" />
-			Right Now
-		</a>
-		<a
-			href="/interest"
-			data-active={page.route.id?.startsWith("/(protected)/(navbar)/interest")}
-			onclick={(e) =>
-				onTabClick(
-					e,
-					page.route.id?.startsWith("/(protected)/(navbar)/interest") ?? false,
-				)}
-		>
-			<FireIcon weight="fill" />
-			Interest
-		</a>
-		<a
-			href="/chat"
-			data-active={page.route.id === "/(protected)/chat"}
-			onclick={(e) => onTabClick(e, page.route.id === "/(protected)/chat")}
-		>
-			<ChatCircleIcon weight="fill" />
-			Inbox
-			{#if hasUnread}
-				<Badge class="absolute inset-e-2 top-1 size-2.5 rounded-full p-0" />
-			{/if}
-		</a>
-	</div>
-	<a
-		href="/settings"
-		aria-label="Me"
-		onclick={(e) =>
-			onTabClick(e, page.route.id === "/(protected)/(navbar)/settings/(me)")}
-		class={[
-			"flex size-14 shrink-0 rounded-full border bg-muted p-1",
-			{
-				"border-2 border-accent":
-					page.route.id === "/(protected)/(navbar)/settings/(me)",
-				"border-border":
-					page.route.id !== "/(protected)/(navbar)/settings/(me)",
-			},
-		]}
-	>
-		{#await myProfilePhotos then photos}
-			{@const mainPhoto = photos[0] as { mediaHash: string } | undefined}
-			<UserAvatar
-				mediaHash={mainPhoto?.mediaHash ?? null}
-				class="size-full *:rounded-full"
-				size="lg"
-			/>
-		{:catch}
-			<BrokenUserAvatar />
-		{/await}
-	</a>
-</ProgressiveBlur>
+	{/each}
+</nav>
 
 <style lang="postcss">
 	@reference "$layout";
 
-	.links a {
-		@apply relative inline-flex h-[calc(100%-1px)] flex-1 flex-col items-center justify-center gap-0.5 rounded-full border border-transparent! px-3 py-1 text-xs whitespace-nowrap text-foreground/60 group-data-vertical/tabs:rounded-2xl group-data-vertical/tabs:px-3 group-data-vertical/tabs:py-1.5 hover:bg-input/20 focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 dark:text-muted-foreground dark:hover:bg-input/20 data-active:font-medium data-active:text-foreground dark:data-active:border-input dark:data-active:text-accent [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4;
+	/* No active pill or fill: the item is coloured, and that is the whole
+	   active state. min-h keeps every item at a 44pt hit target. */
+	.tab {
+		@apply relative flex min-h-11 flex-1 flex-col items-center justify-center gap-[5px] text-ink3 outline-none focus-visible:ring-2 focus-visible:ring-ring/50 data-[active=true]:text-primary;
 	}
 </style>

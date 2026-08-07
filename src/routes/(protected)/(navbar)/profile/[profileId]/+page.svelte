@@ -33,6 +33,7 @@
 	import ProfileNote from "./ProfileNote.svelte";
 	import ProfileTags from "./ProfileTags.svelte";
 	import SexualPosition from "./SexualPosition.svelte";
+	import SpecSeparator from "./SpecSeparator.svelte";
 	import ProfileTopNavBar from "./top-nav/ProfileTopNavBar.svelte";
 
 	let { data }: import("./$types").PageProps = $props();
@@ -172,14 +173,14 @@
 					/>
 					<div
 						class={[
-							"flex flex-col p-4",
+							"flex flex-col px-5 pt-5",
 							{
 								"pb-24": ourProfile,
 								"pb-40": !ourProfile,
 							},
 						]}
 					>
-						<h1 class="text-2xl wrap-break-word">
+						<h1 class="screen-title wrap-break-word">
 							{#if displayName !== null}
 								<span class="font-semibold">
 									{displayName}
@@ -190,7 +191,7 @@
 								</span>{/if}{#if age !== null}, {age}
 							{/if}
 						</h1>
-						<div class="mt-1 flex items-center gap-3 text-sm">
+						<div class="mt-2.5 flex items-center gap-3.5 text-caption">
 							<OnlineStatus
 								onlineUntil={onlineUntil ?? null}
 								{seen}
@@ -199,9 +200,14 @@
 							<Distance {distance} />
 						</div>
 						{#if sexualPosition !== null || height !== null || weight !== null || bodyType !== null}
-							<div class="mt-2 flex items-center gap-3 text-sm">
+							<div
+								class="mt-3 flex flex-wrap items-center gap-2 text-caption font-medium"
+							>
 								{#if sexualPosition !== null && sexualPosition !== undefined}
 									<SexualPosition {sexualPosition} />
+									{#if height !== null || weight !== null || bodyType !== null}
+										<SpecSeparator />
+									{/if}
 								{/if}
 								<Height {height} {weight} {bodyType} />
 							</div>
@@ -211,10 +217,8 @@
 							<AboutMe>{aboutMe}</AboutMe>
 						{/if}
 						{#if (genders && genders.length > 0) || (pronouns && pronouns.length > 0) || ethnicity !== null || relationshipStatus !== null || (grindrTribes && grindrTribes.length > 0)}
-							<div class="mt-4 flex flex-col gap-2">
-								<span class="text-sm text-muted-foreground uppercase"
-									>Stats</span
-								>
+							<div class="mt-5.5 flex flex-col gap-2.75">
+								<span class="section-label">Stats</span>
 								<Genders {genders} {pronouns} />
 								<Tribes tribes={grindrTribes} />
 								<Ethnicity {ethnicity} />
@@ -222,10 +226,8 @@
 							</div>
 						{/if}
 						{#if (lookingFor && lookingFor.length > 0) || (meetAt && meetAt.length > 0) || nsfw !== null}
-							<div class="mt-4 flex flex-col gap-2">
-								<span class="text-sm text-muted-foreground uppercase">
-									Expectations
-								</span>
+							<div class="mt-5.5 flex flex-col gap-2.75">
+								<span class="section-label">Expectations</span>
 								<LookingFor {lookingFor} />
 								<MeetAt {meetAt} />
 								<NSFWPics nsfwPics={nsfw} />
@@ -233,20 +235,16 @@
 						{/if}
 						<ProfileAlbums {profileId} self={ourProfile} />
 						{#if hivStatus !== null || lastTestedDateValue !== null || (sexualHealthValue && sexualHealthValue.length > 0)}
-							<div class="mt-4 flex flex-col gap-2">
-								<span class="text-sm text-muted-foreground uppercase">
-									Health
-								</span>
+							<div class="mt-5.5 flex flex-col gap-2.75">
+								<span class="section-label">Health</span>
 								<HivStatus {hivStatus} />
 								<LastTested lastTestedDate={lastTestedDateValue} />
 								<HealthPractices healthPractices={sexualHealthValue} />
 							</div>
 						{/if}
 						{#if socialNetworks && Object.keys(socialNetworks).length > 0}
-							<div class="mt-4 flex flex-col gap-2">
-								<span class="text-sm text-muted-foreground uppercase">
-									Socials
-								</span>
+							<div class="mt-5.5 flex flex-col gap-2.75">
+								<span class="section-label">Socials</span>
 								<Socials socials={socialNetworks} />
 							</div>
 						{/if}

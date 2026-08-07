@@ -20,10 +20,21 @@
 
 	const TOGGLE_FILTER_KEYS = ["isOnline", "isRightNow", "isFresh"] as const;
 
+	// One "on" look for the whole filter row. The buttons apply it from their own
+	// state; the toggle-group items get the aria-pressed variant of it, which
+	// also has to beat the group's default pressed fill.
+	const ACTIVE_FILTER =
+		"bg-foreground text-background hover:bg-foreground/90 hover:text-background";
+	const ACTIVE_FILTER_PRESSED =
+		"aria-pressed:bg-foreground aria-pressed:text-background aria-pressed:hover:bg-foreground/90 aria-pressed:hover:text-background";
+
 	const filters = $derived(gridState.filters.value ?? defaultFilters);
 	const { ageEnabled, positionEnabled, isFavorite } = $derived(filters);
 </script>
 
+<!-- Every "on" filter in this row uses the same inverted fill, whichever kind of
+     control it is: a sheet-opening button, a toggle button, or a toggle-group
+     item. ACTIVE_FILTER is that one style. -->
 <Button
 	variant="secondary"
 	aria-label="All filters"
@@ -36,27 +47,21 @@
 	aria-label="Favorites"
 	aria-pressed={isFavorite}
 	onclick={() => gridState.filters.set({ isFavorite: !isFavorite })}
-	class={{
-		"bg-foreground text-background hover:bg-foreground/90": isFavorite,
-	}}
+	class={{ [ACTIVE_FILTER]: isFavorite }}
 >
-	<StarIcon />
+	<StarIcon weight={isFavorite ? "fill" : "regular"} />
 </Button>
 <Button
 	variant="secondary"
 	onclick={() => (openFilters.age = true)}
-	class={{
-		"bg-foreground text-background hover:bg-foreground/90": ageEnabled,
-	}}
+	class={{ [ACTIVE_FILTER]: ageEnabled }}
 >
 	Age
 </Button>
 <Button
 	variant="secondary"
 	onclick={() => (openFilters.position = true)}
-	class={{
-		"bg-foreground text-background hover:bg-foreground/90": positionEnabled,
-	}}
+	class={{ [ACTIVE_FILTER]: positionEnabled }}
 >
 	Position
 </Button>
@@ -78,19 +83,19 @@
 >
 	<ToggleGroup.Item
 		value="isOnline"
-		class={buttonVariants({ variant: "secondary" })}
+		class={[buttonVariants({ variant: "secondary" }), ACTIVE_FILTER_PRESSED]}
 	>
 		Online
 	</ToggleGroup.Item>
 	<ToggleGroup.Item
 		value="isRightNow"
-		class={buttonVariants({ variant: "secondary" })}
+		class={[buttonVariants({ variant: "secondary" }), ACTIVE_FILTER_PRESSED]}
 	>
 		Right now
 	</ToggleGroup.Item>
 	<ToggleGroup.Item
 		value="isFresh"
-		class={buttonVariants({ variant: "secondary" })}
+		class={[buttonVariants({ variant: "secondary" }), ACTIVE_FILTER_PRESSED]}
 	>
 		Fresh
 	</ToggleGroup.Item>

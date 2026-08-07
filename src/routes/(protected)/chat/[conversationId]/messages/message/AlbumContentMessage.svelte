@@ -46,7 +46,6 @@
 	class={[
 		"flex flex-col gap-1",
 		{
-			"ms-3": !media.clone,
 			// Sized to the reply bubble, not the preview: the preview is a fixed
 			// thumbnail below, so a reaction collapses to just that.
 			"w-fit max-w-60": !media.clone,

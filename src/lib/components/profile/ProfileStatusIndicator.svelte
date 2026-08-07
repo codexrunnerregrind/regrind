@@ -32,8 +32,8 @@
 		class={[
 			"flex shrink-0",
 			{
-				"text-green-500": online,
-				"text-gray-400": !online,
+				"text-online": online,
+				"text-ink3": !online,
 			},
 			className,
 		]}
@@ -43,7 +43,7 @@
 		{#if isVisiting}
 			<AirplaneTiltIcon weight="fill" class="size-3" />
 		{:else}
-			<span class="size-2 rounded-full bg-green-500"></span>
+			<span class="size-2 rounded-full bg-online"></span>
 		{/if}
 	</div>
 {/if}

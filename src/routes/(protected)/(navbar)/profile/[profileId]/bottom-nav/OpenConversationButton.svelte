@@ -14,11 +14,14 @@
 	);
 </script>
 
+<!-- Mirrors the media viewer's reply field: a 44pt pill on the muted fill, its
+     label sitting where a placeholder would. Not a real input — tapping it opens
+     the conversation, where the message is actually written. -->
 <Button
-	variant="outline"
+	variant="ghost"
 	size="lg"
-	class="flex-1 justify-start bg-input/20!"
+	class="h-11 flex-1 justify-start rounded-composer bg-muted px-4.5 hover:bg-muted"
 	href="/chat/{conversationId}"
 >
-	<span class="font-normal text-muted-foreground">Write a message...</span>
+	<span class="text-sm font-normal text-ink3">Write a message...</span>
 </Button>

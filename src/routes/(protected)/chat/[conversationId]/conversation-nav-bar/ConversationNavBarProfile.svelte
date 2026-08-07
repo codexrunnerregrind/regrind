@@ -26,7 +26,7 @@
 		<div class="flex min-w-0 flex-col">
 			<Card.Title
 				class={[
-					"flex min-w-0 items-center gap-1",
+					"flex min-w-0 items-center gap-1 text-row font-semibold",
 					{
 						"text-muted-foreground": !profile.name,
 					},
@@ -36,9 +36,11 @@
 				<DisplayName name={profile.name} class="truncate" />
 			</Card.Title>
 			{#if profile.distance === null}
-				<Card.Description class="truncate">Distance unknown</Card.Description>
+				<Card.Description class="truncate text-meta text-ink3">
+					Distance unknown
+				</Card.Description>
 			{:else}
-				<Card.Description class="truncate">
+				<Card.Description class="truncate text-meta text-ink3">
 					<DistanceFormatted distance={profile.distance} />
 				</Card.Description>
 			{/if}

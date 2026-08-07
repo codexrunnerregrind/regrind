@@ -50,7 +50,7 @@
 		onscroll={() => (views.scrollY = container?.scrollTop ?? 0)}
 	>
 		<div
-			class="@container/photo-grid flex min-h-overscrollable w-full flex-col gap-3 pt-16 pb-nav-clear"
+			class="@container/photo-grid flex min-h-overscrollable w-full flex-col gap-3 pt-(--interest-header) pb-nav-clear"
 		>
 			{#if views.loading}
 				<div class="photo-grid">

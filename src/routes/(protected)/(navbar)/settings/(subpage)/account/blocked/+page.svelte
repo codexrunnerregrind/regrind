@@ -1,13 +1,12 @@
 <script lang="ts">
-	import SectionFooter from "$lib/components/settings/SectionFooter.svelte";
-	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
 	import BlockedUsersList from "./BlockedUsersList.svelte";
 </script>
 
-<SectionHeader>Blocked</SectionHeader>
-<BlockedUsersList />
-<SectionFooter>
-	Blocked users can't see your profile or message you, and you won't see theirs.
+<!-- The explanation leads, above the count and the list: what a block does is
+     what someone came here to check. -->
+<p class="pt-1 pb-3.5 text-preview/[1.45] text-pretty text-ink3">
+	Blocked people can't see your profile, message you, or appear in your feed.
 	Because a block hides their profile from you as well, most entries here show
 	only a profile ID.
-</SectionFooter>
+</p>
+<BlockedUsersList />

@@ -29,12 +29,14 @@
 	{#snippet actions()}
 		<Item.Actions class="flex min-w-6 flex-col items-end gap-1 @max-row:hidden">
 			<span
-				class="max-w-full truncate text-right font-medium text-muted-foreground"
+				class="max-w-full truncate text-right text-meta font-medium text-ink3"
 			>
 				<RelativeTimeDynamic date={tap.timestamp} />
 			</span>
 			{#if tap.tapType !== null}
-				<TapIcon tapType={tap.tapType} />
+				<!-- A tap they actually sent, so the emoji rather than the line glyph —
+			     same rule as the profile button. -->
+				<TapIcon tapType={tap.tapType} sent class="size-4" />
 			{/if}
 		</Item.Actions>
 	{/snippet}

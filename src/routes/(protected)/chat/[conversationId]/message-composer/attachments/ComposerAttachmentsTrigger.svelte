@@ -16,11 +16,10 @@
 </script>
 
 <div
-	class={["absolute bottom-0 left-0", { "pointer-events-none": disabled }]}
+	class={["shrink-0", { "pointer-events-none": disabled }]}
 	transition:scale={{ duration: 400, easing: expoOut, start: 0 }}
 >
 	<ComposerButton
-		class="static ps-3.5 pe-1.5"
 		aria-label="Add attachment"
 		onclick={() => {
 			onClick?.();

@@ -19,10 +19,10 @@
 	>
 		<ArrowLeftIcon size={32} />
 	</a>
-	<span class="min-w-0 truncate text-lg font-medium">My Albums</span>
+	<span class="detail-title min-w-0 truncate">My albums</span>
 </ProgressiveBlur>
 
-<main class="flex w-full flex-1 px-3 pt-19 pb-nav-clear">
+<main class="flex w-full flex-1 px-screen pt-19 pb-nav-clear">
 	<div class="mx-auto flex w-full max-w-160 flex-col">
 		<MyAlbumsGrid />
 	</div>

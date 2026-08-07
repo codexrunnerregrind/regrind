@@ -49,7 +49,7 @@
 		onscroll={() => (taps.scrollY = container?.scrollTop ?? 0)}
 	>
 		<div
-			class="mx-auto flex min-h-overscrollable w-full max-w-120 flex-col gap-0 px-0 pt-16 pb-nav-clear"
+			class="mx-auto flex min-h-overscrollable w-full max-w-120 flex-col gap-0 px-0 pt-(--interest-header) pb-nav-clear"
 		>
 			{#if taps.loading}
 				{#each Array(8)}

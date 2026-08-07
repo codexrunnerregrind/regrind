@@ -142,7 +142,9 @@
 	}
 </script>
 
-<div class="@container/photo-grid flex flex-col rounded-grid">
+<!-- `-mx-4 px-gutter` cancels the sheet panel's padding so the margin around the
+     tiles is the same 2px as the gutter between them. -->
+<div class="@container/photo-grid -mx-4 flex flex-col rounded-grid px-gutter">
 	{#if error !== null}
 		<div class="flex flex-1">
 			<ApiErrorDisplay {error} onRetry={() => void load()} class="m-auto" />
@@ -189,8 +191,11 @@
 						if (open) contextMenuUsed = true;
 					}}
 				>
+					<!-- `flex`, not the default block: the inline-flex button inside would
+					     otherwise sit on a text line box, adding ~5px under every tile and
+					     making the row gaps read wider than the column gaps. -->
 					<ContextMenu.Trigger
-						class="relative aspect-square [-webkit-touch-callout:none] **:[-webkit-touch-callout:none]"
+						class="relative flex aspect-square [-webkit-touch-callout:none] **:[-webkit-touch-callout:none]"
 					>
 						<button
 							type="button"

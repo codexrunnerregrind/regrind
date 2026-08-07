@@ -25,9 +25,11 @@
 	isFavorite={preview.isFavorite}
 >
 	{#snippet overlay()}
+		<!-- Centred, because it stands for the whole tile: this viewer's photo is
+		     the one thing the tile cannot show. -->
 		<div class="absolute inset-0 flex items-center justify-center">
 			<div
-				class="flex size-9 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm"
+				class="flex size-9.5 items-center justify-center rounded-full bg-plate text-plate-foreground"
 			>
 				{#if preview.isSecretAdmirer}
 					<HeartIcon weight="fill" class="size-4.5 text-rose-400" />
@@ -36,9 +38,11 @@
 				{/if}
 			</div>
 		</div>
+		<!-- The same label band the people grids use, carrying when rather than
+		     who — how long ago they looked, and how often. -->
 		{#if preview.lastViewed !== null || totalCount > 1}
 			<div
-				class="absolute inset-x-0 bottom-0 z-1 flex items-center justify-between gap-1 bg-linear-to-t from-black/65 to-transparent px-1.5 pt-6 pb-1 text-2xs font-medium text-white/90"
+				class="tile-scrim z-1 flex items-center justify-between gap-1.5 text-2xs/[1.1] font-medium text-plate-muted"
 			>
 				<span class="truncate">
 					{#if preview.lastViewed !== null}
@@ -47,10 +51,10 @@
 				</span>
 				{#if totalCount > 1}
 					<span
-						class="flex shrink-0 items-center gap-0.5"
+						class="flex shrink-0 items-center gap-1"
 						title="{totalCount} views"
 					>
-						<EyeIcon weight="bold" class="size-3" />
+						<EyeIcon class="size-3" />
 						{viewedCountLabel}
 					</span>
 				{/if}

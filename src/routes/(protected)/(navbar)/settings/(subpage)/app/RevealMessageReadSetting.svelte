@@ -27,7 +27,6 @@
 			});
 		}
 	}
-	tint="blue"
 >
 	{#snippet icon()}
 		<ChecksIcon weight="fill" />

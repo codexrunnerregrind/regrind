@@ -406,6 +406,18 @@ export function previewFromMessage(
 	}
 }
 
+/**
+ * The image to show alongside a quoted message, or null when the quote has
+ * nothing to show. A reply to one of several photos is unreadable as the bare
+ * word "Photo" — which photo? — so the quote carries the picture itself.
+ */
+export function replyThumbnailUrl(
+	message: ApiResponseMessage | null | undefined,
+): string | null {
+	if (!message) return null;
+	return message.type === "Image" ? message.body.url : null;
+}
+
 export function previewLabel(preview: MessagePreview | null): string | null {
 	if (preview === null) return null;
 	if (preview.text !== null) return preview.text;

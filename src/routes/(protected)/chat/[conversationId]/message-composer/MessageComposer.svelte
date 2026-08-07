@@ -53,7 +53,7 @@
 
 <form
 	bind:this={form}
-	class="absolute bottom-0 z-20 flex min-h-11 w-full min-w-0 shrink-0 flex-col gap-1 px-2 pb-2"
+	class="absolute bottom-0 z-20 flex min-h-11 w-full min-w-0 shrink-0 flex-col gap-2 border-t border-border bg-background px-3 pt-3 pb-3"
 	bind:clientHeight={height}
 	oninput={() => {
 		// WebKit bug: resive observer emits event a frame late,
@@ -74,13 +74,19 @@
 	{#if replyTo}
 		<ComposerReplyPreview message={replyTo} onCancel={onCancelReply} />
 	{/if}
-	<div class="relative h-full w-full rounded-composer bg-popover">
-		<MessageTextInput bind:value={textContent} />
+	<!-- One row, three controls: attach, field, send. `items-end` keeps the two
+	     buttons on the bottom line as the field grows to multiple lines. -->
+	<div class="flex w-full items-end gap-2">
 		<ComposerAttachments />
-		{#if textContent === ""}
-			<ComposerVoiceMessage />
-		{:else}
-			<ComposerSubmitButton />
-		{/if}
+		<MessageTextInput bind:value={textContent} />
+		<!-- Fixed slot: mic and send cross-fade over each other, so without a
+		     reserved box the row would resize for a frame mid-swap. -->
+		<div class="relative size-10 shrink-0">
+			{#if textContent === ""}
+				<ComposerVoiceMessage />
+			{:else}
+				<ComposerSubmitButton />
+			{/if}
+		</div>
 	</div>
 </form>

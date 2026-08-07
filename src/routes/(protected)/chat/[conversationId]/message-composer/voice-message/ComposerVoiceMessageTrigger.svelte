@@ -19,7 +19,6 @@
 			},
 		});
 	}}
-	class="ps-0"
 	{disabled}
 >
 	{#snippet icon({ ...props })}

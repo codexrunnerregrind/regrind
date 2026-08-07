@@ -61,7 +61,6 @@
 			update("notifyMessages", next, () => (notifyMessages = previous));
 		}
 	}
-	tint="blue"
 >
 	{#snippet icon()}
 		<ChatCircleDotsIcon weight="fill" />
@@ -79,7 +78,6 @@
 			update("notifyTaps", next, () => (notifyTaps = previous));
 		}
 	}
-	tint="pink"
 >
 	{#snippet icon()}
 		<HandTapIcon weight="fill" />

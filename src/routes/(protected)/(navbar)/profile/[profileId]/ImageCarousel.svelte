@@ -7,8 +7,11 @@
 
 	import { sendTap } from "$lib/api/interest/taps";
 	import { sendMessage } from "$lib/api/messaging/messages";
-	import { registerLightboxDownloadButton } from "$lib/chat/lightbox-download";
-	import { registerMediaViewerChrome } from "$lib/chat/media-viewer-chrome";
+	import { downloadMedia } from "$lib/chat/lightbox-download";
+	import {
+		type MediaViewerActions,
+		registerMediaViewerChrome,
+	} from "$lib/chat/media-viewer-chrome";
 	import { TapType } from "$lib/model/interest/taps";
 	import { profileMediaUrl } from "$lib/util/media";
 	import {
@@ -80,7 +83,18 @@
 	$effect(() => {
 		if (!gallery) return;
 		// Built here rather than up front so `self` is read when the viewer opens.
-		const actions = self ? {} : profileActions;
+		// Saving is offered either way — it is one of the viewer's own controls,
+		// alongside zoom and close, not something you do to somebody else's photo.
+		const actions: MediaViewerActions = {
+			...(self ? {} : profileActions),
+			onSave: (index) => {
+				const media = medias[index];
+				if (!media) return;
+				downloadMedia({
+					url: profileMediaUrl({ mediaHash: media.mediaHash, size: "full" }),
+				});
+			},
+		};
 		let lightbox: PhotoSwipeLightbox | undefined;
 		import("photoswipe/lightbox")
 			.then(({ default: PhotoSwipeLightbox }) => {
@@ -91,8 +105,8 @@
 					pswpModule: () => import("photoswipe"),
 					mainClass: `pswp--buttons-visible`,
 					// Matches the chat and album viewers: opaque backdrop, no counter
-					// (the chrome's pills say where we are) and the media padded clear
-					// of the chrome.
+					// (the chrome's segments say where we are) and the photo filling the
+					// screen under the chrome's floating bars.
 					bgOpacity: 1,
 					counter: false,
 				});
@@ -119,17 +133,8 @@
 						}
 					});
 				});
-				registerLightboxDownloadButton(lightbox, (index) => {
-					const media = medias[index];
-					return media
-						? {
-								url: profileMediaUrl({
-									mediaHash: media.mediaHash,
-									size: "full",
-								}),
-							}
-						: null;
-				});
+				// No toolbar download button: the chrome hides the toolbar and carries
+				// saving in its sender row (see `actions.onSave` above).
 				registerMediaViewerChrome(lightbox, {
 					count: medias.length,
 					// The date each photo was taken replaces the old bottom label, which

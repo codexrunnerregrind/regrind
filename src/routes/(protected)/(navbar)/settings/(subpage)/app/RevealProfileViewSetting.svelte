@@ -29,7 +29,6 @@
 			});
 		}
 	}
-	tint="indigo"
 >
 	{#snippet icon()}
 		<EyeIcon weight="fill" />

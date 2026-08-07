@@ -27,7 +27,6 @@
 		title="Privacy"
 		description="Control what other users can see about you."
 		href="/settings/account/privacy"
-		tint="green"
 	>
 		{#snippet icon()}
 			<ShieldCheckIcon weight="fill" />
@@ -37,12 +36,12 @@
 
 <SectionHeader>Sign-in</SectionHeader>
 <SettingsGroup>
-	<SettingsRow title="Email" tint="blue" onclick={unimplemented}>
+	<SettingsRow title="Email" onclick={unimplemented}>
 		{#snippet icon()}
 			<EnvelopeIcon weight="fill" />
 		{/snippet}
 	</SettingsRow>
-	<SettingsRow title="Password" tint="indigo" onclick={unimplemented}>
+	<SettingsRow title="Password" onclick={unimplemented}>
 		{#snippet icon()}
 			<KeyIcon weight="fill" />
 		{/snippet}
@@ -51,16 +50,12 @@
 
 <SectionHeader>People</SectionHeader>
 <SettingsGroup>
-	<SettingsRow
-		title="Blocked users"
-		tint="slate"
-		href="/settings/account/blocked"
-	>
+	<SettingsRow title="Blocked users" href="/settings/account/blocked">
 		{#snippet icon()}
 			<ProhibitIcon weight="fill" />
 		{/snippet}
 	</SettingsRow>
-	<SettingsRow title="Hidden users" tint="slate" onclick={unimplemented}>
+	<SettingsRow title="Hidden users" onclick={unimplemented}>
 		{#snippet icon()}
 			<EyeSlashIcon weight="fill" />
 		{/snippet}

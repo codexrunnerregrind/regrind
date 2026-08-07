@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
+	import { PushPinIcon } from "phosphor-svelte";
 	import { onMount, tick, untrack } from "svelte";
 
 	import { getConversations } from "$lib/chat/conversations-context.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
-	import PillTabs from "$lib/components/shared/PillTabs.svelte";
+	import UnderlineTabs from "$lib/components/shared/UnderlineTabs.svelte";
 	import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 	import { hapticImpact, hapticSelection } from "$lib/platform/haptics";
@@ -17,6 +18,7 @@
 		ConversationsState,
 		InboxTab,
 	} from "$lib/chat/conversations-state.svelte";
+	import type { Conversation as ConversationEntry } from "$lib/model/messaging/conversations";
 	import AlbumsTab from "./AlbumsTab.svelte";
 	import Conversation from "./Conversation.svelte";
 	import ConversationsSelectionBar from "./ConversationsSelectionBar.svelte";
@@ -57,8 +59,10 @@
 		class?: import("svelte/elements").ClassValue;
 	} = $props();
 
+	// "Messages" rather than "Inbox": the screen title above already says Inbox,
+	// so the tab names the list instead of repeating it.
 	const tabs: { value: InboxTab; label: string }[] = [
-		{ value: "inbox", label: "Inbox" },
+		{ value: "inbox", label: "Messages" },
 		{ value: "albums", label: "Albums" },
 	];
 	// Held on the shared state, not locally, so it survives leaving this screen.
@@ -190,6 +194,16 @@
 		void conversations.deleteConversations(conversationIds);
 	}
 
+	// Pinned conversations lift out of the list into their own card so the list
+	// below reads as one uninterrupted run. `entries` is already sorted
+	// pinned-first, so this is a partition, not a re-order.
+	const pinnedEntries = $derived(
+		conversations.entries.filter((entry) => entry.data.pinned),
+	);
+	const restEntries = $derived(
+		conversations.entries.filter((entry) => !entry.data.pinned),
+	);
+
 	function observeSentinel(node: HTMLElement) {
 		const observer = new IntersectionObserver(
 			(es) => {
@@ -206,6 +220,23 @@
 		};
 	}
 </script>
+
+{#snippet row(conversation: ConversationEntry, eager: boolean)}
+	{@const conversationId = conversation.data.conversationId}
+	{@const props = {
+		conversation,
+		selection: selecting ? selection : null,
+		onEnterSelection: mobile.current
+			? () => enterSelection(conversationId)
+			: undefined,
+		onRequestDelete: () => requestDelete([conversationId]),
+	}}
+	{#if eager}
+		<Conversation {...props} />
+	{:else}
+		<LazyConversation {...props} />
+	{/if}
+{/snippet}
 
 {#if selecting}
 	<ConversationsSelectionBar
@@ -232,12 +263,10 @@
 		onPrev: () => cycleTab(-1),
 	}}
 >
-	<PillTabs
-		{tabs}
-		value={activeTab}
-		onSelect={selectTab}
-		class="shrink-0 px-4 pt-4 pb-2"
-	/>
+	<div class="shrink-0 px-screen pt-4">
+		<h1 class="screen-title">Inbox</h1>
+		<UnderlineTabs {tabs} value={activeTab} onSelect={selectTab} class="mt-4" />
+	</div>
 	{#if activeTab === "albums"}
 		<AlbumsTab class={className} />
 	{:else}
@@ -259,29 +288,28 @@
 				<div
 					class="flex min-h-overscrollable shrink-0 flex-col gap-0 pb-nav-clear"
 				>
-					{#each conversations.entries as conversation, i (conversation.data.conversationId)}
-						{@const conversationId = conversation.data.conversationId}
-						{#if i < EAGER_COUNT}
-							<Conversation
-								{conversation}
-								selection={selecting ? selection : null}
-								onEnterSelection={mobile.current
-									? () => enterSelection(conversationId)
-									: undefined}
-								onRequestDelete={() => requestDelete([conversationId])}
-							/>
-						{:else}
-							<LazyConversation
-								{conversation}
-								selection={selecting ? selection : null}
-								onEnterSelection={mobile.current
-									? () => enterSelection(conversationId)
-									: undefined}
-								onRequestDelete={() => requestDelete([conversationId])}
-							/>
-						{/if}
+					{#if pinnedEntries.length > 0}
+						<div class="flex items-center gap-1.5 px-screen pt-5.5 pb-2.5">
+							<PushPinIcon weight="fill" class="size-3 text-ink3" />
+							<span class="section-label">Pinned</span>
+						</div>
+						<!-- The card closes the group, so the last row's separator would
+						     draw a stray line just inside its bottom edge. -->
+						<div
+							class="pinned-group mx-screen overflow-hidden rounded-xl bg-card [&>:last-child_a]:after:border-b-0"
+						>
+							{#each pinnedEntries as conversation (conversation.data.conversationId)}
+								{@render row(conversation, true)}
+							{/each}
+						</div>
+						<div class="h-5"></div>
+					{/if}
+					{#each restEntries as conversation, i (conversation.data.conversationId)}
+						{@render row(conversation, i < EAGER_COUNT)}
 					{:else}
-						<EmptyConversationsList />
+						{#if pinnedEntries.length === 0}
+							<EmptyConversationsList />
+						{/if}
 					{/each}
 					{#if conversations.loadingMore}
 						{#each Array(6)}
@@ -316,3 +344,15 @@
 		{/await}
 	{/if}
 </div>
+
+<style lang="postcss">
+	@reference "$layout";
+
+	/* A row inside the pinned card is square, but the card clips to a 12px
+	   radius — so the selected state's outline (and its tint overlay, which
+	   inherits the radius) had its corners sliced off. Rounding the row to the
+	   card's own radius makes both follow the curve. */
+	.pinned-group :global([data-slot="item"]) {
+		@apply rounded-xl;
+	}
+</style>

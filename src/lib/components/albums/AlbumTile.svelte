@@ -75,28 +75,33 @@
 			/>
 		</div>
 	{/if}
-	<div
-		class="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col items-start gap-0.5 rounded-b-[inherit] bg-linear-to-t from-black/75 to-transparent p-2 pt-6 text-start"
-	>
-		<span class="line-clamp-2 text-xs font-medium text-white">
+	<!-- One label band per tile rather than scattered overlays — the same tile
+	     grammar as the profile grids (ProfileMiniCard.svelte), on the lighter ramp
+	     since an album's label is one short line. -->
+	<div class="tile-scrim-soft flex flex-col items-start text-start">
+		<span class="line-clamp-2 text-meta/[1.1] font-semibold">
 			{title}
 		</span>
 		{#if subtitle}
-			<span class="line-clamp-1 text-[0.7rem] text-white/70">
+			<span class="mt-0.5 line-clamp-1 text-3xs/[1.1] text-plate-muted">
 				{subtitle}
 			</span>
 		{/if}
 	</div>
 	{#if badge}
 		<span
-			class="pointer-events-none absolute top-1.5 left-1.5 rounded-full bg-primary/90 px-2 py-0.5 text-xs font-medium text-primary-foreground"
+			class="pointer-events-none absolute top-1.5 left-1.5 rounded-plate bg-primary px-1.5 py-0.5 text-3xs font-semibold text-primary-foreground"
 		>
 			{badge}
 		</span>
 	{/if}
 	{#if locked}
+		<!-- The one plate on the tile: a glyph alone would read as part of the cover
+		     rather than as the album's state. Fill only, no backdrop blur: this
+		     rides in a scrolling grid, and a blur per tile costs a snapshot of
+		     everything behind it every frame. -->
 		<span
-			class="pointer-events-none absolute top-1.5 right-1.5 flex size-6 items-center justify-center rounded-full bg-black/55 text-white"
+			class="pointer-events-none absolute top-2 right-2 flex size-6.5 items-center justify-center rounded-full bg-plate-strong text-plate-foreground"
 			aria-label="Locked"
 		>
 			<LockSimpleIcon weight="fill" class="size-3.5" />
@@ -116,7 +121,7 @@
 	type="button"
 	bind:this={tileElement}
 	class={[
-		"relative aspect-3/4 cursor-pointer rounded-lg [-webkit-touch-callout:none] **:[-webkit-touch-callout:none]",
+		"relative aspect-album cursor-pointer rounded-lg [-webkit-touch-callout:none] **:[-webkit-touch-callout:none]",
 		{ "opacity-50": loading },
 	]}
 	aria-label={unseen ? `Open ${title}, new content` : `Open ${title}`}

@@ -10,13 +10,16 @@
 	}: import("svelte").ComponentProps<typeof ComposerButton> = $props();
 </script>
 
-<div class="block" transition:fade={{ duration: 400, easing: expoOut }}>
+<div
+	class="absolute inset-0"
+	transition:fade={{ duration: 400, easing: expoOut }}
+>
 	<ComposerButton
 		{...props}
 		class={[
-			"absolute right-0 bottom-0 rounded-e-composer pe-3.5",
+			"rounded-full bg-primary text-primary-foreground hover:bg-primary/90",
 			// Reach into the composer's padding so a near-miss still counts
-			"after:absolute after:-inset-2 after:content-['']",
+			"relative after:absolute after:-inset-2 after:content-['']",
 			className,
 		]}
 	/>

@@ -78,12 +78,13 @@
 {#snippet newAlbumTile()}
 	<button
 		type="button"
-		class="flex aspect-3/4 cursor-pointer items-center justify-center rounded-lg bg-muted/60 text-muted-foreground transition-colors hover:bg-muted/80 disabled:opacity-50"
+		class="flex aspect-album cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border text-primary transition-colors disabled:opacity-50 can-hover:hover:bg-muted/40"
 		aria-label="New album"
 		disabled={creating}
 		onclick={() => void create()}
 	>
-		<PlusIcon weight="bold" class="size-8" />
+		<PlusIcon class="size-4.5" />
+		<span class="text-2xs font-medium">Add</span>
 	</button>
 {/snippet}
 
@@ -93,14 +94,14 @@
 			<ApiErrorDisplay {error} onRetry={() => void load()} class="m-auto" />
 		</div>
 	{:else if albums === null}
-		<div class="photo-grid">
+		<div class="object-grid">
 			{@render newAlbumTile()}
 			{#each Array(5)}
-				<Skeleton class="aspect-3/4 rounded-lg" />
+				<Skeleton class="aspect-album rounded-lg" />
 			{/each}
 		</div>
 	{:else}
-		<div class="photo-grid">
+		<div class="object-grid">
 			{@render newAlbumTile()}
 			{#each albums as album (album.albumId)}
 				<AlbumTile

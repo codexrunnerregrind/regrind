@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { getMessageContext, getMessageMetaContext } from "./context";
-	import MessageTail from "./MessageTail.svelte";
 
 	const { lastInStack, isOut } = $derived(getMessageContext()());
 	const { clone, setRef, adornments } = $derived(getMessageMetaContext()());
@@ -13,20 +12,15 @@
 
 <div
 	class={[
-		"relative w-fit max-w-100 shrink-0 overflow-visible rounded-xl bg-muted px-3 py-2 text-muted-foreground italic select-text",
+		"relative w-fit max-w-[74%] shrink-0 overflow-visible rounded-bubble bg-muted px-3.5 py-2.75 text-row/[1.45] text-muted-foreground italic select-text",
 		{
 			"pointer-coarse:select-none": !clone,
-			"ms-3": !isOut && !clone,
-			"rounded-es-none": lastInStack && !isOut,
-			"me-3": isOut && !clone,
-			"rounded-ee-none": lastInStack && isOut,
+			"rounded-es-bubble-tail": lastInStack && !isOut,
+			"rounded-ee-bubble-tail": lastInStack && isOut,
 		},
 	]}
 	bind:this={el}
 >
-	{#if lastInStack}
-		<MessageTail {isOut} class="fill-muted" />
-	{/if}
 	<span class="whitespace-pre-wrap">Message unsent</span>
 	{@render adornments?.()}
 </div>

@@ -6,7 +6,6 @@
 	import ProfileRightNowIndicator from "$lib/components/profile/ProfileRightNowIndicator.svelte";
 	import ProfileStatusIndicator from "$lib/components/profile/ProfileStatusIndicator.svelte";
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
-	import { Badge } from "$lib/components/ui/badge";
 	import type { RightNowStatus } from "$lib/model/right-now";
 
 	let {
@@ -61,88 +60,88 @@
 </script>
 
 {#snippet content()}
-	<div class="absolute size-full bg-stone-700">
+	<div class="absolute size-full bg-media-placeholder">
 		<UserAvatar {mediaHash} class="size-full" size="xl" />
 	</div>
 	{#if distance !== null}
-		<span class="profile-card-distance absolute top-1 right-1.5">
+		<span class="profile-card-distance absolute top-1.5 right-1.5 z-1">
 			<DistanceFormatted {distance} />
 		</span>
 	{/if}
+	<!-- Bare glyphs in the corner, no disc behind them: at three tiles across, a
+	     filled plate per marker is most of what you see. A shadow carries them
+	     over a light photo the same way the distance label is carried. -->
 	{#if isFavorite || hadRecentChat}
-		<div
-			class="absolute inset-s-2 top-2 z-1 flex w-1/6 flex-col items-center gap-1"
-		>
+		<div class="absolute inset-s-1.5 top-1.5 z-1 flex flex-col gap-1">
 			{#if isFavorite}
-				<div class="badge">
-					<StarIcon weight="fill" class="m-auto size-4/6 text-yellow-500" />
-				</div>
+				<StarIcon
+					weight="fill"
+					class="marker text-primary"
+					aria-label="Saved"
+					role="img"
+				/>
 			{/if}
 			{#if hadRecentChat}
-				<div class="badge">
-					<ChatIcon
-						weight="fill"
-						class="m-auto size-3/5 -translate-y-px text-sky-400"
-					/>
-				</div>
+				<ChatIcon weight="fill" class="marker text-plate-foreground" />
 			{/if}
 		</div>
 	{/if}
-	<!-- The note and who this is share one stack along the bottom edge: the note
-	     sits directly above the name, or on the edge itself when there is no
-	     name for it to sit above. -->
+	<!-- One label band per tile rather than scattered overlays: who this is on
+	     the first line, the private note on the second. Either line may be
+	     absent, and a tile with neither renders no band at all. -->
 	{#if noteText !== "" || hasIdentity}
-		<div class="z-1 flex w-full min-w-0 flex-col items-start gap-0.5 p-0.5">
-			{#if noteText !== ""}
-				<Badge
-					variant="outline"
-					class="max-w-full min-w-0 gap-1 bg-popover/20 text-2xs backdrop-blur-2xl"
-				>
-					<NotePencilIcon
-						weight="fill"
-						role="img"
-						aria-label="Has a note"
-						class="size-3 shrink-0 text-primary"
-					/>
-					<span class="truncate">{noteText}</span>
-				</Badge>
-			{/if}
-			{#if hasIdentity}
-				<div class="flex w-full min-w-0 items-center gap-0.5">
-					<Badge
-						variant="outline"
-						class="max-w-full min-w-0 shrink gap-0 bg-popover/20 backdrop-blur-2xl"
-					>
+		<div
+			class={[
+				"tile-scrim z-1 flex min-w-0 items-end gap-1",
+				{ "tile-scrim-tall": noteText !== "" && hasIdentity },
+			]}
+		>
+			<div class="flex min-w-0 flex-1 flex-col">
+				{#if hasIdentity}
+					<div class="flex min-w-0 items-center">
 						<ProfileStatusIndicator {onlineUntil} {isVisiting} class="me-1" />
 
 						<ProfileRightNowIndicator {rightNow} class="me-1" />
 
 						{#if displayName !== null}
-							<span class="block shrink truncate font-semibold">
+							<span class="truncate text-meta/[1.1] font-semibold">
 								{displayName}
 							</span>
 						{/if}
 						{#if displayName !== null && age !== null}
-							,&nbsp;
+							<span class="text-meta/[1.1] font-semibold">,&nbsp;</span>
 						{/if}
 						{#if age !== null}
-							<span class="line-clamp-1 block max-w-full shrink-0 truncate">
+							<span class="shrink-0 text-meta/[1.1] font-semibold">
 								{age}
 							</span>
 						{/if}
-					</Badge>
-					{#if unread !== null && unread > 0}
-						<span
-							class="flex size-5 shrink-0 items-center justify-center rounded-full border border-black/20 bg-primary text-2xs font-semibold text-primary-foreground"
-						>
-							{#if unread > 99}
-								<span class="text-3xs">99+</span>
-							{:else}
-								{unread}
-							{/if}
+					</div>
+				{/if}
+				{#if noteText !== ""}
+					<div class="mt-0.5 flex min-w-0 items-center gap-1">
+						<NotePencilIcon
+							weight="fill"
+							role="img"
+							aria-label="Has a note"
+							class="size-2.5 shrink-0 text-plate-accent"
+						/>
+						<span class="truncate text-3xs/[1.1] text-plate-muted">
+							{noteText}
 						</span>
+					</div>
+				{/if}
+			</div>
+			{#if unread !== null && unread > 0}
+				<span
+					class="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-2xs font-semibold text-primary-foreground"
+				>
+					{#if unread > 99}
+						<span class="text-3xs">99+</span>
+					{:else}
+						{unread}
 					{/if}
-				</div>
+				</span>
 			{/if}
 		</div>
 	{/if}
@@ -168,7 +167,9 @@
 <style lang="postcss">
 	@reference "$layout";
 
-	.badge {
-		@apply flex aspect-square h-auto w-full rounded-full border border-white/10 bg-popover/40 backdrop-blur-2xl;
+	/* A tile's corner status glyph. */
+	:global(.marker) {
+		@apply size-3.5 shrink-0;
+		filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.6));
 	}
 </style>

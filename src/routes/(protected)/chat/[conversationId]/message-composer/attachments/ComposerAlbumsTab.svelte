@@ -166,7 +166,11 @@
 	}
 </script>
 
-<div class="@container/photo-grid flex flex-col gap-3 rounded-grid">
+<!-- `-mx-4 px-gutter` cancels the sheet panel's padding so the margin around the
+     tiles is the same 2px as the gutter between them. -->
+<div
+	class="@container/photo-grid -mx-4 flex flex-col gap-3 rounded-grid px-gutter"
+>
 	{#if error !== null}
 		<div class="flex flex-1">
 			<ApiErrorDisplay {error} onRetry={() => void load()} class="m-auto" />
@@ -259,7 +263,7 @@
 		     sheet (like the media tab's Send button) so it stays visible without
 		     dragging the sheet up, regardless of how many albums there are. -->
 		<div
-			class="pointer-events-none absolute inset-x-0 bottom-18 flex flex-col items-center gap-3 bg-linear-to-t from-popover via-popover to-transparent px-4 pt-8 pb-1"
+			class="pointer-events-none absolute inset-x-0 bottom-20 flex flex-col items-center gap-3 bg-linear-to-t from-popover via-popover to-transparent px-4 pt-8"
 		>
 			{#if !stopMode}
 				<DropdownMenu.Root>

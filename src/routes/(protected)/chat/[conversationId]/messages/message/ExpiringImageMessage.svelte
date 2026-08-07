@@ -37,7 +37,6 @@
 	const className: import("svelte/elements").ClassValue = $derived([
 		"relative",
 		{
-			"ms-3": !media.clone,
 			"size-full": media.clone,
 		},
 	]);

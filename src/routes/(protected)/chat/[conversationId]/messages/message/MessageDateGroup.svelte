@@ -4,7 +4,11 @@
 	let { dayStart }: { dayStart: number } = $props();
 </script>
 
-<span class="mb-4 text-center text-xs text-muted-foreground">
+<!-- A lettered rule rather than a pill: it separates days without competing with
+     the bubbles either side of it. -->
+<span
+	class="mb-4 text-center text-3xs leading-none font-medium tracking-[0.14em] text-ink3 uppercase"
+>
 	{#if isToday(dayStart)}
 		Today
 	{:else if startOfToday().getTime() - dayStart < 7 * 24 * 60 * 60 * 1000}

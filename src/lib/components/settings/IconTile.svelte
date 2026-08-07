@@ -1,21 +1,17 @@
 <script lang="ts">
-	import { type Tint, tintForeground, tints } from "./tints";
-
 	let {
 		children,
-		tint = "slate",
 	}: {
 		children: import("svelte").Snippet;
-		tint?: Tint;
 	} = $props();
 </script>
 
-<!-- Rounded colour tile behind a settings row's glyph. Keeps every row scannable
-     by colour and gives the list its structure at a glance. -->
+<!-- A settings row's glyph. No coloured tile behind it: in this design colour is
+     signal, so a list of tinted squares would spend all of it on decoration and
+     leave none for the one row that matters (Sign out). Structure comes from the
+     card groups and their labels instead. -->
 <span
-	class="flex size-8 shrink-0 items-center justify-center rounded-lg [&_svg]:size-4.5"
-	style:background-color={tints[tint]}
-	style:color={tintForeground(tint)}
+	class="flex size-[17px] shrink-0 items-center justify-center [&_svg]:size-[17px]"
 >
 	{@render children()}
 </span>

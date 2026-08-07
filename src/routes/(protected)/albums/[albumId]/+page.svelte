@@ -2,8 +2,6 @@
 	import { page } from "$app/state";
 	import {
 		ArrowLeftIcon,
-		CaretLeftIcon,
-		CaretRightIcon,
 		ImageIcon,
 		PencilSimpleIcon,
 		TrashIcon,
@@ -34,6 +32,7 @@
 		albumNameByteLength,
 	} from "$lib/model/messaging/albums";
 	import { hapticImpact } from "$lib/platform/haptics";
+	import { dragReorder } from "$lib/util/drag-reorder";
 	import AlbumShares from "./AlbumShares.svelte";
 
 	let { data }: import("./$types").PageProps = $props();
@@ -155,16 +154,15 @@
 		}
 	}
 
-	async function moveContent(index: number, delta: number) {
+	async function moveContent(from: number, to: number) {
 		if (album === null || busy) return;
-		const target = index + delta;
 		const previous = album.content;
-		if (target < 0 || target >= previous.length) return;
+		if (to < 0 || to >= previous.length || to === from) return;
 
 		const next = [...previous];
-		const [moved] = next.splice(index, 1);
+		const [moved] = next.splice(from, 1);
 		if (moved === undefined) return;
-		next.splice(target, 0, moved);
+		next.splice(to, 0, moved);
 
 		busy = true;
 		album.content = next;
@@ -205,8 +203,8 @@
 	>
 		<ArrowLeftIcon size={32} />
 	</button>
-	<span class="min-w-0 flex-1 truncate text-lg font-medium">
-		{isMine ? "Edit Album" : (album?.albumName ?? "Album")}
+	<span class="detail-title min-w-0 flex-1 truncate">
+		{isMine ? "Edit album" : (album?.albumName ?? "Album")}
 	</span>
 </ProgressiveBlur>
 
@@ -226,25 +224,26 @@
 					/>
 				{:else if album === null}
 					<div class="flex gap-4">
-						<Skeleton class="aspect-3/4 w-28 shrink-0 rounded-xl" />
+						<Skeleton class="aspect-album h-32.5 shrink-0 rounded-lg" />
 						<div class="flex flex-1 flex-col gap-2 pt-1">
 							<Skeleton class="h-5 w-32 rounded-md" />
 							<Skeleton class="h-4 w-40 rounded-md" />
 							<Skeleton class="h-9 w-36 rounded-full" />
 						</div>
 					</div>
-					<div class="photo-grid">
+					<div class="object-grid">
 						{#each Array(6)}
-							<Skeleton class="aspect-square rounded-lg" />
+							<Skeleton class="aspect-album-photo rounded-lg" />
 						{/each}
 					</div>
 				{:else}
-					<!-- Album summary -->
-					<div class="flex gap-4">
+					<!-- Album summary: the cover beside what only you can see about the
+					     album — its private name, its size, when you last touched it. -->
+					<div class="flex gap-3.5">
 						<button
 							type="button"
 							class={[
-								"relative aspect-3/4 w-28 shrink-0 cursor-pointer overflow-hidden rounded-xl bg-card-foreground/10",
+								"relative aspect-album h-32.5 shrink-0 cursor-pointer overflow-hidden rounded-lg bg-media-placeholder",
 								{ "opacity-50": opening },
 							]}
 							aria-label="Open album"
@@ -260,39 +259,35 @@
 								/>
 							{:else}
 								<div
-									class="flex size-full items-center justify-center text-muted-foreground"
+									class="flex size-full items-center justify-center text-media-placeholder-foreground"
 								>
 									<ImageIcon weight="fill" class="size-8" />
 								</div>
 							{/if}
 						</button>
-						<div class="flex min-w-0 flex-1 flex-col gap-1">
-							<span
-								class="text-xs tracking-wide text-muted-foreground uppercase"
-							>
-								Album name
-							</span>
-							<div class="flex items-center gap-2">
-								<span class="truncate text-xl font-semibold">
+						<div class="flex min-w-0 flex-1 flex-col gap-2.25">
+							<span class="section-label">Album name</span>
+							<div class="flex items-center gap-2.25">
+								<span class="album-name truncate">
 									{album.albumName ?? "Untitled album"}
 								</span>
 								{#if isMine}
 									<button
 										type="button"
-										class="shrink-0 text-muted-foreground transition-colors hover:text-foreground"
+										class="shrink-0 text-primary"
 										aria-label="Rename album"
 										onclick={openRename}
 									>
-										<PencilSimpleIcon class="size-5" />
+										<PencilSimpleIcon class="size-4" />
 									</button>
 								{/if}
 							</div>
 							{#if isMine}
-								<span class="text-xs text-muted-foreground">
+								<span class="text-2xs/[1.4] text-ink3">
 									Only you see the album name
 								</span>
 							{/if}
-							<span class="mt-1 text-sm text-muted-foreground">
+							<span class="text-preview text-muted-foreground">
 								{album.content.length}
 								{album.content.length === 1 ? "item" : "items"}
 								{#if updatedMs !== null}
@@ -303,7 +298,7 @@
 								<Button
 									variant="secondary"
 									size="sm"
-									class="mt-2 w-fit gap-2 rounded-full"
+									class="mt-0.5 w-fit gap-2 rounded-full"
 									onclick={scrollToShares}
 								>
 									<UsersIcon weight="fill" class="size-4" />
@@ -314,11 +309,23 @@
 					</div>
 
 					<!-- Content grid -->
-					<div class="flex flex-col gap-2">
+					<div class="flex flex-col gap-2.5">
+						<div class="flex items-center justify-between gap-2">
+							<span class="section-label">Photos</span>
+							{#if isMine && album.content.length > 1}
+								<span class="text-2xs text-ink3">Hold a photo to reorder</span>
+							{/if}
+						</div>
 						{#if album.content.length > 0}
-							<div class="photo-grid">
+							<div
+								class="object-grid reorder-grid"
+								use:dragReorder={{
+									enabled: isMine && !busy,
+									onReorder: (from, to) => void moveContent(from, to),
+								}}
+							>
 								{#each album.content as item, index (item.contentId)}
-									<div class="relative aspect-square">
+									<div class="relative aspect-album-photo" data-reorder-item>
 										<button
 											type="button"
 											class="size-full overflow-hidden rounded-lg"
@@ -329,53 +336,34 @@
 											<img
 												src={item.thumbUrl}
 												alt=""
-												class="size-full bg-card-foreground/10 object-cover"
+												class="size-full bg-media-placeholder object-cover"
 												draggable="false"
 											/>
 										</button>
 										{#if isMine}
 											<button
 												type="button"
-												class="absolute top-1.5 right-1.5 flex size-7 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80 disabled:opacity-50"
+												class="absolute top-1.5 right-1.5 flex size-6.5 items-center justify-center rounded-full bg-plate-strong text-plate-foreground disabled:opacity-50"
 												aria-label="Delete media"
 												disabled={busy}
 												onclick={() => void removeContent(item.contentId)}
 											>
-												<TrashIcon class="size-4" />
+												<TrashIcon class="size-3.5" />
 											</button>
-											<div
-												class="absolute inset-x-1.5 bottom-1.5 flex justify-between"
-											>
-												<button
-													type="button"
-													class="flex size-7 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80 disabled:opacity-30"
-													aria-label="Move earlier"
-													disabled={busy || index === 0}
-													onclick={() => void moveContent(index, -1)}
+											<!-- The first photo is the album's cover everywhere else,
+											     so the grid says which one that is. Fill only, no
+											     backdrop blur — see AlbumTile.svelte. -->
+											{#if index === 0}
+												<span
+													class="pointer-events-none absolute bottom-1.5 left-1.5 rounded-plate bg-plate-strong px-1.75 py-0.75 text-3xs font-semibold text-plate-foreground"
 												>
-													<CaretLeftIcon class="size-4" />
-												</button>
-												<button
-													type="button"
-													class="flex size-7 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80 disabled:opacity-30"
-													aria-label="Move later"
-													disabled={busy || index === album.content.length - 1}
-													onclick={() => void moveContent(index, 1)}
-												>
-													<CaretRightIcon class="size-4" />
-												</button>
-											</div>
+													Cover
+												</span>
+											{/if}
 										{/if}
 									</div>
 								{/each}
 							</div>
-							<span class="text-center text-xs text-muted-foreground">
-								{#if isMine}
-									Tap to view &middot; use the arrows to reorder
-								{:else}
-									Tap to view
-								{/if}
-							</span>
 						{:else}
 							<div
 								class="rounded-xl border border-dashed border-border py-10 text-center text-sm text-muted-foreground"
