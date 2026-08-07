@@ -34,6 +34,7 @@
 	import ProfileTags from "./ProfileTags.svelte";
 	import SexualPosition from "./SexualPosition.svelte";
 	import SpecSeparator from "./SpecSeparator.svelte";
+	import CloseProfileButton from "./top-nav/CloseProfileButton.svelte";
 	import ProfileTopNavBar from "./top-nav/ProfileTopNavBar.svelte";
 
 	let { data }: import("./$types").PageProps = $props();
@@ -98,10 +99,11 @@
 		>
 			<main class="relative mx-auto min-h-overscrollable w-full max-w-200">
 				{#if profileState.loading || !profile}
-					<div class="flex max-w-full flex-col">
+					<div class="relative flex max-w-full flex-col">
 						<Skeleton
 							class="aspect-3/4 h-auto max-h-photo w-full rounded-none"
 						/>
+						<CloseProfileButton />
 
 						<div
 							class={[
@@ -164,6 +166,7 @@
 						{#if !ourProfile}
 							<ProfileNote {profileId} isFavorite={profile.isFavorite} />
 						{/if}
+						<CloseProfileButton />
 					</div>
 					<ProfileTopNavBar
 						ourProfileId={profileState.ourProfileId}

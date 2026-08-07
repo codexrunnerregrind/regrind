@@ -7,7 +7,9 @@
 	import UserIcon from "phosphor-svelte/lib/UserIcon";
 	import { untrack } from "svelte";
 
+	import { getProfile } from "$lib/api/users/profiles";
 	import { getOrCreateConversationsState } from "$lib/chat/conversations-context.svelte";
+	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
 	import { hapticSelection } from "$lib/platform/haptics";
 	import { scrollActiveViewToTop } from "$lib/util/scroll";
 
@@ -28,6 +30,12 @@
 		getOrCreateConversationsState(ourProfileId),
 	);
 	const hasUnread = $derived(conversations.hasUnread);
+
+	// The "You" tab wears the user's own first photo when they have one, so the
+	// generic glyph is only a fallback. A failed fetch falls back the same way.
+	const ourAvatarHash = $derived(
+		getProfile(ourProfileId).then((profile) => profile.medias[0]?.mediaHash),
+	);
 
 	// Each tab owns a route prefix rather than an exact id so subpages (a
 	// settings subpage, an interest sub-tab) keep their tab lit.
@@ -67,6 +75,10 @@
 	];
 </script>
 
+{#snippet glyph(Icon: (typeof tabs)[number]["icon"])}
+	<Icon class="size-5.25" />
+{/snippet}
+
 <!-- Hairline on top and an opaque background — the redesign drops the blurred
      float in favour of a plain bar the grid scrolls up to.
      Height is pinned to --nav-height rather than left to the content: that token
@@ -86,7 +98,35 @@
 			class="tab"
 		>
 			<span class="relative">
-				<tab.icon class="size-5.25" />
+				{#if tab.href === "/settings"}
+					{#await ourAvatarHash}
+						{@render glyph(tab.icon)}
+					{:then mediaHash}
+						{#if mediaHash}
+							<!-- Ringed only while active: at 21pt the photo is too small for a
+							     colour shift to register, so the ring stands in for the tint
+							     the glyph tabs get. -->
+							<span
+								class={[
+									"block size-5.25 overflow-hidden rounded-full bg-media-placeholder",
+									{ "ring-2 ring-current": active },
+								]}
+							>
+								<UserAvatar
+									{mediaHash}
+									class="size-full *:rounded-full"
+									size="md"
+								/>
+							</span>
+						{:else}
+							{@render glyph(tab.icon)}
+						{/if}
+					{:catch}
+						{@render glyph(tab.icon)}
+					{/await}
+				{:else}
+					{@render glyph(tab.icon)}
+				{/if}
 				{#if tab.href === "/chat" && hasUnread}
 					<span
 						class="absolute -top-0.5 -right-1 size-2 rounded-full bg-primary"

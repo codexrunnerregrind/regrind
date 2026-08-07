@@ -267,10 +267,11 @@
 		     whose slides aren't one set — so the name and avatar below sit at the
 		     same height in every viewer. h-[19px] is the band's own height under
 		     border-box: 6pt above the 3pt bars, 10pt below.
-		     Each segment is a fixed size, so two photos and eight look alike and the
-		     row simply grows; stretching segments to the page width reads as a
-		     loading bar rather than as your place in a set. They shrink only past
-		     the point where the row would outgrow its cap. -->
+		     Each segment is one fixed size at every count, so two photos and eight
+		     look alike and the row simply grows; stretching segments to the page
+		     width reads as a loading bar rather than as your place in a set. The
+		     width is the one that still fits MAX_SEGMENTS inside the cap, so the
+		     row never has to shrink its segments to stay within it. -->
 		<div
 			class="mx-auto flex h-[19px] max-w-64 items-center justify-center gap-1.5 pt-1.5 pb-2.5"
 			aria-hidden="true"
@@ -280,7 +281,7 @@
 					{#each { length: count }, i}
 						<span
 							class={[
-								"h-[3px] w-[34px] min-w-1 rounded-sm transition-colors",
+								"h-[3px] w-[15px] shrink-0 rounded-sm transition-colors",
 								{
 									"bg-viewer-ink": i === index,
 									"bg-viewer-ink/30": i !== index,

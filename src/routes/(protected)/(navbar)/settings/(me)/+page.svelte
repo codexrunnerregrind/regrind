@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { version } from "$app/environment";
 	import {
 		GearIcon,
 		IdentificationCardIcon,
@@ -10,6 +9,7 @@
 	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
 	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
 	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
+	import AppVersion from "./AppVersion.svelte";
 	import ProfileLink from "./ProfileLink.svelte";
 	import SignOutButton from "./SignOutButton.svelte";
 	import Socials from "./Socials.svelte";
@@ -63,11 +63,7 @@
 					</SettingsGroup>
 				</div>
 
-				<span
-					class="mt-6 px-4 text-center font-mono text-2xs break-all whitespace-pre-wrap text-muted-foreground select-text"
-				>
-					{version}
-				</span>
+				<AppVersion />
 			</div>
 		</div>
 	</div>

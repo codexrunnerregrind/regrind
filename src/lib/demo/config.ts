@@ -1,7 +1,29 @@
 import { env } from "$env/dynamic/public";
 
+// The build-time env var is the default; the hidden toggle in Settings (tap the
+// app version seven times) overrides it and wins in both directions, so a demo
+// build can be switched back to the real API and vice versa.
+const DEMO_STORAGE_KEY = "demo:enabled";
+
+function demoOverride(): boolean | undefined {
+	if (typeof localStorage === "undefined") return undefined;
+	const stored = localStorage.getItem(DEMO_STORAGE_KEY);
+	return stored === null ? undefined : stored === "true";
+}
+
 export const demoEnabled =
-	!("VITEST" in import.meta) && "PUBLIC_ENABLE_DEMO" in env;
+	!("VITEST" in import.meta) && (demoOverride() ?? "PUBLIC_ENABLE_DEMO" in env);
+
+/**
+ * Flip demo mode and reload. Everything downstream reads `demoEnabled` once at
+ * startup — transport, media URLs, the picker — so a reload is the only way to
+ * hand the whole app over to (or back from) the mock backend.
+ */
+export function toggleDemoMode(): void {
+	if (typeof localStorage === "undefined") return;
+	localStorage.setItem(DEMO_STORAGE_KEY, String(!demoEnabled));
+	location.reload();
+}
 
 export const demoMeProfileId = 123456000;
 

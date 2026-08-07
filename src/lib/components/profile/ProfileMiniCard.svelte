@@ -76,7 +76,7 @@
 			{#if isFavorite}
 				<StarIcon
 					weight="fill"
-					class="marker text-primary"
+					class="marker text-yellow-400"
 					aria-label="Saved"
 					role="img"
 				/>
