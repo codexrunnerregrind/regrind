@@ -55,6 +55,7 @@ Some of this is mine, some comes from pull requests that haven't landed in the o
 - Redesigned settings
 - Appearance of the app: pick your own theme, colors, etc
 - Manage blocked contacts
+- Set your current location, or pick one on the map
 - Swipe between tabs
 - Haptics feedback
 - A small bubble that shows up when someone views your profile
