@@ -47,13 +47,15 @@ class TestList extends ReconcilingListState<Item, Item[]> {
 		return fetchMock() as Promise<Item[]>;
 	}
 
-	protected applySnapshot(snapshot: Item[]): Set<number> {
+	protected applySnapshotReturningCoveredKeys(snapshot: Item[]): Set<number> {
 		this.items = snapshot;
 		return new Set(snapshot.map((item) => item.id));
 	}
 
 	protected applyUpsert(item: Item): void {
-		const index = this.items.findIndex((existing) => existing.id === item.id);
+		const index = this.items.findIndex(
+			(existing) => existing.id === item.id,
+		);
 		const previous = this.items[index];
 		if (previous) this.items.splice(index, 1);
 		this.items = [

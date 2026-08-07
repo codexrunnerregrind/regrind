@@ -9,7 +9,7 @@ import {
 	setConversationMuted,
 	setConversationPinned,
 } from "$lib/api/messaging/conversations";
-import { previewFromMessage } from "$lib/model/messaging/messages";
+import { previewFromMessage } from "$lib/model/messaging/message-preview";
 import { below } from "$lib/util/breakpoints.svelte";
 import { reconciler } from "$lib/util/reconcile";
 import {
@@ -54,11 +54,13 @@ class ConversationsState {
 	#onIncomingMessage: IncomingMessageHandler;
 	#activeConversationId: string | null = null;
 	#wsPromises: Promise<() => void>[] = [];
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- read only by getCachedConversation(), never from a template or $derived
 	#messageCache = new Map<string, CachedConversation>();
 	#unsubscribeReconcile: () => void;
 	#destroyed = false;
 	#pendingFlags = new PendingFlags<OptimisticFlagField>();
 	#pendingDeletes = new PendingDeletes();
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- bookkeeping for Promise.allSettled(), nothing renders from it
 	#inFlightFetches = new Set<Promise<unknown>>();
 	#fetchEpoch = 0;
 	#refreshRequestedSinceFetchStart = false;
@@ -81,10 +83,14 @@ class ConversationsState {
 		);
 
 		this.#wsPromises.push(
-			ws.on("chat.v1.message_sent", chatV1MessageSentEventSchema, (event) => {
+			ws.on(
+				"chat.v1.message_sent",
+				chatV1MessageSentEventSchema,
+				(event) => {
 				if (this.#destroyed) return;
 				void this.#handleMessageSent(event.payload);
-			}),
+				},
+			),
 			ws.on(
 				"chat.v1.conversation.delete",
 				chatV1ConversationDeleteEventSchema,
@@ -155,10 +161,7 @@ class ConversationsState {
 		}
 		this.refreshing = true;
 		try {
-			await this.initial.catch(() => {});
-			// Claim the epoch after initial resolves, or a still-loading initial
-			// #load sees a newer epoch and drops its own result.
-			const fetchEpoch = ++this.#fetchEpoch;
+			const fetchEpoch = await this.#claimEpochAfterInitial();
 			this.#refreshRequestedSinceFetchStart = false;
 
 			const activeId = this.#activeConversationId;
@@ -170,6 +173,7 @@ class ConversationsState {
 				(min, e) => Math.min(min, e.data.lastActivityTimestamp),
 				Number.POSITIVE_INFINITY,
 			);
+			// eslint-disable-next-line svelte/prefer-svelte-reactivity -- function-local scratch map, discarded before this call returns
 			const fetched = new Map<string, Conversation>();
 			let oldestFetchedTs = Number.POSITIVE_INFINITY;
 			let page: number | null = 1;
@@ -216,7 +220,12 @@ class ConversationsState {
 			for (const entry of [...this.entries]) {
 				const id = entry.data.conversationId;
 				if (fetched.has(id)) continue;
-				if (this.#pendingDeletes.blocks({ conversationId: id, fetchEpoch }))
+				if (
+					this.#pendingDeletes.blocks({
+						conversationId: id,
+						fetchEpoch,
+					})
+				)
 					continue;
 				if (entry.data.lastActivityTimestamp > windowFloor) {
 					this.remove(id);
@@ -226,10 +235,7 @@ class ConversationsState {
 			this.#sortEntries();
 		} catch (error) {
 			console.error(error);
-			showErrorToast({
-				label: "Failed to refresh conversations",
-				error,
-			});
+			showErrorToast({ label: "Failed to refresh conversations", error });
 		} finally {
 			this.refreshing = false;
 			this.#runRequestedRefresh();
@@ -249,9 +255,12 @@ class ConversationsState {
 		return this.#syncLatestInFlight;
 	}
 
-	async #runSyncLatest({ errorLabel }: { errorLabel: string }): Promise<void> {
-		// Read, don't claim: syncLatest never writes nextPage, so #load/#reconcile
-		// must not defer to it. It still guards its own write below.
+	async #runSyncLatest({
+		errorLabel,
+	}: {
+		errorLabel: string;
+	}): Promise<void> {
+		// Claiming would make an in-flight #load drop the nextPage it fetched.
 		const fetchEpoch = this.#fetchEpoch;
 		try {
 			const result = await getConversations(1);
@@ -280,6 +289,7 @@ class ConversationsState {
 		const fetchEpoch = ++this.#fetchEpoch;
 		const result = await getConversations(page);
 		if (this.#isStale(fetchEpoch)) return;
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- function-local lookup, never mutated after construction
 		const known = new Set(this.entries.map((e) => e.data.conversationId));
 		for (const entry of result.entries) {
 			const conversationId = entry.data.conversationId;
@@ -292,6 +302,11 @@ class ConversationsState {
 		}
 		this.nextPage = result.nextPage;
 		this.#sortEntries();
+	}
+
+	async #claimEpochAfterInitial(): Promise<number> {
+		await this.initial.catch(() => {});
+		return ++this.#fetchEpoch;
 	}
 
 	#isStale(fetchEpoch: number): boolean {
@@ -352,13 +367,15 @@ class ConversationsState {
 			const [removed] = this.entries.splice(index, 1);
 			revert = () => {
 				if (removed && !this.#find(conversationId)) {
-					this.entries.splice(Math.min(index, this.entries.length), 0, removed);
+					this.entries.splice(
+						Math.min(index, this.entries.length),
+						0,
+						removed,
+					);
 				}
 			};
 		}
-		return {
-			revert,
-		};
+		return { revert };
 	}
 
 	setActive(conversationId: string): void {
@@ -401,7 +418,8 @@ class ConversationsState {
 				.number()
 				.int()
 				.nonnegative()
-				.safeParse(localStorage.getItem(this.#inboxStorageKey())).data ?? 0
+				.safeParse(localStorage.getItem(this.#inboxStorageKey()))
+				.data ?? 0
 		);
 	}
 
@@ -594,7 +612,9 @@ class ConversationsState {
 	}
 
 	#find(conversationId: string): Conversation | undefined {
-		return this.entries.find((e) => e.data.conversationId === conversationId);
+		return this.entries.find(
+			(e) => e.data.conversationId === conversationId,
+		);
 	}
 
 	#mergeIncoming({

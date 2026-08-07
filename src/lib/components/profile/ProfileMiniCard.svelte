@@ -152,13 +152,19 @@
 	<a
 		{href}
 		aria-label={hasVisibleText ? undefined : "Profile"}
-		class={["relative flex aspect-square items-end overflow-hidden", className]}
+		class={[
+			"relative flex aspect-square items-end overflow-hidden",
+			className,
+		]}
 	>
 		{@render content()}
 	</a>
 {:else}
 	<div
-		class={["relative flex aspect-square items-end overflow-hidden", className]}
+		class={[
+			"relative flex aspect-square items-end overflow-hidden",
+			className,
+		]}
 	>
 		{@render content()}
 	</div>

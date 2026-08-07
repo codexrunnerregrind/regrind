@@ -70,6 +70,9 @@
 	   drawn on top of it. */
 	--media-placeholder: #eff2f6;
 	--media-placeholder-foreground: #8b95a1;
+	/* Chat's list pane width. Read back by +layout@(protected).svelte to size
+	   the resizable pane, so it has to stay a plain length. */
+	--list-rail: 117px;
 }
 
 .dark {
@@ -277,7 +280,7 @@
 	--radius-plate: 7px;
 
 	--spacing-avatar: 37.5px;
-	--spacing-list-rail: 117px;
+	--spacing-list-rail: var(--list-rail);
 	/* Where a list row's content column starts: ps-4 (16) + the size-16 avatar
 	   (64) + gap-3 (12). Row dividers are inset to it. */
 	--spacing-list-inset: 92px;
@@ -348,7 +351,9 @@ body {
 	--nav-height: 4rem;
 	--selection-bar-height: 4.75rem;
 	--content-pb: calc(var(--nav-height) + var(--safe-area-bottom));
-	--screen-safe: calc(100dvh - var(--safe-area-top) - var(--safe-area-bottom));
+	--screen-safe: calc(
+		100dvh - var(--safe-area-top) - var(--safe-area-bottom)
+	);
 	/* Runs under the bottom navbar; pair with -mb-(--content-pb) and
 	   pb-nav-clear so content scrolls beneath the navbar's blur. */
 	--screen-nav: calc(100dvh - var(--safe-area-top));

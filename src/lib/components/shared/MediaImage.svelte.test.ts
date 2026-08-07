@@ -35,7 +35,9 @@ describe("MediaImage", () => {
 
 	it("treats a zero-dimension load as broken without calling onload", async () => {
 		const onload = vi.fn();
-		const { container } = render(MediaImage, { props: { src: SRC, onload } });
+		const { container } = render(MediaImage, {
+			props: { src: SRC, onload },
+		});
 
 		await loadedImage(container.querySelector("img")!, 0);
 
@@ -45,7 +47,9 @@ describe("MediaImage", () => {
 
 	it("keeps the image and reports onload for a real load", async () => {
 		const onload = vi.fn();
-		const { container } = render(MediaImage, { props: { src: SRC, onload } });
+		const { container } = render(MediaImage, {
+			props: { src: SRC, onload },
+		});
 
 		await loadedImage(container.querySelector("img")!, 320);
 

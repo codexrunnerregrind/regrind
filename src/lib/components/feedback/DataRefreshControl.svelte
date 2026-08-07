@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { tick } from "svelte";
 	import { cubicOut, expoOut } from "svelte/easing";
 	import { Tween } from "svelte/motion";
 	import { scale, type TransitionConfig } from "svelte/transition";
@@ -7,11 +6,16 @@
 
 	import { Button } from "$lib/components/ui/button";
 	import { cn } from "$lib/util/utils";
-	import { MAX_SLINGSHOT_TENSION, slingshotTension } from "./refresh/disc-math";
+	import {
+		MAX_SLINGSHOT_TENSION,
+		slingshotTension,
+	} from "./refresh/disc-math";
+	import { fixedHeaderOffset } from "./refresh/fixed-header-offset.svelte";
 	import { attachOverscrollPull } from "./refresh/overscroll-adapter";
 	import { PullModel } from "./refresh/pull-model.svelte";
 	import RefreshDisc from "./refresh/RefreshDisc.svelte";
 	import { AT_BOUNDARY_PX } from "./refresh/scroll-chain";
+	import { scrollGeometry } from "./refresh/scroll-geometry";
 	import { attachTouchPull } from "./refresh/touch-adapter";
 
 	let {
@@ -43,12 +47,14 @@
 	};
 
 	const mounted = $derived(!!container);
-	let revealed = $state(false);
+	let restingButtonShown = $state(false);
 	let distance = $state(Infinity);
-	let measuredOffset = $state(0);
+	const headerOffset = fixedHeaderOffset({
+		container: () => container,
+		enabled: () => position === "top",
+	});
 
-	// Mouse pointer-only
-	let pointerOnly = $state(false);
+	let onlyMouseSeen = $state(false);
 	let sawBand = false;
 
 	const reveal = new Tween(0, REVEAL_TRANSITION);
@@ -61,13 +67,14 @@
 		model.setUpdating(updating ?? false);
 	});
 	model.onTrigger = () => onrefresh?.();
-	model.getBaseline = () => (revealed ? REST_HEIGHT_PX : 0);
+	model.getBaseline = () => (restingButtonShown ? REST_HEIGHT_PX : 0);
 
 	type IndicatorType = "disc" | "hint" | "button";
 	const activeFace = $derived.by((): IndicatorType | null => {
 		if (busy) return "disc";
-		if (model.gestureActive) return model.source === "touch" ? "disc" : "hint";
-		if (revealed) return "button";
+		if (model.gestureActive)
+			return model.source === "touch" ? "disc" : "hint";
+		if (restingButtonShown) return "button";
 		return null;
 	});
 	let lingerFace: IndicatorType | null = $state(null);
@@ -87,7 +94,9 @@
 	function discDragTop(displayPx: number): number {
 		const drag = Math.min(1, displayPx / ARM_PX);
 		const tension = slingshotTension(displayPx / ARM_PX);
-		return DISC_START + DISC_TRAVEL * (drag + tension / MAX_SLINGSHOT_TENSION);
+		return (
+			DISC_START + DISC_TRAVEL * (drag + tension / MAX_SLINGSHOT_TENSION)
+		);
 	}
 
 	const discShown = $derived.by(() => {
@@ -106,6 +115,7 @@
 			reveal.current > 0
 		);
 	});
+	const hintMayOverflowBand = $derived(hintShown);
 	const buttonShown = $derived.by(() => {
 		if (activeFace) return activeFace === "button";
 		return lingerFace === "button" && reveal.current > 0;
@@ -144,7 +154,10 @@
 		if (discVisible) {
 			return 1;
 		} else if (hintShown) {
-			return Math.min(1, Math.max(0, (reveal.current / ARM_PX) * 1.2 - 0.2));
+			return Math.min(
+				1,
+				Math.max(0, (reveal.current / ARM_PX) * 1.2 - 0.2),
+			);
 		} else {
 			return Math.min(
 				1,
@@ -152,61 +165,37 @@
 			);
 		}
 	});
-	const scrollTop = () => container?.scrollTop ?? 0;
-	const maxScrollY = () =>
-		container ? container.scrollHeight - container.clientHeight : 0;
-	const scrollToY = (top: number, behavior: ScrollBehavior) => {
-		container?.scroll({ top, behavior });
-	};
-	const overscrollPx = () =>
-		position === "top" ? -scrollTop() : scrollTop() - maxScrollY();
-	const boundaryDistance = () =>
-		position === "top" ? scrollTop() : maxScrollY() - scrollTop();
+	const geometry = scrollGeometry({
+		container: () => container,
+		position: () => position,
+	});
+	const { overscrollPx, boundaryDistance } = geometry;
 
 	export function scrollToRest(behavior: ScrollBehavior = "instant") {
-		if (!container) return;
-		const top = position === "top" ? 0 : maxScrollY();
-		if (Math.abs(scrollTop() - top) >= 1) scrollToY(top, behavior);
+		geometry.scrollToRest(behavior);
 	}
 
 	$effect(() => {
 		if (model.gestureActive && model.source === "overscroll") {
 			void reveal.set(model.displayPx, { duration: 0 });
 		} else if (!model.gestureActive) {
-			void reveal.set(busy || revealed ? REST_HEIGHT_PX : 0);
+			void reveal.set(busy || restingButtonShown ? REST_HEIGHT_PX : 0);
 		}
 	});
 
 	const shouldRevealRestingButton = () =>
-		pointerOnly &&
-		!revealed &&
+		onlyMouseSeen &&
+		!restingButtonShown &&
 		!busy &&
 		!model.gestureActive &&
 		distance < AT_BOUNDARY_PX;
 
 	const shouldConcealRestingButton = () =>
-		revealed && !model.gestureActive && distance >= AT_BOUNDARY_PX;
+		restingButtonShown &&
+		!model.gestureActive &&
+		distance >= AT_BOUNDARY_PX;
 	$effect(() => {
-		if (shouldRevealRestingButton()) revealed = true;
-	});
-
-	$effect(() => {
-		if (position !== "top" || !container) return;
-		const measure = () => {
-			const header = document.querySelector("[data-fixed-header]");
-			if (!header) {
-				measuredOffset = 0;
-				return;
-			}
-			const headerBottom = header.getBoundingClientRect().bottom;
-			measuredOffset = Math.max(
-				0,
-				headerBottom - container.getBoundingClientRect().top,
-			);
-		};
-		void tick().then(measure);
-		window.addEventListener("resize", measure);
-		return () => window.removeEventListener("resize", measure);
+		if (shouldRevealRestingButton()) restingButtonShown = true;
 	});
 
 	$effect(() => {
@@ -215,20 +204,20 @@
 
 		let mouseProbe: ReturnType<typeof setTimeout> | undefined;
 		const onWheel = (event: WheelEvent) => {
-			if (sawBand || pointerOnly) return;
+			if (sawBand || onlyMouseSeen) return;
 			const toward = position === "top" ? -event.deltaY : event.deltaY;
 			if (toward <= 0 || boundaryDistance() >= AT_BOUNDARY_PX) return;
 			clearTimeout(mouseProbe);
 			mouseProbe = setTimeout(() => {
-				if (!sawBand) pointerOnly = true;
+				if (!sawBand) onlyMouseSeen = true;
 			}, MOUSE_PROBE_MS);
 		};
 
 		const onScroll = () => {
 			if (overscrollPx() > BAND_DETECT_PX) {
 				sawBand = true;
-				pointerOnly = false;
-				revealed = false;
+				onlyMouseSeen = false;
+				restingButtonShown = false;
 			}
 			if (
 				!model.gestureActive &&
@@ -240,8 +229,8 @@
 				void reveal.set(Math.max(0, overscrollPx()), { duration: 0 });
 			}
 			distance = boundaryDistance();
-			if (shouldRevealRestingButton()) revealed = true;
-			else if (shouldConcealRestingButton()) revealed = false;
+			if (shouldRevealRestingButton()) restingButtonShown = true;
+			else if (shouldConcealRestingButton()) restingButtonShown = false;
 		};
 
 		target.addEventListener("scroll", onScroll, { passive: true });
@@ -260,14 +249,16 @@
 		const listenTarget = container;
 		if (!listenTarget) return;
 		const scrollRoot = () => container ?? null;
+		// Without this the touch drag freezes: PullModel resists across
+		// space * OVERSHOOT minus the baseline, leaving no range to move through.
 		const noteTouch = () => {
 			sawBand = true;
-			pointerOnly = false;
-			// Hide it so the next touch pull starts from zero. A baseline bigger
-			// than space * OVERSHOOT freezes the drag.
-			revealed = false;
+			onlyMouseSeen = false;
+			restingButtonShown = false;
 		};
-		listenTarget.addEventListener("touchmove", noteTouch, { passive: true });
+		listenTarget.addEventListener("touchmove", noteTouch, {
+			passive: true,
+		});
 		const detach = [
 			attachTouchPull(model, {
 				listenTarget,
@@ -299,8 +290,7 @@
 		data-refresh-source={model.source}
 		class={cn(
 			"pointer-events-none z-10",
-			// hintOffset can push the hint past the band edge, so don't clip it
-			{ "overflow-clip": !hintShown },
+			{ "overflow-clip": !hintMayOverflowBand },
 			"absolute inset-x-0",
 			{
 				"top-(--drc-anchor)": position === "top",
@@ -308,7 +298,7 @@
 			},
 			containerClass,
 		)}
-		style:--drc-anchor="{measuredOffset}px"
+		style:--drc-anchor="{headerOffset.px}px"
 		style:height="{overlayHeight}px"
 		style:opacity
 	>
@@ -342,7 +332,9 @@
 						"top-1": position === "bottom",
 					},
 				]}
-				style:translate="-50% {position === 'top' ? hintOffset : -hintOffset}px"
+				style:translate="-50% {position === 'top'
+					? hintOffset
+					: -hintOffset}px"
 			>
 				{#if model.phase === "armed"}
 					Release to refresh

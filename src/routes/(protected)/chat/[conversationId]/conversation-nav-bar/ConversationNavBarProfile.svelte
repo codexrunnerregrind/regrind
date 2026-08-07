@@ -7,11 +7,7 @@
 	import * as Card from "$lib/components/ui/card";
 	import type { ConversationProfile } from "../conversation-state.svelte";
 
-	let {
-		profile,
-	}: {
-		profile: ConversationProfile;
-	} = $props();
+	let { profile }: { profile: ConversationProfile } = $props();
 </script>
 
 <a href="/profile/{profile.profileId}" class="flex-1 py-4 ps-1 pe-2">

@@ -1,14 +1,13 @@
 <script lang="ts">
 	import { UsersThreeIcon } from "phosphor-svelte";
 
-	import { tribes as allTribes, type TribeId } from "$lib/model/users/profiles";
+	import {
+		tribes as allTribes,
+		type TribeId,
+	} from "$lib/model/users/profiles";
 	import ProfileField from "./ProfileField.svelte";
 
-	let {
-		tribes,
-	}: {
-		tribes: TribeId[] | null;
-	} = $props();
+	let { tribes }: { tribes: TribeId[] | null } = $props();
 </script>
 
 {#if tribes !== null && tribes.length > 0}

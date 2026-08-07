@@ -16,7 +16,12 @@ export const banInfoSchema = z.object({
 export type BanInfo = z.infer<typeof banInfoSchema>;
 
 export const restrictionSchema = z.object({
-	kind: z.enum(["ageVerification", "timedBan", "trustVendorRejected", "other"]),
+	kind: z.enum([
+		"ageVerification",
+		"timedBan",
+		"trustVendorRejected",
+		"other",
+	]),
 	region: z.string().nullish(),
 	reason: z.string().nullish(),
 });
@@ -29,20 +34,12 @@ const loginResultSchema = z.object({
 
 export const methods = {
 	login: {
-		request: z.object({
-			email: z.email(),
-			password: z.string().min(1),
-		}),
+		request: z.object({ email: z.email(), password: z.string().min(1) }),
 		response: loginResultSchema,
 	},
-	login_with_google: {
-		request: z.undefined(),
-		response: loginResultSchema,
-	},
+	login_with_google: { request: z.undefined(), response: loginResultSchema },
 	google_sign_in: {
-		request: z.object({
-			token: z.string().min(1),
-		}),
+		request: z.object({ token: z.string().min(1) }),
 		response: loginResultSchema,
 	},
 	auth_state: {
@@ -53,10 +50,7 @@ export const methods = {
 		request: z.undefined(),
 		response: restrictionSchema.nullish(),
 	},
-	refresh_token: {
-		request: z.undefined(),
-		response: loginResultSchema,
-	},
+	refresh_token: { request: z.undefined(), response: loginResultSchema },
 	rotate_api_params: {
 		request: z.undefined(),
 		response: z.object({
@@ -64,10 +58,7 @@ export const methods = {
 			"l-device-info": z.string(),
 		}),
 	},
-	logout: {
-		request: z.undefined(),
-		response: z.null(),
-	},
+	logout: { request: z.undefined(), response: z.null() },
 	recaptcha_first_party_enabled: {
 		request: z.undefined(),
 		response: z.boolean(),
@@ -115,12 +106,7 @@ export function asAppError(error: unknown) {
 			kind: z.enum(apiErrorKinds),
 			message: z
 				.string()
-				.or(
-					z.object({
-						code: z.number(),
-						message: z.string(),
-					}),
-				)
+				.or(z.object({ code: z.number(), message: z.string() }))
 				.optional(),
 		})
 		.safeParse(error);

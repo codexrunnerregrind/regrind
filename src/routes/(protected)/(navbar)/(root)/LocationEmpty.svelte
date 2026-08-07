@@ -44,10 +44,7 @@
 			geoMapPickerOpen = false;
 		} catch (error) {
 			console.error(error);
-			showErrorToast({
-				label: "Failed to save location",
-				error,
-			});
+			showErrorToast({ label: "Failed to save location", error });
 		}
 	}
 </script>
@@ -66,7 +63,11 @@
 	<Empty.Content>
 		<div class="flex flex-wrap justify-center gap-2">
 			{#if geoApiSupported}
-				<Button variant="default" onclick={handleDetectLocation} {disabled}>
+				<Button
+					variant="default"
+					onclick={handleDetectLocation}
+					{disabled}
+				>
 					<GpsFixIcon color="currentColor" weight="fill" />
 					Use current location
 				</Button>
@@ -80,10 +81,5 @@
 			</Button>
 		</div>
 	</Empty.Content>
-	<!-- <Button variant="link" class="text-muted-foreground" size="sm">
-		<a href="#/">
-			Learn More <ArrowUpRightIcon class="inline" />
-		</a>
-	</Button> -->
 </Empty.Root>
 <LocationChooser onSubmit={submitGeohash} bind:open={geoMapPickerOpen} />

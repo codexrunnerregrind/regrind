@@ -19,11 +19,8 @@
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
 	import { decodeGeohash } from "$lib/model/geohash";
 
-	let {
-		class: className,
-	}: {
-		class?: import("svelte/elements").ClassValue;
-	} = $props();
+	let { class: className }: { class?: import("svelte/elements").ClassValue } =
+		$props();
 
 	const usingCurrent = $derived(getUsingCurrentLocationSnapshot());
 	const geoSupported = geoApiSupported();

@@ -13,9 +13,7 @@ import {
 	redactValue,
 } from "$lib/api/redact/value";
 
-export type RedactionOptions = {
-	redact: boolean;
-};
+export type RedactionOptions = { redact: boolean };
 
 const maxCauseDepth = 3;
 const maxIssues = 20;
@@ -48,7 +46,8 @@ function describeError({
 			issues: describeZodIssues(error),
 		};
 	}
-	if (error instanceof Error) return describeThrown({ error, options, depth });
+	if (error instanceof Error)
+		return describeThrown({ error, options, depth });
 	if (typeof error === "object" && error !== null) {
 		return options.redact ? redactValue(error) : error;
 	}
@@ -123,7 +122,11 @@ function describeCause({
 	const { cause } = error;
 	if (cause instanceof z.ZodError) {
 		return { issues: describeZodIssues(cause) };
-	} else if (cause === null || cause === undefined || depth >= maxCauseDepth) {
+	} else if (
+		cause === null ||
+		cause === undefined ||
+		depth >= maxCauseDepth
+	) {
 		return {};
 	} else {
 		return {
@@ -142,7 +145,9 @@ function prose(value: string, { redact }: RedactionOptions): string {
 
 function describeZodIssues(error: z.ZodError): unknown[] {
 	const { issues } = error;
-	const described: unknown[] = issues.slice(0, maxIssues).map(describeZodIssue);
+	const described: unknown[] = issues
+		.slice(0, maxIssues)
+		.map(describeZodIssue);
 	if (issues.length > maxIssues) {
 		described.push(`<+${issues.length - maxIssues} more>`);
 	}
@@ -168,7 +173,8 @@ function formatZodIssuePath(path: readonly PropertyKey[]): string {
 }
 
 function capList(value: unknown): unknown {
-	if (!Array.isArray(value) || value.length <= maxIssueListItems) return value;
+	if (!Array.isArray(value) || value.length <= maxIssueListItems)
+		return value;
 	return [
 		...value.slice(0, maxIssueListItems),
 		`<+${value.length - maxIssueListItems} more>`,

@@ -10,13 +10,8 @@
 
 	let {
 		openFilters = $bindable(),
-	}: {
-		openFilters: {
-			all: boolean;
-			age: boolean;
-			position: boolean;
-		};
-	} = $props();
+	}: { openFilters: { all: boolean; age: boolean; position: boolean } } =
+		$props();
 
 	const TOGGLE_FILTER_KEYS = ["isOnline", "isRightNow", "isFresh"] as const;
 

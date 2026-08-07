@@ -11,10 +11,7 @@
 	let {
 		checked = $bindable(),
 		value = $bindable(),
-	}: {
-		checked: boolean;
-		value: number[];
-	} = $props();
+	}: { checked: boolean; value: number[] } = $props();
 
 	const genders = $derived(
 		getGenders().then((genders) =>
@@ -50,7 +47,10 @@
 				class="w-full flex-wrap gap-1"
 				bind:value={
 					() => value.map(String),
-					(v: string[]) => ((checked = v.length > 0), (value = v.map(Number)))
+					(v: string[]) => (
+						(checked = v.length > 0),
+						(value = v.map(Number))
+					)
 				}
 			>
 				{#each genders as { genderId, gender, excludeOnFilterSelection: excludeList, genderPlural, displayGroup } (genderId)}
@@ -67,7 +67,10 @@
 					{/if}
 				{/each}
 				<ToggleGroup.Item value="-1">Not specified</ToggleGroup.Item>
-				<Button variant="secondary" onclick={() => (expanded = !expanded)}>
+				<Button
+					variant="secondary"
+					onclick={() => (expanded = !expanded)}
+				>
 					{#if expanded}
 						Less
 					{:else}

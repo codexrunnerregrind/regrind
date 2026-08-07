@@ -73,11 +73,7 @@
 	import RequestBlockedAlert from "$lib/components/feedback/RequestBlockedAlert.svelte";
 	import SessionErrorAlert from "$lib/components/feedback/SessionErrorAlert.svelte";
 
-	let {
-		children,
-	}: {
-		children?: import("svelte").Snippet;
-	} = $props();
+	let { children }: { children?: import("svelte").Snippet } = $props();
 
 	const hasBottomNavBar = $derived(
 		page.route.id?.startsWith("/(protected)/(navbar)") ?? false,
@@ -118,9 +114,7 @@
 		position="bottom-center"
 		offset={toastOffset}
 		mobileOffset={toastOffset}
-		toastOptions={{
-			class: "toast",
-		}}
+		toastOptions={{ class: "toast" }}
 		expand
 	/>
 	<div id="screen-nav-root">

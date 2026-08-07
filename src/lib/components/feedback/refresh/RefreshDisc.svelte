@@ -4,10 +4,7 @@
 	let {
 		progress = 0,
 		spinning = false,
-	}: {
-		progress?: number;
-		spinning?: boolean;
-	} = $props();
+	}: { progress?: number; spinning?: boolean } = $props();
 
 	const RADIUS = 7.5;
 	const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
@@ -23,9 +20,9 @@
 	const SPIN_INTRO_MIN_SWEEP = 0.05;
 
 	const drag = $derived(Math.min(1, Math.max(0, progress)));
-	// 5/3 is 1 / (1 - RING_START_DRAG), so ringProgress hits 1 when drag hits 1.
-	// Change one and you have to change the other.
-	const ringProgress = $derived((Math.max(drag - RING_START_DRAG, 0) * 5) / 3);
+	const ringProgress = $derived(
+		Math.max(drag - RING_START_DRAG, 0) / (1 - RING_START_DRAG),
+	);
 	const sweep = $derived(Math.min(MAX_ARC, ringProgress * MAX_ARC));
 	const arrowScale = $derived(Math.min(1, ringProgress));
 	const tension = $derived(slingshotTension(progress));
@@ -41,14 +38,15 @@
 			: RING_MIN_OPACITY + (1 - RING_MIN_OPACITY) * ringProgress,
 	);
 
-	// The spinning cycle picks up where the arrow was pointing
-	let spinFrom = $state({ rotation: 0, sweep: 0 });
+	let arrowAtSpinStart = $state({ rotation: 0, sweep: 0 });
 	$effect.pre(() => {
-		if (!spinning) spinFrom = { rotation, sweep };
+		if (!spinning) arrowAtSpinStart = { rotation, sweep };
 	});
-	const spinBase = $derived(spinFrom.rotation + spinFrom.sweep * 360);
-	const introArc = $derived(spinFrom.sweep * CIRCUMFERENCE);
-	const withIntro = $derived(spinFrom.sweep > SPIN_INTRO_MIN_SWEEP);
+	const spinBase = $derived(
+		arrowAtSpinStart.rotation + arrowAtSpinStart.sweep * 360,
+	);
+	const introArc = $derived(arrowAtSpinStart.sweep * CIRCUMFERENCE);
+	const withIntro = $derived(arrowAtSpinStart.sweep > SPIN_INTRO_MIN_SWEEP);
 </script>
 
 <div
@@ -63,6 +61,7 @@
 					<circle
 						class={["spin-arc", { "with-intro": withIntro }]}
 						style:--intro-arc={introArc}
+						style:--circumference={CIRCUMFERENCE}
 						cx="20"
 						cy="20"
 						r={RADIUS}
@@ -93,10 +92,12 @@
 					<g transform="rotate({sweep * 360} 20 20)">
 						<polygon
 							fill="currentColor"
-							points="{20 + RADIUS - ARROW_HALF_WIDTH * arrowScale},20 {20 +
+							points="{20 +
+								RADIUS -
+								ARROW_HALF_WIDTH * arrowScale},20 {20 +
 								RADIUS +
-								ARROW_HALF_WIDTH * arrowScale},20 {20 + RADIUS},{20 +
-								ARROW_HEIGHT * arrowScale}"
+								ARROW_HALF_WIDTH * arrowScale},20 {20 +
+								RADIUS},{20 + ARROW_HEIGHT * arrowScale}"
 						/>
 					</g>
 				{/if}
@@ -119,8 +120,7 @@
 		transition: opacity 200ms ease-out;
 	}
 
-	/* CircularProgressDrawable: arc grows from ~0 to 0.8 turns,
-	   dash values scaled to circumference 2*pi*7.5. */
+	/* Dash values are Android's CircularProgressDrawable scaled to r 7.5. */
 	.spin-group {
 		transform-origin: 20px 20px;
 		animation: disc-rotate 1568ms linear infinite;
@@ -143,11 +143,13 @@
 	@keyframes disc-spin-intro {
 		from {
 			stroke-dasharray: var(--intro-arc) 150;
-			stroke-dashoffset: calc((var(--intro-arc) - 47.124) * 1px);
+			stroke-dashoffset: calc(
+				(var(--intro-arc) - var(--circumference)) * 1px
+			);
 		}
 		to {
 			stroke-dasharray: 0.5 150;
-			stroke-dashoffset: calc((0.5 - 47.124) * 1px);
+			stroke-dashoffset: calc((0.5 - var(--circumference)) * 1px);
 		}
 	}
 	@keyframes disc-dash {

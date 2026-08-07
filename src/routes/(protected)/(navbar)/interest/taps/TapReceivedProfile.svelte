@@ -6,11 +6,7 @@
 	import * as Item from "$lib/components/ui/item";
 	import type { TapProfile } from "$lib/model/interest/tap-profile";
 
-	let {
-		tap,
-	}: {
-		tap: TapProfile;
-	} = $props();
+	let { tap }: { tap: TapProfile } = $props();
 </script>
 
 <ProfileItem
@@ -27,7 +23,9 @@
 		{/if}
 	{/snippet}
 	{#snippet actions()}
-		<Item.Actions class="flex min-w-6 flex-col items-end gap-1 @max-row:hidden">
+		<Item.Actions
+			class="flex min-w-6 flex-col items-end gap-1 @max-row:hidden"
+		>
 			<span
 				class="max-w-full truncate text-right text-meta font-medium text-ink3"
 			>

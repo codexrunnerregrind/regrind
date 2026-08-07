@@ -21,10 +21,7 @@
 				description += ` (${status.info.reason})`;
 			}
 			description += ". You can't sign in until the ban is lifted.";
-			return {
-				title: "Your account is banned",
-				description,
-			};
+			return { title: "Your account is banned", description };
 		}
 		if (status?.kind === "restriction") {
 			if (status.restriction.kind === "ageVerification") {
@@ -63,7 +60,8 @@
 	async function copyDetails() {
 		if (status?.kind !== "banned") return;
 		try {
-			const clipboard = await import("@tauri-apps/plugin-clipboard-manager");
+			const clipboard =
+				await import("@tauri-apps/plugin-clipboard-manager");
 			await clipboard.writeText(JSON.stringify(status.info, null, 2));
 			toast.success("Details copied to clipboard");
 		} catch (error) {
@@ -89,7 +87,9 @@
 	>
 		<AlertDialog.Header>
 			<AlertDialog.Title>{content.title}</AlertDialog.Title>
-			<AlertDialog.Description>{content.description}</AlertDialog.Description>
+			<AlertDialog.Description
+				>{content.description}</AlertDialog.Description
+			>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>
 			{#if status?.kind === "banned"}

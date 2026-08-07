@@ -6,9 +6,8 @@ const LONG_PRESS_MOVE_TOLERANCE_PX = 12;
 // double-tap from two quick taps landing close together.
 const DOUBLE_TAP_MAX_GAP_MS = 300;
 const DOUBLE_TAP_MOVE_TOLERANCE_PX = 24;
-// One press fires once app-wide, a layout shift can land the native ~500ms contextmenu on a new element
-const REFIRE_GAP_MS = 500;
-// Lifting synthetic click can retarget the same way so suppress the next click anywhere
+// A layout shift can land the contextmenu or the click on another element.
+const NATIVE_CONTEXTMENU_DELAY_MS = 500;
 const CLICK_SUPPRESS_MS = 700;
 
 let lastFiredAt = 0;
@@ -17,7 +16,7 @@ let clickSuppressorAttached = false;
 
 function fireOnce(onLongPress: () => void): void {
 	const now = Date.now();
-	if (now - lastFiredAt < REFIRE_GAP_MS) return;
+	if (now - lastFiredAt < NATIVE_CONTEXTMENU_DELAY_MS) return;
 	lastFiredAt = now;
 	onLongPress();
 }
@@ -104,7 +103,8 @@ export function longPressHandlers(
 		onpointermove(event) {
 			if (timer === null) return;
 			if (
-				Math.abs(event.clientX - originX) > LONG_PRESS_MOVE_TOLERANCE_PX ||
+				Math.abs(event.clientX - originX) >
+					LONG_PRESS_MOVE_TOLERANCE_PX ||
 				Math.abs(event.clientY - originY) > LONG_PRESS_MOVE_TOLERANCE_PX
 			) {
 				cancel();

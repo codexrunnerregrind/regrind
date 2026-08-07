@@ -40,7 +40,10 @@
 				pending = units;
 				setPreferences({ units }).catch((error) => {
 					pending = null;
-					showErrorToast({ label: "Failed to save preferences", error });
+					showErrorToast({
+						label: "Failed to save preferences",
+						error,
+					});
 				});
 			}
 		}

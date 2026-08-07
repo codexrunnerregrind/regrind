@@ -73,12 +73,8 @@
 
 	let contextMenuOpen:
 		| false
-		| {
-				x: number;
-				y: number;
-				width: number;
-				height: number;
-		  } = $state(false);
+		| { x: number; y: number; width: number; height: number } =
+		$state(false);
 	let messageElement: HTMLElement | null = $state(null);
 	const bubbleCenterY = $derived.by(() => {
 		const el = messageElement;
@@ -213,15 +209,16 @@
 	>
 		{#if message.reactions.length > 0}
 			{@const reactionMap = message.reactions.reduce(
-				(m, r) => m.set(r.reactionType, (m.get(r.reactionType) ?? 0) + 1),
+				(m, r) =>
+					m.set(r.reactionType, (m.get(r.reactionType) ?? 0) + 1),
 				new Map<number, number>(),
 			)}
 			<div
 				class="mt-1 mr-1 flex items-center gap-0.5"
 				transition:scale={{ duration: 150, easing: expoOut }}
 			>
-				{#each reactionMap.entries() as [type, count]}
-					<Reaction type={Number(type)} {count} />
+				{#each reactionMap.entries() as [type] (type)}
+					<Reaction type={Number(type)} />
 				{/each}
 			</div>
 		{/if}
@@ -260,14 +257,7 @@
 	</MessageWrapper>
 {/snippet}
 
-<div
-	class={[
-		"relative z-1 flex flex-col gap-0.5",
-		{
-			"mt-3": firstInStack,
-		},
-	]}
->
+<div class={["relative z-1 flex flex-col gap-0.5", { "mt-3": firstInStack }]}>
 	{#if firstInStack && dayStart !== undefined}
 		<MessageDateGroup {dayStart} />
 	{/if}

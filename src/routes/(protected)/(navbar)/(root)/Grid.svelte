@@ -21,10 +21,14 @@
 	} = $props();
 
 	const gridProfiles = $derived.by(() => {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- built and spread inside this $derived, never mutated afterwards
 		const byId = new Map<number, GridProfile>();
 		for (const item of gridState.items) {
 			const existing = byId.get(item.id);
-			if (!existing || (existing.type === "lazy" && item.type === "rendered")) {
+			if (
+				!existing ||
+				(existing.type === "lazy" && item.type === "rendered")
+			) {
 				byId.set(item.id, item);
 			}
 		}

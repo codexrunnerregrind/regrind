@@ -35,7 +35,7 @@ The only indirect counters are:
    - Number of registered users on git.opengrind.org (**IP addresses are not stored**)
    - Keep in mind these platforms do not collect or store any personally identifiable data about users
 
-**As of July 8, 2026, the estimated number of users is ~25000 based on the downloads counter.**
+**As of August, 2026, the estimated number of users is ~30000 based on the downloads counter.**
 
 ## Open Grind features
 
@@ -105,7 +105,7 @@ That's how items are returned from API, specifically the first ten are "open" an
 
 ### \> What version number works?
 
-As of July 2026, the confirmed working version for API is `26.9.1.163471`. If you don't know what that means, just use the latest Open Grind version.
+As of August 5th, 2026, the confirmed working version for API is `26.13.0.170510`. If you don't know what that means, just use the latest Open Grind version.
 
 ### \> Is GrindrPlus Discord server gone?
 

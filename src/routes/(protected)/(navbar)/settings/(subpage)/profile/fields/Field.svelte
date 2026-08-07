@@ -9,12 +9,8 @@
 		error,
 		hint,
 		children,
-	}: {
-		label: string;
-		error?: string;
-		hint?: string;
-		children: Snippet;
-	} = $props();
+	}: { label: string; error?: string; hint?: string; children: Snippet } =
+		$props();
 </script>
 
 <!-- Stacked field row: caption label above a full-width control. For controls

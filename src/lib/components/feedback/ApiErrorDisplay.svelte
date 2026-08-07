@@ -21,6 +21,9 @@
 		if (apiError?.kind === "RequestBlocked") {
 			return "Grindr is blocking your requests";
 		}
+		if (apiError?.kind === "NetworkBlocked") {
+			return "Something on your network blocked the request";
+		}
 		if (!retryable) {
 			return "Something went wrong";
 		}
@@ -36,7 +39,9 @@
 	<div class="flex gap-2">
 		{#if onRetry && retryable}
 			<Button
-				variant={buttonVariant === "outline" ? "default" : buttonVariant}
+				variant={buttonVariant === "outline"
+					? "default"
+					: buttonVariant}
 				size="sm"
 				onclick={onRetry}
 			>

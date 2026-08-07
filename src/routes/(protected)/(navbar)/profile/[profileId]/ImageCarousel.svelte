@@ -122,7 +122,9 @@
 				});
 				lightbox.on("change", () => {
 					gallery?.scrollTo({
-						top: lightbox?.pswp?.currSlide?.data.element?.offsetTop ?? 0,
+						top:
+							lightbox?.pswp?.currSlide?.data.element
+								?.offsetTop ?? 0,
 						behavior: "instant",
 					});
 				});
@@ -184,15 +186,19 @@
 				const index = Math.floor(item);
 				const tipYp =
 					Math.min(item > 0 ? index : item, medias.length - 1) +
-					(item < medias.length - 1 ? Math.max(0, (frac - 0.5) * 2) : frac);
+					(item < medias.length - 1
+						? Math.max(0, (frac - 0.5) * 2)
+						: frac);
 				indicatorY = PADDING_VERTICAL + tipYp * (BULLET_SIZE + GAP);
 				const indicatorStretch = stretch * (BULLET_SIZE * 2 + GAP + 4);
 				indicatorHeight =
 					BULLET_SIZE +
-					(item > 0 && item < medias.length - 1 ? indicatorStretch : 0);
+					(item > 0 && item < medias.length - 1
+						? indicatorStretch
+						: 0);
 			}}
 		>
-			{#each medias as { mediaHash, createdAt }, index}
+			{#each medias as { mediaHash, createdAt }, index (mediaHash + index)}
 				{@const src = profileMediaUrl({ mediaHash, size: "full" })}
 				<ImageCarouselItem
 					{src}
@@ -208,7 +214,8 @@
 			style:padding="{PADDING_VERTICAL}px {PADDING_HORIZONTAL}px"
 		>
 			{#each medias, i (i)}
-				<span class="block size-2 rounded-full bg-neutral-200/40"></span>
+				<span class="block size-2 rounded-full bg-neutral-200/40"
+				></span>
 			{/each}
 			<span
 				class="absolute left-2 block w-2 rounded-full bg-neutral-300"

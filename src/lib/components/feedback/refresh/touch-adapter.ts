@@ -14,10 +14,6 @@ export interface TouchPullOptions {
 	position: PullPosition;
 }
 
-/**
- * Touch pull-to-refresh. We don't always get the gesture: if the browser already
- * decided it is a scroll, the touchmoves come in non-cancelable.
- */
 export function attachTouchPull(
 	model: PullModel,
 	{ listenTarget, scrollRoot, boundaryDistance, position }: TouchPullOptions,
@@ -27,7 +23,7 @@ export function attachTouchPull(
 	let startY = 0;
 	let startTarget: EventTarget | null = null;
 	let engaged = false;
-	let dead = false;
+	let browserTookTheGesture = false;
 
 	const pullDelta = (touch: Touch) => {
 		const dy = touch.clientY - startY;
@@ -46,7 +42,7 @@ export function attachTouchPull(
 		touchId = null;
 		startTarget = null;
 		engaged = false;
-		dead = false;
+		browserTookTheGesture = false;
 		removeGestureListeners();
 	};
 
@@ -59,8 +55,9 @@ export function attachTouchPull(
 		const touch = findTouch(event);
 		if (!touch) return;
 
-		if (!engaged && !dead) {
-			const nativeScrollOwnsGesture = boundaryDistance() >= AT_BOUNDARY_PX;
+		if (!engaged && !browserTookTheGesture) {
+			const nativeScrollOwnsGesture =
+				boundaryDistance() >= AT_BOUNDARY_PX;
 			if (nativeScrollOwnsGesture) {
 				anchorPullOrigin(touch);
 				return;
@@ -68,7 +65,7 @@ export function attachTouchPull(
 			const pull = pullDelta(touch);
 			const cross = Math.abs(touch.clientX - startX);
 			if (pull <= -SLOP_PX || cross > Math.abs(pull)) {
-				dead = true;
+				browserTookTheGesture = true;
 				return;
 			}
 			if (pull < SLOP_PX) return;
@@ -78,7 +75,7 @@ export function attachTouchPull(
 				!chainAllowsPull({ start: startTarget, root, position }) ||
 				!model.beginPull("touch")
 			) {
-				dead = true;
+				browserTookTheGesture = true;
 				return;
 			}
 			engaged = true;
@@ -95,7 +92,7 @@ export function attachTouchPull(
 		if (!nativeScrollWon) return;
 		model.cancel();
 		engaged = false;
-		dead = true;
+		browserTookTheGesture = true;
 	};
 
 	const onTouchEnd = (event: TouchEvent) => {
@@ -111,9 +108,11 @@ export function attachTouchPull(
 	};
 
 	const addGestureListeners = () => {
-		listenTarget.addEventListener("touchmove", onTouchMove as EventListener, {
-			passive: false,
-		});
+		listenTarget.addEventListener(
+			"touchmove",
+			onTouchMove as EventListener,
+			{ passive: false },
+		);
 		listenTarget.addEventListener("touchend", onTouchEnd as EventListener);
 		listenTarget.addEventListener(
 			"touchcancel",
@@ -123,8 +122,14 @@ export function attachTouchPull(
 	};
 
 	const removeGestureListeners = () => {
-		listenTarget.removeEventListener("touchmove", onTouchMove as EventListener);
-		listenTarget.removeEventListener("touchend", onTouchEnd as EventListener);
+		listenTarget.removeEventListener(
+			"touchmove",
+			onTouchMove as EventListener,
+		);
+		listenTarget.removeEventListener(
+			"touchend",
+			onTouchEnd as EventListener,
+		);
 		listenTarget.removeEventListener(
 			"touchcancel",
 			onTouchCancel as EventListener,
@@ -134,9 +139,8 @@ export function attachTouchPull(
 
 	const onTouchStart = (event: TouchEvent) => {
 		if (event.touches.length !== 1) return;
-		// Left over from a gesture whose touchend fired on a node that got removed,
-		// so it never reached us.
-		if (touchId !== null) {
+		const previousGestureNeverEnded = touchId !== null;
+		if (previousGestureNeverEnded) {
 			if (engaged) model.cancel();
 			reset();
 		}
@@ -146,7 +150,7 @@ export function attachTouchPull(
 		anchorPullOrigin(touch);
 		startTarget = event.target;
 		engaged = false;
-		dead = false;
+		browserTookTheGesture = false;
 		addGestureListeners();
 	};
 

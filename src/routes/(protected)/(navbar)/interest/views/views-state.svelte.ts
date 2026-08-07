@@ -48,7 +48,9 @@ export class ViewsState extends ReconcilingListState<
 		profileId: number;
 		isFavorite: boolean;
 	}): void {
-		const index = this.#profiles.findIndex((v) => v.profileId === profileId);
+		const index = this.#profiles.findIndex(
+			(v) => v.profileId === profileId,
+		);
 		const profile = this.#profiles[index];
 		if (!profile) return;
 		this.#profiles = this.#profiles.with(index, { ...profile, isFavorite });
@@ -86,10 +88,13 @@ export class ViewsState extends ReconcilingListState<
 		return getViews();
 	}
 
-	protected applySnapshot(snapshot: ViewsSnapshot): Set<number> {
+	protected applySnapshotReturningCoveredKeys(
+		snapshot: ViewsSnapshot,
+	): Set<number> {
 		this.#profiles = snapshot.profiles;
 		this.#previews = snapshot.previews;
 		cached = snapshot;
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- caller only reads .has() then drops it
 		return new Set(snapshot.profiles.map((profile) => profile.profileId));
 	}
 

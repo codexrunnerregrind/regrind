@@ -37,10 +37,11 @@
 			0,
 		),
 	);
+	let lastMarkedActivity = 0;
 	$effect(() => {
-		// Fixes effect_update_depth_exceeded
-		void latestActivity;
-		untrack(() => conversations.markInboxViewed());
+		if (latestActivity === lastMarkedActivity) return;
+		lastMarkedActivity = latestActivity;
+		conversations.markInboxViewed();
 	});
 
 	let container: HTMLDivElement | null = $state(null);
@@ -53,11 +54,8 @@
 		});
 	});
 
-	let {
-		class: className,
-	}: {
-		class?: import("svelte/elements").ClassValue;
-	} = $props();
+	let { class: className }: { class?: import("svelte/elements").ClassValue } =
+		$props();
 
 	// "Messages" rather than "Inbox": the screen title above already says Inbox,
 	// so the tab names the list instead of repeating it.
@@ -87,7 +85,9 @@
 
 	async function compensateScroll() {
 		if (!container) return;
-		const paddingBefore = parseFloat(getComputedStyle(container).paddingTop);
+		const paddingBefore = parseFloat(
+			getComputedStyle(container).paddingTop,
+		);
 		const scrollBefore = container.scrollTop;
 		await tick();
 		if (!container) return;
@@ -208,7 +208,9 @@
 		const observer = new IntersectionObserver(
 			(es) => {
 				if (es[0]?.isIntersecting)
-					conversations.loadMore().catch((error) => console.error(error));
+					conversations
+						.loadMore()
+						.catch((error) => console.error(error));
 			},
 			{ rootMargin: "400px" },
 		);

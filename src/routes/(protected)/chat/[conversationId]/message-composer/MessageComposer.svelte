@@ -38,17 +38,15 @@
 			textContent = "";
 		} catch (error) {
 			console.error(error);
-			showErrorToast({
-				label: "Failed to send message",
-				error,
-			});
+			showErrorToast({ label: "Failed to send message", error });
 		}
 	}
 
-	setMessageComposerContext(() => ({
-		disabled,
-		sendMessage: onSend,
-	}));
+	function remeasureBeforeResizeObserverCatchesUp() {
+		if (form) height = form.clientHeight;
+	}
+
+	setMessageComposerContext(() => ({ disabled, sendMessage: onSend }));
 </script>
 
 <form

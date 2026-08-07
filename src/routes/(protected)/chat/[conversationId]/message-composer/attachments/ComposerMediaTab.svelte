@@ -25,10 +25,8 @@
 	let {
 		onClose,
 		onSelectionChange,
-	}: {
-		onClose: () => void;
-		onSelectionChange: (count: number) => void;
-	} = $props();
+	}: { onClose: () => void; onSelectionChange: (count: number) => void } =
+		$props();
 
 	const composer = getMessageComposerContext();
 	const selected = new SelectionSet<number>(10);
@@ -71,7 +69,10 @@
 		for (const item of picked) {
 			try {
 				const added = await addMediaToDrawer(item);
-				media = [added, ...(media ?? []).filter(({ id }) => id !== added.id)];
+				media = [
+					added,
+					...(media ?? []).filter(({ id }) => id !== added.id),
+				];
 			} catch (err) {
 				console.error(err);
 				toast.error("Couldn't add photo");
@@ -147,7 +148,11 @@
 <div class="@container/photo-grid -mx-4 flex flex-col rounded-grid px-gutter">
 	{#if error !== null}
 		<div class="flex flex-1">
-			<ApiErrorDisplay {error} onRetry={() => void load()} class="m-auto" />
+			<ApiErrorDisplay
+				{error}
+				onRetry={() => void load()}
+				class="m-auto"
+			/>
 		</div>
 	{:else if media === null}
 		<div class="photo-grid">

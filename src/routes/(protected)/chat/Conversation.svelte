@@ -15,7 +15,7 @@
 	import { Badge } from "$lib/components/ui/badge";
 	import * as ContextMenu from "$lib/components/ui/context-menu";
 	import * as Item from "$lib/components/ui/item";
-	import { previewLabel } from "$lib/model/messaging/messages";
+	import { previewLabel } from "$lib/model/messaging/message-preview";
 	import type { Conversation } from "$lib/model/messaging/conversations";
 	import type { SelectionSet } from "$lib/util/selection.svelte";
 
@@ -108,7 +108,9 @@
 				{#if previewText !== null}
 					{previewText}
 				{:else}
-					<span class="preview-not-available"> Preview not available </span>
+					<span class="preview-not-available">
+						Preview not available
+					</span>
 				{/if}
 			</Item.Description>
 		{/snippet}
@@ -136,7 +138,9 @@
 				</span>
 				{#if conversation.data.unreadCount > 0}
 					<Badge
-						variant={conversation.data.muted ? "secondary" : "default"}
+						variant={conversation.data.muted
+							? "secondary"
+							: "default"}
 						class="px-[5.5px] @max-row:hidden"
 					>
 						{conversation.data.unreadCount}
@@ -179,7 +183,10 @@
 					{/if}
 				</ContextMenu.Item>
 				<ContextMenu.Separator />
-				<ContextMenu.Item variant="destructive" onSelect={onRequestDelete}>
+				<ContextMenu.Item
+					variant="destructive"
+					onSelect={onRequestDelete}
+				>
 					<TrashIcon class="size-5" />
 					Delete
 				</ContextMenu.Item>

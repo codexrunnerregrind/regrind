@@ -16,11 +16,7 @@
 	import { processMessages } from "../messages";
 	import Message from "./message/Message.svelte";
 
-	let {
-		seenTimestamp = $bindable(),
-	}: {
-		seenTimestamp: number;
-	} = $props();
+	let { seenTimestamp = $bindable() }: { seenTimestamp: number } = $props();
 
 	const conversationState = $derived(getConversationState()());
 
@@ -93,10 +89,7 @@
 				});
 			} catch (error) {
 				console.error(error);
-				showErrorToast({
-					label: "Failed to delete message",
-					error,
-				});
+				showErrorToast({ label: "Failed to delete message", error });
 				revert?.();
 			}
 		}}
@@ -109,10 +102,7 @@
 				});
 			} catch (error) {
 				console.error(error);
-				showErrorToast({
-					label: "Failed to react to message",
-					error,
-				});
+				showErrorToast({ label: "Failed to react to message", error });
 			}
 		}}
 		onUnsend={isOut && !message.unsent

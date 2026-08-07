@@ -11,10 +11,7 @@
 	let {
 		genders = null,
 		pronouns = null,
-	}: {
-		genders?: number[] | null;
-		pronouns?: number[] | null;
-	} = $props();
+	}: { genders?: number[] | null; pronouns?: number[] | null } = $props();
 </script>
 
 {#if (genders !== null && genders.length > 0) || (pronouns !== null && pronouns.length > 0)}
@@ -48,7 +45,8 @@
 				{genders
 					.map(
 						(genderId) =>
-							allGenders.find((g) => g.genderId === genderId)?.gender,
+							allGenders.find((g) => g.genderId === genderId)
+								?.gender,
 					)
 					.join(", ")}
 			{:catch}
@@ -65,7 +63,8 @@
 				{pronouns
 					.map(
 						(pronounId) =>
-							allPronouns.find((p) => p.pronounId === pronounId)?.pronoun,
+							allPronouns.find((p) => p.pronounId === pronounId)
+								?.pronoun,
 					)
 					.join(", ")}
 			{:catch}

@@ -43,7 +43,9 @@
 		if (!container) return;
 		const openExternally = (event: MouseEvent) => {
 			if (event.target instanceof HTMLElement) {
-				const href = event.target?.closest("a[href]")?.getAttribute("href");
+				const href = event.target
+					?.closest("a[href]")
+					?.getAttribute("href");
 				if (href) {
 					event.preventDefault();
 					openExternalLink(href);
@@ -145,7 +147,10 @@
 
 	$effect(() => {
 		if (pendingCenter && map) {
-			map.setView([pendingCenter.lat, pendingCenter.lon], pendingCenter.zoom);
+			map.setView(
+				[pendingCenter.lat, pendingCenter.lon],
+				pendingCenter.zoom,
+			);
 			pendingCenter = undefined;
 		}
 	});
@@ -191,7 +196,9 @@
 			<Marker
 				latLng={[pinPos.lat, pinPos.lon]}
 				ondragend={(event: DragEndEvent) => {
-					const { lat, lng } = (event.target as LeafletMarker).getLatLng();
+					const { lat, lng } = (
+						event.target as LeafletMarker
+					).getLatLng();
 					pinPos = { lat, lon: lng };
 					atCurrentLocation = false;
 				}}
@@ -211,9 +218,7 @@
 	<div
 		class={[
 			"absolute bottom-4 z-1010 w-full p-2",
-			{
-				"max-w-[calc(100%-2.5rem)]": gpsAvailable,
-			},
+			{ "max-w-[calc(100%-2.5rem)]": gpsAvailable },
 		]}
 	>
 		<Input
@@ -250,7 +255,7 @@
 					<Spinner class="m-auto size-8" />
 				{:then response}
 					{#if response}
-						{#each response.places.toSorted((a, b) => b.importance - a.importance) as place}
+						{#each response.places.toSorted((a, b) => b.importance - a.importance) as place (`${place.lat},${place.lon},${place.name}`)}
 							<Button
 								class="flex h-auto cursor-pointer flex-col items-start justify-start gap-0 text-left text-current"
 								variant="link"
@@ -261,7 +266,9 @@
 									showSearchResults = false;
 								}}
 							>
-								<span class="line-clamp-1 block max-w-full truncate">
+								<span
+									class="line-clamp-1 block max-w-full truncate"
+								>
 									{place.name}
 								</span>
 								<span
@@ -273,7 +280,11 @@
 						{/each}
 					{/if}
 				{:catch error}
-					<ApiErrorDisplay {error} buttonVariant="secondary" class="m-auto" />
+					<ApiErrorDisplay
+						{error}
+						buttonVariant="secondary"
+						class="m-auto"
+					/>
 				{/await}
 			</div>
 		</div>

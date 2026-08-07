@@ -49,7 +49,8 @@ function response({
 		assertOk() {
 			if (status >= 200 && status < 300) return;
 			throw new Error(
-				assertOkErrorMessage ?? `API request failed with status ${status}`,
+				assertOkErrorMessage ??
+					`API request failed with status ${status}`,
 			);
 		},
 		text: () => body ?? JSON.stringify(data ?? null),
@@ -135,7 +136,10 @@ describe("message API wrappers", () => {
 		fetchRestMock.mockResolvedValue(
 			response({
 				status: 403,
-				body: JSON.stringify({ type: "urn:gr:err:header", status: 403 }),
+				body: JSON.stringify({
+					type: "urn:gr:err:header",
+					status: 403,
+				}),
 			}),
 		);
 
@@ -299,14 +303,17 @@ describe("message API wrappers", () => {
 			}),
 		).resolves.toBe(res);
 
-		expect(fetchRestMock).toHaveBeenCalledWith("/v4/chat/message/reaction", {
+		expect(fetchRestMock).toHaveBeenCalledWith(
+			"/v4/chat/message/reaction",
+			{
 			method: "POST",
 			body: {
 				conversationId: "conversation-1",
 				messageId: "msg-1",
 				reactionType: 1,
 			},
-		});
+			},
+		);
 	});
 
 	it("throws when delete requests return non-200 statuses", async () => {
@@ -328,10 +335,7 @@ describe("message API wrappers", () => {
 
 		expect(fetchRestMock).toHaveBeenCalledWith("/v4/chat/message/delete", {
 			method: "POST",
-			body: {
-				conversationId: "conversation-1",
-				messageId: "msg-1",
-			},
+			body: { conversationId: "conversation-1", messageId: "msg-1" },
 		});
 	});
 
@@ -354,10 +358,7 @@ describe("message API wrappers", () => {
 
 		expect(fetchRestMock).toHaveBeenCalledWith("/v4/chat/message/unsend", {
 			method: "POST",
-			body: {
-				conversationId: "conversation-1",
-				messageId: "msg-1",
-			},
+			body: { conversationId: "conversation-1", messageId: "msg-1" },
 		});
 	});
 });

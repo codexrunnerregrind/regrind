@@ -4,10 +4,7 @@
 	let {
 		profileId,
 		ourProfileId,
-	}: {
-		profileId: number;
-		ourProfileId: number;
-	} = $props();
+	}: { profileId: number; ourProfileId: number } = $props();
 
 	const conversationId = $derived(
 		[profileId, ourProfileId].toSorted((a, b) => a - b).join(":"),

@@ -30,8 +30,7 @@ export abstract class ReconcilingListState<TItem, TSnapshot, TKey = number> {
 		this.visibleCount = pageSize;
 	}
 
-	// Subclasses must call this at the END of their constructor: subclass $state
-	// fields only exist after super() returns.
+	// A subclass calls this last: its fields exist only after super() returns.
 	protected start(): void {
 		const cached = this.loadCache();
 		if (cached === null) {
@@ -116,7 +115,8 @@ export abstract class ReconcilingListState<TItem, TSnapshot, TKey = number> {
 		try {
 			await this.#replaceFromServer();
 		} catch (error) {
-			this.error = error instanceof Error ? error : new Error(String(error));
+			this.error =
+				error instanceof Error ? error : new Error(String(error));
 		} finally {
 			this.loading = false;
 			this.#runRequestedRefresh();
@@ -138,9 +138,9 @@ export abstract class ReconcilingListState<TItem, TSnapshot, TKey = number> {
 		try {
 			const snapshot = await this.fetch();
 			if (this.#superseded(token)) return;
-			const known = this.applySnapshot(snapshot);
+			const covered = this.applySnapshotReturningCoveredKeys(snapshot);
 			for (const item of buffer) {
-				if (!known.has(this.keyOf(item))) this.applyUpsert(item);
+				if (!covered.has(this.keyOf(item))) this.applyUpsert(item);
 			}
 			this.#loaded = true;
 			this.error = null;
@@ -164,9 +164,9 @@ export abstract class ReconcilingListState<TItem, TSnapshot, TKey = number> {
 
 	protected abstract get length(): number;
 	protected abstract fetch(): Promise<TSnapshot>;
-	// Assigns the snapshot to the store; returns the keys it covers, so buffered
-	// upserts the snapshot already includes are skipped on replay.
-	protected abstract applySnapshot(snapshot: TSnapshot): Set<TKey>;
+	protected abstract applySnapshotReturningCoveredKeys(
+		snapshot: TSnapshot,
+	): Set<TKey>;
 	protected abstract applyUpsert(item: TItem): void;
 	protected abstract keyOf(item: TItem): TKey;
 	protected abstract subscribeEvents(): Promise<() => void>;

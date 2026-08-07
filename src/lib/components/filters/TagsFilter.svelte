@@ -10,10 +10,7 @@
 	let {
 		checked = $bindable(),
 		value = $bindable(),
-	}: {
-		checked: boolean;
-		value: string[];
-	} = $props();
+	}: { checked: boolean; value: string[] } = $props();
 
 	let searchQuery = $state("");
 	let expanded = $state(false);
@@ -31,6 +28,7 @@
 	async function load() {
 		const langs = await getTags();
 		const flat: (Tag & { textLower: string })[] = [];
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- function-local dedupe helper, discarded when load() returns
 		const seenText = new Set<string>();
 		for (const lang of langs) {
 			for (const category of lang.categoryCollection) {
@@ -122,12 +120,14 @@
 							<div
 								class="w-full py-2 text-center text-xs text-muted-foreground"
 							>
-								Showing first {shown.length} of {filtered.length} matches, keep typing
-								to narrow down
+								Showing first {shown.length} of {filtered.length}
+								matches, keep typing to narrow down
 							</div>
 						{/if}
 					{:else}
-						<div class="w-full py-2 text-center text-xs text-muted-foreground">
+						<div
+							class="w-full py-2 text-center text-xs text-muted-foreground"
+						>
 							No tags match "{searchQuery}"
 						</div>
 					{/if}

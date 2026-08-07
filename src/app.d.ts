@@ -1,13 +1,4 @@
-// See https://svelte.dev/docs/kit/types#app.d.ts
-// for information about these interfaces
 declare global {
-	namespace App {
-		// interface Error {}
-		// interface Locals {}
-		// interface PageData {}
-		// interface PageState {}
-		// interface Platform {}
-	}
 	interface Window {
 		__reapplyInsets: () => unknown;
 		__AndroidInsets?: {
@@ -18,9 +9,7 @@ declare global {
 			imeVisible?(): boolean;
 		};
 		__AndroidOnBackGesture?: () => boolean;
-		__AndroidBack?: {
-			moveTaskToBack(): void;
-		};
+		__AndroidBack?: { moveTaskToBack(): void };
 	}
 }
 

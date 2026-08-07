@@ -110,10 +110,7 @@ class GridState {
 			this.nextPage = result.nextPage;
 		} catch (error) {
 			console.error(error);
-			showErrorToast({
-				label: "Failed to load more profiles",
-				error,
-			});
+			showErrorToast({ label: "Failed to load more profiles", error });
 		} finally {
 			this.loadingMore = false;
 		}
@@ -146,10 +143,7 @@ class GridState {
 			}
 		} catch (error) {
 			console.error(id, error);
-			showErrorToast({
-				label: "Failed to load profile",
-				error,
-			});
+			showErrorToast({ label: "Failed to load profile", error });
 		} finally {
 			this.#resolvingIds.delete(id);
 		}
@@ -173,9 +167,7 @@ class GridState {
 					ageMin: filters?.age[0],
 					ageMax: filters?.age[1],
 				}),
-				...(filters?.genderEnabled && {
-					genders: filters?.genders,
-				}),
+				...(filters?.genderEnabled && { genders: filters?.genders }),
 				...(filters?.positionEnabled && {
 					sexualPositions: filters?.positions,
 				}),
@@ -191,9 +183,7 @@ class GridState {
 					filters?.photos.includes("has-face-pics") && {
 						faceOnly: true,
 					}),
-				...(filters?.tribesEnabled && {
-					tribes: filters?.tribes,
-				}),
+				...(filters?.tribesEnabled && { tribes: filters?.tribes }),
 				...(filters?.bodyTypesEnabled && {
 					bodyTypes: filters?.bodyTypes,
 				}),
@@ -202,8 +192,10 @@ class GridState {
 					heightCmMax: filters?.height[1],
 				}),
 				...(filters?.weightEnabled && {
-					weightGramsMin: (filters?.weight[0] ?? WEIGHT_KG_MIN) * 1000,
-					weightGramsMax: (filters?.weight[1] ?? WEIGHT_KG_MAX) * 1000,
+					weightGramsMin:
+						(filters?.weight[0] ?? WEIGHT_KG_MIN) * 1000,
+					weightGramsMax:
+						(filters?.weight[1] ?? WEIGHT_KG_MAX) * 1000,
 				}),
 				...(filters?.relationshipStatusesEnabled && {
 					relationshipStatuses: filters?.relationshipStatuses,
@@ -215,17 +207,14 @@ class GridState {
 				...(filters?.lookingForEnabled && {
 					lookingFor: filters?.lookingFor,
 				}),
-				...(filters?.meetAtEnabled && {
-					meetAt: filters?.meetAt,
-				}),
-				notRecentlyChatted: filters?.haventChattedTodayEnabled || undefined,
+				...(filters?.meetAtEnabled && { meetAt: filters?.meetAt }),
+				notRecentlyChatted:
+					filters?.haventChattedTodayEnabled || undefined,
 				...(filters?.healthPracticesEnabled && {
 					sexualHealth: filters?.healthPractices,
 				}),
 				...(filters?.tagsEnabled &&
-					filters?.tags && {
-						tags: filters?.tags,
-					}),
+					filters?.tags && { tags: filters?.tags }),
 				fresh: filters?.isFresh || undefined,
 			} satisfies z.infer<typeof cascadeV4QuerySchema>;
 			const result = await getGrid(query);

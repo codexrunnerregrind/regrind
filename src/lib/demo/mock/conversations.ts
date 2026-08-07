@@ -1,7 +1,5 @@
-import {
-	type ApiResponseMessage,
-	previewFromMessage,
-} from "$lib/model/messaging/messages";
+import { previewFromMessage } from "$lib/model/messaging/message-preview";
+import { type ApiResponseMessage } from "$lib/model/messaging/messages";
 import type { AlbumExpirationType } from "$lib/model/messaging/albums";
 import type { Conversation } from "$lib/model/messaging/conversations";
 import { DAY, demoMeProfileId, HOUR, MINUTE, NOW } from "../config";
@@ -255,7 +253,8 @@ export function demoConversations(page: number): {
 	if (page > 1) return { entries: [], nextPage: null };
 	const entries: Conversation[] = demoConversationSeeds
 		.filter(
-			(conv) => !deletedConversationIds.has(conversationIdFor(conv.withId)),
+			(conv) =>
+				!deletedConversationIds.has(conversationIdFor(conv.withId)),
 		)
 		.map((conv): Conversation => {
 			const conversationId = conversationIdFor(conv.withId);
@@ -292,7 +291,8 @@ export function demoConversations(page: number): {
 			};
 		})
 		.sort(
-			(a, b) => b.data.lastActivityTimestamp - a.data.lastActivityTimestamp,
+			(a, b) =>
+				b.data.lastActivityTimestamp - a.data.lastActivityTimestamp,
 		);
 	return { entries, nextPage: null };
 }

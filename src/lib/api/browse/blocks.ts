@@ -6,10 +6,7 @@ import type { Profile } from "$lib/model/users/profiles";
 
 const getBlockedUsersResponseSchema = z.object({
 	blocking: z.array(
-		z.object({
-			profileId: z.number(),
-			blockedTime: z.number(),
-		}),
+		z.object({ profileId: z.number(), blockedTime: z.number() }),
 	),
 });
 

@@ -10,11 +10,7 @@
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 	import type { filterPositionSchema } from "$lib/model/browse/grid/filters";
 
-	let {
-		open = $bindable(),
-	}: {
-		open: boolean;
-	} = $props();
+	let { open = $bindable() }: { open: boolean } = $props();
 
 	let filters = $derived({ ...(gridState.filters.value ?? defaultFilters) });
 	let { positionEnabled: enabled, positions: value } = $derived(filters);
@@ -58,7 +54,10 @@
 			</div>
 			<Drawer.Title>Positions</Drawer.Title>
 			<div class="flex flex-1 justify-end">
-				<Switch aria-label="Filter by position" bind:checked={enabled} />
+				<Switch
+					aria-label="Filter by position"
+					bind:checked={enabled}
+				/>
 			</div>
 		</Drawer.Header>
 		<div class="mb-2 flex flex-col gap-1.5 px-4">

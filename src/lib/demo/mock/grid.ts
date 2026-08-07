@@ -144,10 +144,7 @@ function cascadeProfileData(seed: DemoSeed) {
 }
 
 function cascadeFullItem(seed: DemoSeed): CascadeFullItem {
-	return {
-		type: "full_profile_v1",
-		data: cascadeProfileData(seed),
-	};
+	return { type: "full_profile_v1", data: cascadeProfileData(seed) };
 }
 
 function cascadePartialItem(seed: DemoSeed): CascadePartialItem {
@@ -205,7 +202,9 @@ export function demoCascadeV4(params: URLSearchParams) {
 	const slice = ids.slice(start, start + GRID_PAGE_SIZE);
 	const items = slice.map((id) => {
 		const seed = profileSeed(id);
-		return isPartialId(id) ? cascadePartialItem(seed) : cascadeFullItem(seed);
+		return isPartialId(id)
+			? cascadePartialItem(seed)
+			: cascadeFullItem(seed);
 	});
 	return {
 		items,
@@ -240,7 +239,9 @@ export function demoSearchProfiles(params: URLSearchParams) {
 			age: seed.age,
 			distance: seed.distanceM ?? null,
 			medias:
-				photos.length > 0 ? photos.map((mediaHash) => ({ mediaHash })) : null,
+				photos.length > 0
+					? photos.map((mediaHash) => ({ mediaHash }))
+					: null,
 		};
 	});
 }

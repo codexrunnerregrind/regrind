@@ -92,7 +92,8 @@ describe("groupMessagesByDate", () => {
 				?.dayStart,
 		).toBe(localDayStart(olderSameDayTs));
 		expect(
-			messages.find((message) => message.messageId === "newest")?.dayStart,
+			messages.find((message) => message.messageId === "newest")
+				?.dayStart,
 		).toBe(undefined);
 		expect(
 			messages.find((message) => message.messageId === "previous-day")

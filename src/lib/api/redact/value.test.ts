@@ -44,7 +44,10 @@ describe("redactValue", () => {
 					type: "full_profile_v1",
 					data: { profileId: "<number>", displayName: "<string:4>" },
 				},
-				{ type: "sponsored_profile_v1", data: { profileId: "<number>" } },
+				{
+					type: "sponsored_profile_v1",
+					data: { profileId: "<number>" },
+				},
 			],
 		});
 	});
@@ -159,7 +162,9 @@ describe("redactValue", () => {
 describe("redactResponseBody", () => {
 	it("structures a JSON body instead of nesting it as a string", () => {
 		expect(
-			redactResponseBody('{"items":[{"profileId":123,"distanceMeters":41}]}'),
+			redactResponseBody(
+				'{"items":[{"profileId":123,"distanceMeters":41}]}',
+			),
 		).toEqual({
 			items: [{ profileId: "<number>", distanceMeters: "<number>" }],
 		});

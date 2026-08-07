@@ -17,10 +17,10 @@ import {
 	albumMinSchema,
 } from "$lib/model/messaging/albums";
 import { fullConversationSchema } from "$lib/model/messaging/conversations";
+import { previewLabel } from "$lib/model/messaging/message-preview";
 import {
 	apiResponseMessageSchema,
 	expiringImageMessageSchema,
-	previewLabel,
 } from "$lib/model/messaging/messages";
 import { favoriteNotesResponseSchema } from "$lib/model/users/favorites";
 import { gendersSchema } from "$lib/model/users/genders";
@@ -61,7 +61,9 @@ describe("demo route data matches the real schemas", () => {
 		const page1 = cascadeV4ResponseSchema.parse(
 			route("/v4/cascade?nearbyGeoHash=u00&pageNumber=1"),
 		);
-		expect(firstProfileId(page0.items)).not.toBe(firstProfileId(page1.items));
+		expect(firstProfileId(page0.items)).not.toBe(
+			firstProfileId(page1.items),
+		);
 	});
 
 	it("full profile validates for an arbitrary id", () => {
@@ -117,7 +119,10 @@ describe("demo route data matches the real schemas", () => {
 	it("conversation messages validate and align with the preview", () => {
 		const inbox = route("/v4/inbox?page=1", "POST") as {
 			entries: {
-				data: { conversationId: string; preview: { text: string | null } };
+				data: {
+					conversationId: string;
+					preview: { text: string | null };
+				};
 			}[];
 		};
 		for (const entry of inbox.entries) {
@@ -125,7 +130,9 @@ describe("demo route data matches the real schemas", () => {
 			const body = route(
 				`/v5/chat/conversation/${id}/message?profile=true`,
 			) as { messages: unknown[]; lastReadTimestamp: number | null };
-			const messages = z.array(apiResponseMessageSchema).parse(body.messages);
+			const messages = z
+				.array(apiResponseMessageSchema)
+				.parse(body.messages);
 			const [newest] = messages;
 			const oldest = messages.at(-1);
 			if (!newest || !oldest) throw new Error(`no messages in ${id}`);
@@ -155,7 +162,9 @@ describe("demo route data matches the real schemas", () => {
 			const body = route(
 				`/v5/chat/conversation/${id}/message?profile=true`,
 			) as { messages: unknown[] };
-			const messages = z.array(apiResponseMessageSchema).parse(body.messages);
+			const messages = z
+				.array(apiResponseMessageSchema)
+				.parse(body.messages);
 			for (const message of messages) {
 				if (
 					message.type === "Album" ||
@@ -236,7 +245,8 @@ describe("demo route data matches the real schemas", () => {
 			profiles: unknown[];
 			previews: unknown[];
 		};
-		for (const profile of views.profiles) viewerProfileSchema.parse(profile);
+		for (const profile of views.profiles)
+			viewerProfileSchema.parse(profile);
 		for (const preview of views.previews) viewPreviewSchema.parse(preview);
 	});
 
@@ -285,12 +295,16 @@ describe("demo route data matches the real schemas", () => {
 
 	it("conversation pin/mute/delete mutations persist across inbox fetches", () => {
 		const inbox = () => {
-			const body = route("/v4/inbox?page=1", "POST") as { entries: unknown[] };
+			const body = route("/v4/inbox?page=1", "POST") as {
+				entries: unknown[];
+			};
 			return z.array(fullConversationSchema).parse(body.entries);
 		};
 		const [first, second, third] = inbox();
 		if (!first || !second || !third)
-			throw new Error("the demo inbox has fewer than three conversations");
+			throw new Error(
+				"the demo inbox has fewer than three conversations",
+			);
 
 		route(
 			`/v4/chat/conversation/${first.data.conversationId}/${first.data.pinned ? "unpin" : "pin"}`,
@@ -304,15 +318,19 @@ describe("demo route data matches the real schemas", () => {
 
 		const after = inbox();
 		expect(
-			after.find((e) => e.data.conversationId === first.data.conversationId)
-				?.data.pinned,
+			after.find(
+				(e) => e.data.conversationId === first.data.conversationId,
+			)?.data.pinned,
 		).toBe(!first.data.pinned);
 		expect(
-			after.find((e) => e.data.conversationId === second.data.conversationId)
-				?.data.muted,
+			after.find(
+				(e) => e.data.conversationId === second.data.conversationId,
+			)?.data.muted,
 		).toBe(!second.data.muted);
 		expect(
-			after.some((e) => e.data.conversationId === third.data.conversationId),
+			after.some(
+				(e) => e.data.conversationId === third.data.conversationId,
+			),
 		).toBe(false);
 	});
 });

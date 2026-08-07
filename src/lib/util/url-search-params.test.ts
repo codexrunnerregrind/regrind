@@ -38,16 +38,10 @@ describe("urlSearchParamsCodec", () => {
 	it("decodes empty array parameters as empty arrays", () => {
 		const parsed = z.decode(
 			codec,
-			new URLSearchParams({
-				ids: "",
-				ranks: "",
-			}),
+			new URLSearchParams({ ids: "", ranks: "" }),
 		);
 
-		expect(parsed).toEqual({
-			ids: [],
-			ranks: [],
-		});
+		expect(parsed).toEqual({ ids: [], ranks: [] });
 	});
 
 	it("encodes defined scalar and array values while omitting nullish values", () => {

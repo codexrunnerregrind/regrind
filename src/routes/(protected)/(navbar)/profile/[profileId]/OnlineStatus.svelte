@@ -18,15 +18,15 @@
 
 {#if self || online}
 	<div class="flex items-center gap-1.5 whitespace-nowrap">
-		<span class="ms-0.5 inline-block size-2 shrink-0 rounded-full bg-green-500">
+		<span
+			class="ms-0.5 inline-block size-2 shrink-0 rounded-full bg-green-500"
+		>
 		</span>
 		Online now
 	</div>
 {:else if seen !== null}
 	<span class="text-gray-500">
-		Online {formatDistanceStrict(seen, getNow(), {
-			addSuffix: true,
-		})}
+		Online {formatDistanceStrict(seen, getNow(), { addSuffix: true })}
 	</span>
 {:else}
 	<span class="text-gray-500">Offline</span>

@@ -3,11 +3,7 @@
 	import { isMobilePlatform } from "$lib/platform/os";
 	import { getMessageComposerContext } from "./message-composer-context.svelte";
 
-	let {
-		value = $bindable(),
-	}: {
-		value: string;
-	} = $props();
+	let { value = $bindable() }: { value: string } = $props();
 
 	const isMobile = isMobilePlatform();
 

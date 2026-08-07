@@ -10,7 +10,9 @@
 	import SettingsSwitchRow from "$lib/components/settings/SettingsSwitchRow.svelte";
 
 	let pending = $state<boolean | null>(null);
-	const value = $derived(pending ?? getPreferencesSnapshot().revealMessageRead);
+	const value = $derived(
+		pending ?? getPreferencesSnapshot().revealMessageRead,
+	);
 </script>
 
 <SettingsSwitchRow
