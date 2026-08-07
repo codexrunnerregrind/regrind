@@ -10,17 +10,23 @@
 		getAlbumsSharedByProfile,
 		getMyAlbums,
 	} from "$lib/api/messaging/albums";
+	import { AlbumOpener } from "$lib/components/albums/album-open.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import { Skeleton } from "$lib/components/ui/skeleton";
+	import type { AlbumSharer } from "$lib/chat/album-viewer";
 	import type { MyAlbum, SharedAlbum } from "$lib/model/messaging/albums";
 
 	let {
 		profileId,
 		self,
+		sharer,
 	}: {
 		profileId: number;
 		self: boolean;
+		// Describes whose profile this is, for the viewer's header when tapping one
+		// of their shared albums. Unused on our own profile.
+		sharer?: AlbumSharer;
 	} = $props();
 
 	/** Both album shapes reduced to what this list renders. */
@@ -57,6 +63,9 @@
 
 	let albums = $state<AlbumEntry[] | null>(null);
 	let error = $state<unknown>(null);
+	// Somebody else's albums open in the lightbox viewer; only our own tiles lead
+	// to the album editor at /albums/{id}.
+	const opener = new AlbumOpener();
 
 	async function load(id: number, isSelf: boolean) {
 		albums = null;
@@ -99,6 +108,45 @@
 	}
 </script>
 
+{#snippet tile(album: AlbumEntry)}
+	<div
+		class={[
+			"relative aspect-square",
+			{ "opacity-50": opener.openingId === album.albumId },
+		]}
+	>
+		{#if album.coverUrl}
+			<img
+				src={album.coverUrl}
+				alt=""
+				class="size-full rounded-xl bg-card-foreground/10 object-cover"
+				draggable="false"
+			/>
+		{:else}
+			<div
+				class="flex size-full items-center justify-center rounded-xl bg-card-foreground/10 text-muted-foreground"
+			>
+				<FolderOpenIcon weight="fill" class="size-6" />
+			</div>
+		{/if}
+		{#if album.hasUnseenContent}
+			<span
+				class="absolute end-1 top-1 size-2.5 rounded-full bg-primary outline-2 outline-background"
+				aria-label="Unseen content"
+			></span>
+		{/if}
+	</div>
+	<span class="truncate text-sm">
+		{album.albumName ?? "Untitled album"}
+	</span>
+	{#if album.itemCount !== null}
+		<span class="text-xs text-muted-foreground">
+			{album.itemCount}
+			{album.itemCount === 1 ? "item" : "items"}
+		</span>
+	{/if}
+{/snippet}
+
 {#if self || error !== null || albums === null || albums.length > 0}
 	<div class="mt-4 flex flex-col gap-2">
 		<div class="flex items-center justify-between gap-2">
@@ -130,42 +178,23 @@
 		{:else}
 			<div class="flex gap-2 overflow-x-auto pb-1">
 				{#each albums as album (album.albumId)}
-					<a
-						href="/albums/{album.albumId}"
-						class="flex w-24 shrink-0 flex-col gap-1"
-					>
-						<div class="relative aspect-square">
-							{#if album.coverUrl}
-								<img
-									src={album.coverUrl}
-									alt=""
-									class="size-full rounded-xl bg-card-foreground/10 object-cover"
-									draggable="false"
-								/>
-							{:else}
-								<div
-									class="flex size-full items-center justify-center rounded-xl bg-card-foreground/10 text-muted-foreground"
-								>
-									<FolderOpenIcon weight="fill" class="size-6" />
-								</div>
-							{/if}
-							{#if album.hasUnseenContent}
-								<span
-									class="absolute end-1 top-1 size-2.5 rounded-full bg-primary outline-2 outline-background"
-									aria-label="Unseen content"
-								></span>
-							{/if}
-						</div>
-						<span class="truncate text-sm">
-							{album.albumName ?? "Untitled album"}
-						</span>
-						{#if album.itemCount !== null}
-							<span class="text-xs text-muted-foreground">
-								{album.itemCount}
-								{album.itemCount === 1 ? "item" : "items"}
-							</span>
-						{/if}
-					</a>
+					{#if self}
+						<a
+							href="/albums/{album.albumId}"
+							class="flex w-24 shrink-0 flex-col gap-1"
+						>
+							{@render tile(album)}
+						</a>
+					{:else}
+						<button
+							type="button"
+							class="flex w-24 shrink-0 cursor-pointer flex-col gap-1 text-start disabled:opacity-60"
+							disabled={opener.openingId !== null}
+							onclick={() => void opener.open(album.albumId, sharer ?? {})}
+						>
+							{@render tile(album)}
+						</button>
+					{/if}
 				{/each}
 			</div>
 		{/if}

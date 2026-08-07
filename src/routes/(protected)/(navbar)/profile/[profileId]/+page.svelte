@@ -10,6 +10,7 @@
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import NotFound from "$lib/components/feedback/NotFound.svelte";
 	import { Skeleton } from "$lib/components/ui/skeleton";
+	import { profileMediaUrl } from "$lib/util/media";
 	import AboutMe from "./AboutMe.svelte";
 	import BlockedProfile from "./BlockedProfile.svelte";
 	import ProfileBottomNavBar from "./bottom-nav/ProfileBottomNavBar.svelte";
@@ -236,7 +237,21 @@
 								<NSFWPics nsfwPics={nsfw} />
 							</div>
 						{/if}
-						<ProfileAlbums {profileId} self={ourProfile} />
+						<ProfileAlbums
+							{profileId}
+							self={ourProfile}
+							sharer={{
+								name: displayName,
+								avatarUrl: medias[0]
+									? profileMediaUrl({
+											mediaHash: medias[0].mediaHash,
+											size: "thumb",
+										})
+									: null,
+								// The profile carries metres; the viewer's header wants km.
+								distanceKm: distance === null ? null : distance / 1000,
+							}}
+						/>
 						{#if hivStatus !== null || lastTestedDateValue !== null || (sexualHealthValue && sexualHealthValue.length > 0)}
 							<div class="mt-5.5 flex flex-col gap-2.75">
 								<span class="section-label">Health</span>
