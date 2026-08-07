@@ -7,8 +7,8 @@
 	import { getConversations } from "$lib/chat/conversations-context.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
+	import ListRowSkeleton from "$lib/components/feedback/ListRowSkeleton.svelte";
 	import UnderlineTabs from "$lib/components/shared/UnderlineTabs.svelte";
-	import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 	import { hapticImpact, hapticSelection } from "$lib/platform/haptics";
 	import { below } from "$lib/util/breakpoints.svelte";
@@ -282,7 +282,7 @@
 		>
 			{#await conversations.initial}
 				{#each Array(8)}
-					<Skeleton class="h-22 w-full shrink-0" />
+					<ListRowSkeleton />
 				{/each}
 			{:then}
 				<div
@@ -313,7 +313,7 @@
 					{/each}
 					{#if conversations.loadingMore}
 						{#each Array(6)}
-							<Skeleton class="h-22 w-full shrink-0" />
+							<ListRowSkeleton />
 						{/each}
 					{/if}
 					{#if conversations.nextPage !== null}
