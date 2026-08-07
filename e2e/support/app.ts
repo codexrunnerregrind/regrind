@@ -1,4 +1,4 @@
-import type { CDPSession, Page } from "@playwright/test";
+import { type CDPSession, expect, type Page } from "@playwright/test";
 
 export const DEMO_CONVERSATION = "/chat/100001:123456000";
 export const DEMO_GEOHASH = "u33dc0cpgp00";
@@ -122,6 +122,19 @@ export async function installMobileLocation(
 		},
 		[latitude, longitude],
 	);
+}
+
+/**
+ * Opens the browse grid the way a phone gets there: the shim and the position
+ * go in first, then the location prompt is accepted. Resolves once the grid's
+ * filter chips are up, so the caller can go straight at the cards.
+ */
+export async function openBrowseGrid(page: Page): Promise<void> {
+	await installTauriShim(page);
+	await installMobileLocation(page);
+	await page.goto("/");
+	await page.getByRole("button", { name: "Use current location" }).click();
+	await expect(page.getByLabel("Favorites")).toBeVisible();
 }
 
 export class TrustedTouch {

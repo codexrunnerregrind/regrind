@@ -1,18 +1,8 @@
 import { expect, type Page, test } from "@playwright/test";
 
-import { installMobileLocation, installTauriShim } from "./support/app";
+import { openBrowseGrid } from "./support/app";
 
 const SEEDED_NOTE = "Met at the bar on Rua Nova";
-
-// The browse grid loads for a phone that knows where it is, so both are stubbed
-// before the location is accepted.
-async function openBrowseGrid(page: Page): Promise<void> {
-	await installTauriShim(page);
-	await installMobileLocation(page);
-	await page.goto("/");
-	await page.getByRole("button", { name: "Use current location" }).click();
-	await expect(page.getByLabel("Favorites")).toBeVisible();
-}
 
 function card(page: Page, text: string) {
 	return page.getByRole("link").filter({ hasText: text });

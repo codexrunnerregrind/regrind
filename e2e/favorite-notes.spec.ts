@@ -1,6 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 
-import { installTauriShim } from "./support/app";
+import { installTauriShim, openBrowseGrid } from "./support/app";
 
 // The demo notes live in page memory, so a save is checked by navigating
 // client-side — a reload would reset the mock and hide whether it landed.
@@ -20,17 +20,12 @@ test.describe("favorite notes", () => {
 	test("a note shows on the card and on the profile, and edits reach both", async ({
 		page,
 	}) => {
-		await installTauriShim(page);
-		await page.goto("/favorites");
+		await openBrowseGrid(page);
 
 		await expect(
 			noteCard(page, SEEDED_NOTE),
 			"the note is shown on the favorite's card",
 		).toHaveCount(1);
-		await expect(
-			noteCard(page, SEEDED_NOTE).getByLabel("Has a note"),
-			"and the card carries a badge, readable even where the text is trimmed",
-		).toBeVisible();
 		await noteCard(page, SEEDED_NOTE).click();
 		await expect(page).toHaveURL(/\/profile\/\d+$/);
 
@@ -58,10 +53,10 @@ test.describe("favorite notes", () => {
 		await page.keyboard.press("Escape");
 
 		await page.goBack();
-		await expect(page).toHaveURL(/\/favorites$/);
+		await expect(page).toHaveURL(/\/$/);
 		await expect(
 			noteCard(page, "Neighbour, plays padel"),
-			"the card follows the edit without the list being reloaded",
+			"the card follows the edit without the grid being reloaded",
 		).toHaveCount(1);
 	});
 
@@ -97,8 +92,7 @@ test.describe("favorite notes", () => {
 	test("a long note stays one trimmed pill at the top of the photo", async ({
 		page,
 	}) => {
-		await installTauriShim(page);
-		await page.goto("/favorites");
+		await openBrowseGrid(page);
 		await noteCard(page, SEEDED_NOTE).click();
 
 		const pill = page.getByRole("button", { name: "Edit note" });
@@ -149,31 +143,5 @@ test.describe("favorite notes", () => {
 			page.getByRole("button", { name: "Edit note" }),
 			"and the pill does not claim a note that was not stored",
 		).toBeHidden();
-	});
-
-	test("the favorites grid searches notes and names", async ({ page }) => {
-		await installTauriShim(page);
-		await page.goto("/favorites");
-
-		const cards = page.getByRole("link");
-		await expect(noteCard(page, SEEDED_NOTE)).toHaveCount(1);
-		const before = await cards.count();
-
-		await page.getByRole("button", { name: "Search favorites" }).click();
-		const search = page.getByLabel("Search favorites");
-
-		await search.fill("gym");
-		await expect(noteCard(page, "Gym buddy, works nights")).toHaveCount(1);
-		await expect(noteCard(page, SEEDED_NOTE)).toHaveCount(0);
-
-		// The phone number stored with a note is matched too.
-		await search.fill("912345678");
-		await expect(noteCard(page, "Gym buddy, works nights")).toHaveCount(1);
-
-		await search.fill("nothing matches this");
-		await expect(page.getByText("No Matches")).toBeVisible();
-
-		await page.getByRole("button", { name: "Close search" }).click();
-		await expect(cards).toHaveCount(before);
 	});
 });

@@ -62,9 +62,7 @@
 			href: "/interest",
 			label: "Interest",
 			icon: StarIcon,
-			match: (id: string) =>
-				id.startsWith("/(protected)/(navbar)/interest") ||
-				id.startsWith("/(protected)/(navbar)/favorites"),
+			match: (id: string) => id.startsWith("/(protected)/(navbar)/interest"),
 		},
 		{
 			href: "/chat",
