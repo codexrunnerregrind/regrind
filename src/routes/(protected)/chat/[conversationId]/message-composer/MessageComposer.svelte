@@ -53,7 +53,7 @@
 
 <form
 	bind:this={form}
-	class="absolute bottom-0 z-20 flex min-h-11 w-full min-w-0 shrink-0 flex-col gap-2 border-t border-border bg-background px-3 pt-3 pb-3"
+	class="absolute bottom-0 z-20 flex min-h-11 w-full min-w-0 shrink-0 flex-col gap-2 border-t border-border bg-background px-4.5 pt-3 pb-3"
 	bind:clientHeight={height}
 	oninput={() => {
 		// WebKit bug: resive observer emits event a frame late,

@@ -24,23 +24,25 @@
 	<span class="w-0.75 shrink-0 bg-primary"></span>
 	<div class="flex min-w-0 flex-1 items-center gap-2 py-1.5">
 		<ArrowBendUpLeftIcon class="shrink-0 text-muted-foreground" size={16} />
+		<!-- Thumbnail leads the label rather than trailing it, so the arrow, what
+		     you are replying to, and its name read left to right as one phrase. -->
+		{#if thumbnail !== null}
+			<MediaImage
+				src={thumbnail}
+				alt=""
+				loading="lazy"
+				class="size-10 shrink-0 rounded-sm object-cover"
+				aspectRatio="1 / 1"
+			/>
+		{/if}
 		<span class="min-w-0 flex-1 truncate text-caption text-muted-foreground">
 			{label}
 		</span>
 	</div>
-	{#if thumbnail !== null}
-		<MediaImage
-			src={thumbnail}
-			alt=""
-			loading="lazy"
-			class="size-10 shrink-0 object-cover"
-			aspectRatio="1 / 1"
-		/>
-	{/if}
 	<button
 		type="button"
 		aria-label="Cancel reply"
-		class="shrink-0 self-center rounded-full p-1 text-muted-foreground active:bg-foreground/10"
+		class="me-1 shrink-0 self-center rounded-full p-1 text-muted-foreground active:bg-foreground/10"
 		onclick={onCancel}
 	>
 		<XIcon size={14} />

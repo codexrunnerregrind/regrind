@@ -301,6 +301,7 @@
 			role="button"
 			tabindex="0"
 			aria-label="Message"
+			data-message-id={message.messageId}
 			{...longPress}
 			ondblclick={(event) => {
 				// Mouse double-click; touch double-tap is synthesized in longPress.
