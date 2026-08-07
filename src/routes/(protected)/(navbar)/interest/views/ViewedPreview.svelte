@@ -1,9 +1,9 @@
 <script lang="ts">
 	import EyeIcon from "phosphor-svelte/lib/EyeIcon";
 	import HeartIcon from "phosphor-svelte/lib/HeartIcon";
-	import LockSimpleIcon from "phosphor-svelte/lib/LockSimpleIcon";
 
 	import ProfileMiniCard from "$lib/components/profile/ProfileMiniCard.svelte";
+	import LockIcon from "$lib/components/shared/LockIcon.svelte";
 	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
 	import type { ViewPreview } from "$lib/model/interest/views";
 
@@ -34,7 +34,7 @@
 				{#if preview.isSecretAdmirer}
 					<HeartIcon weight="fill" class="size-4.5 text-rose-400" />
 				{:else}
-					<LockSimpleIcon weight="fill" class="size-4.5" />
+					<LockIcon class="size-4.5" />
 				{/if}
 			</div>
 		</div>

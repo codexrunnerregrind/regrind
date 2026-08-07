@@ -1,7 +1,7 @@
 <script lang="ts">
 	import ImageBrokenIcon from "phosphor-svelte/lib/ImageBrokenIcon";
-	import LockSimpleIcon from "phosphor-svelte/lib/LockSimpleIcon";
 
+	import LockIcon from "$lib/components/shared/LockIcon.svelte";
 	import { hapticImpact } from "$lib/platform/haptics";
 	import { longPressHandlers } from "$lib/util/long-press";
 	import AlbumContextMenu from "./AlbumContextMenu.svelte";
@@ -104,7 +104,7 @@
 			class="pointer-events-none absolute top-2 right-2 flex size-6.5 items-center justify-center rounded-full bg-plate-strong text-plate-foreground"
 			aria-label="Locked"
 		>
-			<LockSimpleIcon weight="fill" class="size-3.5" />
+			<LockIcon class="size-3.5" />
 		</span>
 	{/if}
 	{#if unseen}
