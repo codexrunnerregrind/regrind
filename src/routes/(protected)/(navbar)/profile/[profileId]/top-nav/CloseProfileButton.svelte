@@ -14,11 +14,23 @@
 	}
 </script>
 
+<!-- No plate behind the glyph: like the tile distance label, it leans on a drop
+     shadow rather than a fill, so it stays legible over a bright photo without
+     putting a disc on top of the face. -->
 <button
 	type="button"
 	onclick={close}
 	aria-label="Close profile"
-	class="absolute top-3.5 left-3.5 z-10 flex size-8.5 items-center justify-center rounded-full bg-plate-strong text-plate-foreground backdrop-blur-md after:absolute after:-inset-1.25 after:content-['']"
+	class="glyph absolute top-2 left-2 z-10 flex size-11 items-center justify-center text-plate-foreground"
 >
-	<XIcon class="size-4" weight="bold" />
+	<!-- `light` is ~1.5px of stroke at 24pt, which is the handoff's 1.6pt line
+	     icons; `thin` disappears against a busy photo and `regular` reads heavy
+	     without a plate under it. -->
+	<XIcon class="size-6" weight="light" />
 </button>
+
+<style lang="postcss">
+	.glyph :global(svg) {
+		filter: drop-shadow(0 1px 3px rgb(0 0 0 / 0.6));
+	}
+</style>
