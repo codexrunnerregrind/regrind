@@ -191,14 +191,18 @@
 			<div
 				class="flex min-h-overscrollable shrink-0 flex-col justify-end gap-1"
 			>
-				{#if conversationState.loadingMore}
-					<Spinner class="mt-25 shrink-0 self-center" />
-				{/if}
 				<ConversationPaginationSentinel {container} />
 				<MessagesList bind:seenTimestamp />
 			</div>
 		{/if}
 	</div>
+	<!-- Floated over the list rather than sitting above the oldest bubble: in the
+	     flow it took ~124px the moment a fetch started and gave them back when it
+	     finished, shoving the messages the reader is looking at down and up again
+	     on every page. -->
+	{#if conversationState.loadingMore}
+		<Spinner class="absolute top-22 left-1/2 z-10 shrink-0 -translate-x-1/2" />
+	{/if}
 	{#if !conversationState.loading && !conversationState.error}
 		<DataRefreshControl
 			bind:this={refreshControl}

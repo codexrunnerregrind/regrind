@@ -45,6 +45,20 @@
 	let failedSrc: string | null = $state(null);
 	const failed = $derived(failedSrc === message.url);
 
+	// The API leaves width and height out often enough that it cannot be relied
+	// on, and an <img> with no ratio and an auto height occupies nothing until it
+	// decodes — a screenful of photos then grows out of nowhere and shoves the
+	// conversation around, worst of all while older pages are loading in. So the
+	// bubble stands at a portrait placeholder until the photo reports its own
+	// shape, and only the difference between the two ever moves.
+	const PLACEHOLDER_RATIO = "3 / 4";
+	let naturalRatio: string | null = $state(null);
+	const aspectRatio = $derived(
+		message.width !== null && message.height !== null
+			? `${message.width} / ${message.height}`
+			: (naturalRatio ?? PLACEHOLDER_RATIO),
+	);
+
 	let teardown: (() => void) | undefined;
 
 	// Their photos get the reply bar; our own side is browse-only, since there is
@@ -150,9 +164,12 @@
 			src={message.url}
 			class={["w-full rounded-lg", media.cornerClass]}
 			imgClass="bg-card-foreground/10"
-			aspectRatio={message.width !== null && message.height !== null
-				? `${message.width} / ${message.height}`
-				: undefined}
+			{aspectRatio}
+			onload={(image) => {
+				if (image.naturalHeight > 0) {
+					naturalRatio = `${image.naturalWidth} / ${image.naturalHeight}`;
+				}
+			}}
 			bind:failedSrc
 		/>
 	</a>
