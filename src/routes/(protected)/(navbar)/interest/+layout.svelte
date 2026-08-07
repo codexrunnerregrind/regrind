@@ -3,6 +3,7 @@
 	import { page } from "$app/state";
 
 	import UnderlineTabs from "$lib/components/shared/UnderlineTabs.svelte";
+	import { getViewActivityState } from "$lib/interest/view-activity.svelte";
 	import { hapticSelection } from "$lib/platform/haptics";
 	import { swipeTabs } from "$lib/util/swipe-tabs";
 	import { interestTabs, rememberInterestTab } from "./interest-tab";
@@ -25,6 +26,15 @@
 	// So the tab bar's /interest link comes back here rather than resetting.
 	$effect(() => {
 		rememberInterestTab(page.url.pathname);
+	});
+
+	// Opening Interest is what clears the nav-bar badge. Reading the flag (rather
+	// than clearing once on mount) also covers a view that arrives while this
+	// screen is already open — it never gets a chance to badge. `peek` because
+	// the nav bar owns the instance; there is nothing to clear without it.
+	$effect(() => {
+		const activity = getViewActivityState.peek();
+		if (activity?.hasUnseenViews) activity.markSeen();
 	});
 
 	const activeIndex = $derived(

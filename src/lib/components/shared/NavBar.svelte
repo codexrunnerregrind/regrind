@@ -10,6 +10,7 @@
 	import { getProfile } from "$lib/api/users/profiles";
 	import { getOrCreateConversationsState } from "$lib/chat/conversations-context.svelte";
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
+	import { getViewActivityState } from "$lib/interest/view-activity.svelte";
 	import { hapticSelection } from "$lib/platform/haptics";
 	import { scrollActiveViewToTop } from "$lib/util/scroll";
 
@@ -30,6 +31,11 @@
 		getOrCreateConversationsState(ourProfileId),
 	);
 	const hasUnread = $derived(conversations.hasUnread);
+
+	// Lives here rather than in the Interest route so a view that lands while the
+	// user is anywhere else still lights the tab.
+	const viewActivity = untrack(() => getViewActivityState(ourProfileId));
+	const hasUnseenViews = $derived(viewActivity.hasUnseenViews);
 
 	// The "You" tab wears the user's own first photo when they have one, so the
 	// generic glyph is only a fallback. A failed fetch falls back the same way.
@@ -127,7 +133,7 @@
 				{:else}
 					{@render glyph(tab.icon)}
 				{/if}
-				{#if tab.href === "/chat" && hasUnread}
+				{#if (tab.href === "/chat" && hasUnread) || (tab.href === "/interest" && hasUnseenViews)}
 					<span
 						class="absolute -top-0.5 -right-1 size-2 rounded-full bg-primary"
 					></span>
