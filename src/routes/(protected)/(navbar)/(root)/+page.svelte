@@ -48,6 +48,42 @@
 
 	let gridContainer: HTMLElement | null = $state(null);
 
+	// The notes field is secondary chrome: it fades out of the way once the user
+	// starts reading down the grid and comes back as soon as they scroll back up.
+	// It stays put while a query is running — hiding the field someone is
+	// searching with, and the only way to clear it, would be worse than the space
+	// it saves.
+	let scrolledPastSearch = $state(false);
+	let lastScrollY = 0;
+	const hideSearch = $derived(
+		searchable && scrolledPastSearch && !favoriteSearch.active,
+	);
+
+	// A new filter selection scrolls the grid back to the top, so the field it
+	// may have just added starts shown.
+	$effect(() => {
+		void searchable;
+		scrolledPastSearch = false;
+		lastScrollY = 0;
+	});
+
+	function onGridScroll() {
+		const container = gridContainer;
+		if (!container) return;
+		const y = container.scrollTop;
+		gridState.scrollY = y;
+
+		// Small deltas are left to accumulate rather than flipping the field on
+		// every jitter of a finger resting on the screen, or on the overscroll a
+		// rubber band walks back through.
+		const delta = y - lastScrollY;
+		if (Math.abs(delta) < 12) return;
+		lastScrollY = y;
+
+		if (y <= 8) scrolledPastSearch = false;
+		else scrolledPastSearch = delta > 0;
+	}
+
 	restoreScrollOnce(() => gridContainer, gridState);
 </script>
 
@@ -61,11 +97,11 @@
 		</main>
 	{:else}
 		<main class="screen-nav-host">
-			<TopBar search={favoriteSearch} />
+			<TopBar search={favoriteSearch} searchHidden={hideSearch} />
 			<div
 				class="pull-scroller"
 				bind:this={gridContainer}
-				onscroll={() => (gridState.scrollY = gridContainer?.scrollTop ?? 0)}
+				onscroll={onGridScroll}
 			>
 				<div
 					class={[

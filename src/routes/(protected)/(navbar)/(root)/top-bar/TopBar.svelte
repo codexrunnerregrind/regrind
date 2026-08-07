@@ -8,7 +8,10 @@
 	import LocationChange from "../LocationChange.svelte";
 	import QuickFilters from "./QuickFilters.svelte";
 
-	let { search }: { search: FavoriteSearch } = $props();
+	let {
+		search,
+		searchHidden = false,
+	}: { search: FavoriteSearch; searchHidden?: boolean } = $props();
 
 	let openFilters = $state({
 		all: false,
@@ -25,6 +28,11 @@
 	$effect(() => {
 		if (!showingFavorites) search.clear();
 	});
+
+	// Scrolling with the field focused (and the keyboard up on mobile) must not
+	// collapse it out from under the cursor.
+	let focused = $state(false);
+	const collapsed = $derived(searchHidden && !focused);
 </script>
 
 <ProgressiveBlur
@@ -40,7 +48,25 @@
 		<CommandCenterTrigger />
 	</div>
 	{#if showingFavorites}
-		<FavoriteNoteSearch {search} />
+		<!-- Only opacity and transform animate, and the row keeps its height either
+		     way: laying the header out again mid-animation would re-rasterise the
+		     nine backdrop-filter layers behind it every frame, which stutters.
+		     The row it leaves behind costs nothing — the grid scrolls under the
+		     blur, so cards fill it, and at the top of the list the field is back. -->
+		<div
+			class={[
+				"transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none",
+				{
+					"pointer-events-none -translate-y-1.5 opacity-0": collapsed,
+					"translate-y-0 opacity-100": !collapsed,
+				},
+			]}
+			inert={collapsed}
+			onfocusin={() => (focused = true)}
+			onfocusout={() => (focused = false)}
+		>
+			<FavoriteNoteSearch {search} />
+		</div>
 	{/if}
 </ProgressiveBlur>
 <GridFilters bind:open={openFilters.all} />
