@@ -72,7 +72,7 @@
 			<ApiErrorDisplay {error} onRetry={() => void load()} class="m-auto" />
 		</div>
 	{:else if albums === null}
-		<div class="object-grid">
+		<div class="object-grid gap-1">
 			{@render myAlbumsTile()}
 			{#each Array(6)}
 				<Skeleton class="aspect-album rounded-lg" />
@@ -80,7 +80,7 @@
 		</div>
 	{:else if albums.length === 0}
 		{#if onOpenMyAlbums}
-			<div class="object-grid">
+			<div class="object-grid gap-1">
 				{@render myAlbumsTile()}
 			</div>
 		{/if}
@@ -96,7 +96,7 @@
 			</Empty.Header>
 		</Empty.Root>
 	{:else}
-		<div class="object-grid">
+		<div class="object-grid gap-1">
 			{@render myAlbumsTile()}
 			{#each albums as album (album.albumId)}
 				<AlbumTile

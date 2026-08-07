@@ -94,14 +94,14 @@
 			<ApiErrorDisplay {error} onRetry={() => void load()} class="m-auto" />
 		</div>
 	{:else if albums === null}
-		<div class="object-grid">
+		<div class="object-grid gap-1">
 			{@render newAlbumTile()}
 			{#each Array(5)}
 				<Skeleton class="aspect-album rounded-lg" />
 			{/each}
 		</div>
 	{:else}
-		<div class="object-grid">
+		<div class="object-grid gap-1">
 			{@render newAlbumTile()}
 			{#each albums as album (album.albumId)}
 				<AlbumTile

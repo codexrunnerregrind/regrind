@@ -228,13 +228,18 @@ export async function openAlbumLightbox(
 		const slide = album.content[content.index];
 		if (slide?.contentType.startsWith("video/")) {
 			event.preventDefault();
+			// PhotoSwipe sizes this wrapper to the slide; the video is stretched to
+			// it rather than left to size itself, since a video with a poster takes
+			// the poster's intrinsic size — a small cover thumbnail would leave the
+			// video sitting tiny and top-aligned instead of filling the slide.
 			content.element = document.createElement("div");
+			content.element.className = "flex h-full w-full items-center";
 			const video = document.createElement("video");
 			video.src = slide.url;
 			if (slide.coverUrl !== null) video.poster = slide.coverUrl;
 			video.controls = true;
 			video.playsInline = true;
-			video.className = "max-w-full max-h-full m-auto";
+			video.className = "h-full w-full object-contain";
 			content.element.appendChild(video);
 			content.state = "loading";
 			if (video.readyState >= 3) {
