@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack } from "svelte";
 
+	import { ensureFavoriteNotes } from "$lib/api/users/favorite-notes-state.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import { nearestScrollableAncestor } from "$lib/components/feedback/refresh/scroll-chain";
@@ -21,6 +22,12 @@
 		const state = getViewsState(ourProfileId);
 		state.load();
 		return state;
+	});
+
+	// Any viewer can be a favorite, so the notes are read once for the whole
+	// grid rather than per card — the same list the browse grid shares.
+	$effect(() => {
+		void ensureFavoriteNotes();
 	});
 
 	let container: HTMLDivElement | null = $state(null);
