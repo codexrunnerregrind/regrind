@@ -121,7 +121,10 @@
 				<span
 					class={[
 						"flex max-w-full items-center gap-1 text-meta font-medium",
-						{ "text-primary": unreadSignal, "text-ink3": !unreadSignal },
+						{
+							"text-primary": unreadSignal,
+							"text-ink3": !unreadSignal,
+						},
 					]}
 				>
 					{#if conversation.data.pinned}
@@ -133,7 +136,8 @@
 						/>
 					</span>
 					{#if unreadSignal}
-						<span class="size-dot shrink-0 rounded-full bg-primary"></span>
+						<span class="size-dot shrink-0 rounded-full bg-primary"
+						></span>
 					{/if}
 				</span>
 				{#if conversation.data.unreadCount > 0}

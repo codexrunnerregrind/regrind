@@ -8,11 +8,7 @@
 	import { hapticImpact } from "$lib/platform/haptics";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
 
-	let {
-		onClose,
-	}: {
-		onClose: () => void;
-	} = $props();
+	let { onClose }: { onClose: () => void } = $props();
 
 	const composer = getMessageComposerContext();
 
@@ -30,7 +26,11 @@
 
 	onMount(() => {
 		if (pinPos) {
-			geoMapPicker?.centerAt({ lat: pinPos.lat, lon: pinPos.lon, zoom: 15 });
+			geoMapPicker?.centerAt({
+				lat: pinPos.lat,
+				lon: pinPos.lon,
+				zoom: 15,
+			});
 		}
 		// Auto-select the current position on open (silent: no prompt-denied toast).
 		void geoMapPicker?.locate({ silent: true });
@@ -52,7 +52,11 @@
 		class="h-[50vh] touch-manipulation overflow-clip rounded-lg"
 		data-vaul-no-drag
 	>
-		<GeoMapPicker bind:pinPos bind:atCurrentLocation bind:this={geoMapPicker} />
+		<GeoMapPicker
+			bind:pinPos
+			bind:atCurrentLocation
+			bind:this={geoMapPicker}
+		/>
 	</div>
 	<Button size="lg" disabled={!pinPos} onclick={send}>
 		{atCurrentLocation ? "Send current location" : "Send location"}

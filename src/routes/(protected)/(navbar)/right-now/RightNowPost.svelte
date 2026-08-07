@@ -170,7 +170,10 @@
 						name: displayName,
 						fallbackName: "Right Now",
 						avatarUrl: mediaHash
-							? profileMediaUrl({ mediaHash: mediaHash, size: "thumb" })
+							? profileMediaUrl({
+									mediaHash: mediaHash,
+									size: "thumb",
+								})
 							: null,
 						// The feed reports metres, the viewer takes kilometres.
 						distanceKm: distance === null ? null : distance / 1000,
@@ -255,13 +258,18 @@
 						]}
 					>
 						{#if !state?.loaded}
-							<div class="h-64 w-full animate-pulse rounded-lg bg-muted"></div>
+							<div
+								class="h-64 w-full animate-pulse rounded-lg bg-muted"
+							></div>
 						{/if}
 
 						<img
 							use:trackCached={imgIndex}
 							onload={(e) =>
-								markLoaded(e.currentTarget as HTMLImageElement, imgIndex)}
+								markLoaded(
+									e.currentTarget as HTMLImageElement,
+									imgIndex,
+								)}
 							src={image.fullImageUrl}
 							alt=""
 							class={[
@@ -305,7 +313,9 @@
 					variant="ghost"
 					size="icon"
 					href="/chat/{conversationId}"
-					aria-label="Message {displayName ? `${displayName}` : 'someone'}"
+					aria-label="Message {displayName
+						? `${displayName}`
+						: 'someone'}"
 				>
 					<ChatIcon
 						class="inline-block size-4 align-text-top"

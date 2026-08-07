@@ -81,52 +81,52 @@ export class ConversationState {
 				"chat.v1.message_sent",
 				chatV1MessageSentEventSchema,
 				(event) => {
-				if (this.#destroyed) return;
-				const incoming = event.payload;
-				if (incoming.conversationId !== this.conversationId) return;
+					if (this.#destroyed) return;
+					const incoming = event.payload;
+					if (incoming.conversationId !== this.conversationId) return;
 
-				const existing = this.messages.find(
-					(m) => m.messageId === incoming.messageId,
-				);
-				if (existing) {
+					const existing = this.messages.find(
+						(m) => m.messageId === incoming.messageId,
+					);
+					if (existing) {
 						Object.assign(existing, incoming, {
 							status: "sent" as const,
 						});
-					this.#syncCache();
-					return;
-				}
+						this.#syncCache();
+						return;
+					}
 
-				if (incoming.senderId === this.ourProfileId) {
+					if (incoming.senderId === this.ourProfileId) {
 						const pending = matchPendingEcho({
 							messages: this.messages,
 							incoming,
 						});
-					if (pending) {
-						pending.status = "sent";
-						pending.messageId = incoming.messageId;
-						this.#syncCache();
-						return;
+						if (pending) {
+							pending.status = "sent";
+							pending.messageId = incoming.messageId;
+							this.#syncCache();
+							return;
+						}
 					}
-				}
 
-				const newestTimestamp = this.messages.reduce(
-					(max, m) => Math.max(max, m.timestamp),
-					Number.NEGATIVE_INFINITY,
-				);
-				if (incoming.timestamp < newestTimestamp) return;
+					const newestTimestamp = this.messages.reduce(
+						(max, m) => Math.max(max, m.timestamp),
+						Number.NEGATIVE_INFINITY,
+					);
+					if (incoming.timestamp < newestTimestamp) return;
 
 					const msg: OptimisticMessage = {
 						...incoming,
 						status: "sent",
 					};
-				this.messages = [msg, ...this.messages];
-				this.#syncCache();
-				if (msg.senderId !== this.ourProfileId) {
-					void this.reportRead({
-						messageId: msg.messageId,
-						timestamp: msg.timestamp,
-					});
-				}
+					this.messages = [msg, ...this.messages];
+					this.#syncCache();
+					if (msg.senderId !== this.ourProfileId) {
+						void this.reportRead({
+							messageId: msg.messageId,
+							timestamp: msg.timestamp,
+						});
+					}
 				},
 			),
 			ws.on(
@@ -473,19 +473,19 @@ export class ConversationState {
 	async #markRead(messageId: string): Promise<void> {
 		const { revealMessageRead } = await getPreferences();
 		if (!revealMessageRead) return;
-			try {
-				await markConversationAsRead({
-					conversationId: this.conversationId,
+		try {
+			await markConversationAsRead({
+				conversationId: this.conversationId,
 				messageId,
-				});
-			} catch (error) {
-				console.error(error);
-				showErrorToast({
-					label: "Failed to mark conversation as read",
-					error,
-				});
-			}
+			});
+		} catch (error) {
+			console.error(error);
+			showErrorToast({
+				label: "Failed to mark conversation as read",
+				error,
+			});
 		}
+	}
 
 	async reactTo({
 		messageId,

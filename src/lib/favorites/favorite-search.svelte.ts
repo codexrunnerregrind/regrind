@@ -71,7 +71,8 @@ export class FavoriteSearch {
 					{
 						displayName: profile.displayName,
 						notes: profile.note,
-						phoneNumber: favoriteNote(profile.profileId)?.phoneNumber,
+						phoneNumber: favoriteNote(profile.profileId)
+							?.phoneNumber,
 					},
 					this.query,
 				),
@@ -121,7 +122,8 @@ export class FavoriteSearch {
 			}));
 			this.#loaded = true;
 		} catch (error) {
-			this.error = error instanceof Error ? error : new Error(String(error));
+			this.error =
+				error instanceof Error ? error : new Error(String(error));
 		} finally {
 			this.loading = false;
 		}

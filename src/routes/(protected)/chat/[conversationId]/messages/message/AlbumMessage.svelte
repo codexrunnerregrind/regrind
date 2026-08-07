@@ -48,14 +48,18 @@
 	// bare. The conversation partner is the sharer, so its profile is what the
 	// header describes.
 	const sharer = $derived.by<AlbumSharer | undefined>(() => {
-		if (message.ownerProfileId === conversation.ourProfileId) return undefined;
+		if (message.ownerProfileId === conversation.ourProfileId)
+			return undefined;
 		const profile = conversation.profile;
 		return {
 			name: profile?.name,
 			avatarUrl:
 				profile?.mediaHash === undefined || profile.mediaHash === null
 					? null
-					: profileMediaUrl({ mediaHash: profile.mediaHash, size: "thumb" }),
+					: profileMediaUrl({
+							mediaHash: profile.mediaHash,
+							size: "thumb",
+						}),
 			// The conversation profile reports metres, the viewer takes kilometres.
 			distanceKm:
 				profile?.distance === undefined || profile.distance === null
@@ -134,7 +138,9 @@
 				/>
 			</div>
 		{/if}
-		<div class={["@container absolute top-0 left-0 size-full", contentClass]}>
+		<div
+			class={["@container absolute top-0 left-0 size-full", contentClass]}
+		>
 			{#if expiry !== null}
 				<div
 					class={[

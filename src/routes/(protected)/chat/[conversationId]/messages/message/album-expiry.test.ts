@@ -16,7 +16,10 @@ describe("albumExpiry", () => {
 
 	it("returns null for indefinite shares", () => {
 		expect(
-			albumExpiry({ viewableUntil: null, expirationType: "INDEFINITE" }, NOW),
+			albumExpiry(
+				{ viewableUntil: null, expirationType: "INDEFINITE" },
+				NOW,
+			),
 		).toBe(null);
 	});
 
@@ -36,10 +39,15 @@ describe("albumExpiry", () => {
 	});
 
 	it("ignores a stamp on an album that does not declare an expiration", () => {
-		expect(albumExpiry({ viewableUntil: NOW + 30 * MINUTE }, NOW)).toBe(null);
+		expect(albumExpiry({ viewableUntil: NOW + 30 * MINUTE }, NOW)).toBe(
+			null,
+		);
 		expect(
 			albumExpiry(
-				{ viewableUntil: NOW + 30 * MINUTE, expirationType: "INDEFINITE" },
+				{
+					viewableUntil: NOW + 30 * MINUTE,
+					expirationType: "INDEFINITE",
+				},
 				NOW,
 			),
 		).toBe(null);
@@ -65,7 +73,10 @@ describe("albumExpiry", () => {
 
 	it("treats the exact expiry moment as expired", () => {
 		expect(
-			albumExpiry({ viewableUntil: NOW, expirationType: "ONE_HOUR" }, NOW),
+			albumExpiry(
+				{ viewableUntil: NOW, expirationType: "ONE_HOUR" },
+				NOW,
+			),
 		).toEqual({ label: "Expired", expired: true });
 	});
 
@@ -91,17 +102,25 @@ describe("albumExpiry", () => {
 
 	it("still expires a view-once share once its window has passed", () => {
 		expect(
-			albumExpiry({ viewableUntil: NOW - MINUTE, expirationType: "ONCE" }, NOW),
+			albumExpiry(
+				{ viewableUntil: NOW - MINUTE, expirationType: "ONCE" },
+				NOW,
+			),
 		).toEqual({ label: "Expired", expired: true });
 	});
 
 	it("degrades to no marker for an unrecognised type", () => {
 		// Inbound expirationType is an unvalidated string by design, so a value
 		// added server-side must not render a broken badge.
-		expect(albumExpiry({ expirationType: "SOME_NEW_TYPE" }, NOW)).toBe(null);
+		expect(albumExpiry({ expirationType: "SOME_NEW_TYPE" }, NOW)).toBe(
+			null,
+		);
 		expect(
 			albumExpiry(
-				{ viewableUntil: NOW + MINUTE, expirationType: "SOME_NEW_TYPE" },
+				{
+					viewableUntil: NOW + MINUTE,
+					expirationType: "SOME_NEW_TYPE",
+				},
 				NOW,
 			),
 		).toBe(null);

@@ -18,10 +18,7 @@
 	let {
 		message,
 		messageId,
-	}: {
-		message: ImageMessage["body"];
-		messageId: string;
-	} = $props();
+	}: { message: ImageMessage["body"]; messageId: string } = $props();
 
 	const media = new MessageMediaState();
 
@@ -83,9 +80,13 @@
 				name: profile?.name,
 				fallbackName: "Photos",
 				avatarUrl:
-					profile?.mediaHash === undefined || profile.mediaHash === null
+					profile?.mediaHash === undefined ||
+					profile.mediaHash === null
 						? null
-						: profileMediaUrl({ mediaHash: profile.mediaHash, size: "thumb" }),
+						: profileMediaUrl({
+								mediaHash: profile.mediaHash,
+								size: "thumb",
+							}),
 				// The conversation profile reports metres, the viewer takes kilometres.
 				distanceKm:
 					profile?.distance === undefined || profile.distance === null
@@ -121,8 +122,12 @@
 		// received pic and you browse received pics; open one you sent and you
 		// browse the ones you sent.
 		const tapped = images.find((i) => i.messageId === messageId);
-		const sideImages = images.filter((i) => i.senderId === tapped?.senderId);
-		const startIndex = sideImages.findIndex((i) => i.messageId === messageId);
+		const sideImages = images.filter(
+			(i) => i.senderId === tapped?.senderId,
+		);
+		const startIndex = sideImages.findIndex(
+			(i) => i.messageId === messageId,
+		);
 		teardown?.();
 		teardown = undefined;
 		openImageGalleryLightbox(sideImages, {

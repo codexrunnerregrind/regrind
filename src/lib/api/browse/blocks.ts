@@ -23,9 +23,9 @@ export async function blockUser({
 }: {
 	profileId: Profile["profileId"];
 }) {
-	await fetchRest(`/v3/me/blocks/${profileId}`, {
-		method: "POST",
-	}).then((res) => res.assertOk());
+	await fetchRest(`/v3/me/blocks/${profileId}`, { method: "POST" }).then(
+		(res) => res.assertOk(),
+	);
 	// This list decides whether a profile reads as blocked by us, and backs the
 	// blocked-users screen, so a stale entry would show the wrong side of the
 	// block for up to the TTL.
@@ -37,8 +37,8 @@ export async function unblockUser({
 }: {
 	profileId: Profile["profileId"];
 }) {
-	await fetchRest(`/v3/me/blocks/${profileId}`, {
-		method: "DELETE",
-	}).then((res) => res.assertOk());
+	await fetchRest(`/v3/me/blocks/${profileId}`, { method: "DELETE" }).then(
+		(res) => res.assertOk(),
+	);
 	getBlockedUsers.invalidate();
 }

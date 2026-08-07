@@ -43,7 +43,9 @@ export function getAlbumShared(
  */
 const SWEEP_TTL_MS = 60_000;
 
+// eslint-disable-next-line svelte/prefer-svelte-reactivity -- TTL bookkeeping, nothing renders from it
 const sweptAt = new Map<number, number>();
+// eslint-disable-next-line svelte/prefer-svelte-reactivity -- in-flight de-duplication, nothing renders from it
 const sweepsInFlight = new Map<number, Promise<void>>();
 
 function sweptRecently(profileId: number): boolean {

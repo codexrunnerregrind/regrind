@@ -67,7 +67,12 @@ export const demoConversationSeeds: DemoConversation[] = [
 				reply: "can't see it anymore",
 				expired: true,
 			},
-			{ fromMe: false, kind: "albumContent", albumId: 5001, locked: true },
+			{
+				fromMe: false,
+				kind: "albumContent",
+				albumId: 5001,
+				locked: true,
+			},
 			// Kept last so this conversation's preview stays an Album, which
 			// demo.test.ts asserts.
 			{

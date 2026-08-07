@@ -29,10 +29,7 @@
 	// offered but cannot do anything yet.
 	function remove() {
 		toast(ToastUnimplemented, {
-			componentProps: {
-				feature: "Removing a shared album",
-				issue: 33,
-			},
+			componentProps: { feature: "Removing a shared album", issue: 33 },
 		});
 	}
 
@@ -104,7 +101,8 @@
 					onclick={() => {
 						// The feed is cached now, so the dot has to be settled here —
 						// there is no remount refetch to pick the server's word up.
-						if (album.albumViewable) sharedAlbums.markSeen(album.albumId);
+						if (album.albumViewable)
+							sharedAlbums.markSeen(album.albumId);
 						void opener.open(album.albumId, {
 							name: album.profile?.name,
 							avatarUrl: album.profile?.profileUrl,

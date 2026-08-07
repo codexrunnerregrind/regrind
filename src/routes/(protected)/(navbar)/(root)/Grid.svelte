@@ -12,13 +12,8 @@
 	import GridProfileMiniCard from "./GridProfileMiniCard.svelte";
 	import NoNoteMatches from "./NoNoteMatches.svelte";
 
-	let {
-		geohash,
-		search,
-	}: {
-		geohash: string;
-		search: FavoriteSearch;
-	} = $props();
+	let { geohash, search }: { geohash: string; search: FavoriteSearch } =
+		$props();
 
 	const gridProfiles = $derived.by(() => {
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- built and spread inside this $derived, never mutated afterwards

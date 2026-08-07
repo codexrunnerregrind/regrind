@@ -334,7 +334,9 @@ export function demoSingleMessage({
 	const conv = demoConversationById.get(conversationId);
 	const message =
 		(conv
-			? threadMessages(conv).find((entry) => entry.messageId === messageId)
+			? threadMessages(conv).find(
+					(entry) => entry.messageId === messageId,
+				)
 			: undefined) ?? demoSentMessages.get(messageId);
 	return { message: message ?? null };
 }

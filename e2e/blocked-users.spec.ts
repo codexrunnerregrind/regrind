@@ -35,7 +35,9 @@ test.describe("blocked users settings screen", () => {
 		await page.getByRole("link").first().click();
 		await expect(page).toHaveURL(/\/settings\/account$/);
 		await openBlockedUsers(page);
-		await expect(page.getByRole("button", { name: "Unblock" })).toHaveCount(1);
+		await expect(page.getByRole("button", { name: "Unblock" })).toHaveCount(
+			1,
+		);
 	});
 
 	test("the chat menu can block, and the block lands in the list", async ({
@@ -45,7 +47,10 @@ test.describe("blocked users settings screen", () => {
 		await page.goto("/chat/100001:123456000");
 
 		const blockItem = page.getByRole("menuitem", { name: "Block" });
-		const confirm = page.getByRole("button", { name: "Block", exact: true });
+		const confirm = page.getByRole("button", {
+			name: "Block",
+			exact: true,
+		});
 
 		// Cancelling the confirmation must leave the conversation untouched.
 		await page.getByLabel("Conversation menu").click();
@@ -59,7 +64,9 @@ test.describe("blocked users settings screen", () => {
 		await blockItem.click();
 		await confirm.click();
 
-		await expect(page, "blocking leaves the conversation").toHaveURL(/\/chat$/);
+		await expect(page, "blocking leaves the conversation").toHaveURL(
+			/\/chat$/,
+		);
 
 		await page.locator('a[href="/settings"]').click();
 		await page.getByText("Account Settings", { exact: true }).click();

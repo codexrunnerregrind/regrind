@@ -56,7 +56,11 @@ describe("ViewActivityState", () => {
 		expect(activity.hasUnseenViews).toBe(false);
 
 		emitView(
-			viewEvent({ profileId: 42, photoHash: "hash", timestamp: 1_710_000_000 }),
+			viewEvent({
+				profileId: 42,
+				photoHash: "hash",
+				timestamp: 1_710_000_000,
+			}),
 		);
 
 		expect(activity.hasUnseenViews).toBe(true);

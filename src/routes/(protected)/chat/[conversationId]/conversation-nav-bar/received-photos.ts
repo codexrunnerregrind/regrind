@@ -23,7 +23,11 @@ function toPhotos({
 	return messages
 		.filter((m) => m.type === "Image" && m.senderId === profileId)
 		.map((m) => {
-			const body = m.body as { url: string; width: number; height: number };
+			const body = m.body as {
+				url: string;
+				width: number;
+				height: number;
+			};
 			return {
 				url: body.url,
 				width: body.width,

@@ -13,13 +13,8 @@
 	import { hapticSelection } from "$lib/platform/haptics";
 	import type { PressieSharedAlbum } from "$lib/model/messaging/albums";
 
-	let {
-		profileId,
-		name,
-	}: {
-		profileId: number;
-		name?: string | null;
-	} = $props();
+	let { profileId, name }: { profileId: number; name?: string | null } =
+		$props();
 
 	let open = $state(false);
 	let albums = $state<PressieSharedAlbum[] | null>(null);

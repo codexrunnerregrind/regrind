@@ -60,15 +60,22 @@ class NotificationService {
 		// never throws.
 		const safe = (p: Promise<() => void>): Promise<() => void> =>
 			p.catch((error: unknown) => {
-				console.error("[notifications] listener registration failed", error);
+				console.error(
+					"[notifications] listener registration failed",
+					error,
+				);
 				return () => {};
 			});
 
 		this.#unlisteners.push(
 			safe(
-				ws.on("chat.v1.message_sent", chatV1MessageSentEventSchema, (event) => {
-					void this.#onMessage(event.payload);
-				}),
+				ws.on(
+					"chat.v1.message_sent",
+					chatV1MessageSentEventSchema,
+					(event) => {
+						void this.#onMessage(event.payload);
+					},
+				),
 			),
 			safe(
 				ws.on("tap.v1.tap_sent", tapV1TapSentEventSchema, (event) => {
@@ -79,8 +86,9 @@ class NotificationService {
 			// this; open the route we stashed in `extra`.
 			safe(
 				onAction((notification) => {
-					const route = notificationExtraSchema.safeParse(notification.extra)
-						.data?.route;
+					const route = notificationExtraSchema.safeParse(
+						notification.extra,
+					).data?.route;
 					if (route) void goto(route);
 				}).then((listener) => () => void listener.unregister()),
 			),
@@ -152,7 +160,9 @@ class NotificationService {
 		const senderName = entry?.data.name?.trim();
 		sendNotification({
 			title: senderName || "New message",
-			body: previewLabel(previewFromMessage(message)) ?? "Sent you a message",
+			body:
+				previewLabel(previewFromMessage(message)) ??
+				"Sent you a message",
 			group: message.conversationId,
 			extra: { route: `/chat/${message.conversationId}` },
 		});

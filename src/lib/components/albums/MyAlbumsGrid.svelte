@@ -41,7 +41,8 @@
 			await goto(`/albums/${albumId}`);
 		} catch (err) {
 			console.error(err);
-			const status = err instanceof ApiError ? err.response?.status : null;
+			const status =
+				err instanceof ApiError ? err.response?.status : null;
 			showErrorToast({
 				label:
 					status === 402
@@ -91,7 +92,11 @@
 <div class="@container/photo-grid flex min-h-0 flex-1 flex-col">
 	{#if error !== null}
 		<div class="flex flex-1">
-			<ApiErrorDisplay {error} onRetry={() => void load()} class="m-auto" />
+			<ApiErrorDisplay
+				{error}
+				onRetry={() => void load()}
+				class="m-auto"
+			/>
 		</div>
 	{:else if albums === null}
 		<div class="object-grid gap-1">
@@ -105,7 +110,8 @@
 			{@render newAlbumTile()}
 			{#each albums as album (album.albumId)}
 				<AlbumTile
-					coverUrl={album.content[0]?.thumbUrl || album.content[0]?.coverUrl}
+					coverUrl={album.content[0]?.thumbUrl ||
+						album.content[0]?.coverUrl}
 					title={album.albumName || "Untitled album"}
 					badge={album.sharedCount > 0 ? "Shared" : undefined}
 					onclick={() => void goto(`/albums/${album.albumId}`)}
@@ -127,8 +133,8 @@
 		<AlertDialog.Header>
 			<AlertDialog.Title>Delete this album?</AlertDialog.Title>
 			<AlertDialog.Description>
-				The album and everyone's access to it will be removed. This cannot be
-				undone.
+				The album and everyone's access to it will be removed. This
+				cannot be undone.
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>

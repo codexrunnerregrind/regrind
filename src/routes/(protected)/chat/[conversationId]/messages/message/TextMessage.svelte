@@ -9,10 +9,8 @@
 	let {
 		message,
 		replyTo,
-	}: {
-		message: TextMessage["body"];
-		replyTo?: ApiResponseMessage | null;
-	} = $props();
+	}: { message: TextMessage["body"]; replyTo?: ApiResponseMessage | null } =
+		$props();
 
 	const { lastInStack, isOut } = $derived(getMessageContext()());
 	const { clone, setRef, adornments } = $derived(getMessageMetaContext()());
@@ -23,14 +21,7 @@
 	});
 </script>
 
-<div
-	class={[
-		"flex max-w-[74%] flex-col",
-		{
-			"items-end": isOut,
-		},
-	]}
->
+<div class={["flex max-w-[74%] flex-col", { "items-end": isOut }]}>
 	<!-- No drawn tail: the last bubble in a stack tightens its inner bottom
 	     corner instead, which points the stack at its sender on its own. -->
 	<div
@@ -40,7 +31,8 @@
 				"pointer-coarse:select-none": !clone,
 				"bg-message-bubble-in text-message-bubble-foreground": !isOut,
 				"rounded-es-bubble-tail": lastInStack && !isOut,
-				"bg-message-bubble-out text-message-bubble-out-foreground": isOut,
+				"bg-message-bubble-out text-message-bubble-out-foreground":
+					isOut,
 				"rounded-ee-bubble-tail": lastInStack && isOut,
 			},
 		]}

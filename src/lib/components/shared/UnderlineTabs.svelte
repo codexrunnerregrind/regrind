@@ -1,8 +1,5 @@
 <script lang="ts" module>
-	export type UnderlineTab = {
-		value: string;
-		label: string;
-	};
+	export type UnderlineTab = { value: string; label: string };
 </script>
 
 <script lang="ts">

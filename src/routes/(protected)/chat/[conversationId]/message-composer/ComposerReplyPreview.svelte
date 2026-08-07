@@ -35,7 +35,9 @@
 				aspectRatio="1 / 1"
 			/>
 		{/if}
-		<span class="min-w-0 flex-1 truncate text-caption text-muted-foreground">
+		<span
+			class="min-w-0 flex-1 truncate text-caption text-muted-foreground"
+		>
 			{label}
 		</span>
 	</div>

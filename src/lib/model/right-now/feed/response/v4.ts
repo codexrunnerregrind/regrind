@@ -36,18 +36,12 @@ export const RightNowPostMediaItemSchema = z.object({
 
 export const CuratedPostV1Schema = z.object({
 	type: z.literal("curated_post_v1"),
-	data: z.object({
-		"@type": z.string(),
-		type: z.string(),
-	}),
+	data: z.object({ "@type": z.string(), type: z.string() }),
 });
 
 export const UpsellInsertV1Schema = z.object({
 	type: z.literal("upsell_insert_v1"),
-	data: z.object({
-		"@type": z.string(),
-		type: z.string(),
-	}),
+	data: z.object({ "@type": z.string(), type: z.string() }),
 });
 
 export const DiscreetRightNowPostV1Schema = z.object({

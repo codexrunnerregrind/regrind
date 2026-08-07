@@ -27,7 +27,8 @@
 
 	let menuOpen = $state(false);
 	let pickerOpen = $state(false);
-	let pinPos: { lat: number; lon: number; zoom: number } | undefined = $state();
+	let pinPos: { lat: number; lon: number; zoom: number } | undefined =
+		$state();
 	let locationChooser: LocationChooser | undefined = $state();
 	let locating = $state(false);
 
@@ -45,7 +46,10 @@
 				);
 			} else {
 				console.error(error);
-				showErrorToast({ label: "Failed to get current location", error });
+				showErrorToast({
+					label: "Failed to get current location",
+					error,
+				});
 			}
 		} finally {
 			locating = false;

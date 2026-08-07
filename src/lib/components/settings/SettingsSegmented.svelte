@@ -41,16 +41,14 @@
 			class={[
 				"h-auto flex-1 rounded-md px-2 text-muted-foreground",
 				"data-[state=on]:bg-card data-[state=on]:text-foreground data-[state=on]:shadow-sm",
-				{
-					"flex-col gap-1.5 py-2.5": stacked,
-					"gap-2 py-2": !stacked,
-				},
+				{ "flex-col gap-1.5 py-2.5": stacked, "gap-2 py-2": !stacked },
 			]}
 		>
 			{#if option.icon}
 				<option.icon weight="fill" class="size-5" />
 			{/if}
-			<span class="truncate text-caption font-medium">{option.label}</span>
+			<span class="truncate text-caption font-medium">{option.label}</span
+			>
 		</ToggleGroup.Item>
 	{/each}
 </ToggleGroup.Root>

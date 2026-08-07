@@ -30,7 +30,8 @@ export class SwipeToReply {
 	);
 
 	#onDown(event: GestureCustomEvent): void {
-		if (event.detail.event.pointerType === "mouse" && this.#isMobile) return;
+		if (event.detail.event.pointerType === "mouse" && this.#isMobile)
+			return;
 		this.#active = true;
 		this.#startClientX = event.detail.event.clientX;
 	}
@@ -57,6 +58,9 @@ export class SwipeToReply {
 	}
 
 	get progress(): number {
-		return Math.min(Math.abs(this.#offset.current) / TRIGGER_DISTANCE_PX, 1);
+		return Math.min(
+			Math.abs(this.#offset.current) / TRIGGER_DISTANCE_PX,
+			1,
+		);
 	}
 }

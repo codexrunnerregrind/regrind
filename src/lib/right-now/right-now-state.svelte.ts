@@ -8,7 +8,9 @@ import { type FeedPost, getPosts } from "./posts";
 import { RightNowSearchFiltersState } from "./right-now-filters-state.svelte";
 
 class RightNowState {
-	filters = new RightNowSearchFiltersState({ onRefresh: () => this.refresh() });
+	filters = new RightNowSearchFiltersState({
+		onRefresh: () => this.refresh(),
+	});
 	posts: FeedPost[] = $state([]);
 	loading = $state(false);
 	refreshing = $state(false);
@@ -64,9 +66,7 @@ class RightNowState {
 			const filters = this.filters.value;
 			const query = {
 				sort: filters?.sort || "DISTANCE",
-				...(filters?.hostingEnabled && {
-					hosting: filters?.hosting,
-				}),
+				...(filters?.hostingEnabled && { hosting: filters?.hosting }),
 				...(filters?.positionEnabled && {
 					sexualPositions: filters?.positions,
 				}),
@@ -92,7 +92,9 @@ class RightNowState {
 			this.error =
 				err instanceof Error
 					? err
-					: new Error("Failed to fetch Right Now feed", { cause: err });
+					: new Error("Failed to fetch Right Now feed", {
+							cause: err,
+						});
 			this.loading = false;
 		}
 	}

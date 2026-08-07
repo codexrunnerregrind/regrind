@@ -62,16 +62,19 @@ export async function loadAlbum(albumId: number): Promise<LoadedAlbum> {
 				try {
 					await new Promise<void>((resolve, reject) => {
 						if (video.readyState >= 1) resolve();
-						video.addEventListener("loadedmetadata", () => resolve(), {
-							once: true,
-						});
+						video.addEventListener(
+							"loadedmetadata",
+							() => resolve(),
+							{ once: true },
+						);
 						video.addEventListener(
 							"error",
 							({ error }) =>
 								reject(
-									new Error(`Failed to load video: ${slide.url}`, {
-										cause: error,
-									}),
+									new Error(
+										`Failed to load video: ${slide.url}`,
+										{ cause: error },
+									),
 								),
 							{ once: true },
 						);
@@ -90,14 +93,17 @@ export async function loadAlbum(albumId: number): Promise<LoadedAlbum> {
 				try {
 					await new Promise<void>((resolve, reject) => {
 						if (img.complete) resolve();
-						img.addEventListener("load", () => resolve(), { once: true });
+						img.addEventListener("load", () => resolve(), {
+							once: true,
+						});
 						img.addEventListener(
 							"error",
 							({ error }) =>
 								reject(
-									new Error(`Failed to load image: ${slide.url}`, {
-										cause: error,
-									}),
+									new Error(
+										`Failed to load image: ${slide.url}`,
+										{ cause: error },
+									),
 								),
 							{ once: true },
 						);
@@ -174,9 +180,9 @@ export async function openAlbumLightbox(
 						});
 					},
 					onOpenChat: async () => {
-						const ourProfileId = await callMethod("auth_state").catch(
-							() => null,
-						);
+						const ourProfileId = await callMethod(
+							"auth_state",
+						).catch(() => null);
 						if (ourProfileId === null) return;
 						const conversationId = [toUserId, ourProfileId]
 							.toSorted((a, b) => a - b)

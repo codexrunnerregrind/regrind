@@ -93,10 +93,7 @@ export const sharedAlbumSchema = z.object({
 	...albumExpirationSchema.shape,
 	content: albumContentMin.nullish(),
 	contentCount: z
-		.object({
-			imageCount: z.int(),
-			videoCount: z.int(),
-		})
+		.object({ imageCount: z.int(), videoCount: z.int() })
 		.nullish(),
 });
 

@@ -38,6 +38,8 @@
 		class="min-h-24 rounded-lg"
 	/>
 	{#if over}
-		<span class="text-caption text-destructive">Too long, please shorten</span>
+		<span class="text-caption text-destructive"
+			>Too long, please shorten</span
+		>
 	{/if}
 </div>

@@ -42,6 +42,8 @@
 		}
 	}
 
+	// WebKit bug: the resize observer emits a frame late, painting the taller
+	// composer over the newest message once.
 	function remeasureBeforeResizeObserverCatchesUp() {
 		if (form) height = form.clientHeight;
 	}
@@ -53,11 +55,7 @@
 	bind:this={form}
 	class="absolute bottom-0 z-20 flex min-h-11 w-full min-w-0 shrink-0 flex-col gap-2 border-t border-border bg-background px-4.5 pt-3 pb-3"
 	bind:clientHeight={height}
-	oninput={() => {
-		// WebKit bug: resive observer emits event a frame late,
-		// painting the taller composer over the newest message once
-		if (form) height = form.clientHeight;
-	}}
+	oninput={remeasureBeforeResizeObserverCatchesUp}
 	onpointerdown={(event) => {
 		// Tapping the composer's own padding shouldn't dismiss the keyboard
 		const target = event.target as HTMLElement | null;

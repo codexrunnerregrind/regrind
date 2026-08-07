@@ -68,7 +68,9 @@
 		};
 	});
 
-	const notesRemaining = $derived(FAVORITE_NOTE_MAX_LENGTH - notesValue.length);
+	const notesRemaining = $derived(
+		FAVORITE_NOTE_MAX_LENGTH - notesValue.length,
+	);
 	const tooLong = $derived(notesRemaining < 0);
 	const dirty = $derived(
 		notesValue !== stored.notes || phoneValue !== stored.phoneNumber,
@@ -125,7 +127,9 @@
 			await deleteFavoriteNote({ profileId });
 			await refreshFavoriteNote(profileId);
 			if (
-				!favoriteNoteIsEmpty(favoriteNote(profileId) ?? EMPTY_FAVORITE_NOTE)
+				!favoriteNoteIsEmpty(
+					favoriteNote(profileId) ?? EMPTY_FAVORITE_NOTE,
+				)
 			) {
 				toast.error("The server still has this note");
 				return;
@@ -148,7 +152,8 @@
 		<Drawer.Header>
 			<Drawer.Title>Note</Drawer.Title>
 			<Drawer.Description>
-				Only you can see this. It stays with the profile in your favorites.
+				Only you can see this. It stays with the profile in your
+				favorites.
 			</Drawer.Description>
 		</Drawer.Header>
 		<div class="flex flex-col gap-4 px-4 pb-2">
@@ -182,7 +187,9 @@
 				{/if}
 			</div>
 			<div class="flex flex-col gap-1.5">
-				<Label class="px-1" for="favorite-note-phone">Phone number</Label>
+				<Label class="px-1" for="favorite-note-phone"
+					>Phone number</Label
+				>
 				<Input
 					id="favorite-note-phone"
 					type="tel"
@@ -194,13 +201,16 @@
 			</div>
 			{#if saveFailed}
 				<span class="px-1 text-caption text-destructive">
-					The server accepted this note but kept nothing. Your text is still
-					here — try saving again.
+					The server accepted this note but kept nothing. Your text is
+					still here — try saving again.
 				</span>
 			{/if}
 		</div>
 		<Drawer.Footer>
-			<Button disabled={busy || !dirty || tooLong} onclick={() => void save()}>
+			<Button
+				disabled={busy || !dirty || tooLong}
+				onclick={() => void save()}
+			>
 				{#if saving}
 					<Spinner class="size-4" />
 				{/if}

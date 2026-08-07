@@ -30,15 +30,13 @@
 	const media = new MessageMediaState();
 	const conversation = $derived(getConversationState()());
 	const isOurs = $derived(
-		conversation.messages.find((m) => m.messageId === messageId)?.senderId ===
-			conversation.ourProfileId,
+		conversation.messages.find((m) => m.messageId === messageId)
+			?.senderId === conversation.ourProfileId,
 	);
 
 	const className: import("svelte/elements").ClassValue = $derived([
 		"relative",
-		{
-			"size-full": media.clone,
-		},
+		{ "size-full": media.clone },
 	]);
 
 	const contentClass: import("svelte/elements").ClassValue = $derived([
@@ -105,9 +103,13 @@
 				name: profile?.name,
 				fallbackName: "Expiring photo",
 				avatarUrl:
-					profile?.mediaHash === undefined || profile.mediaHash === null
+					profile?.mediaHash === undefined ||
+					profile.mediaHash === null
 						? null
-						: profileMediaUrl({ mediaHash: profile.mediaHash, size: "thumb" }),
+						: profileMediaUrl({
+								mediaHash: profile.mediaHash,
+								size: "thumb",
+							}),
 				// The conversation profile reports metres, the viewer takes kilometres.
 				distanceKm:
 					profile?.distance === undefined || profile.distance === null

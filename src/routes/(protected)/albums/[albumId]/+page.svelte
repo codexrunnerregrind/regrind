@@ -224,7 +224,9 @@
 					/>
 				{:else if album === null}
 					<div class="flex gap-4">
-						<Skeleton class="aspect-album h-32.5 shrink-0 rounded-lg" />
+						<Skeleton
+							class="aspect-album h-32.5 shrink-0 rounded-lg"
+						/>
 						<div class="flex flex-1 flex-col gap-2 pt-1">
 							<Skeleton class="h-5 w-32 rounded-md" />
 							<Skeleton class="h-4 w-40 rounded-md" />
@@ -291,7 +293,9 @@
 								{album.content.length}
 								{album.content.length === 1 ? "item" : "items"}
 								{#if updatedMs !== null}
-									&middot; updated <RelativeTimeDynamic date={updatedMs} />
+									&middot; updated <RelativeTimeDynamic
+										date={updatedMs}
+									/>
 								{/if}
 							</span>
 							{#if isMine}
@@ -313,7 +317,9 @@
 						<div class="flex items-center justify-between gap-2">
 							<span class="section-label">Photos</span>
 							{#if isMine && album.content.length > 1}
-								<span class="text-2xs text-ink3">Hold a photo to reorder</span>
+								<span class="text-2xs text-ink3"
+									>Hold a photo to reorder</span
+								>
 							{/if}
 						</div>
 						{#if album.content.length > 0}
@@ -321,11 +327,15 @@
 								class="object-grid reorder-grid"
 								use:dragReorder={{
 									enabled: isMine && !busy,
-									onReorder: (from, to) => void moveContent(from, to),
+									onReorder: (from, to) =>
+										void moveContent(from, to),
 								}}
 							>
 								{#each album.content as item, index (item.contentId)}
-									<div class="relative aspect-album-photo" data-reorder-item>
+									<div
+										class="relative aspect-album-photo"
+										data-reorder-item
+									>
 										<button
 											type="button"
 											class="size-full overflow-hidden rounded-lg"
@@ -346,7 +356,10 @@
 												class="absolute top-1.5 right-1.5 flex size-6.5 items-center justify-center rounded-full bg-plate-strong text-plate-foreground disabled:opacity-50"
 												aria-label="Delete media"
 												disabled={busy}
-												onclick={() => void removeContent(item.contentId)}
+												onclick={() =>
+													void removeContent(
+														item.contentId,
+													)}
 											>
 												<TrashIcon class="size-3.5" />
 											</button>
@@ -378,7 +391,8 @@
 							<AlbumShares
 								{albumId}
 								onSharedCountChange={(count) => {
-									if (album !== null) album.sharedCount = count;
+									if (album !== null)
+										album.sharedCount = count;
 								}}
 							/>
 						</div>
@@ -435,8 +449,8 @@
 		<AlertDialog.Header>
 			<AlertDialog.Title>Delete this album?</AlertDialog.Title>
 			<AlertDialog.Description>
-				The album and everyone's access to it will be removed. This cannot be
-				undone.
+				The album and everyone's access to it will be removed. This
+				cannot be undone.
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>

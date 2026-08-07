@@ -6,11 +6,8 @@
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import { hapticImpact, hapticSelection } from "$lib/platform/haptics";
 
-	let {
-		class: className,
-	}: {
-		class?: import("svelte/elements").ClassValue;
-	} = $props();
+	let { class: className }: { class?: import("svelte/elements").ClassValue } =
+		$props();
 
 	let container: HTMLDivElement | null = $state(null);
 

@@ -101,7 +101,10 @@ export async function installMobileLocation(
 ): Promise<void> {
 	await page.addInitScript(
 		([lat, lon]) => {
-			const win = window as unknown as Record<string, Record<string, unknown>>;
+			const win = window as unknown as Record<
+				string,
+				Record<string, unknown>
+			>;
 			const internals = win.__TAURI_INTERNALS__;
 			// The shim installs these before this script runs, so both are present.
 			if (!internals || !win.__TAURI_OS_PLUGIN_INTERNALS__) return;
@@ -110,11 +113,19 @@ export async function installMobileLocation(
 				args?: unknown,
 				opts?: unknown,
 			) => unknown;
-			internals.invoke = (cmd: string, args?: unknown, opts?: unknown) => {
+			internals.invoke = (
+				cmd: string,
+				args?: unknown,
+				opts?: unknown,
+			) => {
 				if (cmd.startsWith("plugin:geolocation|")) {
 					if (cmd.endsWith("get_current_position")) {
 						return Promise.resolve({
-							coords: { latitude: lat, longitude: lon, accuracy: 10 },
+							coords: {
+								latitude: lat,
+								longitude: lon,
+								accuracy: 10,
+							},
 							timestamp: 0,
 						});
 					}

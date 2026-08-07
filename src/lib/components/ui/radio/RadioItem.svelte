@@ -3,13 +3,8 @@
 	import { getContext } from "svelte";
 	import type { Snippet } from "svelte";
 
-	let {
-		value: itemValue,
-		children,
-	}: {
-		value: string;
-		children: Snippet;
-	} = $props();
+	let { value: itemValue, children }: { value: string; children: Snippet } =
+		$props();
 
 	const context = getContext<{
 		value: string;

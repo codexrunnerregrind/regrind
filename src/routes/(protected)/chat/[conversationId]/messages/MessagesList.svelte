@@ -133,9 +133,13 @@
 					if (albumId === null || profileId === undefined) return;
 					// Optimistically lock the album bubble(s) so they show as no
 					// longer viewable straight away; revert if the request fails.
-					const { revert } = conversationState.lockSharedAlbum(albumId);
+					const { revert } =
+						conversationState.lockSharedAlbum(albumId);
 					try {
-						await unshareAlbum({ albumId, profileIds: [profileId] });
+						await unshareAlbum({
+							albumId,
+							profileIds: [profileId],
+						});
 						setAlbumShared(albumId, profileId, false);
 						toast.success("Album unshared");
 					} catch (error) {

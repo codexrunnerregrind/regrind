@@ -1,5 +1,8 @@
 <script lang="ts">
-	import { fetchCurrentGeohash, geoApiSupported } from "$lib/app-data/location";
+	import {
+		fetchCurrentGeohash,
+		geoApiSupported,
+	} from "$lib/app-data/location";
 	import {
 		getActiveGeohashSnapshot,
 		getCurrentGeohashSnapshot,

@@ -44,7 +44,8 @@ function demoAlbumOwner(albumId: number): number {
 	if (shared) return shared.ownerProfileId;
 	for (const conversation of demoConversationSeeds) {
 		for (const message of conversation.messages) {
-			if (message.kind !== "album" || message.albumId !== albumId) continue;
+			if (message.kind !== "album" || message.albumId !== albumId)
+				continue;
 			return message.fromMe ? demoMeProfileId : conversation.withId;
 		}
 	}
@@ -198,7 +199,9 @@ export function demoReorderAlbumContent(albumId: number, body: unknown) {
 export function demoDeleteAlbumContent(albumId: number, contentId: number) {
 	const album = demoAlbumStore().find((item) => item.albumId === albumId);
 	if (!album) return;
-	album.content = album.content.filter((item) => item.contentId !== contentId);
+	album.content = album.content.filter(
+		(item) => item.contentId !== contentId,
+	);
 }
 
 export function demoSharedAlbumsFeed() {
@@ -232,7 +235,10 @@ export function demoSharedAlbumsFeed() {
 					// hash, so mirror that with the seeded photo's demo URL.
 					profileUrl: demoMediaUrl(photosOf(ownerProfileId)[0]),
 					onlineUntil: null,
-					distanceKm: owner.distanceM === null ? null : owner.distanceM / 1000,
+					distanceKm:
+						owner.distanceM === null
+							? null
+							: owner.distanceM / 1000,
 				},
 			};
 		},

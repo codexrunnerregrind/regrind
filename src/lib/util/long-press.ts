@@ -124,8 +124,10 @@ export function longPressHandlers(
 			if (
 				onDoubleTap &&
 				Date.now() - lastTapAt < DOUBLE_TAP_MAX_GAP_MS &&
-				Math.abs(event.clientX - lastTapX) < DOUBLE_TAP_MOVE_TOLERANCE_PX &&
-				Math.abs(event.clientY - lastTapY) < DOUBLE_TAP_MOVE_TOLERANCE_PX
+				Math.abs(event.clientX - lastTapX) <
+					DOUBLE_TAP_MOVE_TOLERANCE_PX &&
+				Math.abs(event.clientY - lastTapY) <
+					DOUBLE_TAP_MOVE_TOLERANCE_PX
 			) {
 				lastTapAt = 0;
 				cancelReplay();

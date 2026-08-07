@@ -61,7 +61,10 @@
 				toUserId: profileId,
 				message: {
 					type: "ProfilePhotoReply",
-					body: { imageHash: media.mediaHash, photoContentReply: text },
+					body: {
+						imageHash: media.mediaHash,
+						photoContentReply: text,
+					},
 				},
 			});
 		},
@@ -91,7 +94,10 @@
 				const media = medias[index];
 				if (!media) return;
 				downloadMedia({
-					url: profileMediaUrl({ mediaHash: media.mediaHash, size: "full" }),
+					url: profileMediaUrl({
+						mediaHash: media.mediaHash,
+						size: "full",
+					}),
 				});
 			},
 		};

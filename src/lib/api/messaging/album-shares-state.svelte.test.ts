@@ -90,7 +90,9 @@ describe("ensureAlbumSharesSwept", () => {
 
 	it("keeps going when one album's lookup fails", async () => {
 		getAlbumSharesMock.mockImplementation((albumId: number) =>
-			albumId === 1 ? Promise.reject(new Error("nope")) : Promise.resolve([42]),
+			albumId === 1
+				? Promise.reject(new Error("nope"))
+				: Promise.resolve([42]),
 		);
 
 		await ensureAlbumSharesSwept(42, ALBUMS);

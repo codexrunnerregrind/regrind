@@ -20,7 +20,5 @@
 	class={["size-10 shrink-0 cursor-pointer rounded-md p-0", className]}
 	{...props}
 >
-	{@render icon({
-		class: "size-4.5",
-	})}
+	{@render icon({ class: "size-4.5" })}
 </Button>

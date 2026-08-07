@@ -100,7 +100,9 @@
 	{@render trailing?.()}
 	{#if showChevron}
 		{#if external}
-			<ArrowSquareOutIcon class="size-4 shrink-0 text-muted-foreground/70" />
+			<ArrowSquareOutIcon
+				class="size-4 shrink-0 text-muted-foreground/70"
+			/>
 		{:else}
 			<CaretRightIcon
 				weight="bold"

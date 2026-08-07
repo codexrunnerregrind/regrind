@@ -32,19 +32,31 @@
 			<button
 				{...props}
 				type="button"
-				class={[inlineRowClass, "active:bg-muted can-hover:hover:bg-muted"]}
+				class={[
+					inlineRowClass,
+					"active:bg-muted can-hover:hover:bg-muted",
+				]}
 			>
 				<span class={inlineLabelClass}>{label}</span>
 				<span class="ms-auto flex min-w-0 items-center gap-1">
-					<span class={[valueClass, { "text-muted-foreground": !selected }]}>
+					<span
+						class={[
+							valueClass,
+							{ "text-muted-foreground": !selected },
+						]}
+					>
 						{selected?.label ?? placeholder}
 					</span>
-					<CaretUpDownIcon class="size-4 shrink-0 text-muted-foreground/70" />
+					<CaretUpDownIcon
+						class="size-4 shrink-0 text-muted-foreground/70"
+					/>
 				</span>
 			</button>
 		{/snippet}
 	</DropdownMenu.Trigger>
-	<DropdownMenu.Content class="max-h-72 w-(--bits-dropdown-menu-anchor-width)">
+	<DropdownMenu.Content
+		class="max-h-72 w-(--bits-dropdown-menu-anchor-width)"
+	>
 		<DropdownMenu.RadioGroup
 			bind:value={
 				() => (value === null ? "" : String(value)),
@@ -52,9 +64,9 @@
 			}
 		>
 			{#if nullable}
-					<DropdownMenu.RadioItem value=""
-						>{clearLabel}</DropdownMenu.RadioItem
-					>
+				<DropdownMenu.RadioItem value=""
+					>{clearLabel}</DropdownMenu.RadioItem
+				>
 			{/if}
 			{#each options as option (option.value)}
 				<DropdownMenu.RadioItem value={String(option.value)}>

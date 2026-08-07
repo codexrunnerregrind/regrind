@@ -224,7 +224,10 @@ describe("message API wrappers", () => {
 			albumId: 8001,
 			ownerProfileId: 99,
 			albumContentId: 800_100,
-			previewUrl: "https://cdns.grindr.com/images/chat/a".padEnd(100, "b"),
+			previewUrl: "https://cdns.grindr.com/images/chat/a".padEnd(
+				100,
+				"b",
+			),
 			expiresAt: null,
 			viewable: true,
 			albumContentReply: "nice",
@@ -266,7 +269,10 @@ describe("message API wrappers", () => {
 				albumId: 8001,
 				ownerProfileId: 99,
 				albumContentId: 800_100,
-				previewUrl: "https://cdns.grindr.com/images/chat/a".padEnd(100, "b"),
+				previewUrl: "https://cdns.grindr.com/images/chat/a".padEnd(
+					100,
+					"b",
+				),
 				expiresAt: null,
 				viewable: true,
 			},
@@ -306,12 +312,12 @@ describe("message API wrappers", () => {
 		expect(fetchRestMock).toHaveBeenCalledWith(
 			"/v4/chat/message/reaction",
 			{
-			method: "POST",
-			body: {
-				conversationId: "conversation-1",
-				messageId: "msg-1",
-				reactionType: 1,
-			},
+				method: "POST",
+				body: {
+					conversationId: "conversation-1",
+					messageId: "msg-1",
+					reactionType: 1,
+				},
 			},
 		);
 	});

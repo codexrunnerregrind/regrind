@@ -40,7 +40,9 @@
 	// The "You" tab wears the user's own first photo when they have one, so the
 	// generic glyph is only a fallback. A failed fetch falls back the same way.
 	const ourAvatarHash = $derived(
-		getProfile(ourProfileId).then((profile) => profile.medias[0]?.mediaHash),
+		getProfile(ourProfileId).then(
+			(profile) => profile.medias[0]?.mediaHash,
+		),
 	);
 
 	// Each tab owns a route prefix rather than an exact id so subpages (a
@@ -62,7 +64,8 @@
 			href: "/interest",
 			label: "Interest",
 			icon: StarIcon,
-			match: (id: string) => id.startsWith("/(protected)/(navbar)/interest"),
+			match: (id: string) =>
+				id.startsWith("/(protected)/(navbar)/interest"),
 		},
 		{
 			href: "/chat",
@@ -74,7 +77,8 @@
 			href: "/settings",
 			label: "You",
 			icon: UserIcon,
-			match: (id: string) => id.startsWith("/(protected)/(navbar)/settings"),
+			match: (id: string) =>
+				id.startsWith("/(protected)/(navbar)/settings"),
 		},
 	];
 </script>

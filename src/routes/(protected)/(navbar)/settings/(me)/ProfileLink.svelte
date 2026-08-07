@@ -7,14 +7,12 @@
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
 	import { Skeleton } from "$lib/components/ui/skeleton";
 
-	let {
-		id,
-	}: {
-		id: number;
-	} = $props();
+	let { id }: { id: number } = $props();
 
 	const myProfile = $derived(getProfile(id));
-	const myProfilePhotos = $derived(myProfile.then((profile) => profile.medias));
+	const myProfilePhotos = $derived(
+		myProfile.then((profile) => profile.medias),
+	);
 </script>
 
 <!-- Hero card for the signed-in user: the same neutral surface as the group
@@ -49,7 +47,9 @@
 			{:then profile}
 				<DisplayName name={profile.displayName} />
 			{:catch}
-				<span class="text-muted-foreground italic">Failed to load name</span>
+				<span class="text-muted-foreground italic"
+					>Failed to load name</span
+				>
 			{/await}
 		</span>
 		<span class="truncate text-preview leading-none text-muted-foreground">

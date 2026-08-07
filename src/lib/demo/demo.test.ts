@@ -207,7 +207,9 @@ describe("demo route data matches the real schemas", () => {
 		const response = demoRoute({
 			path: `/v4/albums/${albumId}/shares`,
 			method: "POST",
-			body: { profiles: [{ profileId: 100001, expirationType: "INDEFINITE" }] },
+			body: {
+				profiles: [{ profileId: 100001, expirationType: "INDEFINITE" }],
+			},
 		});
 		expect(response.status).toBe(200);
 	});
@@ -262,7 +264,9 @@ describe("demo route data matches the real schemas", () => {
 		}) as { profiles: unknown[] };
 		expect(profiles).toHaveLength(ids.length);
 		expect(
-			profiles.every((profile) => shortProfileSchema.parse(profile).isFavorite),
+			profiles.every(
+				(profile) => shortProfileSchema.parse(profile).isFavorite,
+			),
 		).toBe(true);
 	});
 

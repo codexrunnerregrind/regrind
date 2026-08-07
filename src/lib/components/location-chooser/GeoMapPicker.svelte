@@ -111,7 +111,10 @@
 		} catch (error) {
 			console.error(error);
 			if (!silent) {
-				showErrorToast({ label: "Failed to get current location", error });
+				showErrorToast({
+					label: "Failed to get current location",
+					error,
+				});
 			}
 		} finally {
 			gpsRequestInProgress = false;

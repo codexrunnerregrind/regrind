@@ -164,7 +164,10 @@
 							self={ourProfile}
 						/>
 						{#if !ourProfile}
-							<ProfileNote {profileId} isFavorite={profile.isFavorite} />
+							<ProfileNote
+								{profileId}
+								isFavorite={profile.isFavorite}
+							/>
 						{/if}
 						<CloseProfileButton />
 					</div>
@@ -178,10 +181,7 @@
 					<div
 						class={[
 							"flex flex-col px-5 pt-5",
-							{
-								"pb-24": ourProfile,
-								"pb-40": !ourProfile,
-							},
+							{ "pb-24": ourProfile, "pb-40": !ourProfile },
 						]}
 					>
 						<h1 class="screen-title wrap-break-word">
@@ -195,7 +195,9 @@
 								</span>{/if}{#if age !== null}, {age}
 							{/if}
 						</h1>
-						<div class="mt-2.5 flex items-center gap-3.5 text-caption">
+						<div
+							class="mt-2.5 flex items-center gap-3.5 text-caption"
+						>
 							<OnlineStatus
 								onlineUntil={onlineUntil ?? null}
 								{seen}
@@ -249,7 +251,8 @@
 										})
 									: null,
 								// The profile carries metres; the viewer's header wants km.
-								distanceKm: distance === null ? null : distance / 1000,
+								distanceKm:
+									distance === null ? null : distance / 1000,
 							}}
 						/>
 						{#if hivStatus !== null || lastTestedDateValue !== null || (sexualHealthValue && sexualHealthValue.length > 0)}

@@ -340,7 +340,8 @@ export type MessagePreview = {
 export function previewFromMessage(
 	message: ApiResponseMessage | undefined,
 ): MessagePreview {
-	if (!message) return { type: "", text: null, albumId: null, imageHash: null };
+	if (!message)
+		return { type: "", text: null, albumId: null, imageHash: null };
 	switch (message.type) {
 		case "Unsent":
 			return {

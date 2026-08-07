@@ -10,11 +10,7 @@
 	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
 	import type { filterPositionSchema } from "$lib/model/browse/grid/filters";
 
-	let {
-		open = $bindable(),
-	}: {
-		open: boolean;
-	} = $props();
+	let { open = $bindable() }: { open: boolean } = $props();
 
 	let filters = $derived({
 		...(rightNowState.filters.value ?? defaultRightNowFilters),
@@ -23,7 +19,9 @@
 
 	$effect(() => {
 		if (open) {
-			filters = { ...(rightNowState.filters.value ?? defaultRightNowFilters) };
+			filters = {
+				...(rightNowState.filters.value ?? defaultRightNowFilters),
+			};
 		}
 	});
 

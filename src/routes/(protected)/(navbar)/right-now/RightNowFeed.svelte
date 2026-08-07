@@ -5,11 +5,7 @@
 	import RightNowEmptyFeed from "./RightNowEmptyFeed.svelte";
 	import RightNowPost from "./RightNowPost.svelte";
 
-	let {
-		ourProfileId,
-	}: {
-		ourProfileId: number;
-	} = $props();
+	let { ourProfileId }: { ourProfileId: number } = $props();
 
 	$effect.pre(() => {
 		rightNowState.load();

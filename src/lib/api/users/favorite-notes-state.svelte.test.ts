@@ -55,7 +55,9 @@ describe("favorite note state", () => {
 
 		await ensureFavoriteNote(1);
 
-		expect(favoriteNote(1)?.notes).toBe("Only the per-profile read has this");
+		expect(favoriteNote(1)?.notes).toBe(
+			"Only the per-profile read has this",
+		);
 	});
 
 	it("does not re-read a note it already read per profile", async () => {

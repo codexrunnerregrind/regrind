@@ -16,20 +16,18 @@
 </script>
 
 <ContextMenu {...props}>
-	{#snippet children()}
-		<div class="buttons w-45">
-			<Button
-				variant="ghost"
-				onclick={() => {
-					onRemove();
-					props.onClose();
-				}}
-			>
-				<TrashIcon />
-				{removeLabel}
-			</Button>
-		</div>
-	{/snippet}
+	<div class="buttons w-45">
+		<Button
+			variant="ghost"
+			onclick={() => {
+				onRemove();
+				props.onClose();
+			}}
+		>
+			<TrashIcon />
+			{removeLabel}
+		</Button>
+	</div>
 </ContextMenu>
 
 <style lang="postcss">

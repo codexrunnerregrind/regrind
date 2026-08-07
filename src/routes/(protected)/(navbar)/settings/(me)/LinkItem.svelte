@@ -15,14 +15,8 @@
 		warning?: {
 			title: string;
 			description: string;
-			primary: {
-				label: string;
-				destination: string;
-			};
-			secondary: {
-				label: string;
-				destination: string;
-			};
+			primary: { label: string; destination: string };
+			secondary: { label: string; destination: string };
 		};
 	} = $props();
 
@@ -69,8 +63,14 @@
 				</Dialog.Description>
 			</Dialog.Header>
 			<Dialog.Footer class="max-w-full flex-col sm:flex-col">
-				{@render warningButton({ variant: "default", ...warning.primary })}
-				{@render warningButton({ variant: "secondary", ...warning.secondary })}
+				{@render warningButton({
+					variant: "default",
+					...warning.primary,
+				})}
+				{@render warningButton({
+					variant: "secondary",
+					...warning.secondary,
+				})}
 			</Dialog.Footer>
 		</Dialog.Content>
 	</Dialog.Root>

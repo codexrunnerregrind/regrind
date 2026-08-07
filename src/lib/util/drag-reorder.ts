@@ -143,7 +143,9 @@ export function dragReorder(node: HTMLElement, options: DragReorderOptions) {
 	function claimPointerListeners() {
 		if (pointerListenersBound) return;
 		pointerListenersBound = true;
-		window.addEventListener("pointermove", onPointerMove, { passive: false });
+		window.addEventListener("pointermove", onPointerMove, {
+			passive: false,
+		});
 		window.addEventListener("pointerup", onPointerUp);
 		// A cancelled pointer still drops the tile where it was last dragged to:
 		// the move was deliberate, and losing it because the WebView reclaimed the
@@ -162,13 +164,19 @@ export function dragReorder(node: HTMLElement, options: DragReorderOptions) {
 	}
 
 	function onPointerDown(event: PointerEvent) {
-		if (opts.enabled === false || drag !== null || event.button !== 0) return;
+		if (opts.enabled === false || drag !== null || event.button !== 0)
+			return;
 		const el = (event.target as HTMLElement | null)?.closest<HTMLElement>(
 			"[data-reorder-item]",
 		);
 		if (el === null || el === undefined || !node.contains(el)) return;
 
-		pending = { el, x: event.clientX, y: event.clientY, id: event.pointerId };
+		pending = {
+			el,
+			x: event.clientX,
+			y: event.clientY,
+			id: event.pointerId,
+		};
 		claimPointerListeners();
 		holdTimer = setTimeout(lift, HOLD_MS);
 	}

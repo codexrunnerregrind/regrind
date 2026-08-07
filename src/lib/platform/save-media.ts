@@ -108,9 +108,7 @@ export async function saveMediaToDevice(
 					"Movies",
 					filename,
 					media.mimeType,
-					{
-						requestPermission: true,
-					},
+					{ requestPermission: true },
 				)
 			: await AndroidFs.createNewPublicImageFile(
 					"Pictures",
@@ -151,7 +149,9 @@ async function shareFile(
 	mimeType: string,
 	filename: string,
 ): Promise<boolean> {
-	const file = new File([new Uint8Array(bytes)], filename, { type: mimeType });
+	const file = new File([new Uint8Array(bytes)], filename, {
+		type: mimeType,
+	});
 	if (navigator.canShare?.({ files: [file] })) {
 		try {
 			await navigator.share({ files: [file] });

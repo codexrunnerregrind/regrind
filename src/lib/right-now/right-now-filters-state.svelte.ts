@@ -48,10 +48,7 @@ export class RightNowSearchFiltersState {
 			this.value = rightNowFilters ?? defaultRightNowFilters;
 		} catch (error) {
 			console.error(error);
-			showErrorToast({
-				label: "Failed to load filters",
-				error,
-			});
+			showErrorToast({ label: "Failed to load filters", error });
 		}
 	}
 
@@ -62,10 +59,7 @@ export class RightNowSearchFiltersState {
 			}
 		} catch (error) {
 			console.error(error);
-			showErrorToast({
-				label: "Failed to update filters",
-				error,
-			});
+			showErrorToast({ label: "Failed to update filters", error });
 		}
 	}
 }

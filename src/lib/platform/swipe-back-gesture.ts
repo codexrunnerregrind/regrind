@@ -142,7 +142,8 @@ export function applySwipeBackGesture(): () => void {
 			dx > window.innerWidth * COMMIT_DISTANCE_RATIO ||
 			velocity > COMMIT_VELOCITY;
 
-		screen!.style.transition = "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)";
+		screen!.style.transition =
+			"transform 220ms cubic-bezier(0.22, 1, 0.36, 1)";
 		if (commit) navigateBack();
 		// Whether we committed (content swapped) or cancelled, settle at 0.
 		requestAnimationFrame(() => {

@@ -18,10 +18,7 @@ export type AlbumExpiry = { label: string; expired: boolean };
  * which means an unknown value has to degrade to "no marker" here.
  */
 export function albumExpiry(
-	message: {
-		viewableUntil?: number | null;
-		expirationType?: string | null;
-	},
+	message: { viewableUntil?: number | null; expirationType?: string | null },
 	nowMs: number,
 ): AlbumExpiry | null {
 	const { viewableUntil, expirationType } = message;
@@ -43,7 +40,8 @@ export function albumExpiry(
 
 	// The API gives view-once shares a short window, but that window is when
 	// the single view must happen, not a lifetime worth counting down.
-	if (expirationType === "ONCE") return { label: "View once", expired: false };
+	if (expirationType === "ONCE")
+		return { label: "View once", expired: false };
 
 	if (stamped) {
 		return {

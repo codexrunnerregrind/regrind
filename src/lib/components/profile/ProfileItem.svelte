@@ -73,7 +73,8 @@
 		"@container relative flex min-w-24 flex-nowrap items-stretch gap-0 rounded-none p-0",
 		{
 			"can-hover:hover:bg-muted/40": !selected && !active,
-			"outline-2 -outline-offset-2 outline-primary outline-solid": selected,
+			"outline-2 -outline-offset-2 outline-primary outline-solid":
+				selected,
 			"[-webkit-touch-callout:none] **:[-webkit-touch-callout:none]":
 				!!onLongPress,
 		},

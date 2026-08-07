@@ -54,7 +54,8 @@
 			const blocking = await getBlockedUsers();
 			const ids = blocking.map((entry) => entry.profileId);
 			blockedIds = ids;
-			if (ids.length > 0) blocked = await resolvePage(ids.slice(0, PAGE_SIZE));
+			if (ids.length > 0)
+				blocked = await resolvePage(ids.slice(0, PAGE_SIZE));
 		} catch (err) {
 			console.error(err);
 			error = err;
@@ -65,7 +66,10 @@
 		if (blockedIds === null || loadingMore || remaining <= 0) return;
 		loadingMore = true;
 		try {
-			const next = blockedIds.slice(blocked.length, blocked.length + PAGE_SIZE);
+			const next = blockedIds.slice(
+				blocked.length,
+				blocked.length + PAGE_SIZE,
+			);
 			blocked = [...blocked, ...(await resolvePage(next))];
 		} catch (err) {
 			console.error(err);
@@ -80,7 +84,9 @@
 		const previousBlocked = blocked;
 		const previousIds = blockedIds;
 		unblocking = profileId;
-		blocked = previousBlocked.filter((user) => user.profileId !== profileId);
+		blocked = previousBlocked.filter(
+			(user) => user.profileId !== profileId,
+		);
 		// Drop it from the id list too, or the count and paging would still include
 		// someone who is no longer blocked.
 		blockedIds = previousIds?.filter((id) => id !== profileId) ?? null;
@@ -123,7 +129,8 @@
 				name={user.name}
 				mediaHash={user.mediaHash}
 				actionLabel="Unblock"
-				actionDescription="Unblock {user.name ?? `profile ${user.profileId}`}"
+				actionDescription="Unblock {user.name ??
+					`profile ${user.profileId}`}"
 				disabled={unblocking !== null}
 				onAction={() => void unblock(user.profileId)}
 			>
@@ -144,7 +151,9 @@
 			disabled={loadingMore}
 			onclick={() => void loadMore()}
 		>
-			{loadingMore ? "Loading…" : `Show ${Math.min(remaining, PAGE_SIZE)} more`}
+			{loadingMore
+				? "Loading…"
+				: `Show ${Math.min(remaining, PAGE_SIZE)} more`}
 		</Button>
 	{/if}
 {/if}

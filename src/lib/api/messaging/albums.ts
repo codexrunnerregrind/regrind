@@ -68,9 +68,9 @@ export async function renameAlbum({
 
 /** Deleting an album that is already gone answers 403, not 404. */
 export async function deleteAlbum({ albumId }: { albumId: number }) {
-	return await fetchRest(`/v1/albums/${albumId}`, {
-		method: "DELETE",
-	}).then((res) => res.assertOk());
+	return await fetchRest(`/v1/albums/${albumId}`, { method: "DELETE" }).then(
+		(res) => res.assertOk(),
+	);
 }
 
 /**
@@ -176,7 +176,10 @@ export async function shareAlbum({
 	return await fetchRest(`/v4/albums/${albumId}/shares`, {
 		method: "POST",
 		body: {
-			profiles: profileIds.map((profileId) => ({ profileId, expirationType })),
+			profiles: profileIds.map((profileId) => ({
+				profileId,
+				expirationType,
+			})),
 		},
 	}).then((res) => res.assertOk());
 }

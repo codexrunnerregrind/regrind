@@ -38,7 +38,9 @@ export abstract class ReconcilingListState<TItem, TSnapshot, TKey = number> {
 		} else {
 			// Seeded from a previous visit: show it at once and catch up quietly,
 			// instead of replacing what we already have with skeletons.
-			this.applySnapshot(cached);
+			// Nothing is buffered yet on a seeded start, so the covered keys the
+			// server path uses to replay upserts have nothing to answer for.
+			this.applySnapshotReturningCoveredKeys(cached);
 			this.loading = false;
 			void this.#backgroundRefresh();
 		}

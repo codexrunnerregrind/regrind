@@ -7,11 +7,7 @@
 		label,
 		icon,
 		children,
-	}: {
-		label: string;
-		icon?: Snippet;
-		children: Snippet;
-	} = $props();
+	}: { label: string; icon?: Snippet; children: Snippet } = $props();
 </script>
 
 <!-- Inline field row: label on the leading edge, control on the trailing one.

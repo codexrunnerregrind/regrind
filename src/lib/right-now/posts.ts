@@ -25,7 +25,10 @@ export async function getPosts(query: Parameters<typeof getRightNowFeedV4>[0]) {
 	const posts: FeedPost[] = [];
 
 	for (const item of response.items) {
-		if (item.type !== "right_now_post_v3" && item.type !== "locked_post_v1") {
+		if (
+			item.type !== "right_now_post_v3" &&
+			item.type !== "locked_post_v1"
+		) {
 			continue;
 		}
 

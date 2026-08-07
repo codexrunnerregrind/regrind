@@ -198,8 +198,5 @@ function filterPosts(params: URLSearchParams) {
 export function demoRightNowFeed(
 	params: URLSearchParams,
 ): RightNowFeedResponse {
-	return {
-		items: filterPosts(params),
-		viewerCount: 0,
-	};
+	return { items: filterPosts(params), viewerCount: 0 };
 }

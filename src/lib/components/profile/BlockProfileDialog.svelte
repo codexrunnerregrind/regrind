@@ -44,8 +44,8 @@
 				{name ? `Block ${name}?` : "Block this user?"}
 			</AlertDialog.Title>
 			<AlertDialog.Description>
-				They won't be able to see your profile or message you, and you won't see
-				theirs. You can undo this from Account Settings.
+				They won't be able to see your profile or message you, and you
+				won't see theirs. You can undo this from Account Settings.
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>

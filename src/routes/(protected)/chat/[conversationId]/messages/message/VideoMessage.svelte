@@ -21,7 +21,6 @@
 		// (view counters, expiry) differ per variant and is read defensively.
 		message: {
 			url?: string | null;
-			contentType?: string | null;
 			looping?: boolean | null;
 			maxViews?: number | null;
 			viewsRemaining?: number | null;
@@ -32,10 +31,7 @@
 
 	const className: import("svelte/elements").ClassValue = $derived([
 		"relative",
-		{
-			"w-3/5 max-w-60 min-w-40": !media.clone,
-			"size-full": media.clone,
-		},
+		{ "w-3/5 max-w-60 min-w-40": !media.clone, "size-full": media.clone },
 	]);
 
 	const contentClass: import("svelte/elements").ClassValue = $derived([
@@ -60,7 +56,10 @@
 		if (loading || url !== null) return;
 		loading = true;
 		try {
-			const fetched = await getSingleMessage({ conversationId, messageId })
+			const fetched = await getSingleMessage({
+				conversationId,
+				messageId,
+			})
 				.then((res) => apiResponseMessageSchema.parse(res.message))
 				.then((parsed) =>
 					VIDEO_MESSAGE_TYPES.includes(parsed.type)

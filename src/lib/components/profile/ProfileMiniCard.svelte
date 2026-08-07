@@ -99,20 +99,30 @@
 			<div class="flex min-w-0 flex-1 flex-col">
 				{#if hasIdentity}
 					<div class="flex min-w-0 items-center">
-						<ProfileStatusIndicator {onlineUntil} {isVisiting} class="me-1" />
+						<ProfileStatusIndicator
+							{onlineUntil}
+							{isVisiting}
+							class="me-1"
+						/>
 
 						<ProfileRightNowIndicator {rightNow} class="me-1" />
 
 						{#if displayName !== null}
-							<span class="truncate text-meta/[1.1] font-semibold">
+							<span
+								class="truncate text-meta/[1.1] font-semibold"
+							>
 								{displayName}
 							</span>
 						{/if}
 						{#if displayName !== null && age !== null}
-							<span class="text-meta/[1.1] font-semibold">,&nbsp;</span>
+							<span class="text-meta/[1.1] font-semibold"
+								>,&nbsp;</span
+							>
 						{/if}
 						{#if age !== null}
-							<span class="shrink-0 text-meta/[1.1] font-semibold">
+							<span
+								class="shrink-0 text-meta/[1.1] font-semibold"
+							>
 								{age}
 							</span>
 						{/if}

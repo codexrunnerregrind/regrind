@@ -148,7 +148,9 @@ describe("createAlbum", () => {
 
 describe("renameAlbum", () => {
 	it("puts the new name", async () => {
-		fetchRestMock.mockResolvedValue(response({ albumId: 12, albumName: null }));
+		fetchRestMock.mockResolvedValue(
+			response({ albumId: 12, albumName: null }),
+		);
 
 		await expect(
 			renameAlbum({ albumId: 12, albumName: null }),
@@ -178,10 +180,10 @@ describe("reorderAlbumContent", () => {
 
 		await reorderAlbumContent({ albumId: 12, contentIds: [3, 1, 2] });
 
-		expect(fetchRestMock).toHaveBeenCalledWith("/v1/albums/12/content/order", {
-			method: "POST",
-			body: { contentIds: [3, 1, 2] },
-		});
+		expect(fetchRestMock).toHaveBeenCalledWith(
+			"/v1/albums/12/content/order",
+			{ method: "POST", body: { contentIds: [3, 1, 2] } },
+		);
 	});
 });
 

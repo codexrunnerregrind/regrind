@@ -13,11 +13,7 @@
 		searchHidden = false,
 	}: { search: FavoriteSearch; searchHidden?: boolean } = $props();
 
-	let openFilters = $state({
-		all: false,
-		age: false,
-		position: false,
-	});
+	let openFilters = $state({ all: false, age: false, position: false });
 
 	const showingFavorites = $derived(
 		gridState.filters.value?.isFavorite ?? false,

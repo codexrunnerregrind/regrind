@@ -152,7 +152,10 @@ export async function getProfiles(
 		const batch = await fetchRest("/v3/profiles", {
 			method: "POST",
 			body: {
-				targetProfileIds: profileIds.slice(i, i + MAX_PROFILES_PER_REQUEST),
+				targetProfileIds: profileIds.slice(
+					i,
+					i + MAX_PROFILES_PER_REQUEST,
+				),
 			},
 		}).then((res) => res.jsonParsed(getProfilesResponseSchema).profiles);
 		profiles.push(...batch);

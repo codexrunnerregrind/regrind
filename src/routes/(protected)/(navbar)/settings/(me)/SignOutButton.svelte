@@ -23,7 +23,8 @@
 		<AlertDialog.Header>
 			<AlertDialog.Title>Sign out?</AlertDialog.Title>
 			<AlertDialog.Description>
-				Are you sure you want to sign out? You can sign back in at any time.
+				Are you sure you want to sign out? You can sign back in at any
+				time.
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>

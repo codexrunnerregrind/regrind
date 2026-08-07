@@ -168,7 +168,9 @@
 	];
 	const deferTapAction = untrack(
 		() =>
-			!isOut && onReact !== undefined && OPENS_ON_TAP.includes(message.type),
+			!isOut &&
+			onReact !== undefined &&
+			OPENS_ON_TAP.includes(message.type),
 	);
 
 	// iOS WebKit fires neither `contextmenu` (handled by the long-press synthesis)
@@ -228,9 +230,15 @@
 {#snippet content(clone?: boolean)}
 	<MessageWrapper {clone} {setRef} {adornments}>
 		{#if message.type === "Text"}
-			<TextMessage message={message.body} replyTo={message.replyToMessage} />
+			<TextMessage
+				message={message.body}
+				replyTo={message.replyToMessage}
+			/>
 		{:else if message.type === "Image"}
-			<ImageMessage message={message.body} messageId={message.messageId} />
+			<ImageMessage
+				message={message.body}
+				messageId={message.messageId}
+			/>
 		{:else if message.type === "ExpiringImage"}
 			<ExpiringImageMessage
 				message={message.body}
@@ -269,7 +277,9 @@
 					"pointer-events-none absolute flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground",
 					{ "right-0": isOut, "left-0": !isOut },
 				]}
-				style:top={bubbleCenterY !== null ? `${bubbleCenterY}px` : "50%"}
+				style:top={bubbleCenterY !== null
+					? `${bubbleCenterY}px`
+					: "50%"}
 				style:opacity={swipe.progress}
 				style:transform={`translateY(-50%) scale(${swipe.armed ? 1 : 0.6 + swipe.progress * 0.4})`}
 			>
@@ -283,10 +293,7 @@
 				// row and gives the whole list a horizontal scrollbar. A flex item
 				// with `min-w-0` shrinks to the row instead.
 				"flex [-webkit-touch-callout:none] *:min-w-0 **:[-webkit-touch-callout:none]",
-				{
-					"justify-start pe-3": !isOut,
-					"justify-end ps-3": isOut,
-				},
+				{ "justify-start pe-3": !isOut, "justify-end ps-3": isOut },
 			]}
 			role="button"
 			tabindex="0"

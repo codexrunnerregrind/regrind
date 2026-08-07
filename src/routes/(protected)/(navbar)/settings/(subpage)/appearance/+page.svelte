@@ -178,7 +178,8 @@
 							"border border-border bg-muted text-foreground":
 								color === "neutral",
 							"ring-foreground/70": selected === color,
-							"ring-transparent active:scale-95": selected !== color,
+							"ring-transparent active:scale-95":
+								selected !== color,
 						},
 					]}
 					style={color === "neutral"

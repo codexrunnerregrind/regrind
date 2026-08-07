@@ -94,7 +94,8 @@
 			await goto(`/albums/${albumId}`);
 		} catch (err) {
 			console.error(err);
-			const status = err instanceof ApiError ? err.response?.status : null;
+			const status =
+				err instanceof ApiError ? err.response?.status : null;
 			showErrorToast({
 				label:
 					status === 402
@@ -190,7 +191,8 @@
 							type="button"
 							class="flex w-24 shrink-0 cursor-pointer flex-col gap-1 text-start disabled:opacity-60"
 							disabled={opener.openingId !== null}
-							onclick={() => void opener.open(album.albumId, sharer ?? {})}
+							onclick={() =>
+								void opener.open(album.albumId, sharer ?? {})}
 						>
 							{@render tile(album)}
 						</button>

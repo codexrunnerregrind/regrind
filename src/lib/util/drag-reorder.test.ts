@@ -52,7 +52,9 @@ describe("dragReorder", () => {
 		const onReorder = vi.fn();
 		dragReorder(node, { onReorder });
 
-		node.children[0]?.dispatchEvent(pointer("pointerdown", { x: 50, y: 50 }));
+		node.children[0]?.dispatchEvent(
+			pointer("pointerdown", { x: 50, y: 50 }),
+		);
 		vi.advanceTimersByTime(300);
 		window.dispatchEvent(pointer("pointermove", { x: 250, y: 50 }));
 		window.dispatchEvent(pointer("pointerup", { x: 250, y: 50 }));
@@ -65,7 +67,9 @@ describe("dragReorder", () => {
 		const onReorder = vi.fn();
 		dragReorder(node, { onReorder });
 
-		node.children[0]?.dispatchEvent(pointer("pointerdown", { x: 50, y: 50 }));
+		node.children[0]?.dispatchEvent(
+			pointer("pointerdown", { x: 50, y: 50 }),
+		);
 		vi.advanceTimersByTime(100);
 		window.dispatchEvent(pointer("pointerup", { x: 50, y: 50 }));
 
@@ -77,7 +81,9 @@ describe("dragReorder", () => {
 		const onReorder = vi.fn();
 		dragReorder(node, { onReorder });
 
-		node.children[0]?.dispatchEvent(pointer("pointerdown", { x: 50, y: 50 }));
+		node.children[0]?.dispatchEvent(
+			pointer("pointerdown", { x: 50, y: 50 }),
+		);
 		window.dispatchEvent(pointer("pointermove", { x: 50, y: 200 }));
 		vi.advanceTimersByTime(300);
 		window.dispatchEvent(pointer("pointermove", { x: 250, y: 50 }));

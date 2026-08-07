@@ -101,7 +101,7 @@ export async function sendMessage({
 }) {
 	const body = {
 		type: message.type,
-			target: { type: "Direct", targetId: toUserId },
+		target: { type: "Direct", targetId: toUserId },
 		body: toOutboundBody(message),
 		...(replyToMessageId !== undefined ? { replyToMessageId } : {}),
 	};
@@ -140,11 +140,7 @@ async function sendAlbumContentMessage({
 }) {
 	return await fetchRest("/v4/chat/message/send", {
 		method: "POST",
-		body: {
-			type,
-			target: { type: "Direct", targetId: toUserId },
-			body,
-		},
+		body: { type, target: { type: "Direct", targetId: toUserId }, body },
 	}).then((res) => res.jsonParsed(apiResponseMessageSchema));
 }
 

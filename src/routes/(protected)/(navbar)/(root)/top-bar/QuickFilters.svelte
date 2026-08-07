@@ -78,19 +78,28 @@
 >
 	<ToggleGroup.Item
 		value="isOnline"
-		class={[buttonVariants({ variant: "secondary" }), ACTIVE_FILTER_PRESSED]}
+		class={[
+			buttonVariants({ variant: "secondary" }),
+			ACTIVE_FILTER_PRESSED,
+		]}
 	>
 		Online
 	</ToggleGroup.Item>
 	<ToggleGroup.Item
 		value="isRightNow"
-		class={[buttonVariants({ variant: "secondary" }), ACTIVE_FILTER_PRESSED]}
+		class={[
+			buttonVariants({ variant: "secondary" }),
+			ACTIVE_FILTER_PRESSED,
+		]}
 	>
 		Right now
 	</ToggleGroup.Item>
 	<ToggleGroup.Item
 		value="isFresh"
-		class={[buttonVariants({ variant: "secondary" }), ACTIVE_FILTER_PRESSED]}
+		class={[
+			buttonVariants({ variant: "secondary" }),
+			ACTIVE_FILTER_PRESSED,
+		]}
 	>
 		Fresh
 	</ToggleGroup.Item>

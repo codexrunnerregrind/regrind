@@ -29,7 +29,8 @@ export function applyKeyboardInset(): () => void {
 	const root = document.documentElement;
 	// Captured as written by applyAndroidInsets — on iOS that's the env()
 	// expression rather than a resolved length, so it still tracks rotation.
-	const baseInset = root.style.getPropertyValue("--safe-area-bottom") || "0px";
+	const baseInset =
+		root.style.getPropertyValue("--safe-area-bottom") || "0px";
 	let resting = viewport.height;
 	let open = false;
 

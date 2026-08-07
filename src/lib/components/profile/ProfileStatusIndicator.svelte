@@ -31,10 +31,7 @@
 	<div
 		class={[
 			"flex shrink-0",
-			{
-				"text-online": online,
-				"text-ink3": !online,
-			},
+			{ "text-online": online, "text-ink3": !online },
 			className,
 		]}
 		aria-label={title}

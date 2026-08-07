@@ -206,9 +206,14 @@
 							type="button"
 							class={[
 								"relative size-full rounded-[inherit]",
-								{ "cursor-pointer": selected.canSelectMore || isSelected },
+								{
+									"cursor-pointer":
+										selected.canSelectMore || isSelected,
+								},
 							]}
-							aria-label={isSelected ? "Deselect media" : "Select media"}
+							aria-label={isSelected
+								? "Deselect media"
+								: "Select media"}
 							aria-pressed={isSelected}
 							onclick={() => toggleSelected(item.id)}
 						>
@@ -227,7 +232,9 @@
 								<div
 									class="absolute inset-0 flex items-center justify-center rounded-[inherit] bg-black/50"
 								>
-									<span class="font-medium text-white">Sent</span>
+									<span class="font-medium text-white"
+										>Sent</span
+									>
 								</div>
 							{/if}
 						</button>

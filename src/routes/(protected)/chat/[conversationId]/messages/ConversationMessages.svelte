@@ -202,7 +202,9 @@
 	     finished, shoving the messages the reader is looking at down and up again
 	     on every page. -->
 	{#if conversationState.loadingMore}
-		<Spinner class="absolute top-22 left-1/2 z-10 shrink-0 -translate-x-1/2" />
+		<Spinner
+			class="absolute top-22 left-1/2 z-10 shrink-0 -translate-x-1/2"
+		/>
 	{/if}
 	{#if !conversationState.loading && !conversationState.error}
 		<DataRefreshControl

@@ -85,13 +85,7 @@ export function registerMediaViewerChrome(
 		pswp.element.classList.add("pswp--chrome");
 		chrome = mount(MediaViewerChrome, {
 			target: pswp.element,
-			props: {
-				pswp,
-				count,
-				header,
-				actions,
-				progress,
-			},
+			props: { pswp, count, header, actions, progress },
 		});
 	});
 	// Typing in the reply field would otherwise flip between slides (arrows) or

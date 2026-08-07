@@ -37,7 +37,8 @@
 	let tileElement: HTMLElement | null = $state(null);
 	let contextMenuOpen:
 		| false
-		| { x: number; y: number; width: number; height: number } = $state(false);
+		| { x: number; y: number; width: number; height: number } =
+		$state(false);
 
 	function openContextMenu() {
 		if (!tileElement || !onRemove) return;

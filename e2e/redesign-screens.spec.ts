@@ -13,9 +13,9 @@ const THEMES = ["dark", "light"] as const;
 // emulating a colour scheme the app deliberately ignores.
 async function setTheme(page: Page, theme: (typeof THEMES)[number]) {
 	await page.goto("/settings/appearance");
-	await page.getByRole("radio", { name: "Light", exact: true }).waitFor({
-		timeout: 60_000,
-	});
+	await page
+		.getByRole("radio", { name: "Light", exact: true })
+		.waitFor({ timeout: 60_000 });
 	await page
 		.getByRole("radio", { name: theme === "dark" ? "Dark" : "Light" })
 		.click();
@@ -32,9 +32,10 @@ async function openApp(page: Page, theme: (typeof THEMES)[number]) {
 	if (theme === "light") await setTheme(page, "light");
 	await page.goto("/");
 	await ensureGridLocation(page);
-	await page.locator('a[href^="/profile/"]').first().waitFor({
-		timeout: 60_000,
-	});
+	await page
+		.locator('a[href^="/profile/"]')
+		.first()
+		.waitFor({ timeout: 60_000 });
 }
 
 for (const theme of THEMES) {
@@ -42,8 +43,12 @@ for (const theme of THEMES) {
 		test("browse grid and tab bar", async ({ page }) => {
 			await openApp(page, theme);
 
-			await expect(page.getByRole("link", { name: "Browse" })).toBeVisible();
-			await expect(page.getByRole("link", { name: "Interest" })).toBeVisible();
+			await expect(
+				page.getByRole("link", { name: "Browse" }),
+			).toBeVisible();
+			await expect(
+				page.getByRole("link", { name: "Interest" }),
+			).toBeVisible();
 			await expect(page.getByRole("link", { name: "You" })).toBeVisible();
 
 			await page.screenshot({
@@ -71,9 +76,15 @@ for (const theme of THEMES) {
 			await openApp(page, theme);
 			await page.getByRole("link", { name: "Inbox" }).click();
 
-			await expect(page.getByRole("heading", { name: "Inbox" })).toBeVisible();
-			await expect(page.getByRole("tab", { name: "Messages" })).toBeVisible();
-			await expect(page.getByRole("tab", { name: "Albums" })).toBeVisible();
+			await expect(
+				page.getByRole("heading", { name: "Inbox" }),
+			).toBeVisible();
+			await expect(
+				page.getByRole("tab", { name: "Messages" }),
+			).toBeVisible();
+			await expect(
+				page.getByRole("tab", { name: "Albums" }),
+			).toBeVisible();
 
 			await page.screenshot({
 				path: `test-results/redesign-inbox-${theme}.png`,
@@ -104,8 +115,12 @@ for (const theme of THEMES) {
 				.click();
 
 			await expect(page.getByText("Album name")).toBeVisible();
-			await expect(page.getByText("Photos", { exact: true })).toBeVisible();
-			await expect(page.getByText("Cover", { exact: true })).toBeVisible();
+			await expect(
+				page.getByText("Photos", { exact: true }),
+			).toBeVisible();
+			await expect(
+				page.getByText("Cover", { exact: true }),
+			).toBeVisible();
 
 			await page.screenshot({
 				path: `test-results/redesign-edit-album-${theme}.png`,
@@ -131,7 +146,9 @@ for (const theme of THEMES) {
 			await openApp(page, theme);
 			await page.getByRole("link", { name: "Interest" }).click();
 
-			await expect(page.getByRole("tab", { name: "Views" })).toBeVisible();
+			await expect(
+				page.getByRole("tab", { name: "Views" }),
+			).toBeVisible();
 			await expect(page.locator(".tile-scrim").first()).toBeVisible();
 
 			await page.screenshot({

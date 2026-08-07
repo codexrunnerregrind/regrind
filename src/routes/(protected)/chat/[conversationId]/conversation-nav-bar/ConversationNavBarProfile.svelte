@@ -23,9 +23,7 @@
 			<Card.Title
 				class={[
 					"flex min-w-0 items-center gap-1 text-row font-semibold",
-					{
-						"text-muted-foreground": !profile.name,
-					},
+					{ "text-muted-foreground": !profile.name },
 				]}
 			>
 				<ProfileStatusIndicator onlineUntil={profile.onlineUntil} />

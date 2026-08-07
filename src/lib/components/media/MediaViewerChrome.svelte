@@ -87,7 +87,9 @@
 	});
 
 	const displayName = $derived(
-		profile?.displayName?.trim() || header.name?.trim() || header.fallbackName,
+		profile?.displayName?.trim() ||
+			header.name?.trim() ||
+			header.fallbackName,
 	);
 	const avatarUrl = $derived(
 		profile?.profileImageMediaHash
@@ -231,7 +233,9 @@
 		{/if}
 	</div>
 	<div class="viewer-label flex min-w-0 flex-col">
-		<span class="truncate text-body leading-none font-semibold text-viewer-ink">
+		<span
+			class="truncate text-body leading-none font-semibold text-viewer-ink"
+		>
 			{displayName}
 		</span>
 		<span class="mt-2 truncate text-preview leading-none text-viewer-ink2">
@@ -415,7 +419,10 @@
 							aria-label="Send reply"
 							class="absolute end-1 top-1 flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-60"
 						>
-							<PaperPlaneRightIcon weight="fill" class="size-4.5" />
+							<PaperPlaneRightIcon
+								weight="fill"
+								class="size-4.5"
+							/>
 						</button>
 					{/if}
 				</div>

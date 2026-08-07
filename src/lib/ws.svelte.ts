@@ -156,7 +156,11 @@ class WsState {
 	// connection and triggers its reconnect.
 	#poke(): void {
 		invoke("ws_send", {
-			command: { type: "keepalive", ref_id: crypto.randomUUID(), payload: {} },
+			command: {
+				type: "keepalive",
+				ref_id: crypto.randomUUID(),
+				payload: {},
+			},
 		}).catch(() => {
 			// The command channel only errors if the client is gone; connect()
 			// above will have re-armed the task, so there's nothing to do here.
@@ -203,11 +207,15 @@ class WsState {
 			};
 			const timeout = setTimeout(
 				() =>
-					settle(() => reject(new Error(`[ws] command timed out: ${type}`))),
+					settle(() =>
+						reject(new Error(`[ws] command timed out: ${type}`)),
+					),
 				timeoutMs,
 			);
 			const onError = (e: unknown) =>
-				settle(() => reject(e instanceof Error ? e : new Error(String(e))));
+				settle(() =>
+					reject(e instanceof Error ? e : new Error(String(e))),
+				);
 
 			listen<{ ref: string; status: number; payload: unknown }>(
 				`grindr:${safeName}`,
@@ -222,7 +230,9 @@ class WsState {
 							);
 							return;
 						}
-						const result = responseSchema.safeParse(event.payload.payload);
+						const result = responseSchema.safeParse(
+							event.payload.payload,
+						);
 						if (result.success) resolve(result.data);
 						else reject(result.error);
 					});
@@ -231,7 +241,9 @@ class WsState {
 				.then((fn) => (settled ? fn() : (unlisten = fn)))
 				.catch(onError);
 
-			invoke("ws_send", { command: { type, ref_id, payload } }).catch(onError);
+			invoke("ws_send", { command: { type, ref_id, payload } }).catch(
+				onError,
+			);
 		});
 	}
 

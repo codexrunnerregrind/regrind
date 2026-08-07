@@ -2,7 +2,7 @@
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 	import { PushPinIcon } from "phosphor-svelte";
-	import { onMount, tick, untrack } from "svelte";
+	import { onMount, tick } from "svelte";
 
 	import { getConversations } from "$lib/chat/conversations-context.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
@@ -267,7 +267,12 @@
 >
 	<div class="shrink-0 px-screen pt-4">
 		<h1 class="screen-title">Inbox</h1>
-		<UnderlineTabs {tabs} value={activeTab} onSelect={selectTab} class="mt-4" />
+		<UnderlineTabs
+			{tabs}
+			value={activeTab}
+			onSelect={selectTab}
+			class="mt-4"
+		/>
 	</div>
 	{#if activeTab === "albums"}
 		<AlbumsTab class={className} />
@@ -291,8 +296,13 @@
 					class="flex min-h-overscrollable shrink-0 flex-col gap-0 pb-nav-clear"
 				>
 					{#if pinnedEntries.length > 0}
-						<div class="flex items-center gap-1.5 px-screen pt-5.5 pb-2.5">
-							<PushPinIcon weight="fill" class="size-3 text-ink3" />
+						<div
+							class="flex items-center gap-1.5 px-screen pt-5.5 pb-2.5"
+						>
+							<PushPinIcon
+								weight="fill"
+								class="size-3 text-ink3"
+							/>
 							<span class="section-label">Pinned</span>
 						</div>
 						<!-- The card closes the group, so the last row's separator would

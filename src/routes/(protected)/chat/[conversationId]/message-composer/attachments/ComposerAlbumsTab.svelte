@@ -69,7 +69,9 @@
 				? []
 				: (albums ?? [])
 						.filter(
-							(album) => getAlbumShared(album.albumId, recipientId) === true,
+							(album) =>
+								getAlbumShared(album.albumId, recipientId) ===
+								true,
 						)
 						.map((album) => album.albumId),
 		),
@@ -88,7 +90,8 @@
 		try {
 			const list = await getMyAlbums();
 			albums = list.filter((album) => album.isShareable);
-			if (recipientId !== null) void ensureAlbumSharesSwept(recipientId, list);
+			if (recipientId !== null)
+				void ensureAlbumSharesSwept(recipientId, list);
 		} catch (err) {
 			console.error(err);
 			error = err;
@@ -103,6 +106,7 @@
 	});
 
 	function toggle(albumId: number) {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- reassigned wholesale below, so the state is the assignment
 		const next = new Set(selectedIds);
 		if (next.has(albumId)) {
 			next.delete(albumId);
@@ -124,10 +128,15 @@
 		try {
 			await Promise.all(
 				ids.map((albumId) =>
-					shareAlbum({ albumId, profileIds: [recipientId], expirationType }),
+					shareAlbum({
+						albumId,
+						profileIds: [recipientId],
+						expirationType,
+					}),
 				),
 			);
-			for (const albumId of ids) setAlbumShared(albumId, recipientId, true);
+			for (const albumId of ids)
+				setAlbumShared(albumId, recipientId, true);
 			onClose();
 			toast.success(ids.length === 1 ? "Album shared" : "Albums shared");
 		} catch (err) {
@@ -153,9 +162,12 @@
 					unshareAlbum({ albumId, profileIds: [recipientId] }),
 				),
 			);
-			for (const albumId of ids) setAlbumShared(albumId, recipientId, false);
+			for (const albumId of ids)
+				setAlbumShared(albumId, recipientId, false);
 			onClose();
-			toast.success(ids.length === 1 ? "Album unshared" : "Albums unshared");
+			toast.success(
+				ids.length === 1 ? "Album unshared" : "Albums unshared",
+			);
 		} catch (err) {
 			for (const revert of reverts) revert();
 			console.error(err);
@@ -173,7 +185,11 @@
 >
 	{#if error !== null}
 		<div class="flex flex-1">
-			<ApiErrorDisplay {error} onRetry={() => void load()} class="m-auto" />
+			<ApiErrorDisplay
+				{error}
+				onRetry={() => void load()}
+				class="m-auto"
+			/>
 		</div>
 	{:else if albums === null}
 		<div class="photo-grid">
@@ -234,7 +250,9 @@
 					<div
 						class="pointer-events-none absolute inset-x-0 bottom-0 flex items-end gap-1 rounded-b-[inherit] bg-linear-to-t from-black/70 to-transparent p-2 pt-6 text-start"
 					>
-						<span class="line-clamp-2 text-xs font-medium text-white">
+						<span
+							class="line-clamp-2 text-xs font-medium text-white"
+						>
 							{album.albumName || "Untitled album"}
 						</span>
 					</div>
@@ -274,20 +292,27 @@
 								type="button"
 								class="pointer-events-auto flex items-center gap-2 text-lg font-semibold"
 							>
-								<CheckCircleIcon weight="regular" class="size-6 text-primary" />
+								<CheckCircleIcon
+									weight="regular"
+									class="size-6 text-primary"
+								/>
 								{expirationLabel}
 								<CaretDownIcon weight="bold" class="size-4" />
 							</button>
 						{/snippet}
 					</DropdownMenu.Trigger>
 					<DropdownMenu.Content class="w-52" align="center">
-						<DropdownMenu.Label>Share album for…</DropdownMenu.Label>
+						<DropdownMenu.Label>Share album for…</DropdownMenu.Label
+						>
 						{#each EXPIRATION_OPTIONS as option (option.value)}
 							<DropdownMenu.Item
 								onSelect={() => (expirationType = option.value)}
 							>
 								{#if option.value === expirationType}
-									<CheckCircleIcon weight="fill" class="size-5 text-primary" />
+									<CheckCircleIcon
+										weight="fill"
+										class="size-5 text-primary"
+									/>
 								{:else}
 									<span class="size-5"></span>
 								{/if}
@@ -302,7 +327,9 @@
 				size="lg"
 				variant={stopMode ? "destructive" : "default"}
 				class="pointer-events-auto w-full shadow-lg"
-				disabled={selectedIds.size === 0 || recipientId === null || sharing}
+				disabled={selectedIds.size === 0 ||
+					recipientId === null ||
+					sharing}
 				onclick={() => void (stopMode ? unshare() : share())}
 			>
 				{#if sharing}

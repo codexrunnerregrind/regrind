@@ -41,6 +41,8 @@
 			profileId={conversationState.profile.profileId}
 			name={conversationState.profile.name}
 		/>
-		<ConversationActionsMenu profileId={conversationState.profile.profileId} />
+		<ConversationActionsMenu
+			profileId={conversationState.profile.profileId}
+		/>
 	{/if}
 </ProgressiveBlur>

@@ -21,8 +21,10 @@ const notes = new SvelteMap<number, FavoriteNoteContent>();
 // Profiles whose note is known to be current: read per profile, or listed with
 // text. A listed entry with no text is not enough — that is also what a note
 // the list left out would look like — so those are confirmed per profile once.
+// eslint-disable-next-line svelte/prefer-svelte-reactivity -- bookkeeping only, nothing renders from it
 const known = new Set<number>();
 
+// eslint-disable-next-line svelte/prefer-svelte-reactivity -- in-flight de-duplication, nothing renders from it
 const requests = new Map<number, Promise<void>>();
 
 export const EMPTY_FAVORITE_NOTE: FavoriteNoteContent = {
@@ -58,6 +60,7 @@ export function cacheFavoriteNote(
  * to be matched by a later search.
  */
 export function cacheFavoriteNotes(list: readonly FavoriteNote[]): void {
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local to this call, dropped on return
 	const seen = new Set<number>();
 	for (const note of list) {
 		const profileId = note.counterpartyId;

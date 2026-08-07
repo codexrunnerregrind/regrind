@@ -22,7 +22,9 @@
 		{#if error}
 			<span class="shrink-0 text-caption text-destructive">{error}</span>
 		{:else if hint}
-			<span class="shrink-0 text-caption text-muted-foreground tabular-nums">
+			<span
+				class="shrink-0 text-caption text-muted-foreground tabular-nums"
+			>
 				{hint}
 			</span>
 		{/if}

@@ -35,7 +35,8 @@
 				"text-muted-foreground",
 				{
 					"hover:bg-muted-foreground/10": !active,
-					"bg-muted-foreground/15 hover:bg-muted-foreground/20": active,
+					"bg-muted-foreground/15 hover:bg-muted-foreground/20":
+						active,
 				},
 			]}
 		>

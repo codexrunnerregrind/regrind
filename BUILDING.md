@@ -6,29 +6,29 @@ To get started, choose one of the methods below (Docker, Nix or manual) and foll
 > Only Android release builds are tested as of June 23rd, 2026.
 
 - [Building Open Grind](#building-open-grind)
-  - [Build with Docker (easiest)](#build-with-docker-easiest)
-    - [Clean-up Docker](#clean-up-docker)
-  - [Build with Nix (builds everywhere)](#build-with-nix-builds-everywhere)
-  - [Build manually (advanced)](#build-manually-advanced)
-  - [Build for iOS (macOS only)](#build-for-ios-macos-only)
-    - [iOS build configuration](#ios-build-configuration)
-    - [Build the app](#build-the-app)
-    - [Deploy to a connected iPhone](#deploy-to-a-connected-iphone)
-    - [Develop on device / simulator](#develop-on-device--simulator)
-    - [Distributing via SideStore](#distributing-via-sidestore)
-  - [Credential storage](#credential-storage)
-  - [Signing](#signing)
-    - [Sign \& build with Docker](#sign--build-with-docker)
-    - [Sign \& build with Nix](#sign--build-with-nix)
-    - [Sign \& build manually](#sign--build-manually)
-  - [Trusting the build environment](#trusting-the-build-environment)
-    - [Verifying Nix and flake.lock](#verifying-nix-and-flakelock)
-    - [Verifying the Gradle wrapper jar](#verifying-the-gradle-wrapper-jar)
-  - [Verifying a published release](#verifying-a-published-release)
-  - [Reproducible CI release](#reproducible-ci-release)
-  - [Reproducibility](#reproducibility)
-    - [Refreshing the lock](#refreshing-the-lock)
-    - [Cargo / JS hygiene](#cargo--js-hygiene)
+    - [Build with Docker (easiest)](#build-with-docker-easiest)
+        - [Clean-up Docker](#clean-up-docker)
+    - [Build with Nix (builds everywhere)](#build-with-nix-builds-everywhere)
+    - [Build manually (advanced)](#build-manually-advanced)
+    - [Build for iOS (macOS only)](#build-for-ios-macos-only)
+        - [iOS build configuration](#ios-build-configuration)
+        - [Build the app](#build-the-app)
+        - [Deploy to a connected iPhone](#deploy-to-a-connected-iphone)
+        - [Develop on device / simulator](#develop-on-device--simulator)
+        - [Distributing via SideStore](#distributing-via-sidestore)
+    - [Credential storage](#credential-storage)
+    - [Signing](#signing)
+        - [Sign \& build with Docker](#sign--build-with-docker)
+        - [Sign \& build with Nix](#sign--build-with-nix)
+        - [Sign \& build manually](#sign--build-manually)
+    - [Trusting the build environment](#trusting-the-build-environment)
+        - [Verifying Nix and flake.lock](#verifying-nix-and-flakelock)
+        - [Verifying the Gradle wrapper jar](#verifying-the-gradle-wrapper-jar)
+    - [Verifying a published release](#verifying-a-published-release)
+    - [Reproducible CI release](#reproducible-ci-release)
+    - [Reproducibility](#reproducibility)
+        - [Refreshing the lock](#refreshing-the-lock)
+        - [Cargo / JS hygiene](#cargo--js-hygiene)
 
 ## Build with Docker (easiest)
 
@@ -115,9 +115,9 @@ Prerequisites:
 
 - **macOS** with **Xcode** (full install, not just the Command Line Tools) and its iOS platform
 - **Rust** via [rustup](https://rustup.rs) with the iOS targets:
-  ```bash
-  rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
-  ```
+    ```bash
+    rustup target add aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios
+    ```
 - **[CocoaPods](https://cocoapods.org)** (`brew install cocoapods`) — Tauri uses it to link plugin pods
 - **[Bun](https://bun.sh)** and `bun install`
 - An **Apple Developer team**; the device you install onto must be registered with that team
@@ -221,9 +221,9 @@ between users.
    [git.opengrind.org](https://git.opengrind.org/open-grind/open-grind/releases)
 3. Regenerate the source manifest from the artifact and commit it:
 
-   ```bash
-   bun ci/altstore/source.ts "src-tauri/gen/apple/build/arm64/Open Grind.ipa"
-   ```
+    ```bash
+    bun ci/altstore/source.ts "src-tauri/gen/apple/build/arm64/Open Grind.ipa"
+    ```
 
 [`ci/altstore/source.ts`](./ci/altstore/source.ts) reads the version and bundle
 identifier from `tauri.conf.json`, reuses the store listing in

@@ -51,9 +51,11 @@ async function measure(
 			}
 			img.addEventListener("load", done, { once: true });
 			// A photo we can't measure is no worse off than it was before.
-			img.addEventListener("error", () => resolve({ width: 0, height: 0 }), {
-				once: true,
-			});
+			img.addEventListener(
+				"error",
+				() => resolve({ width: 0, height: 0 }),
+				{ once: true },
+			);
 		});
 	} finally {
 		img.remove();

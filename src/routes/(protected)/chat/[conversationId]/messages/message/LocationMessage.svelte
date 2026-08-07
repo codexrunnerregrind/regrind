@@ -7,11 +7,7 @@
 	import type { LocationMessage } from "$lib/model/messaging/messages";
 	import { MessageMediaState } from "./message-media.svelte";
 
-	let {
-		message,
-	}: {
-		message: LocationMessage["body"];
-	} = $props();
+	let { message }: { message: LocationMessage["body"] } = $props();
 
 	const media = new MessageMediaState();
 

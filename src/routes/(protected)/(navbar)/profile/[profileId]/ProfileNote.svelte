@@ -8,13 +8,8 @@
 	import { Button } from "$lib/components/ui/button";
 	import ProfileNoteEditor from "./ProfileNoteEditor.svelte";
 
-	let {
-		profileId,
-		isFavorite,
-	}: {
-		profileId: number;
-		isFavorite: boolean;
-	} = $props();
+	let { profileId, isFavorite }: { profileId: number; isFavorite: boolean } =
+		$props();
 
 	// Notes hang off a favorite, so there is nothing to read or write until the
 	// profile is one.

@@ -85,7 +85,8 @@ export const swipeTabs: Action<HTMLElement, SwipeTabsOptions | undefined> = (
 
 	/** The tracked finger within a touch list, or null if it is not there. */
 	function tracked(list: TouchList): Touch | null {
-		for (const touch of list) if (touch.identifier === touchId) return touch;
+		for (const touch of list)
+			if (touch.identifier === touchId) return touch;
 		return null;
 	}
 
@@ -176,7 +177,8 @@ export const swipeTabs: Action<HTMLElement, SwipeTabsOptions | undefined> = (
 		if (!horizontal) return;
 
 		const commit =
-			Math.abs(dx) > COMMIT_DISTANCE || Math.abs(velocity) > COMMIT_VELOCITY;
+			Math.abs(dx) > COMMIT_DISTANCE ||
+			Math.abs(velocity) > COMMIT_VELOCITY;
 		if (!commit) return;
 
 		// A flick's direction is its velocity; a slow drag's is its net travel.

@@ -35,7 +35,10 @@
 							<IdentificationCardIcon weight="fill" />
 						{/snippet}
 					</SettingsRow>
-					<SettingsRow title="Account Settings" href="/settings/account">
+					<SettingsRow
+						title="Account Settings"
+						href="/settings/account"
+					>
 						{#snippet icon()}
 							<UserCircleIcon weight="fill" />
 						{/snippet}

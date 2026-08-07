@@ -31,7 +31,8 @@
 	variant="secondary"
 	onclick={() => (openFilters.sort = true)}
 	class={{
-		"bg-foreground text-background hover:bg-foreground/90": sort === "NEWEST",
+		"bg-foreground text-background hover:bg-foreground/90":
+			sort === "NEWEST",
 	}}
 >
 	<SortAscendingIcon />

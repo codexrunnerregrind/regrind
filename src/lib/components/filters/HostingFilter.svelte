@@ -6,8 +6,9 @@
 	import RadioItem from "$lib/components/ui/radio/RadioItem.svelte";
 	import type { filterHostingSchema } from "$lib/model/browse/grid/filters";
 
-	let { value = $bindable() }: { value: z.infer<typeof filterHostingSchema> } =
-		$props();
+	let {
+		value = $bindable(),
+	}: { value: z.infer<typeof filterHostingSchema> } = $props();
 </script>
 
 <RadioGroup
@@ -37,7 +38,8 @@
 				<div
 					class="pointer-events-none absolute inset-0 flex items-center justify-center"
 				>
-					<span class="h-[2px] w-[141%] rotate-45 bg-white mix-blend-difference"
+					<span
+						class="h-[2px] w-[141%] rotate-45 bg-white mix-blend-difference"
 					></span>
 				</div>
 			</div>

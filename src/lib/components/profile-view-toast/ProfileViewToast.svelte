@@ -9,11 +9,8 @@
 		profileId,
 		photoHash,
 		toastId,
-	}: {
-		profileId: number;
-		photoHash: string | null;
-		toastId: string;
-	} = $props();
+	}: { profileId: number; photoHash: string | null; toastId: string } =
+		$props();
 
 	// The socket payload carries a photo but no name, so the name is filled in
 	// once the profile resolves. The bubble is short-lived — it renders with the

@@ -87,8 +87,8 @@ class ConversationsState {
 				"chat.v1.message_sent",
 				chatV1MessageSentEventSchema,
 				(event) => {
-				if (this.#destroyed) return;
-				void this.#handleMessageSent(event.payload);
+					if (this.#destroyed) return;
+					void this.#handleMessageSent(event.payload);
 				},
 			),
 			ws.on(

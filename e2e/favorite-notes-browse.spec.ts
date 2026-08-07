@@ -25,11 +25,16 @@ test.describe("favorite notes in the browse grid", () => {
 		).toHaveCount(3);
 	});
 
-	test("the search field belongs to the favorites filter", async ({ page }) => {
+	test("the search field belongs to the favorites filter", async ({
+		page,
+	}) => {
 		await openBrowseGrid(page);
 
 		const search = page.getByLabel("Search notes");
-		await expect(search, "hidden until favorites are being shown").toBeHidden();
+		await expect(
+			search,
+			"hidden until favorites are being shown",
+		).toBeHidden();
 
 		await page.getByLabel("Favorites").click();
 		await expect(search).toBeVisible();
@@ -41,7 +46,9 @@ test.describe("favorite notes in the browse grid", () => {
 		).toBeHidden();
 	});
 
-	test("searching notes narrows the grid to the matches", async ({ page }) => {
+	test("searching notes narrows the grid to the matches", async ({
+		page,
+	}) => {
 		await openBrowseGrid(page);
 		await page.getByLabel("Favorites").click();
 

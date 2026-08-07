@@ -4,7 +4,10 @@ import z from "zod";
 const { fetchRestMock } = vi.hoisted(() => ({
 	fetchRestMock:
 		vi.fn<
-			(path: string, options?: { method?: string; body?: unknown }) => unknown
+			(
+				path: string,
+				options?: { method?: string; body?: unknown },
+			) => unknown
 		>(),
 }));
 
@@ -350,7 +353,10 @@ describe("deleteProfilePhotos", () => {
 
 describe("getProfiles", () => {
 	it("sends a single request when within the batch limit", async () => {
-		const ids = Array.from({ length: MAX_PROFILES_PER_REQUEST }, (_, i) => i);
+		const ids = Array.from(
+			{ length: MAX_PROFILES_PER_REQUEST },
+			(_, i) => i,
+		);
 		fetchRestMock.mockResolvedValue(ok({ profiles: [] }));
 
 		await getProfiles(ids);

@@ -14,10 +14,8 @@
 	let {
 		albumId,
 		onSharedCountChange,
-	}: {
-		albumId: number;
-		onSharedCountChange?: (count: number) => void;
-	} = $props();
+	}: { albumId: number; onSharedCountChange?: (count: number) => void } =
+		$props();
 
 	type Share = {
 		profileId: number;
@@ -79,7 +77,10 @@
 		if (sharedIds === null || loadingMore || remaining <= 0) return;
 		loadingMore = true;
 		try {
-			const next = sharedIds.slice(shares.length, shares.length + PAGE_SIZE);
+			const next = sharedIds.slice(
+				shares.length,
+				shares.length + PAGE_SIZE,
+			);
 			shares = [...shares, ...(await resolvePage(next))];
 		} catch (err) {
 			console.error(err);
@@ -98,7 +99,9 @@
 		const previousShares = shares;
 		const previousIds = sharedIds;
 		revoking = profileId;
-		shares = previousShares.filter((share) => share.profileId !== profileId);
+		shares = previousShares.filter(
+			(share) => share.profileId !== profileId,
+		);
 		// Drop it from the id list too, or the count and paging would still
 		// include a profile that is no longer shared with.
 		sharedIds = previousIds?.filter((id) => id !== profileId) ?? null;
@@ -120,7 +123,12 @@
 
 	async function unshareAll() {
 		const ids = sharedIds;
-		if (ids === null || ids.length === 0 || unsharingAll || revoking !== null) {
+		if (
+			ids === null ||
+			ids.length === 0 ||
+			unsharingAll ||
+			revoking !== null
+		) {
 			return;
 		}
 		unsharingAll = true;
@@ -171,7 +179,11 @@
 		{/if}
 	</div>
 	{#if error !== null}
-		<ApiErrorDisplay {error} onRetry={() => void load(albumId)} class="my-2" />
+		<ApiErrorDisplay
+			{error}
+			onRetry={() => void load(albumId)}
+			class="my-2"
+		/>
 	{:else if sharedIds === null}
 		<div class="flex flex-col gap-2">
 			{#each Array(2)}
@@ -190,7 +202,8 @@
 					name={share.name}
 					mediaHash={share.mediaHash}
 					actionLabel="Unshare"
-					actionDescription="Unshare with {share.name ?? 'this profile'}"
+					actionDescription="Unshare with {share.name ??
+						'this profile'}"
 					disabled={revoking !== null || unsharingAll}
 					onAction={() => void revoke(share.profileId)}
 				/>
@@ -218,15 +231,18 @@
 			<AlertDialog.Description>
 				{#if sharedIds !== null && sharedIds.length > 0}
 					{sharedIds.length}
-					{sharedIds.length === 1 ? "person" : "people"} will lose access to this
-					album. The album itself is kept.
+					{sharedIds.length === 1 ? "person" : "people"} will lose access
+					to this album. The album itself is kept.
 				{:else}
-					Everyone will lose access to this album. The album itself is kept.
+					Everyone will lose access to this album. The album itself is
+					kept.
 				{/if}
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>
-			<AlertDialog.Cancel disabled={unsharingAll}>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Cancel disabled={unsharingAll}
+				>Cancel</AlertDialog.Cancel
+			>
 			<AlertDialog.Action
 				disabled={unsharingAll}
 				onclick={(event) => {

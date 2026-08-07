@@ -31,7 +31,10 @@
 				);
 			} else {
 				console.error(error);
-				showErrorToast({ label: "Failed to get current location", error });
+				showErrorToast({
+					label: "Failed to get current location",
+					error,
+				});
 			}
 		} finally {
 			disabled = false;

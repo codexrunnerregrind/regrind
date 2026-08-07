@@ -107,7 +107,8 @@ test.describe("favorite notes", () => {
 
 		const box = await pill.boundingBox();
 		const viewport = page.viewportSize();
-		if (box === null || viewport === null) throw new Error("pill not laid out");
+		if (box === null || viewport === null)
+			throw new Error("pill not laid out");
 
 		expect(
 			box.width,

@@ -30,9 +30,13 @@
 				name: profile?.name,
 				fallbackName: "Received photos",
 				avatarUrl:
-					profile?.mediaHash === undefined || profile.mediaHash === null
+					profile?.mediaHash === undefined ||
+					profile.mediaHash === null
 						? null
-						: profileMediaUrl({ mediaHash: profile.mediaHash, size: "thumb" }),
+						: profileMediaUrl({
+								mediaHash: profile.mediaHash,
+								size: "thumb",
+							}),
 				// The conversation profile reports metres, the viewer takes kilometres.
 				distanceKm:
 					profile?.distance === undefined || profile.distance === null
@@ -76,7 +80,9 @@
 			receivedPhotos = await collectReceivedPhotos({
 				conversationId: conversationState.conversationId,
 				profileId,
-				loaded: conversationState.messages.filter((m) => m.status === "sent"),
+				loaded: conversationState.messages.filter(
+					(m) => m.status === "sent",
+				),
 				pageKey: conversationState.pageKey,
 			});
 		} catch (error) {
@@ -105,7 +111,10 @@
 			})
 			.catch((error) => {
 				console.error(error);
-				showErrorToast({ label: "Failed to open received photos", error });
+				showErrorToast({
+					label: "Failed to open received photos",
+					error,
+				});
 			});
 	}
 
