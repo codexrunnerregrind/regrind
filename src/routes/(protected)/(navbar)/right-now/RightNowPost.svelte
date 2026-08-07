@@ -211,7 +211,18 @@
 	class="relative flex w-full gap-3 py-3 ps-4 pe-4 text-sm text-muted-foreground after:pointer-events-none after:absolute after:right-4 after:bottom-0 after:left-list-inset after:border-b after:border-border/60"
 	aria-label={postAriaLabel}
 >
-	<div>
+	<!-- Tapping anywhere in the row opens the poster's profile: the avatar alone
+	     is a small target in a list you scan quickly. It's an overlay rather than
+	     a wrapping anchor so the photos (lightbox) and the message button, both
+	     lifted above it, keep their own actions. Hidden from assistive tech and
+	     the tab order — the avatar link already carries the same destination. -->
+	<a
+		href="/profile/{profileId}"
+		class="absolute inset-0"
+		aria-hidden="true"
+		tabindex="-1"
+	></a>
+	<div class="relative z-10">
 		<RightNowAvatar {profileId} {displayName} {mediaHash} {onlineUntil} />
 	</div>
 	<div class="w-full">
@@ -225,7 +236,7 @@
 		</div>
 		{#if media.length}
 			<div
-				class="mt-2 flex flex-col items-start gap-1"
+				class="relative z-10 mt-2 flex flex-col items-start gap-1"
 				bind:this={mediaContainer}
 			>
 				{#each media as image, imgIndex (image.fullImageUrl)}
@@ -288,7 +299,7 @@
 					<span class="sr-only">Hosting</span>
 				{/if}
 			</div>
-			<div>
+			<div class="relative z-10">
 				<Button
 					type="button"
 					variant="ghost"
