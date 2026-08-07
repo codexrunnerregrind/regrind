@@ -1,16 +1,16 @@
 <script lang="ts">
 	import LockSimpleIcon from "phosphor-svelte/lib/LockSimpleIcon";
 	import UsersIcon from "phosphor-svelte/lib/UsersIcon";
+	import { onMount } from "svelte";
 	import { toast } from "svelte-sonner";
 
-	import { getSharedAlbumsFeed } from "$lib/api/messaging/albums";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import ToastUnimplemented from "$lib/components/feedback/ToastUnimplemented.svelte";
 	import * as Empty from "$lib/components/ui/empty";
 	import { Skeleton } from "$lib/components/ui/skeleton";
-	import type { PressieSharedAlbum } from "$lib/model/messaging/albums";
 	import { AlbumOpener } from "./album-open.svelte";
 	import AlbumTile from "./AlbumTile.svelte";
+	import { sharedAlbums } from "./shared-albums-state.svelte";
 
 	let {
 		onOpenMyAlbums,
@@ -20,8 +20,8 @@
 		onOpenMyAlbums?: () => void;
 	} = $props();
 
-	let albums = $state<PressieSharedAlbum[] | null>(null);
-	let error = $state<unknown>(null);
+	const albums = $derived(sharedAlbums.albums);
+	const error = $derived(sharedAlbums.error);
 	const opener = new AlbumOpener();
 
 	// `/v3/pressie-albums/feed` has no companion endpoint for dismissing a share —
@@ -36,19 +36,8 @@
 		});
 	}
 
-	async function load() {
-		albums = null;
-		error = null;
-		try {
-			const { sharedAlbums } = await getSharedAlbumsFeed();
-			albums = sharedAlbums;
-		} catch (err) {
-			console.error(err);
-			error = err;
-		}
-	}
-
-	void load();
+	// After mount, so a revalidate never writes state mid-render.
+	onMount(() => sharedAlbums.ensureLoaded());
 </script>
 
 {#snippet myAlbumsTile()}
@@ -69,7 +58,11 @@
 <div class="@container/photo-grid flex min-h-0 flex-1 flex-col">
 	{#if error !== null}
 		<div class="flex flex-1">
-			<ApiErrorDisplay {error} onRetry={() => void load()} class="m-auto" />
+			<ApiErrorDisplay
+				{error}
+				onRetry={() => void sharedAlbums.refresh()}
+				class="m-auto"
+			/>
 		</div>
 	{:else if albums === null}
 		<div class="object-grid gap-1">
@@ -108,12 +101,16 @@
 					locked={!album.albumViewable}
 					loading={opener.openingId === album.albumId}
 					disabled={opener.openingId !== null}
-					onclick={() =>
+					onclick={() => {
+						// The feed is cached now, so the dot has to be settled here —
+						// there is no remount refetch to pick the server's word up.
+						if (album.albumViewable) sharedAlbums.markSeen(album.albumId);
 						void opener.open(album.albumId, {
 							name: album.profile?.name,
 							avatarUrl: album.profile?.profileUrl,
 							distanceKm: album.profile?.distanceKm,
-						})}
+						});
+					}}
 					onRemove={remove}
 				/>
 			{/each}
