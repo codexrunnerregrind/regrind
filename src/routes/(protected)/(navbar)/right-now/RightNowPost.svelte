@@ -208,7 +208,7 @@
 <!-- Padding, gap and the inset divider mirror ProfileItem so this feed lines up
      with the inbox/taps lists (avatar at 16px, content and rule at 92px). -->
 <article
-	class="relative flex w-full gap-3 py-3 ps-4 pe-4 text-sm text-muted-foreground after:pointer-events-none after:absolute after:right-4 after:bottom-0 after:left-list-inset after:border-b after:border-border/60"
+	class="relative isolate flex w-full gap-3 py-3 ps-4 pe-4 text-sm text-muted-foreground after:pointer-events-none after:absolute after:right-4 after:bottom-0 after:left-list-inset after:border-b after:border-border/60"
 	aria-label={postAriaLabel}
 >
 	<!-- Tapping anywhere in the row opens the poster's profile: the avatar alone
