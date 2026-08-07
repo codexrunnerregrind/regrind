@@ -6,10 +6,11 @@
 	import { page } from "$app/state";
 	import { IconContext } from "phosphor-svelte";
 	import { onMount } from "svelte";
-	import { Toaster } from "svelte-sonner";
+	import { toast, Toaster } from "svelte-sonner";
 
 	import { hydratePreferences } from "$lib/app-data/preferences.svelte";
 	import { initTheme } from "$lib/app-data/theme.svelte";
+	import { takeDemoAnnouncement } from "$lib/demo/config";
 	import {
 		applyAndroidInsets,
 		applyBackGestureHandler,
@@ -52,6 +53,10 @@
 		void hydratePreferences().catch((error) => {
 			console.error("Failed to hydrate preferences", error);
 		});
+		const demoMode = takeDemoAnnouncement();
+		if (demoMode !== undefined) {
+			toast(demoMode ? "Demo mode on" : "Demo mode off");
+		}
 		return () => {
 			releaseKeyboardInset();
 			releaseZoomBlock();

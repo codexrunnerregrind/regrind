@@ -22,7 +22,25 @@ export const demoEnabled =
 export function toggleDemoMode(): void {
 	if (typeof localStorage === "undefined") return;
 	localStorage.setItem(DEMO_STORAGE_KEY, String(!demoEnabled));
+	sessionStorage.setItem(DEMO_ANNOUNCE_KEY, String(!demoEnabled));
 	location.reload();
+}
+
+const DEMO_ANNOUNCE_KEY = "demo:announce";
+
+/**
+ * The state demo mode was just toggled into, if this load is the reload
+ * `toggleDemoMode` triggered. Reading it clears it, so the announcement shows
+ * once. The toast has to wait for the reload — a toast fired before it would be
+ * torn down with the page, and it would sit on top of the version string in the
+ * middle of the tap gesture.
+ */
+export function takeDemoAnnouncement(): boolean | undefined {
+	if (typeof sessionStorage === "undefined") return undefined;
+	const stored = sessionStorage.getItem(DEMO_ANNOUNCE_KEY);
+	if (stored === null) return undefined;
+	sessionStorage.removeItem(DEMO_ANNOUNCE_KEY);
+	return stored === "true";
 }
 
 export const demoMeProfileId = 123456000;

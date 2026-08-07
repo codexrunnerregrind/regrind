@@ -1,15 +1,15 @@
 <script lang="ts">
 	import { version } from "$app/environment";
-	import { toast } from "svelte-sonner";
 
-	import { demoEnabled, toggleDemoMode } from "$lib/demo/config";
+	import { toggleDemoMode } from "$lib/demo/config";
 
 	// Hidden developer gesture: seven taps on the version string flip demo mode.
 	// Same shape as the usual "tap the build number" easter egg — the count
-	// resets if you stop tapping, and we only start hinting near the end so the
-	// gesture stays out of the way of someone reading or copying the version.
+	// resets if you stop tapping. No feedback while counting: toasts land at the
+	// bottom of the screen, right where the version string is, so a hint would
+	// cover the very thing you have to keep tapping. The confirmation comes as a
+	// toast after the reload instead.
 	const TAPS_TO_TOGGLE = 7;
-	const HINT_FROM_TAP = 4;
 	const RESET_AFTER_MS = 1500;
 
 	let taps = 0;
@@ -23,15 +23,6 @@
 			taps = 0;
 			toggleDemoMode();
 			return;
-		}
-
-		if (taps >= HINT_FROM_TAP) {
-			const left = TAPS_TO_TOGGLE - taps;
-			toast(
-				`${left} more ${left === 1 ? "tap" : "taps"} to ${
-					demoEnabled ? "leave" : "enter"
-				} demo mode`,
-			);
 		}
 
 		reset = setTimeout(() => (taps = 0), RESET_AFTER_MS);
