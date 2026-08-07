@@ -22,3 +22,6 @@ keystore.properties
 
 .local
 /coverage
+
+# local-only environment overrides (Apple team ID, etc)
+.envrc.local

@@ -128,17 +128,30 @@ Everything needed to reproduce an iOS build is committed:
 
 | Setting                   | Value                      | Where it's pinned                                                             |
 | ------------------------- | -------------------------- | ----------------------------------------------------------------------------- |
-| Apple development team    | `65BJ8C3N7S`               | `src-tauri/tauri.conf.json` &rarr; `bundle.iOS.developmentTeam`               |
+| Apple development team    | `APPLE_DEVELOPMENT_TEAM`   | your environment, see below (config holds a placeholder)                      |
 | Bundle identifier         | `org.opengrind.app`        | `src-tauri/tauri.conf.json` &rarr; `identifier` (and `gen/apple/project.yml`) |
 | Marketing / build version | from `version`             | `src-tauri/tauri.conf.json` &rarr; `version`                                  |
 | iOS usage descriptions    | location permission string | `src-tauri/Info.ios.plist`                                                    |
 | Export method             | `debugging`                | `src-tauri/gen/apple/ExportOptions.plist`                                     |
 | Xcode project             | committed                  | `src-tauri/gen/apple/` (regenerate with `bun tauri ios init`)                 |
 
-To build for a **different** Apple account, change `bundle.iOS.developmentTeam`
-in [`src-tauri/tauri.conf.json`](./src-tauri/tauri.conf.json) to your own team ID
-(Xcode &rarr; Settings &rarr; Accounts, or `Membership` on the developer portal) and
-pick a `identifier` that is unique to you. The `debugging` export method in
+The team ID is **not** committed. `bundle.iOS.developmentTeam` in
+[`src-tauri/tauri.conf.json`](./src-tauri/tauri.conf.json) holds the placeholder
+`YOUR_TEAM_ID`, and the Xcode project reads `$(APPLE_DEVELOPMENT_TEAM)` from the
+environment. Export your own team ID before building (Xcode &rarr; Settings &rarr;
+Accounts, or `Membership` on the developer portal):
+
+```bash
+export APPLE_DEVELOPMENT_TEAM=XXXXXXXXXX
+```
+
+Tauri uses that variable in preference to the value in the config, so the
+placeholder is never used for a real build. To keep it out of your shell profile,
+put the line in `.envrc.local`, which is git-ignored and sourced by `.envrc` if
+direnv is set up.
+
+You'll also want an `identifier` in the config that is unique to you. The
+`debugging` export method in
 `ExportOptions.plist` produces a development-signed IPA installable on registered
 devices; switch it to `app-store-connect`, `release-testing`, or `enterprise` for
 other distribution channels.
