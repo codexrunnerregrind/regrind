@@ -2,72 +2,76 @@
 
 A fork of [Open Grind](https://git.opengrind.org/open-grind/open-grind), an unofficial, free and ad-free Grindr client.
 
-It started because I wanted the app on my iPhone. Upstream builds for Android and desktop, so I added an iOS build, then kept going and filled in the things I missed while using it every day.
+This fork started because I wanted to try the app on my iPhone. The original builds for Android and desktop, so I got it running on iOS, then kept going and filled in the things I missed while using it every day.
 
-|                                                        |                                                    |                                            |
-| :----------------------------------------------------: | :------------------------------------------------: | :----------------------------------------: |
-| ![Browse grid](./contrib/screenshots/browse-grid.webp) | ![Right Now](./contrib/screenshots/right-now.webp) | ![Inbox](./contrib/screenshots/inbox.webp) |
+I build this for myself and sideload it onto my own phone. There are no releases.
 
-Fair warning: I build this for myself and sideload it onto my own phone. There are no releases, no support, and I rewrite this branch whenever it suits me. If you want something stable, go to [upstream](https://git.opengrind.org/open-grind/open-grind), that's the real project.
+**NOTE:** Most of the work here was done with AI, which is why I haven't opened any pull requests against the original project.
+
+<img src="./contrib/screenshots/browse-grid.webp" alt="Browse grid" width="220">
+<img src="./contrib/screenshots/right-now.webp" alt="Right Now" width="220">
+<img src="./contrib/screenshots/inbox.webp" alt="Inbox" width="220">
 
 > Every screenshot here is from demo mode (`PUBLIC_ENABLE_DEMO=1`), so it's all mock data.
 
 ## What's different
 
-Some of this is mine, some comes from pull requests that haven't landed upstream yet.
-
-### iOS
-
-Runs on iPhone, with the native bits you'd expect: swipe back, haptics, saving photos out of a chat, and a keyboard that stays out of the way.
+Some of this is mine, some comes from pull requests that haven't landed in the original project yet.
 
 ### Albums
 
-Upstream shows you albums other people send. Here you can also build your own, reorder them, share them straight from the chat composer with an expiry, and unshare later.
+- View albums shared with you
+- Create and edit your own albums
+- Reorder the photos in an album
+- Share or unshare an album from the chat composer
+- Share with an expiry, or unshare later
 
-|                                                          |                                                      |                                                                     |
-| :------------------------------------------------------: | :--------------------------------------------------: | :-----------------------------------------------------------------: |
-| ![Albums inbox](./contrib/screenshots/albums-inbox.webp) | ![Edit album](./contrib/screenshots/album-edit.webp) | ![Share with expiry](./contrib/screenshots/album-share-expiry.webp) |
-|                      Shared with me                      |                   Edit and reorder                   |                        Share with an expiry                         |
+<img src="./contrib/screenshots/albums-inbox.webp" alt="Albums inbox" width="220">
+<img src="./contrib/screenshots/album-edit.webp" alt="Edit album" width="220">
+<img src="./contrib/screenshots/album-share-expiry.webp" alt="Share with expiry" width="220">
 
 ### Chat
 
-Video messages, replies with swipe to reply, sharing your location, double tap to react, and a photo viewer that behaves the same everywhere.
+- Support for video messages and locations
+- Reply to messages, photos, locations
+- Share your location or pick a location
+- Download media (photos / videos)
+- Received photos gallery. All the photos from a conversation in one place, reachable from the chat top bar.
 
-|                                          |                                                          |
-| :--------------------------------------: | :------------------------------------------------------: |
-| ![Chat](./contrib/screenshots/chat.webp) | ![Media viewer](./contrib/screenshots/media-viewer.webp) |
-|     An expiring photo and a location     |                     The photo viewer                     |
+<img src="./contrib/screenshots/chat.webp" alt="Chat" width="220">
+<img src="./contrib/screenshots/media-viewer.webp" alt="Media viewer" width="220">
 
 ### Favorites
 
-Notes on the profiles you favorite, searchable, plus a favorites screen of their own and a list of everyone you've blocked.
+- Favorites screen
+- Add notes to the profiles you favorite
+- Search through your notes
 
-|                                                                    |
-| :----------------------------------------------------------------: |
-| ![Favorites with notes](./contrib/screenshots/favorite-notes.webp) |
-|                  Favorites, with searchable notes                  |
-
-### Notifications
-
-Notifications for new messages and taps, which open the right screen when you tap them.
+<img src="./contrib/screenshots/favorite-notes.webp" alt="Favorites with notes" width="220">
 
 ### Interface
 
-A redesign closer to the official app, settings as grouped lists, theme colors you can pick, and quick filters on the Right Now feed.
+- General redesign with a minimalist look
+- Redesigned settings
+- Appearance of the app: pick your own theme, colors, etc
+- Manage blocked contacts
+- Swipe between tabs
+- Haptics feedback
+- A small bubble that shows up when someone views your profile
+- Tap 7 times on app version to enter / leave Demo mode
+- Plenty of other changes I'm probably forgetting :)
 
-|                                                  |                                                      |
-| :----------------------------------------------: | :--------------------------------------------------: |
-| ![Settings](./contrib/screenshots/settings.webp) | ![Appearance](./contrib/screenshots/appearance.webp) |
-|            Settings as grouped lists             |                 Pick your own colors                 |
+<img src="./contrib/screenshots/settings.webp" alt="Settings" width="220">
+<img src="./contrib/screenshots/appearance.webp" alt="Appearance" width="220">
 
 ## Building
 
-Same as upstream, see [BUILDING.md](./BUILDING.md) and [CONTRIBUTING.md](./CONTRIBUTING.md). For iOS you'll also need Xcode and your own signing identity.
+Same as the original project, see [BUILDING.md](./BUILDING.md) and [CONTRIBUTING.md](./CONTRIBUTING.md). For iOS you'll also need Xcode and your own signing identity.
 
 ## Credit
 
-All the real work is upstream's. Thanks to everyone who builds and maintains it.
+All the real work belongs to the [original project](https://git.opengrind.org/open-grind/open-grind). Thanks to everyone who builds and maintains it.
 
 ## License
 
-[MIT](./LICENSE), same as upstream.
+[MIT](./LICENSE), same as the original project.
