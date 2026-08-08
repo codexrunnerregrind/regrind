@@ -1,5 +1,6 @@
 import { accountScoped } from "$lib/api/account-caches";
 import { getReceivedTaps } from "$lib/api/interest/taps";
+import { recordReceivedTaps } from "$lib/interest/profile-activity.svelte";
 import { ReconcilingListState } from "$lib/util/reconciling-list-state.svelte";
 import { tapV1TapSentEventSchema, ws } from "$lib/ws.svelte";
 import type { TapProfile } from "$lib/model/interest/tap-profile";
@@ -52,6 +53,7 @@ export class TapsState extends ReconcilingListState<TapProfile, TapsSnapshot> {
 	): Set<number> {
 		this.#all = snapshot.profiles;
 		cachedTaps = snapshot.profiles;
+		recordReceivedTaps(snapshot.profiles);
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- caller only reads .has() then drops it
 		return new Set(snapshot.profiles.map((tap) => tap.profileId));
 	}
@@ -63,6 +65,7 @@ export class TapsState extends ReconcilingListState<TapProfile, TapsSnapshot> {
 		if (existing !== -1) this.#all.splice(existing, 1);
 		this.#all = [tap, ...this.#all];
 		cachedTaps = this.#all;
+		recordReceivedTaps([tap]);
 	}
 
 	protected keyOf(tap: TapProfile): number {

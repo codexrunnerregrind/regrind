@@ -7,6 +7,10 @@
 	import demonEmoji from "$lib/assets/emojis/demon/72px.png";
 	import fireEmoji from "$lib/assets/emojis/fire/72px.png";
 	import { TapType, tapTypes } from "$lib/model/interest/taps";
+	// The default size has to be beatable: `class={["size-6", className]}` leaves
+	// the winner to stylesheet order, which is why a caller asking for a smaller
+	// emoji got a `size-6` one anyway.
+	import { cn } from "$lib/util/utils";
 
 	let {
 		tapType,
@@ -50,13 +54,13 @@
 		alt={`${tapTypes[tapType]} tap`}
 		width="24"
 		height="24"
-		class={["size-6 shrink-0", className]}
+		class={cn("size-6 shrink-0", className)}
 		draggable="false"
 	/>
 {:else}
 	<Icon
 		role="img"
 		aria-label={`${tapTypes[tapType]} tap`}
-		class={["size-6 shrink-0", className]}
+		class={cn("size-6 shrink-0", className)}
 	/>
 {/if}

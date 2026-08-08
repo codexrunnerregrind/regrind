@@ -139,6 +139,10 @@
 	/* The pencil glyph on a note line, and the only accent that stays light in
 	   both themes because it sits on a dark plate. */
 	--plate-accent: #7fb2ff;
+	/* "Tapped you" on a profile photo. Warm rather than the note's blue: it
+	   belongs to the flame beside it, and a tap is the one overlay that is
+	   somebody reaching for you rather than a label. */
+	--plate-tap: #f0b64a;
 }
 
 /* The full-screen media viewer (handoff § 09 Album viewer). Always dark, in both
@@ -221,6 +225,7 @@
 	--color-plate-foreground: var(--plate-foreground);
 	--color-plate-muted: var(--plate-muted);
 	--color-plate-accent: var(--plate-accent);
+	--color-plate-tap: var(--plate-tap);
 	--color-plate-scrim: var(--plate-scrim);
 	--color-plate-scrim-soft: var(--plate-scrim-soft);
 	--color-viewer-surface: var(--viewer-surface);
