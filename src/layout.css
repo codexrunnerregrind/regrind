@@ -15,61 +15,61 @@
    two themes are a straight token swap with no layout differences. */
 :root {
 	--radius: 0.75rem;
-	--background: #eae6de; /* bg */
-	--foreground: #1e1b16; /* ink */
-	--card: #f4f1ea; /* surface */
-	--card-foreground: #1e1b16;
-	--popover: #f4f1ea;
-	--popover-foreground: #1e1b16;
+	--background: #eceae6; /* bg */
+	--foreground: #1b1a18; /* ink */
+	--card: #f6f5f2; /* surface */
+	--card-foreground: #1b1a18;
+	--popover: #f6f5f2;
+	--popover-foreground: #1b1a18;
 	/* Pre-hydration fallback for primary actions, links and focus. Matches the
 	   default accent (yellow) in palette.ts so a fresh install doesn't flash a
 	   different color before preferences load. The handoff's own accent is
 	   #0B62E0 here / #3D8BFF dark — pick "Blue" in Appearance to get it. */
 	--primary: oklch(0.869 0.178 91);
 	--primary-foreground: oklch(0.22 0.02 91);
-	--secondary: #dfdace; /* surface2 */
-	--secondary-foreground: #1e1b16;
-	--muted: #dfdace; /* surface2 */
-	--muted-foreground: #57524a; /* ink2 */
+	--secondary: #e1dfda; /* surface2 */
+	--secondary-foreground: #1b1a18;
+	--muted: #e1dfda; /* surface2 */
+	--muted-foreground: #55534d; /* ink2 */
 	--accent: oklch(0.869 0.178 91);
 	--accent-foreground: oklch(0.22 0.02 91);
 	--destructive: #d93f52;
-	--border: #c7c1b3; /* line */
-	--input: #dfdace; /* surface2 — chips and inputs share one fill */
+	--border: #cac7c0; /* line */
+	--input: #e1dfda; /* surface2 — chips and inputs share one fill */
 	--ring: oklch(0.869 0.178 91);
 	--chart-1: oklch(0.869 0.178 91);
 	--chart-2: #1b8a4c;
-	--chart-3: #57524a;
-	--chart-4: #867f72;
+	--chart-3: #55534d;
+	--chart-4: #847f77;
 	--chart-5: #d93f52;
-	--sidebar: #f4f1ea;
-	--sidebar-foreground: #1e1b16;
+	--sidebar: #f6f5f2;
+	--sidebar-foreground: #1b1a18;
 	--sidebar-primary: oklch(0.869 0.178 91);
 	--sidebar-primary-foreground: oklch(0.22 0.02 91);
-	--sidebar-accent: #dfdace;
-	--sidebar-accent-foreground: #1e1b16;
-	--sidebar-border: #c7c1b3;
+	--sidebar-accent: #e1dfda;
+	--sidebar-accent-foreground: #1b1a18;
+	--sidebar-border: #cac7c0;
 	--sidebar-ring: oklch(0.869 0.178 91);
 	/* Tertiary text and inactive icons — tab bar labels, timestamps, captions.
 	   Sits between --muted-foreground (ink2) and the surfaces. */
-	--ink3: #867f72;
+	--ink3: #847f77;
 	/* The one green in the design: the online dot, and nothing else. */
 	--online: #1b8a4c;
 	/* Chat sits on the plain screen background — no wallpaper. */
-	--chat-background: #eae6de;
+	--chat-background: #eceae6;
 	/* Untinted bubble surfaces. theme.svelte.ts overwrites these with the chosen
 	   bubble colors; they show through only before preferences hydrate, and as
 	   the "Neutral" bubble option, so the two sides stay distinguishable by
 	   shade alone. */
-	--message-bubble-in: #dfdace;
-	--message-bubble-out: #dfdace;
-	--message-bubble-foreground: #1e1b16;
-	--message-bubble-out-foreground: #1e1b16;
+	--message-bubble-in: #e1dfda;
+	--message-bubble-out: #e1dfda;
+	--message-bubble-foreground: #1b1a18;
+	--message-bubble-out-foreground: #1b1a18;
 	/* Neutral surface behind photos: avatar/grid placeholders, images that are
 	   still loading, locked media. Its foreground is for the icons and labels
 	   drawn on top of it. */
-	--media-placeholder: #dfdace;
-	--media-placeholder-foreground: #867f72;
+	--media-placeholder: #e1dfda;
+	--media-placeholder-foreground: #847f77;
 	/* Chat's list pane width. Read back by +layout@(protected).svelte to size
 	   the resizable pane, so it has to stay a plain length. */
 	--list-rail: 117px;
