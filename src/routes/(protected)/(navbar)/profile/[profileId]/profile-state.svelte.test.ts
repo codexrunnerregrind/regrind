@@ -54,8 +54,11 @@ function profile(patch: Partial<Profile> = {}): Profile {
 	} as Profile;
 }
 
-function create({ profileId = PROFILE_ID }: { profileId?: number } = {}) {
-	return new ProfileState({ profileId, ourProfileId: OUR_ID });
+function create({
+	profileId = PROFILE_ID,
+	recordView,
+}: { profileId?: number; recordView?: boolean } = {}) {
+	return new ProfileState({ profileId, ourProfileId: OUR_ID, recordView });
 }
 
 function deferredProfile() {
@@ -298,6 +301,33 @@ describe("ProfileState view recording", () => {
 
 		expect(state.isOurProfile).toBe(true);
 		expect(recordProfileViewMock).not.toHaveBeenCalled();
+	});
+
+	it("records nothing until a deferred profile is marked viewed", async () => {
+		getPreferencesMock.mockResolvedValue({ revealProfileViews: true });
+		const state = create({ recordView: false });
+		await flush();
+
+		expect(recordProfileViewMock).not.toHaveBeenCalled();
+
+		state.markViewed();
+		await flush();
+
+		expect(recordProfileViewMock).toHaveBeenCalledExactlyOnceWith({
+			profileId: PROFILE_ID,
+		});
+	});
+
+	it("records a view once however often it is marked", async () => {
+		getPreferencesMock.mockResolvedValue({ revealProfileViews: true });
+		const state = create();
+		state.markViewed();
+		state.markViewed();
+		await flush();
+
+		expect(recordProfileViewMock).toHaveBeenCalledExactlyOnceWith({
+			profileId: PROFILE_ID,
+		});
 	});
 });
 

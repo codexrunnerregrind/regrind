@@ -15,6 +15,7 @@
 		hadRecentChat = false,
 		rightNow = null,
 		note = null,
+		onclick = undefined,
 	}: {
 		id: number;
 		displayName?: string | null;
@@ -28,6 +29,7 @@
 		hadRecentChat?: boolean;
 		rightNow?: RightNowStatus | null;
 		note?: string | null;
+		onclick?: import("svelte/elements").MouseEventHandler<HTMLAnchorElement>;
 	} = $props();
 </script>
 
@@ -43,5 +45,6 @@
 	{hadRecentChat}
 	{rightNow}
 	{note}
+	{onclick}
 	href="/profile/{id}"
 />

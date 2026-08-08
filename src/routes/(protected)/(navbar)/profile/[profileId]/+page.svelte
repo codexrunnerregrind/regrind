@@ -1,293 +1,63 @@
 <script lang="ts">
+	import { replaceState } from "$app/navigation";
 	import { page } from "$app/state";
 	import { untrack } from "svelte";
 
 	import {
-		BlockedProfileError,
-		ProfileUnavailableError,
-	} from "$lib/api/users/profiles";
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
-	import NotFound from "$lib/components/feedback/NotFound.svelte";
-	import { Skeleton } from "$lib/components/ui/skeleton";
-	import { profileMediaUrl } from "$lib/util/media";
-	import AboutMe from "./AboutMe.svelte";
-	import BlockedProfile from "./BlockedProfile.svelte";
-	import ProfileBottomNavBar from "./bottom-nav/ProfileBottomNavBar.svelte";
-	import Distance from "./Distance.svelte";
-	import Ethnicity from "./fields/Ethnicity.svelte";
-	import Genders from "./fields/GendersPronouns.svelte";
-	import HealthPractices from "./fields/HealthPractices.svelte";
-	import HivStatus from "./fields/HivStatus.svelte";
-	import LastTested from "./fields/LastTested.svelte";
-	import LookingFor from "./fields/LookingFor.svelte";
-	import MeetAt from "./fields/MeetAt.svelte";
-	import NSFWPics from "./fields/NSFWPics.svelte";
-	import RelationshipStatus from "./fields/RelationshipStatus.svelte";
-	import Socials from "./fields/Socials.svelte";
-	import Tribes from "./fields/Tribes.svelte";
-	import Height from "./HeightWeightBodyType.svelte";
-	import ImageCarousel from "./ImageCarousel.svelte";
-	import OnlineStatus from "./OnlineStatus.svelte";
-	import { ProfileState } from "./profile-state.svelte";
-	import ProfileAlbums from "./ProfileAlbums.svelte";
-	import ProfileNote from "./ProfileNote.svelte";
-	import ProfileTags from "./ProfileTags.svelte";
-	import SexualPosition from "./SexualPosition.svelte";
-	import SpecSeparator from "./SpecSeparator.svelte";
-	import CloseProfileButton from "./top-nav/CloseProfileButton.svelte";
-	import ProfileTopNavBar from "./top-nav/ProfileTopNavBar.svelte";
+		claimProfileDeck,
+		type ProfileDeck,
+	} from "$lib/profile/profile-deck";
+	import ProfilePager from "./ProfilePager.svelte";
 
 	let { data }: import("./$types").PageProps = $props();
 
 	const ourProfileId = $derived(data.ourProfileId);
-	const profileId = $derived(Number(page.params.profileId));
+	const routeId = $derived(Number(page.params.profileId));
 
-	let profileContainer = $state<HTMLElement | null>(null);
+	/** The list this profile was opened from, or just this profile on its own. */
+	function deckFor(profileId: number): ProfileDeck {
+		const claimed = claimProfileDeck(profileId);
+		return claimed?.ids.includes(profileId)
+			? claimed
+			: { ids: [profileId] };
+	}
 
-	let profileState = $state(
-		untrack(() => new ProfileState({ profileId, ourProfileId })),
-	);
+	const initialId = untrack(() => routeId);
+	let deck = $state(deckFor(initialId));
+	let activeId = $state(initialId);
+	// The id we last put in the URL ourselves. A swipe rewrites the URL so
+	// reloading or sharing lands on the profile actually being looked at, and
+	// this keeps that rewrite from reading back as a navigation elsewhere.
+	let ownUrlId = initialId;
 
 	$effect(() => {
-		const id = profileId;
-		const ourId = ourProfileId;
-
-		const state = untrack(() => {
-			if (
-				id !== profileState.profileId ||
-				ourId !== profileState.ourProfileId
-			) {
-				profileState = new ProfileState({
-					profileId: id,
-					ourProfileId: ourId,
-				});
-			}
-			return profileState;
+		const id = routeId;
+		if (id === ownUrlId) return;
+		untrack(() => {
+			deck = deckFor(id);
+			activeId = id;
 		});
-
-		return () => state.destroy();
+		ownUrlId = id;
 	});
 
-	const profile = $derived(profileState.profile);
-	const error = $derived(profileState.error);
-	const ourProfile = $derived(profileState.isOurProfile);
+	function onactive(profileId: number) {
+		activeId = profileId;
+		ownUrlId = profileId;
+		replaceState(`/profile/${profileId}`, page.state);
+	}
+
+	async function extend(): Promise<void> {
+		const grow = deck.extend;
+		if (!grow) return;
+		const ids = await grow();
+		deck = { ...deck, ids };
+	}
 </script>
 
-{#if error}
-	<div class="flex flex-1">
-		{#if error instanceof BlockedProfileError}
-			<BlockedProfile
-				profileId={profileState.profileId}
-				blockedByUs={error.blockedByUs}
-				onRefresh={() => profileState.markUnblocked()}
-			/>
-		{:else if error instanceof ProfileUnavailableError}
-			<NotFound />
-		{:else}
-			<ApiErrorDisplay
-				{error}
-				onRetry={() => profileState.retry()}
-				class="m-auto"
-			/>
-		{/if}
-	</div>
-{:else}
-	<div class="relative -mb-(--nav-height) h-screen-safe">
-		<div
-			class="h-full overflow-y-auto overscroll-contain"
-			bind:this={profileContainer}
-		>
-			<main
-				class="relative mx-auto min-h-overscrollable w-full max-w-200"
-			>
-				{#if profileState.loading || !profile}
-					<div class="relative flex max-w-full flex-col">
-						<Skeleton
-							class="aspect-3/4 h-auto max-h-photo w-full rounded-none"
-						/>
-						<CloseProfileButton />
-
-						<div
-							class={[
-								"flex max-w-full flex-col gap-3.5 p-4",
-								{ "pb-24": ourProfile, "pb-40": !ourProfile },
-							]}
-						>
-							<Skeleton class="h-6 w-40 max-w-full" />
-							<Skeleton class="h-3 w-30 max-w-full" />
-							<Skeleton class="mt-0.5 h-3 w-50 max-w-full" />
-							<div class="mt-2 flex flex-wrap gap-1">
-								{#each [10, 12, 18, 16, 15] as w, i (i)}
-									<Skeleton
-										class="h-4.5 w-(--w)"
-										--w="calc(var(--spacing) * {w})"
-									/>
-								{/each}
-							</div>
-							<Skeleton class="mt-2.25 h-27 w-full rounded-4xl" />
-						</div>
-					</div>
-				{:else}
-					{@const {
-						displayName,
-						age,
-						onlineUntil,
-						seen,
-						distance,
-						sexualPosition,
-						height,
-						weight,
-						bodyType,
-						profileTags,
-						aboutMe,
-						genders,
-						pronouns,
-						ethnicity,
-						relationshipStatus,
-						grindrTribes,
-						lookingFor,
-						meetAt,
-						nsfw,
-						hivStatus,
-						lastTestedDate: lastTestedDateValue,
-						sexualHealth: sexualHealthValue,
-						socialNetworks,
-						medias,
-					} = profile}
-					<div class="relative">
-						<ImageCarousel
-							{medias}
-							{profileId}
-							{ourProfileId}
-							{displayName}
-							self={ourProfile}
-						/>
-						{#if !ourProfile}
-							<ProfileNote
-								{profileId}
-								isFavorite={profile.isFavorite}
-							/>
-						{/if}
-						<CloseProfileButton />
-					</div>
-					<ProfileTopNavBar
-						ourProfileId={profileState.ourProfileId}
-						{profile}
-						onBlocked={() => profileState.markBlocked()}
-						onFavorite={(isFavorite) =>
-							profileState.setFavorite(isFavorite)}
-					/>
-					<div
-						class={[
-							"flex flex-col px-5 pt-5",
-							{ "pb-24": ourProfile, "pb-40": !ourProfile },
-						]}
-					>
-						<h1 class="screen-title wrap-break-word">
-							{#if displayName !== null}
-								<span class="font-semibold">
-									{displayName}
-								</span>{:else}<span
-									class="font-normal tracking-tight text-muted-foreground italic"
-								>
-									Someone
-								</span>{/if}{#if age !== null}, {age}
-							{/if}
-						</h1>
-						<div
-							class="mt-2.5 flex items-center gap-3.5 text-caption"
-						>
-							<OnlineStatus
-								onlineUntil={onlineUntil ?? null}
-								{seen}
-								self={ourProfile}
-							/>
-							<Distance {distance} />
-						</div>
-						{#if sexualPosition !== null || height !== null || weight !== null || bodyType !== null}
-							<div
-								class="mt-3 flex flex-wrap items-center gap-2 text-caption font-medium"
-							>
-								{#if sexualPosition !== null && sexualPosition !== undefined}
-									<SexualPosition {sexualPosition} />
-									{#if height !== null || weight !== null || bodyType !== null}
-										<SpecSeparator />
-									{/if}
-								{/if}
-								<Height {height} {weight} {bodyType} />
-							</div>
-						{/if}
-						<ProfileTags tags={profileTags} />
-						{#if aboutMe !== null}
-							<AboutMe>{aboutMe}</AboutMe>
-						{/if}
-						{#if (genders && genders.length > 0) || (pronouns && pronouns.length > 0) || ethnicity !== null || relationshipStatus !== null || (grindrTribes && grindrTribes.length > 0)}
-							<div class="mt-5.5 flex flex-col gap-2.75">
-								<span class="section-label">Stats</span>
-								<Genders {genders} {pronouns} />
-								<Tribes tribes={grindrTribes} />
-								<Ethnicity {ethnicity} />
-								<RelationshipStatus {relationshipStatus} />
-							</div>
-						{/if}
-						{#if (lookingFor && lookingFor.length > 0) || (meetAt && meetAt.length > 0) || nsfw !== null}
-							<div class="mt-5.5 flex flex-col gap-2.75">
-								<span class="section-label">Expectations</span>
-								<LookingFor {lookingFor} />
-								<MeetAt {meetAt} />
-								<NSFWPics nsfwPics={nsfw} />
-							</div>
-						{/if}
-						<ProfileAlbums
-							{profileId}
-							self={ourProfile}
-							sharer={{
-								name: displayName,
-								avatarUrl: medias[0]
-									? profileMediaUrl({
-											mediaHash: medias[0].mediaHash,
-											size: "thumb",
-										})
-									: null,
-								// The profile carries metres; the viewer's header wants km.
-								distanceKm:
-									distance === null ? null : distance / 1000,
-							}}
-						/>
-						{#if hivStatus !== null || lastTestedDateValue !== null || (sexualHealthValue && sexualHealthValue.length > 0)}
-							<div class="mt-5.5 flex flex-col gap-2.75">
-								<span class="section-label">Health</span>
-								<HivStatus {hivStatus} />
-								<LastTested
-									lastTestedDate={lastTestedDateValue}
-								/>
-								<HealthPractices
-									healthPractices={sexualHealthValue}
-								/>
-							</div>
-						{/if}
-						{#if socialNetworks && Object.keys(socialNetworks).length > 0}
-							<div class="mt-5.5 flex flex-col gap-2.75">
-								<span class="section-label">Socials</span>
-								<Socials socials={socialNetworks} />
-							</div>
-						{/if}
-					</div>
-					<ProfileBottomNavBar
-						ourProfileId={profileState.ourProfileId}
-						profileId={profile.profileId}
-						tapType={profile.tapType}
-						onTap={(tapType) => profileState.setTap(tapType)}
-					/>
-				{/if}
-			</main>
-		</div>
-		<DataRefreshControl
-			container={profileContainer}
-			updating={profileState.refreshing}
-			position="top"
-			onrefresh={() => profileState.refresh()}
-		/>
-	</div>
-{/if}
+<ProfilePager
+	ids={deck.ids}
+	{activeId}
+	{ourProfileId}
+	{onactive}
+	extend={deck.extend ? extend : undefined}
+/>

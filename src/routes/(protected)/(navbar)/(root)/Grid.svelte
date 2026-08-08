@@ -6,6 +6,7 @@
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import { nearestScrollableAncestor } from "$lib/components/feedback/refresh/scroll-chain";
 	import { gridState } from "$lib/grid/grid-state.svelte";
+	import { armProfileDeck } from "$lib/profile/profile-deck";
 	import type { FavoriteSearch } from "$lib/favorites/favorite-search.svelte";
 	import type { GridProfile } from "$lib/grid/grid";
 	import EmptyGrid from "./EmptyGrid.svelte";
@@ -15,10 +16,10 @@
 	let { geohash, search }: { geohash: string; search: FavoriteSearch } =
 		$props();
 
-	const gridProfiles = $derived.by(() => {
-		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- built and spread inside this $derived, never mutated afterwards
+	function dedupe(items: readonly GridProfile[]): GridProfile[] {
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local to this call, never mutated afterwards
 		const byId = new Map<number, GridProfile>();
-		for (const item of gridState.items) {
+		for (const item of items) {
 			const existing = byId.get(item.id);
 			if (
 				!existing ||
@@ -28,7 +29,28 @@
 			}
 		}
 		return [...byId.values()];
-	});
+	}
+
+	const gridProfiles = $derived(dedupe(gridState.items));
+
+	// Opening a profile hands it the rest of the cascade, so the profile screen
+	// can swipe between them in the order they are shown here. Armed per tap
+	// rather than kept as ambient state — see `armProfileDeck`.
+	function armCascade(profileId: number) {
+		armProfileDeck(profileId, {
+			ids: gridProfiles.map((item) => item.id),
+			extend: async () => {
+				await gridState.loadMore();
+				return dedupe(gridState.items).map((item) => item.id);
+			},
+		});
+	}
+
+	function armSearchResults(profileId: number) {
+		armProfileDeck(profileId, {
+			ids: search.results.map((result) => result.profileId),
+		});
+	}
 
 	// Notes belong to favorites, and any of the profiles here can be one, so the
 	// notes are read once for the whole grid rather than per card.
@@ -102,6 +124,7 @@
 					isFavorite={true}
 					rightNow={result.rightNow}
 					note={result.note}
+					onclick={() => armSearchResults(result.profileId)}
 					medias={result.profileImageMediaHash === null
 						? []
 						: [{ mediaHash: result.profileImageMediaHash }]}
@@ -141,6 +164,7 @@
 					})) ?? []}
 					rightNow={item.rightNow}
 					note={favoriteNote(item.id)?.notes ?? null}
+					onclick={() => armCascade(item.id)}
 				/>
 			{:else}
 				<div

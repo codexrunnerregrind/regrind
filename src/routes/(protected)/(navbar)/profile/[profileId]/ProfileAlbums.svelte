@@ -21,12 +21,18 @@
 		profileId,
 		self,
 		sharer,
+		enabled = true,
 	}: {
 		profileId: number;
 		self: boolean;
 		// Describes whose profile this is, for the viewer's header when tapping one
 		// of their shared albums. Unused on our own profile.
 		sharer?: AlbumSharer;
+		// The profile pager keeps the neighbouring profiles mounted so a swipe has
+		// something to land on, and holds their albums back until then: albums sit
+		// well below the fold, so fetching them for a profile nobody has swiped to
+		// is a request for nothing.
+		enabled?: boolean;
 	} = $props();
 
 	/** Both album shapes reduced to what this list renders. */
@@ -81,7 +87,7 @@
 	}
 
 	$effect(() => {
-		void load(profileId, self);
+		if (enabled) void load(profileId, self);
 	});
 
 	let creating = $state(false);

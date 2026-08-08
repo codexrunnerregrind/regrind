@@ -22,13 +22,22 @@ export class ProfileState {
 
 	#fetchToken = 0;
 	#destroyed = false;
+	#viewed = false;
 
 	constructor({
 		profileId,
 		ourProfileId,
+		recordView = true,
 	}: {
 		profileId: number;
 		ourProfileId: number;
+		/**
+		 * Whether opening counts as viewing. The profile pager mounts the
+		 * neighbouring profiles up front so a swipe has something to animate to,
+		 * and sets this false for them — it calls {@link markViewed} once one is
+		 * actually swiped to.
+		 */
+		recordView?: boolean;
 	}) {
 		this.profileId = profileId;
 		this.ourProfileId = ourProfileId;
@@ -38,11 +47,18 @@ export class ProfileState {
 			return;
 		}
 		void this.#load({ refresh: false });
-		if (!this.isOurProfile) void this.#recordView();
+		if (recordView) this.markViewed();
 	}
 
 	get isOurProfile(): boolean {
 		return this.profileId === this.ourProfileId;
+	}
+
+	/** Record that we looked at this profile. Idempotent. */
+	markViewed(): void {
+		if (this.#viewed || this.isOurProfile) return;
+		this.#viewed = true;
+		void this.#recordView();
 	}
 
 	destroy(): void {

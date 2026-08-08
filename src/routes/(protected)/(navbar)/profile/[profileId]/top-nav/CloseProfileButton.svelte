@@ -21,7 +21,7 @@
 	type="button"
 	onclick={close}
 	aria-label="Close profile"
-	class="glyph absolute top-2 left-2 z-10 flex size-11 items-center justify-center text-plate-foreground"
+	class="glyph pointer-events-auto absolute top-2 left-2 z-10 flex size-11 items-center justify-center text-plate-foreground"
 >
 	<!-- `light` is ~1.5px of stroke at 24pt, which is the handoff's 1.6pt line
 	     icons; `thin` disappears against a busy photo and `regular` reads heavy

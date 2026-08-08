@@ -20,6 +20,7 @@
 		hadRecentChat = false,
 		note = null,
 		href = null,
+		onclick = undefined,
 		class: className,
 		rightNow = null,
 		overlay,
@@ -36,6 +37,8 @@
 		/** The note the user attached to this favorite, if any. */
 		note?: string | null;
 		href?: string | null;
+		/** Fires just before the card navigates. Ignored without an `href`. */
+		onclick?: import("svelte/elements").MouseEventHandler<HTMLAnchorElement>;
 		class?: import("svelte/elements").ClassValue;
 		rightNow?: RightNowStatus | null;
 		overlay?: Snippet;
@@ -108,8 +111,14 @@
 						<ProfileRightNowIndicator {rightNow} class="me-1" />
 
 						{#if displayName !== null}
+							<!-- Emoji sit taller and deeper than the tight
+							     line box `truncate` clips to, so a name that
+							     ends in one loses its bottom. The padding
+							     pushes the clip edge off the glyphs and the
+							     matching negative margin keeps the band the
+							     same height. -->
 							<span
-								class="truncate text-meta/[1.1] font-semibold"
+								class="-my-[0.25em] truncate py-[0.25em] text-meta/[1.1] font-semibold"
 							>
 								{displayName}
 							</span>
@@ -161,6 +170,7 @@
 {#if href !== null}
 	<a
 		{href}
+		{onclick}
 		aria-label={hasVisibleText ? undefined : "Profile"}
 		class={[
 			"relative flex aspect-square items-end overflow-hidden",
