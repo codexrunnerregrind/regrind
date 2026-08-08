@@ -233,8 +233,12 @@
 		{/if}
 	</div>
 	<div class="viewer-label flex min-w-0 flex-col">
+		<!-- Emoji overshoot the tight line box `truncate` clips to, so a name
+		     ending in one loses its bottom. The padding moves the clip edge off
+		     the glyphs; the matching negative margin keeps the row's height and
+		     the gap down to the subtitle unchanged. -->
 		<span
-			class="truncate text-body leading-none font-semibold text-viewer-ink"
+			class="-my-[0.25em] truncate py-[0.25em] text-body leading-none font-semibold text-viewer-ink"
 		>
 			{displayName}
 		</span>

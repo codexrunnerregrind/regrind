@@ -33,7 +33,12 @@
 		class="size-9 shrink-0 overflow-hidden rounded-full bg-media-placeholder *:rounded-full"
 	/>
 	<span class="flex min-w-0 flex-col">
-		<span class="truncate font-heading text-sm leading-snug font-medium">
+		<!-- Emoji overshoot the line box `truncate` clips to, so a name ending in
+		     one loses its bottom. The padding moves the clip edge off the glyphs;
+		     the matching negative margin keeps the toast's height unchanged. -->
+		<span
+			class="-my-[0.25em] truncate py-[0.25em] font-heading text-sm leading-snug font-medium"
+		>
 			{#await displayName}
 				Someone
 			{:then name}
