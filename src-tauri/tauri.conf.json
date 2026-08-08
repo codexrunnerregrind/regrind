@@ -26,7 +26,7 @@
 			}
 		],
 		"security": {
-			"csp": "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'self' 'unsafe-inline'; img-src 'self' data: blob: https://cdns.grindr.com https://*.cloudfront.net https://tile.openstreetmap.org https://*.giphy.com https://api.dicebear.com https://picsum.photos https://*.picsum.photos; media-src 'self' blob: https://cdns.grindr.com https://*.cloudfront.net https://*.giphy.com https://test-videos.co.uk; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'; base-uri 'self'; form-action 'self'"
+			"csp": "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'self' 'unsafe-inline'; img-src 'self' data: blob: ogmedia: http://ogmedia.localhost https://tile.openstreetmap.org https://cdns.grindr.com https://*.cloudfront.net https://*.giphy.com https://api.dicebear.com https://picsum.photos https://*.picsum.photos; media-src 'self' blob: ogmedia: http://ogmedia.localhost https://cdns.grindr.com https://*.cloudfront.net https://*.giphy.com https://test-videos.co.uk; connect-src 'self' ipc: http://ipc.localhost; object-src 'none'; base-uri 'self'; form-action 'self'"
 		}
 	},
 	"bundle": {

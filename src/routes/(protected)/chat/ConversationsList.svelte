@@ -2,7 +2,7 @@
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 	import { PushPinIcon } from "phosphor-svelte";
-	import { onMount, tick } from "svelte";
+	import { tick } from "svelte";
 
 	import { getConversations } from "$lib/chat/conversations-context.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
@@ -12,6 +12,7 @@
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 	import { hapticImpact, hapticSelection } from "$lib/platform/haptics";
 	import { below } from "$lib/util/breakpoints.svelte";
+	import { restoreScrollOnce } from "$lib/util/scroll-restore.svelte";
 	import { SelectionSet } from "$lib/util/selection.svelte";
 	import { swipeTabs } from "$lib/util/swipe-tabs";
 	import type {
@@ -46,13 +47,7 @@
 
 	let container: HTMLDivElement | null = $state(null);
 
-	onMount(() => {
-		void conversations.initial.then(tick).then(() => {
-			if (container && conversations.scrollY > 0) {
-				container.scrollTop = conversations.scrollY;
-			}
-		});
-	});
+	restoreScrollOnce(() => container, conversations);
 
 	let { class: className }: { class?: import("svelte/elements").ClassValue } =
 		$props();
@@ -287,11 +282,19 @@
 			]}
 			onscroll={() => (conversations.scrollY = container?.scrollTop ?? 0)}
 		>
-			{#await conversations.initial}
+			{#if conversations.loading}
 				{#each Array(8)}
 					<ListRowSkeleton />
 				{/each}
-			{:then}
+			{:else if conversations.error}
+				<div class="flex flex-1">
+					<ApiErrorDisplay
+						error={conversations.error}
+						onRetry={() => conversations.retry()}
+						class="m-auto"
+					/>
+				</div>
+			{:else}
 				<div
 					class="flex min-h-overscrollable shrink-0 flex-col gap-0 pb-nav-clear"
 				>
@@ -332,17 +335,9 @@
 						<div class="h-0" use:observeSentinel></div>
 					{/if}
 				</div>
-			{:catch error}
-				<div class="flex flex-1">
-					<ApiErrorDisplay
-						{error}
-						onRetry={() => conversations.retry()}
-						class="m-auto"
-					/>
-				</div>
-			{/await}
+			{/if}
 		</div>
-		{#await conversations.initial then}
+		{#if !conversations.loading && !conversations.error}
 			<DataRefreshControl
 				{container}
 				updating={conversations.refreshing}
@@ -353,7 +348,7 @@
 					void conversations.refresh();
 				}}
 			/>
-		{/await}
+		{/if}
 	{/if}
 </div>
 
