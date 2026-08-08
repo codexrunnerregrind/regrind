@@ -15,6 +15,7 @@ import {
 } from "$lib/api/messaging/messages";
 import { callMethod } from "$lib/api/methods";
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+import { applyPhotoSwipeVideo } from "$lib/util/photoswipe";
 import { downloadMedia } from "./lightbox-download";
 import {
 	type MediaViewerActions,
@@ -210,13 +211,13 @@ export async function openAlbumLightbox(
 		if (!slide) return itemData;
 		return { src: slide.url, width: slide.width, height: slide.height };
 	});
-	// A video draws its own poster; PhotoSwipe's placeholder would only sit
-	// behind it as a stretched blur.
-	lightbox.addFilter("useContentPlaceholder", (usePlaceholder, content) =>
-		album.content[content.index]?.contentType.startsWith("video/")
-			? false
-			: usePlaceholder,
-	);
+	// Video slides are handed to the custom player, which draws its own poster
+	// and controls in place of PhotoSwipe's image content.
+	applyPhotoSwipeVideo(lightbox, (index) => {
+		const slide = album.content[index];
+		if (!slide?.contentType.startsWith("video/")) return null;
+		return { src: slide.url, poster: slide.coverUrl };
+	});
 	// No download button on PhotoSwipe's toolbar: the chrome hides it and puts
 	// saving in its sender row (see `actions.onSave` above).
 	const onBackGesture = () => {
@@ -228,33 +229,6 @@ export async function openAlbumLightbox(
 	});
 	lightbox.on("close", () => {
 		backGestureEventHandlers.delete(onBackGesture);
-	});
-	lightbox.on("contentLoad", (event) => {
-		const { content } = event;
-		const slide = album.content[content.index];
-		if (slide?.contentType.startsWith("video/")) {
-			event.preventDefault();
-			// PhotoSwipe sizes this wrapper to the slide; the video is stretched to
-			// it rather than left to size itself, since a video with a poster takes
-			// the poster's intrinsic size — a small cover thumbnail would leave the
-			// video sitting tiny and top-aligned instead of filling the slide.
-			content.element = document.createElement("div");
-			content.element.className = "flex h-full w-full items-center";
-			const video = document.createElement("video");
-			video.src = slide.url;
-			if (slide.coverUrl !== null) video.poster = slide.coverUrl;
-			video.controls = true;
-			video.playsInline = true;
-			video.className = "h-full w-full object-contain";
-			content.element.appendChild(video);
-			content.state = "loading";
-			if (video.readyState >= 3) {
-				content.onLoaded();
-			} else {
-				video.addEventListener("loadeddata", () => content.onLoaded());
-				video.addEventListener("error", () => content.onError());
-			}
-		}
 	});
 	registerMediaViewerChrome(lightbox, {
 		count: album.content.length,
