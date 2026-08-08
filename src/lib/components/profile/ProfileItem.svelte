@@ -13,6 +13,7 @@
 		active,
 		selected,
 		link,
+		onclick = undefined,
 		description,
 		actions,
 		onToggleSelected,
@@ -28,6 +29,8 @@
 		active?: boolean;
 		selected?: boolean;
 		link: string;
+		/** Fires just before `link` navigates. Not wired to the avatar's own link. */
+		onclick?: import("svelte/elements").MouseEventHandler<HTMLAnchorElement>;
 		description?: import("svelte").Snippet;
 		actions?: import("svelte").Snippet;
 		onToggleSelected?: () => void;
@@ -92,6 +95,7 @@
 		</a>
 		<a
 			href={link}
+			{onclick}
 			class="content relative gap-0.5 py-3 pe-4 after:pointer-events-none after:absolute after:right-4 after:bottom-0 after:left-0 after:border-b after:border-border/60 @max-row:hidden!"
 			tabindex={linkTabindex}
 		>
@@ -99,6 +103,7 @@
 		</a>
 		<a
 			href={link}
+			{onclick}
 			aria-label={title.value ?? "Someone"}
 			class="min-w-24 rounded-2xl @row:hidden"
 			tabindex={linkTabindex}
@@ -108,6 +113,7 @@
 	{:else}
 		<a
 			href={link}
+			{onclick}
 			class="content relative gap-3 overflow-clip py-3 ps-4 pe-4 after:pointer-events-none after:absolute after:right-4 after:bottom-0 after:left-list-inset after:border-b after:border-border/60"
 			tabindex={linkTabindex}
 		>

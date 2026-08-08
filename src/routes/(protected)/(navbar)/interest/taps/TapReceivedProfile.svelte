@@ -6,7 +6,13 @@
 	import * as Item from "$lib/components/ui/item";
 	import type { TapProfile } from "$lib/model/interest/tap-profile";
 
-	let { tap }: { tap: TapProfile } = $props();
+	let {
+		tap,
+		onclick = undefined,
+	}: {
+		tap: TapProfile;
+		onclick?: import("svelte/elements").MouseEventHandler<HTMLAnchorElement>;
+	} = $props();
 </script>
 
 <ProfileItem
@@ -14,6 +20,7 @@
 	title={{ value: tap.displayName }}
 	onlineUntil={tap.onlineUntil}
 	link="/profile/{tap.profileId}"
+	{onclick}
 >
 	{#snippet description()}
 		{#if tap.distance !== null}
