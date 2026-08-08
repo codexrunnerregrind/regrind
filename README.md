@@ -18,6 +18,25 @@ I build this for myself and sideload it onto my own phone. There are no releases
 
 Some of this is mine, some comes from pull requests that haven't landed in the original project yet.
 
+### Interface
+
+- General redesign with a minimalist look
+- Redesigned settings
+- Appearance of the app: pick your own theme, colors, etc
+- Manage blocked contacts
+- Set your current location, or pick one on the map
+- Swipe between tabs
+- Swipe between profiles
+- Haptics feedback
+- A small bubble that shows up when someone views your profile
+- A pill on the profile photo when someone recently tapped or chatted with you
+- Tap 7 times on app version to enter / leave Demo mode
+- Plenty of other changes I'm probably forgetting :)
+
+<img src="./contrib/screenshots/profile-activity.webp" alt="Profile with recent tap and chat" width="220">
+<img src="./contrib/screenshots/settings.webp" alt="Settings" width="220">
+<img src="./contrib/screenshots/appearance.webp" alt="Appearance" width="220">
+
 ### Albums
 
 - View albums shared with you
@@ -48,22 +67,6 @@ Some of this is mine, some comes from pull requests that haven't landed in the o
 - Search through your notes
 
 <img src="./contrib/screenshots/favorite-notes.webp" alt="Favorites with notes" width="220">
-
-### Interface
-
-- General redesign with a minimalist look
-- Redesigned settings
-- Appearance of the app: pick your own theme, colors, etc
-- Manage blocked contacts
-- Set your current location, or pick one on the map
-- Swipe between tabs
-- Haptics feedback
-- A small bubble that shows up when someone views your profile
-- Tap 7 times on app version to enter / leave Demo mode
-- Plenty of other changes I'm probably forgetting :)
-
-<img src="./contrib/screenshots/settings.webp" alt="Settings" width="220">
-<img src="./contrib/screenshots/appearance.webp" alt="Appearance" width="220">
 
 ## Building
 
