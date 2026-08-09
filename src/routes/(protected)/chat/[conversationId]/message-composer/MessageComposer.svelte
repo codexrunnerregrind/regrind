@@ -17,17 +17,14 @@
 		disabled,
 		replyTo,
 		onCancelReply,
-		height = $bindable(0),
 	}: {
 		onSend: (params: Message) => void | Promise<void>;
 		disabled: boolean;
 		replyTo?: ApiResponseMessage | null;
 		onCancelReply?: () => void;
-		height?: number;
 	} = $props();
 
 	let textContent = $state("");
-	let form: HTMLFormElement | null = $state(null);
 
 	async function onSubmit() {
 		const text = textContent.trim();
@@ -42,20 +39,16 @@
 		}
 	}
 
-	// WebKit bug: the resize observer emits a frame late, painting the taller
-	// composer over the newest message once.
-	function remeasureBeforeResizeObserverCatchesUp() {
-		if (form) height = form.clientHeight;
-	}
-
 	setMessageComposerContext(() => ({ disabled, sendMessage: onSend }));
 </script>
 
+<!-- In the flow rather than floating over the list: the messages then end
+     exactly where this begins, whatever height it grows to. Measuring it and
+     padding the list by that number instead left the newest message under the
+     composer whenever the measurement lagged the layout — which on iOS it did
+     until something else forced a resize. -->
 <form
-	bind:this={form}
-	class="absolute bottom-0 z-20 flex min-h-11 w-full min-w-0 shrink-0 flex-col gap-2 border-t border-border bg-background px-4.5 pt-3 pb-3"
-	bind:clientHeight={height}
-	oninput={remeasureBeforeResizeObserverCatchesUp}
+	class="flex min-h-11 min-w-0 shrink-0 flex-col gap-2 border-t border-border bg-background px-4.5 pt-3 pb-3"
 	onpointerdown={(event) => {
 		// Tapping the composer's own padding shouldn't dismiss the keyboard
 		const target = event.target as HTMLElement | null;

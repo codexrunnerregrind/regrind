@@ -6,14 +6,14 @@ const MULTILINE_TEXT =
 	"one two three four five six seven eight nine ten eleven twelve thirteen " +
 	"fourteen fifteen sixteen seventeen eighteen nineteen twenty twentyone";
 
-/** px between the newest message and the composer, from pb-[…+--spacing(1.5)] */
+/** px between the newest message and the composer, from the list's pb-1.5 */
 const GAP_PX = 6;
 
 const MESSAGE = '[role="button"][tabindex="0"]';
 
 type Metrics = {
 	composerHeight: number;
-	paddingBottom: number;
+	composerTop: number;
 	scrollTop: number;
 	floorDistance: number;
 	newestMessageBottom: number;
@@ -48,8 +48,8 @@ function measure(page: Page): Promise<Metrics> {
 			"[data-refresh-phase]",
 		);
 		return {
-			composerHeight: form.clientHeight,
-			paddingBottom: parseFloat(getComputedStyle(scroller).paddingBottom),
+			composerHeight: form.offsetHeight,
+			composerTop: form.getBoundingClientRect().top,
 			scrollTop: scroller.scrollTop,
 			floorDistance:
 				scroller.scrollHeight -
@@ -62,6 +62,21 @@ function measure(page: Page): Promise<Metrics> {
 				: NaN,
 		};
 	}, MESSAGE);
+}
+
+/**
+ * The whole point of the layout: the newest message sits just above the
+ * composer, never under it. Half a pixel of slack for subpixel layout.
+ */
+function expectClearsComposer(m: Metrics) {
+	expect(
+		m.composerTop - m.newestMessageBottom,
+		"newest message clears the composer",
+	).toBeGreaterThan(GAP_PX - 0.5);
+	expect(
+		m.composerTop - m.newestMessageBottom,
+		"and rests against it rather than floating well above",
+	).toBeLessThan(GAP_PX + 24);
 }
 
 const scrollTo = (page: Page, where: "floor" | "middle") =>
@@ -81,20 +96,23 @@ const scrollTo = (page: Page, where: "floor" | "middle") =>
 	);
 
 test.describe("messages list clears the composer", () => {
-	test("bottom padding tracks the composer height", async ({ page }) => {
+	test("the newest message clears the composer at any composer height", async ({
+		page,
+	}) => {
 		await openConversation(page);
+		await scrollTo(page, "floor");
+		await page.waitForTimeout(200);
 		const collapsed = await measure(page);
-		expect(collapsed.paddingBottom).toBe(collapsed.composerHeight + GAP_PX);
-		expect(collapsed.refreshBottom).toBe(collapsed.composerHeight);
+		expectClearsComposer(collapsed);
+		// The composer is in the flow, so the refresh control needs no offset.
+		expect(collapsed.refreshBottom).toBe(0);
 
 		await page.locator("textarea").fill(MULTILINE_TEXT);
 		await expect
 			.poll(async () => (await measure(page)).composerHeight)
 			.toBeGreaterThan(collapsed.composerHeight);
 
-		const grown = await measure(page);
-		expect(grown.paddingBottom).toBe(grown.composerHeight + GAP_PX);
-		expect(grown.refreshBottom).toBe(grown.composerHeight);
+		expectClearsComposer(await measure(page));
 	});
 
 	test("at the floor, a growing composer pushes messages up", async ({
@@ -157,5 +175,14 @@ test.describe("messages list clears the composer", () => {
 			before.middleMessageTop,
 			1,
 		);
+	});
+
+	test("a conversation opens with its newest message clear of the composer", async ({
+		page,
+	}) => {
+		// No typing, no scrolling: the layout has to be right from the first
+		// paint, which is exactly what a measured-then-padded composer got wrong.
+		await openConversation(page);
+		expectClearsComposer(await measure(page));
 	});
 });

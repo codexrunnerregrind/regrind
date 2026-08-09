@@ -11,8 +11,6 @@
 	import MessagesListSkeleton from "./MessagesListSkeleton.svelte";
 	import ScrollToBottomButton from "./ScrollToBottomButton.svelte";
 
-	let { composerHeight }: { composerHeight: number } = $props();
-
 	const conversationState = $derived(getConversationState()());
 
 	let container: HTMLDivElement | null = $state(null);
@@ -157,26 +155,35 @@
 	}
 
 	$effect(() => {
-		onComposerResizeEffect();
+		return keepRestingOnResizeEffect();
 	});
 
-	function onComposerResizeEffect(): void {
-		void composerHeight;
+	/**
+	 * The composer grows and shrinks under the list — a reply preview appearing,
+	 * a message wrapping onto a third line — and every time it does, the list
+	 * loses that much height from its bottom. Watching the list's own box rather
+	 * than the composer's keeps the newest message resting on the floor no
+	 * matter what changed size, and needs nothing measured to do it.
+	 */
+	function keepRestingOnResizeEffect() {
 		const el = container;
 		if (!el) return;
-		untrack(() => {
-			if (!atFloor) return;
-			el.scrollTop = el.scrollHeight;
+		const observer = new ResizeObserver(() => {
+			untrack(() => {
+				if (!atFloor) return;
+				el.scrollTop = el.scrollHeight;
+			});
 		});
+		observer.observe(el);
+		return () => observer.disconnect();
 	}
 </script>
 
 <div
 	class="relative flex min-h-0 max-w-full flex-1 flex-col bg-chat-background"
-	style:--composer-height="{composerHeight}px"
 >
 	<div
-		class="flex min-h-0 max-w-full flex-1 flex-col gap-1 overflow-auto overscroll-contain px-4.5 pt-20 pb-[calc(var(--composer-height)+--spacing(1.5))] *:first:mt-auto"
+		class="flex min-h-0 max-w-full flex-1 flex-col gap-1 overflow-auto overscroll-contain px-4.5 pt-20 pb-1.5 *:first:mt-auto"
 		bind:this={container}
 		style:overflow-anchor="none"
 		onscroll={onContainerScroll}
@@ -211,7 +218,7 @@
 			bind:this={refreshControl}
 			{container}
 			updating={conversationState.refreshing}
-			containerClass="bottom-(--composer-height)"
+			containerClass="bottom-0"
 			hintOffset={8}
 			position="bottom"
 			onrefresh={() => {
