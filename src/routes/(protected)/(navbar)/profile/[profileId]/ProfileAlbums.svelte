@@ -198,7 +198,11 @@
 							class="flex w-24 shrink-0 cursor-pointer flex-col gap-1 text-start disabled:opacity-60"
 							disabled={opener.openingId !== null}
 							onclick={() =>
-								void opener.open(album.albumId, sharer ?? {})}
+								void opener.open(album.albumId, sharer ?? {}, {
+									// Whose albums these are: the profile on screen.
+									ownerProfileId: profileId,
+									albumName: album.albumName,
+								})}
 						>
 							{@render tile(album)}
 						</button>

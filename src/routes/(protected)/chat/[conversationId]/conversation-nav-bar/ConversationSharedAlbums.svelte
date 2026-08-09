@@ -119,11 +119,21 @@
 								// `pointer-events: none` on the body, which the toolbar buttons
 								// override but the swipe surface inherits — blocking swiping
 								// between the album's photos.
-								await opener.open(album.albumId, {
-									name: album.profile?.name ?? name,
-									avatarUrl: album.profile?.profileUrl,
-									distanceKm: album.profile?.distanceKm,
-								});
+								await opener.open(
+									album.albumId,
+									{
+										name: album.profile?.name ?? name,
+										avatarUrl: album.profile?.profileUrl,
+										distanceKm: album.profile?.distanceKm,
+									},
+									{
+										ownerProfileId:
+											album.ownerProfileId ??
+											album.profile?.profileId ??
+											profileId,
+										albumName: album.name,
+									},
+								);
 								open = false;
 							}}
 						/>

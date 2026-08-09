@@ -9,6 +9,7 @@
 	} from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
+	import { ApiError } from "$lib/api/api-error";
 	import { showErrorToast } from "$lib/api/error-toast";
 	import {
 		type AlbumContentResponse,
@@ -18,7 +19,13 @@
 		renameAlbum,
 		reorderAlbumContent,
 	} from "$lib/api/messaging/albums";
-	import { loadAlbum, openAlbumLightbox } from "$lib/chat/album-viewer";
+	import {
+		AlbumLockedError,
+		loadAlbum,
+		loadPaywallAlbum,
+		openAlbumLightbox,
+	} from "$lib/chat/album-viewer";
+	import { announcePaywallTeaser } from "$lib/components/albums/paywall-teaser-toast";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
 	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
@@ -123,16 +130,42 @@
 		opening = true;
 		hapticImpact("light");
 		try {
-			const loaded = await loadAlbum(albumId);
+			// A view-once album can expire between this page loading and the tap,
+			// so the grid can outlive our access to it. The paywall teaser still
+			// carries previews in that case — the same fallback the album grids use.
+			let loaded = await loadAlbum(albumId).catch((err: unknown) => {
+				if (err instanceof ApiError && err.response?.status === 403)
+					return null;
+				throw err;
+			});
+			let fromPaywall = false;
+			if (loaded === null || loaded.content.length === 0) {
+				loaded = await loadPaywallAlbum({
+					albumId,
+					ownerProfileId: album?.profileId,
+				}).catch((err: unknown) => {
+					console.error(err);
+					return null;
+				});
+				if (loaded === null) throw new AlbumLockedError();
+				fromPaywall = true;
+			}
 			await openAlbumLightbox(loaded, {
-				startIndex: index,
+				// A teaser lost the original ordering, so it always opens at the top.
+				startIndex: fromPaywall ? 0 : index,
 				// Someone else's album gets the reply chrome. This page knows no
 				// profile to put in its header, so it falls back to the album name.
-				sharer: isMine ? undefined : {},
+				// A teaser has no content ids to reply to, so it opens bare.
+				sharer: isMine || fromPaywall ? undefined : {},
 			});
+			if (fromPaywall) announcePaywallTeaser();
 		} catch (err) {
-			console.error(err);
-			showErrorToast({ label: "Failed to open album", error: err });
+			if (err instanceof AlbumLockedError) {
+				toast.info(err.message);
+			} else {
+				console.error(err);
+				showErrorToast({ label: "Failed to open album", error: err });
+			}
 		} finally {
 			opening = false;
 		}
