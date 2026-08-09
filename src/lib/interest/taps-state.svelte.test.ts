@@ -1,7 +1,9 @@
+import { flushSync } from "svelte";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
 	getReceivedTapsMock,
+	markBlockedProfilesUnviewableMock,
 	reconcileHandlers,
 	showErrorToastMock,
 	subscriptions,
@@ -10,6 +12,7 @@ const {
 	unlistenTapMock,
 } = vi.hoisted(() => ({
 	getReceivedTapsMock: vi.fn(),
+	markBlockedProfilesUnviewableMock: vi.fn(() => Promise.resolve()),
 	reconcileHandlers: [] as (() => void | Promise<void>)[],
 	showErrorToastMock: vi.fn(),
 	subscriptions: [] as {
@@ -25,6 +28,10 @@ vi.mock("$lib/api/error-toast", () => ({ showErrorToast: showErrorToastMock }));
 vi.mock("$lib/api/interest/taps", () => ({
 	getReceivedTaps: getReceivedTapsMock,
 }));
+vi.mock("$lib/api/browse/blocks", async (importOriginal) => ({
+	...(await importOriginal<typeof import("$lib/api/browse/blocks")>()),
+	markBlockedProfilesUnviewable: markBlockedProfilesUnviewableMock,
+}));
 vi.mock("$lib/util/reconcile", () => ({
 	reconciler: {
 		subscribe(handler: () => void | Promise<void>) {
@@ -34,6 +41,10 @@ vi.mock("$lib/util/reconcile", () => ({
 	},
 }));
 import { clearAccountCaches } from "$lib/api/account-caches";
+import {
+	markProfileUnviewable,
+	markProfileViewable,
+} from "$lib/api/users/profile-viewability";
 import type { TapProfile } from "$lib/model/interest/tap-profile";
 import {
 	getTapsState,
@@ -121,7 +132,9 @@ beforeEach(() => {
 	// that seeds the list on a revisit. Leaving either behind leaks state.
 	clearAccountCaches();
 	resetTapsCacheForTesting();
+	localStorage.clear();
 	getReceivedTapsMock.mockReset();
+	markBlockedProfilesUnviewableMock.mockClear();
 	showErrorToastMock.mockReset();
 	unsubscribeReconcileMock.mockReset();
 	unlistenTapMock.mockReset();
@@ -247,6 +260,65 @@ describe("TapsState", () => {
 		expect(ids).toEqual([1, 2]);
 	});
 
+	it("drops a tap sender who turned out to be unviewable, and keeps it dropped", async () => {
+		getReceivedTapsMock.mockResolvedValue({ profiles: [tap(1), tap(2)] });
+		const state = new TapsState({ ourProfileId: 99 });
+		await waitForLoaded(state);
+
+		markProfileUnviewable(1);
+
+		expect(state.taps.map((entry) => entry.profileId)).toEqual([2]);
+
+		emitTap(tapEvent(1, 99));
+
+		expect(state.taps.map((entry) => entry.profileId)).toEqual([2]);
+
+		await reconcileHandlers[0]?.();
+
+		expect(state.taps.map((entry) => entry.profileId)).toEqual([2]);
+	});
+
+	it("catches up on blocks made before this session on every load", async () => {
+		getReceivedTapsMock.mockResolvedValue({ profiles: [tap(1)] });
+		const state = new TapsState({ ourProfileId: 99 });
+		await waitForLoaded(state);
+
+		expect(markBlockedProfilesUnviewableMock).toHaveBeenCalledOnce();
+
+		await reconcileHandlers[0]?.();
+
+		expect(markBlockedProfilesUnviewableMock).toHaveBeenCalledTimes(2);
+	});
+
+	it("brings a tap sender back when they are unblocked", async () => {
+		getReceivedTapsMock.mockResolvedValue({ profiles: [tap(1)] });
+		const state = new TapsState({ ourProfileId: 99 });
+		await waitForLoaded(state);
+
+		markProfileUnviewable(1);
+
+		expect(state.taps).toEqual([]);
+
+		markProfileViewable(1);
+		await vi.waitFor(() => expect(state.taps).toEqual([tap(1)]));
+	});
+
+	it("drops a tap sender marked while a reconcile fetch is in flight", async () => {
+		getReceivedTapsMock.mockResolvedValueOnce({ profiles: [tap(1)] });
+		const state = new TapsState({ ourProfileId: 99 });
+		await waitForLoaded(state);
+
+		const gate = deferred<{ profiles: TapProfile[] }>();
+		getReceivedTapsMock.mockReturnValueOnce(gate.promise);
+
+		const reconcilePromise = reconcileHandlers[0]?.();
+		markProfileUnviewable(1);
+		gate.resolve({ profiles: [tap(1)] });
+		await reconcilePromise;
+
+		expect(state.taps).toEqual([]);
+	});
+
 	it("reconciles after initial load and cleans up listeners on destroy", async () => {
 		getReceivedTapsMock
 			.mockResolvedValueOnce({ profiles: [tap(1)] })
@@ -274,9 +346,131 @@ describe("TapsState", () => {
 			},
 		});
 
+		markProfileUnviewable(2);
+
 		expect(unsubscribeReconcileMock).toHaveBeenCalledOnce();
 		await vi.waitFor(() => expect(unlistenTapMock).toHaveBeenCalledOnce());
 		expect(state.taps).toEqual([tap(2)]);
+	});
+});
+
+describe("TapsState unseen marker", () => {
+	it("flags received taps as unseen until the list is viewed", async () => {
+		getReceivedTapsMock.mockResolvedValue({ profiles: [tap(1), tap(2)] });
+		const state = new TapsState({ ourProfileId: 99 });
+		await waitForLoaded(state);
+
+		expect(state.hasUnseen).toBe(true);
+
+		state.markViewed();
+
+		expect(state.hasUnseen).toBe(false);
+	});
+
+	it("stays cleared for a tap older than the stored marker", async () => {
+		getReceivedTapsMock.mockResolvedValue({ profiles: [tap(1)] });
+		const viewed = new TapsState({ ourProfileId: 99 });
+		await waitForLoaded(viewed);
+		viewed.markViewed();
+
+		const restarted = new TapsState({ ourProfileId: 99 });
+		await waitForLoaded(restarted);
+
+		expect(restarted.hasUnseen).toBe(false);
+	});
+
+	it("keeps the marker scoped to the signed in account", async () => {
+		getReceivedTapsMock.mockResolvedValue({ profiles: [tap(1)] });
+		const ours = new TapsState({ ourProfileId: 99 });
+		await waitForLoaded(ours);
+		ours.markViewed();
+
+		const otherAccount = new TapsState({ ourProfileId: 7 });
+		await waitForLoaded(otherAccount);
+
+		expect(otherAccount.hasUnseen).toBe(true);
+	});
+
+	it("raises the marker for a live tap whose timestamp is not the newest", async () => {
+		getReceivedTapsMock.mockResolvedValue({ profiles: [tap(1)] });
+		const state = new TapsState({ ourProfileId: 99 });
+		await waitForLoaded(state);
+		state.markViewed();
+
+		emitTap({
+			type: "tap.v1.tap_sent",
+			notificationId: null,
+			ref: null,
+			payload: {
+				timestamp: 1_710_000_000,
+				senderId: 5,
+				recipientId: 99,
+				tapType: 0,
+				senderProfileImageHash: null,
+				senderDisplayName: "Profile 5",
+				isMutual: false,
+			},
+		});
+
+		expect(state.taps.map((entry) => entry.profileId)).toEqual([5, 1]);
+		expect(state.hasUnseen).toBe(true);
+	});
+
+	it("dismisses a live tap that lands while the list is open", async () => {
+		getReceivedTapsMock.mockResolvedValue({ profiles: [tap(1)] });
+		const state = new TapsState({ ourProfileId: 99 });
+		await waitForLoaded(state);
+
+		const stop = $effect.root(() => {
+			$effect(() => {
+				if (state.hasUnseen) state.markViewed();
+			});
+		});
+		flushSync();
+
+		expect(state.hasUnseen).toBe(false);
+
+		emitTap(tapEvent(5, 99));
+		flushSync();
+		stop();
+
+		expect(state.hasUnseen).toBe(false);
+	});
+
+	it("pushes a live tap to a reactive reader without a refetch", async () => {
+		getReceivedTapsMock.mockResolvedValue({ profiles: [tap(1)] });
+		const state = new TapsState({ ourProfileId: 99 });
+		await waitForLoaded(state);
+		state.markViewed();
+
+		const seen: boolean[] = [];
+		const stop = $effect.root(() => {
+			$effect(() => {
+				seen.push(state.hasUnseen);
+			});
+		});
+		flushSync();
+
+		emitTap(tapEvent(5, 99));
+		flushSync();
+		stop();
+
+		expect(seen).toEqual([false, true]);
+	});
+
+	it("raises the marker again only for a newer tap addressed to us", async () => {
+		getReceivedTapsMock.mockResolvedValue({ profiles: [tap(1)] });
+		const state = new TapsState({ ourProfileId: 99 });
+		await waitForLoaded(state);
+		state.markViewed();
+
+		emitTap(tapEvent(5, 7));
+
+		expect(state.hasUnseen).toBe(false);
+
+		emitTap(tapEvent(5, 99));
+
+		expect(state.hasUnseen).toBe(true);
 	});
 });
 

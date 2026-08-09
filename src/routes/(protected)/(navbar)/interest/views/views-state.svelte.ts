@@ -1,5 +1,10 @@
 import { accountScoped } from "$lib/api/account-caches";
+import { markBlockedProfilesUnviewable } from "$lib/api/browse/blocks";
 import { getViews } from "$lib/api/interest/views";
+import {
+	isProfileViewable,
+	onProfileViewabilityChange,
+} from "$lib/api/users/profile-viewability";
 import { onProfileEdit } from "$lib/api/users/profiles";
 import { ReconcilingListState } from "$lib/util/reconciling-list-state.svelte";
 import { viewedMeV1NewViewReceivedEventSchema, ws } from "$lib/ws.svelte";
@@ -32,6 +37,17 @@ export class ViewsState extends ReconcilingListState<
 		if (patch.isFavorite === undefined) return;
 		this.setFavorite({ profileId, isFavorite: patch.isFavorite });
 	});
+	#unsubscribeViewability = onProfileViewabilityChange(
+		({ profileId, viewable }) => {
+			if (viewable) {
+				void this.refresh();
+				return;
+			}
+			this.#profiles = this.#profiles.filter(
+				(view) => view.profileId !== profileId,
+			);
+		},
+	);
 
 	constructor() {
 		super({
@@ -85,13 +101,16 @@ export class ViewsState extends ReconcilingListState<
 	}
 
 	protected fetch(): Promise<ViewsSnapshot> {
+		void markBlockedProfilesUnviewable().catch(console.error);
 		return getViews();
 	}
 
 	protected applySnapshotReturningCoveredKeys(
 		snapshot: ViewsSnapshot,
 	): Set<number> {
-		this.#profiles = snapshot.profiles;
+		this.#profiles = snapshot.profiles.filter((view) =>
+			isProfileViewable(view.profileId),
+		);
 		this.#previews = snapshot.previews;
 		cached = snapshot;
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- caller only reads .has() then drops it
@@ -99,6 +118,7 @@ export class ViewsState extends ReconcilingListState<
 	}
 
 	protected applyUpsert(fresh: ViewerProfile): void {
+		if (!isProfileViewable(fresh.profileId)) return;
 		const index = this.#profiles.findIndex(
 			(v) => v.profileId === fresh.profileId,
 		);
@@ -131,6 +151,7 @@ export class ViewsState extends ReconcilingListState<
 
 	override destroy(): void {
 		this.#unsubscribeProfileEdits();
+		this.#unsubscribeViewability();
 		super.destroy();
 	}
 

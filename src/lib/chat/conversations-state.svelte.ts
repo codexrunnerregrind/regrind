@@ -8,10 +8,7 @@ import {
 	setConversationMuted,
 	setConversationPinned,
 } from "$lib/api/messaging/conversations";
-import {
-	loadInboxLastViewed,
-	saveInboxLastViewed,
-} from "$lib/chat/inbox-last-viewed";
+import { inboxLastViewed } from "$lib/chat/inbox-last-viewed";
 import { applyOptimisticBatch } from "$lib/chat/optimistic-batch";
 import { previewFromMessage } from "$lib/model/messaging/message-preview";
 import { below } from "$lib/util/breakpoints.svelte";
@@ -82,7 +79,7 @@ class ConversationsState {
 	}) {
 		this.ourProfileId = ourProfileId;
 		this.#onIncomingMessage = onIncomingMessage;
-		this.inboxLastViewedAt = loadInboxLastViewed(ourProfileId);
+		this.inboxLastViewedAt = inboxLastViewed.load(ourProfileId);
 		void this.#hardLoad();
 
 		this.#unsubscribeReconcile = reconciler.subscribe(() =>
@@ -424,7 +421,7 @@ class ConversationsState {
 		const now = Date.now();
 		if (now <= this.inboxLastViewedAt) return;
 		this.inboxLastViewedAt = now;
-		saveInboxLastViewed({ profileId: this.ourProfileId, at: now });
+		inboxLastViewed.save({ profileId: this.ourProfileId, at: now });
 	}
 
 	async markRead(conversationId: string) {

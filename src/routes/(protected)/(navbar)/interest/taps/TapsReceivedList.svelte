@@ -4,12 +4,12 @@
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import ListRowSkeleton from "$lib/components/feedback/ListRowSkeleton.svelte";
+	import { getTapsState } from "$lib/interest/taps-state.svelte";
 	import { armProfileDeck } from "$lib/profile/profile-deck";
 	import { observeIntersection } from "$lib/util/observe-intersection";
 	import { restoreScrollOnce } from "$lib/util/scroll-restore.svelte";
 	import EmptyTapsList from "./EmptyTapsList.svelte";
 	import TapReceivedProfile from "./TapReceivedProfile.svelte";
-	import { getTapsState } from "./taps-state.svelte";
 
 	let { ourProfileId }: { ourProfileId: number } = $props();
 
@@ -17,6 +17,10 @@
 		const state = getTapsState(ourProfileId);
 		state.load();
 		return state;
+	});
+
+	$effect(() => {
+		if (taps.hasUnseen) taps.markViewed();
 	});
 
 	let container: HTMLDivElement | null = $state(null);

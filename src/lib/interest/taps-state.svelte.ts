@@ -1,6 +1,12 @@
 import { accountScoped } from "$lib/api/account-caches";
+import { markBlockedProfilesUnviewable } from "$lib/api/browse/blocks";
 import { getReceivedTaps } from "$lib/api/interest/taps";
+import {
+	isProfileViewable,
+	onProfileViewabilityChange,
+} from "$lib/api/users/profile-viewability";
 import { recordReceivedTaps } from "$lib/interest/profile-activity.svelte";
+import { tapsLastViewed } from "$lib/interest/taps-last-viewed";
 import { ReconcilingListState } from "$lib/util/reconciling-list-state.svelte";
 import { tapV1TapSentEventSchema, ws } from "$lib/ws.svelte";
 import type { TapProfile } from "$lib/model/interest/tap-profile";
@@ -22,6 +28,20 @@ export class TapsState extends ReconcilingListState<TapProfile, TapsSnapshot> {
 	readonly ourProfileId: number;
 
 	#all: TapProfile[] = $state([]);
+	#lastViewedAt = $state(0);
+	#tappedSinceViewed = $state(false);
+	#newestTapAt = $derived(
+		this.#all.reduce((newest, tap) => Math.max(newest, tap.timestamp), 0),
+	);
+	#unsubscribeViewability = onProfileViewabilityChange(
+		({ profileId, viewable }) => {
+			if (viewable) {
+				void this.refresh();
+				return;
+			}
+			this.#all = this.#all.filter((tap) => tap.profileId !== profileId);
+		},
+	);
 
 	constructor({ ourProfileId }: { ourProfileId: number }) {
 		super({
@@ -29,11 +49,28 @@ export class TapsState extends ReconcilingListState<TapProfile, TapsSnapshot> {
 			refreshErrorLabel: "Failed to refresh taps",
 		});
 		this.ourProfileId = ourProfileId;
+		this.#lastViewedAt = tapsLastViewed.load(ourProfileId);
 		this.start();
 	}
 
 	get taps(): TapProfile[] {
 		return this.#all.slice(0, this.visibleCount);
+	}
+
+	get hasUnseen(): boolean {
+		return (
+			this.#tappedSinceViewed || this.#newestTapAt > this.#lastViewedAt
+		);
+	}
+
+	markViewed(): void {
+		this.#tappedSinceViewed = false;
+		if (this.#newestTapAt <= this.#lastViewedAt) return;
+		this.#lastViewedAt = this.#newestTapAt;
+		tapsLastViewed.save({
+			profileId: this.ourProfileId,
+			at: this.#lastViewedAt,
+		});
 	}
 
 	protected get length(): number {
@@ -45,20 +82,24 @@ export class TapsState extends ReconcilingListState<TapProfile, TapsSnapshot> {
 	}
 
 	protected fetch(): Promise<TapsSnapshot> {
+		void markBlockedProfilesUnviewable().catch(console.error);
 		return getReceivedTaps();
 	}
 
 	protected applySnapshotReturningCoveredKeys(
 		snapshot: TapsSnapshot,
 	): Set<number> {
-		this.#all = snapshot.profiles;
-		cachedTaps = snapshot.profiles;
-		recordReceivedTaps(snapshot.profiles);
+		this.#all = snapshot.profiles.filter((tap) =>
+			isProfileViewable(tap.profileId),
+		);
+		cachedTaps = this.#all;
+		recordReceivedTaps(this.#all);
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- caller only reads .has() then drops it
 		return new Set(snapshot.profiles.map((tap) => tap.profileId));
 	}
 
 	protected applyUpsert(tap: TapProfile): void {
+		if (!isProfileViewable(tap.profileId)) return;
 		const existing = this.#all.findIndex(
 			(t) => t.profileId === tap.profileId,
 		);
@@ -66,10 +107,16 @@ export class TapsState extends ReconcilingListState<TapProfile, TapsSnapshot> {
 		this.#all = [tap, ...this.#all];
 		cachedTaps = this.#all;
 		recordReceivedTaps([tap]);
+		this.#tappedSinceViewed = true;
 	}
 
 	protected keyOf(tap: TapProfile): number {
 		return tap.profileId;
+	}
+
+	override destroy(): void {
+		this.#unsubscribeViewability();
+		super.destroy();
 	}
 
 	protected subscribeEvents(): Promise<() => void> {
