@@ -4,8 +4,8 @@
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import ListRowSkeleton from "$lib/components/feedback/ListRowSkeleton.svelte";
-	import { nearestScrollableAncestor } from "$lib/components/feedback/refresh/scroll-chain";
 	import { armProfileDeck } from "$lib/profile/profile-deck";
+	import { observeIntersection } from "$lib/util/observe-intersection";
 	import { restoreScrollOnce } from "$lib/util/scroll-restore.svelte";
 	import EmptyTapsList from "./EmptyTapsList.svelte";
 	import TapReceivedProfile from "./TapReceivedProfile.svelte";
@@ -36,21 +36,6 @@
 				return Promise.resolve(taps.taps.map((tap) => tap.profileId));
 			},
 		});
-	}
-
-	function observeSentinel(node: HTMLElement) {
-		const observer = new IntersectionObserver(
-			(entries) => {
-				if (entries[0]?.isIntersecting) taps.loadMore();
-			},
-			{ root: nearestScrollableAncestor(node), rootMargin: "400px" },
-		);
-		observer.observe(node);
-		return {
-			destroy() {
-				observer.disconnect();
-			},
-		};
 	}
 </script>
 
@@ -85,7 +70,14 @@
 					<EmptyTapsList />
 				{/each}
 				{#if taps.hasMore}
-					<div class="h-0" use:observeSentinel></div>
+					<div
+						class="h-0"
+						use:observeIntersection={{
+							handle: () => taps.loadMore(),
+							root: "scroller",
+							rootMargin: "400px",
+						}}
+					></div>
 				{/if}
 			{/if}
 		</div>

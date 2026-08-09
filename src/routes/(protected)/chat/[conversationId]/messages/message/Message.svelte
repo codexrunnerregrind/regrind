@@ -6,6 +6,7 @@
 
 	import { hapticImpact } from "$lib/platform/haptics";
 	import { longPressHandlers } from "$lib/util/long-press";
+	import { observeIntersection } from "$lib/util/observe-intersection";
 	import { SwipeToReply } from "$lib/util/swipe-to-reply.svelte";
 	import type { ApiResponseMessage } from "$lib/model/messaging/messages";
 	import AlbumContentMessage from "./AlbumContentMessage.svelte";
@@ -178,25 +179,6 @@
 	const longPress = longPressHandlers(onContextMenu, reactOnDoubleTap, {
 		deferTapAction,
 	});
-
-	function observeRead(node: HTMLElement) {
-		if (!onVisible) return {};
-		const observer = new IntersectionObserver(
-			(entries) => {
-				if (entries[0]?.isIntersecting) {
-					onVisible();
-					observer.disconnect();
-				}
-			},
-			{ threshold: 0 },
-		);
-		observer.observe(node);
-		return {
-			destroy() {
-				observer.disconnect();
-			},
-		};
-	}
 </script>
 
 {#snippet adornments()}
@@ -315,7 +297,7 @@
 			style:transform={swipe?.deltaX
 				? `translateX(${swipe.deltaX}px)`
 				: undefined}
-			use:observeRead
+			use:observeIntersection={{ handle: onVisible, once: true }}
 		>
 			{@render content()}
 		</div>

@@ -12,6 +12,7 @@
 	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 	import { hapticImpact, hapticSelection } from "$lib/platform/haptics";
 	import { below } from "$lib/util/breakpoints.svelte";
+	import { observeIntersection } from "$lib/util/observe-intersection";
 	import { restoreScrollOnce } from "$lib/util/scroll-restore.svelte";
 	import { SelectionSet } from "$lib/util/selection.svelte";
 	import { swipeTabs } from "$lib/util/swipe-tabs";
@@ -198,24 +199,6 @@
 	const restEntries = $derived(
 		conversations.entries.filter((entry) => !entry.data.pinned),
 	);
-
-	function observeSentinel(node: HTMLElement) {
-		const observer = new IntersectionObserver(
-			(es) => {
-				if (es[0]?.isIntersecting)
-					conversations
-						.loadMore()
-						.catch((error) => console.error(error));
-			},
-			{ rootMargin: "400px" },
-		);
-		observer.observe(node);
-		return {
-			destroy() {
-				observer.disconnect();
-			},
-		};
-	}
 </script>
 
 {#snippet row(conversation: ConversationEntry, eager: boolean)}
@@ -332,7 +315,17 @@
 						{/each}
 					{/if}
 					{#if conversations.nextPage !== null}
-						<div class="h-0" use:observeSentinel></div>
+						<div
+							class="h-0"
+							use:observeIntersection={{
+								handle: () => {
+									conversations
+										.loadMore()
+										.catch((error) => console.error(error));
+								},
+								rootMargin: "400px",
+							}}
+						></div>
 					{/if}
 				</div>
 			{/if}
