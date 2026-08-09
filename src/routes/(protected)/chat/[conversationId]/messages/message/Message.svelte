@@ -252,7 +252,11 @@
 		<MessageDateGroup {dayStart} />
 	{/if}
 
-	<div class="relative" {...swipe?.handlers}>
+	<div
+		class="relative"
+		{...swipe?.handlers}
+		onpointercancel={() => swipe?.cancel()}
+	>
 		{#if swipe}
 			<div
 				class={[
