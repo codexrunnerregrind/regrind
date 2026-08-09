@@ -41,16 +41,13 @@
 
 	     Capped short of the two buttons — 2×`size-12` plus their gap, their inset
 	     and this one — since they hang into the photo far enough to meet a long
-	     "Tapped you 8 days ago", which trims instead. One line rounds to a pill; two round to a
-	     card, because a pill that tall reads as a shape rather than a label. -->
+	     "Tapped you 8 days ago", which trims instead.
+
+	     The radius is fixed at half a single line's height (6px padding twice
+	     plus a 16px line), so one line rounds to a pill and further lines keep
+	     exactly those corners instead of bowing out into a lozenge. -->
 	<div
-		class={[
-			"pointer-events-none absolute start-3 -bottom-3.5 flex max-w-[calc(100%-8.5rem)] flex-col gap-1.5 bg-plate px-2 py-1.5 backdrop-blur-sm",
-			{
-				"rounded-full": activity.length === 1,
-				"rounded-2xl": activity.length > 1,
-			},
-		]}
+		class="pointer-events-none absolute start-3 -bottom-3.5 flex max-w-[calc(100%-8.5rem)] flex-col gap-1.5 rounded-[14px] bg-plate px-2 py-1.5 backdrop-blur-sm"
 	>
 		{#each activity as entry (entry.kind)}
 			<div class="flex items-center gap-1.5">
