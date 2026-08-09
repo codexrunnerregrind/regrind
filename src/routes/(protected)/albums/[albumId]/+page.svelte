@@ -9,7 +9,6 @@
 	} from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
-	import { ApiError } from "$lib/api/api-error";
 	import { showErrorToast } from "$lib/api/error-toast";
 	import {
 		type AlbumContentResponse,
@@ -21,9 +20,8 @@
 	} from "$lib/api/messaging/albums";
 	import {
 		AlbumLockedError,
-		loadAlbum,
-		loadPaywallAlbum,
 		openAlbumLightbox,
+		resolveAlbumForViewing,
 	} from "$lib/chat/album-viewer";
 	import { announcePaywallTeaser } from "$lib/components/albums/paywall-teaser-toast";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
@@ -133,23 +131,9 @@
 			// A view-once album can expire between this page loading and the tap,
 			// so the grid can outlive our access to it. The paywall teaser still
 			// carries previews in that case — the same fallback the album grids use.
-			let loaded = await loadAlbum(albumId).catch((err: unknown) => {
-				if (err instanceof ApiError && err.response?.status === 403)
-					return null;
-				throw err;
-			});
-			let fromPaywall = false;
-			if (loaded === null || loaded.content.length === 0) {
-				loaded = await loadPaywallAlbum({
-					albumId,
-					ownerProfileId: album?.profileId,
-				}).catch((err: unknown) => {
-					console.error(err);
-					return null;
-				});
-				if (loaded === null) throw new AlbumLockedError();
-				fromPaywall = true;
-			}
+			const { album: loaded, fromPaywall } = await resolveAlbumForViewing(
+				{ albumId, ownerProfileId: album?.profileId },
+			);
 			await openAlbumLightbox(loaded, {
 				// A teaser lost the original ordering, so it always opens at the top.
 				startIndex: fromPaywall ? 0 : index,

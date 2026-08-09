@@ -7,15 +7,13 @@
 	} from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
-	import { ApiError } from "$lib/api/api-error";
 	import { showErrorToast } from "$lib/api/error-toast";
 	import {
 		AlbumLockedError,
 		type AlbumSharer,
-		loadAlbum,
-		loadPaywallAlbum,
 		type LoadedAlbum,
 		openAlbumLightbox,
+		resolveAlbumForViewing,
 	} from "$lib/chat/album-viewer";
 	import { announcePaywallTeaser } from "$lib/components/albums/paywall-teaser-toast";
 	import { profileMediaUrl } from "$lib/util/media";
@@ -91,36 +89,15 @@
 		phase = "loading";
 		try {
 			if (cachedAlbum === null) {
-				// An expired or locked share answers 403, or answers with no content
-				// at all. Either way the paywall teaser still carries its media, so
-				// the message stays openable instead of being a dead end.
-				const album = message.isViewable
-					? await loadAlbum(message.albumId).catch(
-							(error: unknown) => {
-								if (
-									error instanceof ApiError &&
-									error.response?.status === 403
-								)
-									return null;
-								throw error;
-							},
-						)
-					: null;
-				if (album !== null && album.content.length > 0) {
-					cachedAlbum = album;
-				} else {
-					// A teaser that errors out is still just an album we cannot
-					// show, so it reports as locked rather than as its own failure.
-					cachedAlbum = await loadPaywallAlbum({
-						albumId: message.albumId,
-						ownerProfileId: message.ownerProfileId,
-					}).catch((error: unknown) => {
-						console.error(error);
-						return null;
-					});
-					cachedFromPaywall = true;
-				}
-				if (cachedAlbum === null) throw new AlbumLockedError();
+				// A locked bubble says so on its face, so there is no point asking
+				// for an album the API will refuse: go straight to the teaser.
+				const resolved = await resolveAlbumForViewing({
+					albumId: message.albumId,
+					ownerProfileId: message.ownerProfileId,
+					viewable: message.isViewable,
+				});
+				cachedAlbum = resolved.album;
+				cachedFromPaywall = resolved.fromPaywall;
 			}
 			destroyLightbox = await openAlbumLightbox(cachedAlbum, {
 				sharer: cachedFromPaywall ? undefined : sharer,

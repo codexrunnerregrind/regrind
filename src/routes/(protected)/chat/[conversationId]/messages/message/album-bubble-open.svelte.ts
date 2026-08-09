@@ -1,14 +1,12 @@
 import { toast } from "svelte-sonner";
 
-import { ApiError } from "$lib/api/api-error";
 import { showErrorToast } from "$lib/api/error-toast";
 import {
 	AlbumLockedError,
 	type AlbumSharer,
-	loadAlbum,
-	loadPaywallAlbum,
 	type LoadedAlbum,
 	openAlbumLightbox,
+	resolveAlbumForViewing,
 } from "$lib/chat/album-viewer";
 import { announcePaywallTeaser } from "$lib/components/albums/paywall-teaser-toast";
 import { profileMediaUrl } from "$lib/util/media";
@@ -76,34 +74,16 @@ export class AlbumBubbleOpener {
 		this.phase = "loading";
 		try {
 			if (this.#album === null) {
-				// The album a reply or reaction points at is old by nature, so it is
-				// often expired or past our viewable allowance by the time the bubble
-				// is tapped: 403, or present but empty. The paywall teaser still
-				// carries previews for it, so the bubble opens on those instead of
-				// going nowhere.
-				const album = await loadAlbum(albumId).catch(
-					(error: unknown) => {
-						if (
-							error instanceof ApiError &&
-							error.response?.status === 403
-						)
-							return null;
-						throw error;
-					},
-				);
-				if (album !== null && album.content.length > 0) {
-					this.#album = album;
-				} else {
-					this.#album = await loadPaywallAlbum({
-						albumId,
-						ownerProfileId: options.ownerProfileId,
-					}).catch((error: unknown) => {
-						console.error(error);
-						return null;
-					});
-					this.#fromPaywall = true;
-				}
-				if (this.#album === null) throw new AlbumLockedError();
+				// The album a reply or reaction points at is old by nature, so it
+				// is often expired or past our viewable allowance by the time the
+				// bubble is tapped. The teaser still carries previews for it, so
+				// the bubble opens on those instead of going nowhere.
+				const resolved = await resolveAlbumForViewing({
+					albumId,
+					ownerProfileId: options.ownerProfileId,
+				});
+				this.#album = resolved.album;
+				this.#fromPaywall = resolved.fromPaywall;
 			}
 			const album = this.#album;
 			// The photo can be gone from the album by now (deleted, or trimmed by

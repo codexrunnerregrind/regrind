@@ -5,6 +5,7 @@ import "photoswipe/style.css";
 import { goto } from "$app/navigation";
 import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
+import { ApiError } from "$lib/api/api-error";
 import {
 	type AlbumContentResponse,
 	getAlbumContent,
@@ -192,6 +193,65 @@ export async function loadPaywallAlbum({
 		updatedAt: now,
 		content,
 	};
+}
+
+/** An album ready for the viewer, and where it had to be found. */
+export type AlbumForViewing = {
+	album: LoadedAlbum;
+	/**
+	 * The album itself was out of reach and this is the paywall teaser standing
+	 * in for it: blurred previews, synthesised slide ids. Callers open it without
+	 * reply chrome — there is nothing on it to reply to — and say so on screen.
+	 */
+	fromPaywall: boolean;
+};
+
+/**
+ * Resolves an album to something the viewer can show, however it has to.
+ *
+ * Every way into the viewer wants the same chain, so it lives here rather than
+ * in each of them: the album itself, and failing that the paywall teaser, which
+ * still carries previews for shares we have lost access to. Throws
+ * {@link AlbumLockedError} when neither has anything — the genuinely-gone case.
+ *
+ * Pass `viewable: false` for an album already known to be locked (a chat
+ * message says so on its face) to skip the request that would only 403.
+ */
+export async function resolveAlbumForViewing({
+	albumId,
+	ownerProfileId,
+	albumName,
+	viewable = true,
+}: {
+	albumId: number;
+	ownerProfileId?: number | null;
+	albumName?: string | null;
+	viewable?: boolean;
+}): Promise<AlbumForViewing> {
+	// 403 is the API's other way of saying "not for you"; an album that comes
+	// back present but empty means the same thing. Both fall through.
+	const album = viewable
+		? await loadAlbum(albumId).catch((error: unknown) => {
+				if (error instanceof ApiError && error.response?.status === 403)
+					return null;
+				throw error;
+			})
+		: null;
+	if (album !== null && album.content.length > 0)
+		return { album, fromPaywall: false };
+
+	// A teaser that errors out is still just an album we cannot show, so it
+	// reports as locked rather than as a failure of its own.
+	const teaser = await loadPaywallAlbum({
+		albumId,
+		ownerProfileId,
+		albumName,
+	}).catch((error: unknown) => {
+		console.error(error);
+		return null;
+	});
+	if (teaser === null) throw new AlbumLockedError();
+	return { album: teaser, fromPaywall: true };
 }
 
 // Opens a measured album in a PhotoSwipe lightbox, wiring up video slides and
