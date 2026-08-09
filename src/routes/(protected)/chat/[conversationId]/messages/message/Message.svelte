@@ -165,6 +165,8 @@
 		"Album",
 		"ExpiringAlbum",
 		"ExpiringAlbumV2",
+		"AlbumContentReply",
+		"AlbumContentReaction",
 		"Location",
 	];
 	const deferTapAction = untrack(
