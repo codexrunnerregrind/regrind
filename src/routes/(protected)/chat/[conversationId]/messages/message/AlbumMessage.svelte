@@ -193,8 +193,10 @@
 					<span class="truncate">{expiry.label}</span>
 				</div>
 			{/if}
+			<!-- Centred in the cover: sitting a fifth up from the bottom read as a
+			     misplaced badge rather than the album's own marker. -->
 			<div
-				class="absolute bottom-1/5 left-1/2 flex -translate-x-1/2 items-center gap-1 px-2 py-0.5 *:aspect-square *:w-[20cqw] *:rounded-full *:bg-card *:p-2"
+				class="absolute inset-0 flex items-center justify-center gap-1 px-2 py-0.5 *:aspect-square *:w-[20cqw] *:rounded-full *:bg-card *:p-2"
 			>
 				{#if message.hasPhoto}
 					<div>
