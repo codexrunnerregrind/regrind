@@ -153,3 +153,28 @@ export const pressieAlbumsFeedResponseSchema = z.object({
 	sharedAlbums: z.array(pressieSharedAlbumSchema),
 	nonEmptyPersonalAlbumCount: z.number().optional(),
 });
+
+/**
+ * The teaser the official app shows on its "unlock albums" upsell
+ * (POST /v3/pressie-albums/feed/paywall/). It carries media URLs for albums we
+ * are not entitled to open through `GET /v2/albums/{albumId}`, which is what
+ * makes it the one way a locked or expired share still has anything to show.
+ *
+ * Lenient on purpose: nothing here is documented as required, and a paywall
+ * entry missing its urls is a skipped album rather than a failed screen.
+ */
+export const pressieAlbumPaywallEntrySchema = z.object({
+	albumId: z.int(),
+	paywallCoverUrl: z.string().nullish(),
+	paywallUrls: z.array(z.string()).nullish(),
+	albumsItemCount: z.int().nullish(),
+	profile: pressieProfileMiniSchema.nullable().optional(),
+});
+
+export type PressieAlbumPaywallEntry = z.infer<
+	typeof pressieAlbumPaywallEntrySchema
+>;
+
+export const pressieAlbumsPaywallResponseSchema = z.object({
+	albumPaywallContent: z.array(pressieAlbumPaywallEntrySchema).nullish(),
+});

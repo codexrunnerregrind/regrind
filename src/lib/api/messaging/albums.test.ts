@@ -12,8 +12,10 @@ import {
 	deleteAlbum,
 	deleteAlbumContent,
 	getAlbumShares,
+	getAlbumsPaywallContent,
 	getAlbumsSharedByProfile,
 	getMyAlbums,
+	getSharedAlbumsFeed,
 	renameAlbum,
 	reorderAlbumContent,
 	shareAlbum,
@@ -271,5 +273,50 @@ describe("shareAlbum", () => {
 				expirationType: "INDEFINITE",
 			}),
 		).rejects.toThrow("mock assertOk rejected status 403");
+	});
+});
+
+describe("getSharedAlbumsFeed", () => {
+	it("requests the shared-albums feed", async () => {
+		fetchRestMock.mockResolvedValue(response({ sharedAlbums: [] }));
+
+		await expect(getSharedAlbumsFeed()).resolves.toEqual({
+			sharedAlbums: [],
+		});
+		expect(fetchRestMock).toHaveBeenCalledWith("/v3/pressie-albums/feed", {
+			method: "POST",
+			body: {},
+		});
+	});
+});
+
+describe("getAlbumsPaywallContent", () => {
+	it("scopes the teaser to one profile and unwraps it", async () => {
+		const entry = {
+			albumId: 5,
+			paywallCoverUrl: "https://example.com/cover.jpg",
+			paywallUrls: ["https://example.com/1.jpg"],
+			albumsItemCount: 1,
+			profile: { profileId: 42 },
+		};
+		fetchRestMock.mockResolvedValue(
+			response({ albumPaywallContent: [entry] }),
+		);
+
+		await expect(getAlbumsPaywallContent(42)).resolves.toEqual([entry]);
+		expect(fetchRestMock).toHaveBeenCalledWith(
+			"/v3/pressie-albums/feed/paywall/",
+			{ method: "POST", body: { counterpartyId: 42 } },
+		);
+	});
+
+	it("asks for every teased album when given no profile", async () => {
+		fetchRestMock.mockResolvedValue(response({}));
+
+		await expect(getAlbumsPaywallContent()).resolves.toEqual([]);
+		expect(fetchRestMock).toHaveBeenCalledWith(
+			"/v3/pressie-albums/feed/paywall/",
+			{ method: "POST", body: { counterpartyId: null } },
+		);
 	});
 });

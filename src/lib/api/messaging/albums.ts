@@ -9,6 +9,7 @@ import {
 	albumSharesSchema,
 	myAlbumSchema,
 	pressieAlbumsFeedResponseSchema,
+	pressieAlbumsPaywallResponseSchema,
 	sharedAlbumSchema,
 } from "$lib/model/messaging/albums";
 
@@ -193,4 +194,28 @@ export async function getSharedAlbumsFeed() {
 		method: "POST",
 		body: {},
 	}).then((res) => res.jsonParsed(pressieAlbumsFeedResponseSchema));
+}
+
+/**
+ * The upsell teaser for albums we cannot open. `GET /v2/albums/{albumId}`
+ * answers a locked or expired share with no content at all, but this endpoint
+ * still hands out media for those same albums so the official app can show what
+ * is behind its paywall — so it is the fallback when opening one fails.
+ *
+ * What it returns is only the blurred, downscaled `.cover` variant: the
+ * full-resolution originals sit behind a per-file CDN signature that just the
+ * entitled album-content endpoint issues, so this is as sharp as it gets
+ * without access to the album itself.
+ *
+ * `counterpartyId` narrows the response to one profile's albums; `null` asks
+ * for everything the account is being upsold on.
+ */
+export async function getAlbumsPaywallContent(
+	counterpartyId: number | null = null,
+) {
+	const { albumPaywallContent } = await fetchRest(
+		"/v3/pressie-albums/feed/paywall/",
+		{ method: "POST", body: { counterpartyId } },
+	).then((res) => res.jsonParsed(pressieAlbumsPaywallResponseSchema));
+	return albumPaywallContent ?? [];
 }

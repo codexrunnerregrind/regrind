@@ -103,11 +103,20 @@
 						// there is no remount refetch to pick the server's word up.
 						if (album.albumViewable)
 							sharedAlbums.markSeen(album.albumId);
-						void opener.open(album.albumId, {
-							name: album.profile?.name,
-							avatarUrl: album.profile?.profileUrl,
-							distanceKm: album.profile?.distanceKm,
-						});
+						void opener.open(
+							album.albumId,
+							{
+								name: album.profile?.name,
+								avatarUrl: album.profile?.profileUrl,
+								distanceKm: album.profile?.distanceKm,
+							},
+							{
+								ownerProfileId:
+									album.ownerProfileId ??
+									album.profile?.profileId,
+								albumName: album.name,
+							},
+						);
 					}}
 					onRemove={remove}
 				/>

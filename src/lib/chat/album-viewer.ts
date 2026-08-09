@@ -8,6 +8,7 @@ import type PhotoSwipeLightbox from "photoswipe/lightbox";
 import {
 	type AlbumContentResponse,
 	getAlbumContent,
+	getAlbumsPaywallContent,
 } from "$lib/api/messaging/albums";
 import {
 	sendAlbumContentReaction,
@@ -50,12 +51,13 @@ export type LoadedAlbum = AlbumContentResponse & {
 	})[];
 };
 
-// Fetches an album and measures every slide's intrinsic dimensions, which
-// PhotoSwipe needs up front to lay out the lightbox.
-export async function loadAlbum(albumId: number): Promise<LoadedAlbum> {
-	const res = await getAlbumContent(albumId);
-	const content = await Promise.all(
-		res.content.map(async (slide) => {
+// Measures every slide's intrinsic dimensions, which PhotoSwipe needs up front
+// to lay out the lightbox.
+async function measureSlides<
+	TSlide extends { contentType: string; url: string },
+>(slides: TSlide[]): Promise<(TSlide & { width: number; height: number })[]> {
+	return await Promise.all(
+		slides.map(async (slide) => {
 			if (slide.contentType.startsWith("video/")) {
 				const video = document.createElement("video");
 				video.src = slide.url ?? "";
@@ -120,7 +122,76 @@ export async function loadAlbum(albumId: number): Promise<LoadedAlbum> {
 			}
 		}),
 	);
-	return { ...res, content };
+}
+
+// Fetches an album and measures its slides.
+export async function loadAlbum(albumId: number): Promise<LoadedAlbum> {
+	const res = await getAlbumContent(albumId);
+	return { ...res, content: await measureSlides(res.content) };
+}
+
+/**
+ * The fallback for an album `GET /v2/albums/{albumId}` will not hand over — a
+ * share past its expiry, or one over the account's viewable-album allowance.
+ * Those albums still appear in the paywall teaser with real media urls, so this
+ * builds a viewable album out of that instead of leaving a dead tile.
+ *
+ * The teaser carries no per-item metadata, so the slides are synthesised: the
+ * urls are images, and reply/react ids would be meaningless here anyway — the
+ * caller opens the result without a `sharer` so that chrome stays off.
+ *
+ * Returns `null` when the album is not in the teaser either, which is the
+ * genuinely-gone case the lock message is for.
+ */
+export async function loadPaywallAlbum({
+	albumId,
+	ownerProfileId,
+	albumName,
+}: {
+	albumId: number;
+	ownerProfileId?: number | null;
+	albumName?: string | null;
+}): Promise<LoadedAlbum | null> {
+	// Asking for the owner's albums first keeps the response small; the
+	// unfiltered call is the retry for when that comes back without the album
+	// (or when we never learned who shared it).
+	const find = async (counterpartyId: number | null) =>
+		(await getAlbumsPaywallContent(counterpartyId)).find(
+			(it) => it.albumId === albumId,
+		);
+	const entry =
+		(ownerProfileId == null ? undefined : await find(ownerProfileId)) ??
+		(await find(null));
+	const urls = [
+		...(entry?.paywallUrls ?? []),
+		...(entry?.paywallCoverUrl ? [entry.paywallCoverUrl] : []),
+	].filter((url) => url.startsWith("https://"));
+	if (urls.length === 0) return null;
+
+	const now = new Date().toISOString().slice(0, 19);
+	const content = await measureSlides(
+		urls.map((url, index) => ({
+			contentId: -(index + 1),
+			contentType: "image/jpeg",
+			coverUrl: url,
+			statusId: 0,
+			thumbUrl: url,
+			url,
+			processing: false,
+			rejectionId: null,
+		})),
+	);
+	return {
+		albumId,
+		albumName: albumName ?? null,
+		hasUnseenContent: false,
+		profileId: ownerProfileId ?? entry?.profile?.profileId ?? 0,
+		albumViewable: true,
+		sharedCount: 0,
+		createdAt: now,
+		updatedAt: now,
+		content,
+	};
 }
 
 // Opens a measured album in a PhotoSwipe lightbox, wiring up video slides and

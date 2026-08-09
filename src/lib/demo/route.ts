@@ -170,6 +170,14 @@ export function demoRoute({
 	) {
 		return ok(demoSingleMessage({ conversationId, messageId }));
 	}
+	// Must precede the feed rule: the paywall path starts with it.
+	if (
+		method === "POST" &&
+		rawPath.startsWith("/v3/pressie-albums/feed/paywall")
+	) {
+		// Nothing in the demo data is locked, so there is nothing to tease.
+		return ok({ albumPaywallContent: [] });
+	}
 	if (method === "POST" && rawPath === "/v3/pressie-albums/feed") {
 		return ok(demoSharedAlbumsFeed());
 	}
