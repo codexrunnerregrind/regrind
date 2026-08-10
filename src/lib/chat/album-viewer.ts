@@ -163,10 +163,22 @@ export async function loadPaywallAlbum({
 	const entry =
 		(ownerProfileId == null ? undefined : await find(ownerProfileId)) ??
 		(await find(null));
+	// `paywallUrls` already leads with the cover, so `paywallCoverUrl` is only a
+	// fallback for the empty case — appending it unconditionally duplicated the
+	// first slide as the last one. Dedupe by the CDN path (minus the per-request
+	// signature query) so the same file under two different signed urls collapses
+	// to one slide.
+	const seen = new Set<string>();
 	const urls = [
 		...(entry?.paywallUrls ?? []),
 		...(entry?.paywallCoverUrl ? [entry.paywallCoverUrl] : []),
-	].filter((url) => url.startsWith("https://"));
+	].filter((url) => {
+		if (!url.startsWith("https://")) return false;
+		const key = url.split("?")[0];
+		if (seen.has(key)) return false;
+		seen.add(key);
+		return true;
+	});
 	if (urls.length === 0) return null;
 
 	const now = new Date().toISOString().slice(0, 19);
