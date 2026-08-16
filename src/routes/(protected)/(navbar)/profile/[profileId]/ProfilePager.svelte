@@ -43,7 +43,14 @@
 	$effect(() => {
 		const wanted = ids.indexOf(activeId);
 		untrack(() => {
-			if (wanted !== -1 && wanted !== index && !settling) index = wanted;
+			if (wanted !== -1) {
+				if (wanted !== index && !settling) index = wanted;
+			} else if (index > ids.length - 1) {
+				// The list this came from is live and can shrink under us. An index
+				// past its end mounts no panes at all — a blank screen — so it falls
+				// back to the last profile still in the list.
+				index = Math.max(0, ids.length - 1);
+			}
 		});
 	});
 

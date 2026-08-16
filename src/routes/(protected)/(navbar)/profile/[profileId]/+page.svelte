@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { replaceState } from "$app/navigation";
+	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 	import { untrack } from "svelte";
 
 	import {
+		armProfileDeck,
 		claimProfileDeck,
 		type ProfileDeck,
 	} from "$lib/profile/profile-deck";
@@ -40,17 +41,45 @@
 		ownUrlId = id;
 	});
 
+	// Handed straight back rather than consumed and dropped: a deck is claimed
+	// once, and everything you can reach from a profile — a chat, an album, a
+	// photo, somebody else's profile — comes back here afterwards, to a screen
+	// that had nothing left to page through. Re-armed for the profile actually
+	// being looked at, so it is still only ever claimed by that one profile and
+	// opening anybody else starts a deck of one, as before.
+	$effect(() => {
+		if (deck.ids.length > 1) armProfileDeck(activeId, deck);
+	});
+
 	function onactive(profileId: number) {
 		activeId = profileId;
 		ownUrlId = profileId;
-		replaceState(`/profile/${profileId}`, page.state);
+		// A real navigation rather than shallow routing. `replaceState` rewrites
+		// the address bar but leaves `page.params` — and the entry the router
+		// restores on the way back — pointing at the profile the screen was
+		// opened on, so leaving for a chat or an album and coming back landed on
+		// the wrong person. This route has no load of its own and the page
+		// component is reused across the param change, so the navigation costs
+		// nothing beyond keeping the history entry honest.
+		goto(`/profile/${profileId}`, {
+			replaceState: true,
+			noScroll: true,
+			keepFocus: true,
+		}).catch((error) => console.error(error));
 	}
 
 	async function extend(): Promise<void> {
 		const grow = deck.extend;
 		if (!grow) return;
-		const ids = await grow();
-		deck = { ...deck, ids };
+		const grown = await grow();
+		// Only ever appended to. The originating list is live — it refreshes
+		// itself, and profiles drop out of it — so what comes back can be shorter
+		// than what is already being paged through, and swapping it in wholesale
+		// would pull the ground out from under the pager mid-swipe.
+		const known = new Set(deck.ids);
+		const added = grown.filter((id) => !known.has(id));
+		if (added.length === 0) return;
+		deck = { ...deck, ids: [...deck.ids, ...added] };
 	}
 </script>
 
