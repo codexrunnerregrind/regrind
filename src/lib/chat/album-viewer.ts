@@ -161,8 +161,9 @@ export async function loadPaywallAlbum({
 			(it) => it.albumId === albumId,
 		);
 	const entry =
-		(ownerProfileId == null ? undefined : await find(ownerProfileId)) ??
-		(await find(null));
+		(ownerProfileId === undefined || ownerProfileId === null
+			? undefined
+			: await find(ownerProfileId)) ?? (await find(null));
 	// `paywallUrls` already leads with the cover, so `paywallCoverUrl` is only a
 	// fallback for the empty case — appending it unconditionally duplicated the
 	// first slide as the last one. Dedupe by the CDN path (minus the per-request
@@ -174,7 +175,7 @@ export async function loadPaywallAlbum({
 		...(entry?.paywallCoverUrl ? [entry.paywallCoverUrl] : []),
 	].filter((url) => {
 		if (!url.startsWith("https://")) return false;
-		const key = url.split("?")[0];
+		const key = url.split("?")[0] ?? url;
 		if (seen.has(key)) return false;
 		seen.add(key);
 		return true;
