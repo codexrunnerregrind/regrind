@@ -126,15 +126,17 @@
 			class={[
 				// Explicit cap rather than max-w-full: the parent is w-fit, so a
 				// percentage would resolve against a width the bubble itself sets.
-				"w-fit max-w-60 rounded-xl px-3 py-2 text-black select-text",
+				"w-fit max-w-60 rounded-xl px-3 py-2 select-text",
 				{
 					"pointer-coarse:select-none": !media.clone,
-					"bg-message-bubble-in": !isOut,
-					"bg-message-bubble-out": isOut,
+					"bg-message-bubble-in text-message-bubble-foreground":
+						!isOut,
+					"bg-message-bubble-out text-message-bubble-out-foreground":
+						isOut,
 				},
 			]}
 		>
-			<span class="whitespace-pre-wrap">{replyText}</span>
+			<span class="wrap-anywhere whitespace-pre-wrap">{replyText}</span>
 		</div>
 	{/if}
 	{@render media.adornments?.()}
