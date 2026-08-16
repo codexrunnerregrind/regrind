@@ -1,5 +1,13 @@
 import type { ApiResponseMessage } from "$lib/model/messaging/messages";
 
+// The three shapes a chat video arrives in. They differ only in how long the
+// media stays viewable, so everything downstream treats them alike.
+export const VIDEO_MESSAGE_TYPES = [
+	"Video",
+	"PrivateVideo",
+	"NonExpiringVideo",
+];
+
 export type MessagePreview = {
 	type: string;
 	text: string | null;
@@ -58,6 +66,21 @@ export function previewLabel(preview: MessagePreview | null): string | null {
 	if (preview === null) return null;
 	if (preview.text !== null) return preview.text;
 	if (preview.albumId !== null) return "Album";
+	if (preview.type === "ExpiringImage") return "Expiring photo";
 	if (preview.imageHash !== null || preview.type === "Image") return "Photo";
+	if (preview.type === "Location") return "Location";
+	if (VIDEO_MESSAGE_TYPES.includes(preview.type)) return "Video";
 	return null;
+}
+
+/**
+ * The image to show alongside a quoted message, or null when the quote has
+ * nothing to show. A reply to one of several photos is unreadable as the bare
+ * word "Photo" — which photo? — so the quote carries the picture itself.
+ */
+export function replyThumbnailUrl(
+	message: ApiResponseMessage | null | undefined,
+): string | null {
+	if (!message) return null;
+	return message.type === "Image" ? message.body.url : null;
 }

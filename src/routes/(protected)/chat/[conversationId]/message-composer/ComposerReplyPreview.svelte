@@ -3,11 +3,11 @@
 
 	import MediaImage from "$lib/components/shared/MediaImage.svelte";
 	import {
-		type ApiResponseMessage,
 		previewFromMessage,
 		previewLabel,
-		replyThumbnailUrl,
-	} from "$lib/model/messaging/messages";
+	} from "$lib/model/messaging/message-preview";
+	import { replyThumbnailUrl } from "$lib/model/messaging/message-preview";
+	import { type ApiResponseMessage } from "$lib/model/messaging/messages";
 	import { getConversationState } from "../conversation-state.svelte";
 
 	let {

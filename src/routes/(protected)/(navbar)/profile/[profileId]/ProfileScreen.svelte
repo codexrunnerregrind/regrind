@@ -1,4 +1,13 @@
 <script lang="ts">
+	import {
+		CameraIcon,
+		EyesIcon,
+		GlobeStandIcon,
+		HeartbeatIcon,
+		HouseIcon,
+		UsersIcon,
+		UsersThreeIcon,
+	} from "phosphor-svelte";
 	import { untrack } from "svelte";
 
 	import {
@@ -10,21 +19,25 @@
 	import NotFound from "$lib/components/feedback/NotFound.svelte";
 	import ProfileActivityPill from "$lib/components/profile/ProfileActivityPill.svelte";
 	import { Skeleton } from "$lib/components/ui/skeleton";
+	import {
+		acceptNSFWPics,
+		ethnicities,
+		healthPractices,
+		hivStatuses,
+		lookingFor as lookingForLabels,
+		meetAt as meetAtLabels,
+		relationshipStatuses,
+		tribes,
+	} from "$lib/model/users/profiles";
 	import { profileMediaUrl } from "$lib/util/media";
 	import AboutMe from "./AboutMe.svelte";
 	import BlockedProfile from "./BlockedProfile.svelte";
 	import Distance from "./Distance.svelte";
-	import Ethnicity from "./fields/Ethnicity.svelte";
 	import Genders from "./fields/GendersPronouns.svelte";
-	import HealthPractices from "./fields/HealthPractices.svelte";
-	import HivStatus from "./fields/HivStatus.svelte";
+	import HivStatusIcon from "./fields/HivStatusIcon.svelte";
 	import LastTested from "./fields/LastTested.svelte";
-	import LookingFor from "./fields/LookingFor.svelte";
-	import MeetAt from "./fields/MeetAt.svelte";
-	import NSFWPics from "./fields/NSFWPics.svelte";
-	import RelationshipStatus from "./fields/RelationshipStatus.svelte";
+	import LookupField from "./fields/LookupField.svelte";
 	import Socials from "./fields/Socials.svelte";
-	import Tribes from "./fields/Tribes.svelte";
 	import Height from "./HeightWeightBodyType.svelte";
 	import ImageCarousel from "./ImageCarousel.svelte";
 	import OnlineStatus from "./OnlineStatus.svelte";
@@ -269,17 +282,45 @@
 							<div class="mt-5.5 flex flex-col gap-2.75">
 								<span class="section-label">Stats</span>
 								<Genders {genders} {pronouns} />
-								<Tribes tribes={grindrTribes} />
-								<Ethnicity {ethnicity} />
-								<RelationshipStatus {relationshipStatus} />
+								<LookupField
+									icon={UsersThreeIcon}
+									value={grindrTribes}
+									options={tribes}
+								/>
+								<LookupField
+									icon={GlobeStandIcon}
+									value={ethnicity}
+									options={ethnicities}
+								/>
+								<LookupField
+									icon={UsersIcon}
+									value={relationshipStatus}
+									options={relationshipStatuses}
+								/>
 							</div>
 						{/if}
 						{#if (lookingFor && lookingFor.length > 0) || (meetAt && meetAt.length > 0) || nsfw !== null}
 							<div class="mt-5.5 flex flex-col gap-2.75">
 								<span class="section-label">Expectations</span>
-								<LookingFor {lookingFor} />
-								<MeetAt {meetAt} />
-								<NSFWPics nsfwPics={nsfw} />
+								<LookupField
+									icon={EyesIcon}
+									weight="fill"
+									label="Looking For"
+									value={lookingFor}
+									options={lookingForLabels}
+								/>
+								<LookupField
+									icon={HouseIcon}
+									label="Meet At"
+									value={meetAt}
+									options={meetAtLabels}
+								/>
+								<LookupField
+									icon={CameraIcon}
+									label="NSFW Pics?"
+									value={nsfw}
+									options={acceptNSFWPics}
+								/>
 							</div>
 						{/if}
 						<ProfileAlbums
@@ -302,12 +343,20 @@
 						{#if hivStatus !== null || lastTestedDateValue !== null || (sexualHealthValue && sexualHealthValue.length > 0)}
 							<div class="mt-5.5 flex flex-col gap-2.75">
 								<span class="section-label">Health</span>
-								<HivStatus {hivStatus} />
+								<LookupField
+									icon={HivStatusIcon}
+									label="HIV Status"
+									value={hivStatus}
+									options={hivStatuses}
+								/>
 								<LastTested
 									lastTestedDate={lastTestedDateValue}
 								/>
-								<HealthPractices
-									healthPractices={sexualHealthValue}
+								<LookupField
+									icon={HeartbeatIcon}
+									label="Health Practices"
+									value={sexualHealthValue}
+									options={healthPractices}
 								/>
 							</div>
 						{/if}

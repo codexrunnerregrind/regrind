@@ -71,7 +71,6 @@
 						class="h-0"
 						use:observeIntersection={{
 							handle: () => views.loadMore(),
-							root: "scroller",
 							rootMargin: "400px",
 						}}
 					></div>

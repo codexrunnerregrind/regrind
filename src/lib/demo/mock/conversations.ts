@@ -2,7 +2,8 @@ import { previewFromMessage } from "$lib/model/messaging/message-preview";
 import { type ApiResponseMessage } from "$lib/model/messaging/messages";
 import type { AlbumExpirationType } from "$lib/model/messaging/albums";
 import type { Conversation } from "$lib/model/messaging/conversations";
-import { DAY, demoMeProfileId, HOUR, MINUTE, NOW } from "../config";
+import { DAY, demoMeProfileId, HOUR, MINUTE, NOW, SECOND } from "../config";
+import { albumCoverUrl } from "./albums";
 import { hashFromSeed } from "./avatars";
 import {
 	type DemoConversation,
@@ -10,10 +11,14 @@ import {
 	type DemoMessage,
 } from "./conversation-seeds";
 import { demoDrawerMedia } from "./drawer";
+import { demoFavoriteOf } from "./favorites";
 import { picsum } from "./picsum";
 import { lastOnlineOf, onlineUntilOf, photosOf, profileSeed } from "./profiles";
 
+const EXPIRING_IMAGE_DURATION_MS = 10 * SECOND;
+
 const MESSAGE_GAP = 7 * MINUTE;
+const MESSAGES_PER_PAGE = 8;
 const DEMO_IMAGE_URL = "https://picsum.photos/seed/opengrind-demo/600/800";
 const DEMO_VIDEO_URL =
 	"https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4";
@@ -121,7 +126,10 @@ function buildMessage({
 					width: 600,
 					height: 800,
 					url: picsum({ seed: `expiring-${conv.withId}-${index}` }),
+					duration: EXPIRING_IMAGE_DURATION_MS,
 					viewsRemaining: message.expired ? 0 : 1,
+					expiresAt: timestamp + DAY,
+					viewed: message.expired,
 				},
 				...base,
 				unsent: false,
@@ -228,10 +236,6 @@ function buildMessage({
 	}
 }
 
-function albumCoverUrl(albumId: number): string {
-	return picsum({ seed: `album-${albumId}-cover`, width: 300, height: 400 });
-}
-
 function threadMessages(conv: DemoConversation): ApiResponseMessage[] {
 	const lastActivity = lastActivityOf(conv);
 	const count = conv.messages.length;
@@ -246,15 +250,23 @@ function threadMessages(conv: DemoConversation): ApiResponseMessage[] {
 	return ordered.reverse();
 }
 
-export function demoConversations(page: number): {
-	entries: Conversation[];
-	nextPage: number | null;
-} {
+export function demoConversations({
+	page,
+	favoritesOnly = false,
+}: {
+	page: number;
+	favoritesOnly?: boolean;
+}): { entries: Conversation[]; nextPage: number | null } {
 	if (page > 1) return { entries: [], nextPage: null };
 	const entries: Conversation[] = demoConversationSeeds
 		.filter(
 			(conv) =>
 				!deletedConversationIds.has(conversationIdFor(conv.withId)),
+		)
+		.filter(
+			(conv) =>
+				!favoritesOnly ||
+				demoFavoriteOf({ profileId: conv.withId, seed: conv.favorite }),
 		)
 		.map((conv): Conversation => {
 			const conversationId = conversationIdFor(conv.withId);
@@ -274,7 +286,10 @@ export function demoConversations(page: number): {
 							onlineUntil: onlineUntilOf(seed),
 							distanceMetres: seed.distanceM,
 							position: seed.position,
-							isInAList: seed.favorite,
+							isInAList: demoFavoriteOf({
+								profileId: conv.withId,
+								seed: conv.favorite,
+							}),
 							hasDatingPotential: false,
 						},
 					],
@@ -283,7 +298,10 @@ export function demoConversations(page: number): {
 					preview: previewFromMessage(latest),
 					muted: mutedOverrides.get(conversationId) ?? conv.muted,
 					pinned: pinnedOverrides.get(conversationId) ?? conv.pinned,
-					favorite: conv.favorite,
+					favorite: demoFavoriteOf({
+						profileId: conv.withId,
+						seed: conv.favorite,
+					}),
 					rightNow: "NOT_ACTIVE",
 					onlineUntil: onlineUntilOf(seed),
 					hasUnreadThrob: false,
@@ -315,13 +333,24 @@ export function demoConversationMessages({
 		profileId: conv?.withId ?? 0,
 		showDistance: seed?.distanceM !== null && seed?.distanceM !== undefined,
 	};
-	if (!conv || pageKey !== undefined) {
-		return { lastReadTimestamp: null, messages: [], profile };
+	if (!conv) return { lastReadTimestamp: null, messages: [], profile };
+	const thread = threadMessages(conv);
+	if (pageKey === undefined) {
+		const lastReadTimestamp =
+			conv.unread > 0 ? (thread[conv.unread]?.timestamp ?? null) : NOW;
+		return {
+			lastReadTimestamp,
+			messages: thread.slice(0, MESSAGES_PER_PAGE),
+			profile,
+		};
 	}
-	const messages = threadMessages(conv);
-	const lastReadTimestamp =
-		conv.unread > 0 ? (messages[conv.unread]?.timestamp ?? null) : NOW;
-	return { lastReadTimestamp, messages, profile };
+	const after = thread.findIndex((message) => message.messageId === pageKey);
+	if (after === -1) return { lastReadTimestamp: null, messages: [], profile };
+	return {
+		lastReadTimestamp: null,
+		messages: thread.slice(after + 1, after + 1 + MESSAGES_PER_PAGE),
+		profile,
+	};
 }
 
 export function demoSingleMessage({

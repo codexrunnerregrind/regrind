@@ -133,7 +133,7 @@
 		aria-label="Open album"
 		onclick={() => void openAlbum()}
 		disabled={phase !== "idle"}
-		bind:this={media.el}
+		{@attach media.attach}
 	>
 		{#if message.coverUrl !== null}
 			<img
@@ -215,7 +215,7 @@
 		aria-label="Open album"
 		onclick={() => void openAlbum()}
 		disabled={phase !== "idle"}
-		bind:this={media.el}
+		{@attach media.attach}
 	>
 		<LockedMedia class={media.cornerClass} />
 		{@render media.adornments?.()}

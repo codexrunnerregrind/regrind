@@ -1,8 +1,9 @@
 <script lang="ts">
 	import CaretDownIcon from "phosphor-svelte/lib/CaretDownIcon";
-	import CheckCircleIcon from "phosphor-svelte/lib/CheckCircleIcon";
 	import FolderOpenIcon from "phosphor-svelte/lib/FolderOpenIcon";
-	import ImageBrokenIcon from "phosphor-svelte/lib/ImageBrokenIcon";
+	import ImagesIcon from "phosphor-svelte/lib/ImagesIcon";
+	import LockSimpleIcon from "phosphor-svelte/lib/LockSimpleIcon";
+	import VideoIcon from "phosphor-svelte/lib/VideoIcon";
 	import { toast } from "svelte-sonner";
 
 	import { showErrorToast } from "$lib/api/error-toast";
@@ -17,15 +18,20 @@
 		unshareAlbum,
 	} from "$lib/api/messaging/albums";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
+	import MediaImage from "$lib/components/shared/MediaImage.svelte";
+	import SelectionCheck from "$lib/components/shared/SelectionCheck.svelte";
+	import { Badge } from "$lib/components/ui/badge";
 	import { Button } from "$lib/components/ui/button";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
 	import * as Empty from "$lib/components/ui/empty";
 	import { Skeleton } from "$lib/components/ui/skeleton";
-	import {
-		type AlbumExpirationType,
-		type MyAlbum,
-	} from "$lib/model/messaging/albums";
+	import { proxyMediaUrl } from "$lib/util/media";
+	import { SelectionSet } from "$lib/util/selection.svelte";
 	import type { AlbumExpiration } from "$lib/model/messaging/albums";
+	import type {
+		AlbumExpirationType,
+		MyAlbum,
+	} from "$lib/model/messaging/albums";
 	import { getConversationState } from "../../conversation-state.svelte";
 
 	// Expiry choices, ordered to match the official app.
@@ -43,18 +49,20 @@
 	let {
 		active,
 		onClose,
+		onSelectionChange,
 	}: {
 		/** Whether this tab is the one on screen. */
 		active: boolean;
 		onClose: () => void;
+		onSelectionChange: (count: number) => void;
 	} = $props();
 
 	const conversationState = $derived(getConversationState()());
 	const recipientId = $derived(conversationState.profile?.profileId ?? null);
+	const selected = new SelectionSet<number>(10);
 
 	let albums = $state<MyAlbum[] | null>(null);
 	let error = $state<unknown>(null);
-	let selectedIds = $state<Set<number>>(new Set());
 	let expirationType = $state<AlbumExpirationType>("INDEFINITE");
 	let sharing = $state(false);
 
@@ -79,9 +87,9 @@
 
 	// Selecting an already-shared album flips the sheet into "stop sharing"
 	// intent. Shared and unshared albums can't be mixed in one selection (see
-	// `toggle`), so a single selected shared album is enough to decide the mode.
+	// `toggleSelected`), so one selected shared album decides the mode.
 	const stopMode = $derived(
-		[...selectedIds].some((id) => sharedAlbumIds.has(id)),
+		selected.values().some((id) => sharedAlbumIds.has(id)),
 	);
 
 	async function load() {
@@ -89,7 +97,7 @@
 		error = null;
 		try {
 			const list = await getMyAlbums();
-			albums = list.filter((album) => album.isShareable);
+			albums = list;
 			if (recipientId !== null)
 				void ensureAlbumSharesSwept(recipientId, list);
 		} catch (err) {
@@ -105,40 +113,55 @@
 		if (active && albums === null && error === null) void load();
 	});
 
-	function toggle(albumId: number) {
-		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- reassigned wholesale below, so the state is the assignment
-		const next = new Set(selectedIds);
-		if (next.has(albumId)) {
-			next.delete(albumId);
-		} else {
+	function toggleSelected(albumId: number) {
+		if (!selected.has(albumId)) {
 			// Never mix shared and unshared albums: tapping one whose share state
 			// differs from the current selection starts a fresh selection instead.
-			const wasStop = [...next].some((id) => sharedAlbumIds.has(id));
-			if (next.size > 0 && wasStop !== sharedAlbumIds.has(albumId))
-				next.clear();
-			next.add(albumId);
+			const wasStop = selected
+				.values()
+				.some((id) => sharedAlbumIds.has(id));
+			if (selected.size > 0 && wasStop !== sharedAlbumIds.has(albumId))
+				selected.clear();
 		}
-		selectedIds = next;
+		selected.toggle(albumId);
+		onSelectionChange(selected.size);
 	}
 
-	async function share() {
-		if (selectedIds.size === 0 || recipientId === null || sharing) return;
+	// Read by the sheet to label its confirm button.
+	export function actionLabel(): string {
+		return stopMode ? "Stop sharing" : "Send";
+	}
+
+	export function sendSelected() {
+		if (albums === null || recipientId === null || sharing) return;
+		const albumIds = selected.values();
+		if (albumIds.length === 0) return;
+		const stopping = stopMode;
+		selected.clear();
+		onSelectionChange(0);
+		onClose();
+		void (stopping
+			? stopSharing(albumIds, recipientId)
+			: startSharing(albumIds, recipientId));
+	}
+
+	async function startSharing(albumIds: number[], profileId: number) {
 		sharing = true;
-		const ids = [...selectedIds];
 		try {
 			await Promise.all(
-				ids.map((albumId) =>
+				albumIds.map((albumId) =>
 					shareAlbum({
 						albumId,
-						profileIds: [recipientId],
+						profileIds: [profileId],
 						expirationType,
 					}),
 				),
 			);
-			for (const albumId of ids)
-				setAlbumShared(albumId, recipientId, true);
-			onClose();
-			toast.success(ids.length === 1 ? "Album shared" : "Albums shared");
+			for (const albumId of albumIds)
+				setAlbumShared(albumId, profileId, true);
+			toast.success(
+				albumIds.length === 1 ? "Album shared" : "Albums shared",
+			);
 		} catch (err) {
 			console.error(err);
 			showErrorToast({ label: "Failed to share album", error: err });
@@ -147,26 +170,23 @@
 		}
 	}
 
-	async function unshare() {
-		if (selectedIds.size === 0 || recipientId === null || sharing) return;
+	async function stopSharing(albumIds: number[], profileId: number) {
 		sharing = true;
-		const ids = [...selectedIds];
 		// Optimistically lock the shared-album bubbles in the chat so they show as
 		// no longer viewable straight away; revert them if the request fails.
-		const reverts = ids.map(
+		const reverts = albumIds.map(
 			(albumId) => conversationState.lockSharedAlbum(albumId).revert,
 		);
 		try {
 			await Promise.all(
-				ids.map((albumId) =>
-					unshareAlbum({ albumId, profileIds: [recipientId] }),
+				albumIds.map((albumId) =>
+					unshareAlbum({ albumId, profileIds: [profileId] }),
 				),
 			);
-			for (const albumId of ids)
-				setAlbumShared(albumId, recipientId, false);
-			onClose();
+			for (const albumId of albumIds)
+				setAlbumShared(albumId, profileId, false);
 			toast.success(
-				ids.length === 1 ? "Album unshared" : "Albums unshared",
+				albumIds.length === 1 ? "Album unshared" : "Albums unshared",
 			);
 		} catch (err) {
 			for (const revert of reverts) revert();
@@ -178,11 +198,7 @@
 	}
 </script>
 
-<!-- `-mx-4 px-gutter` cancels the sheet panel's padding so the margin around the
-     tiles is the same 2px as the gutter between them. -->
-<div
-	class="@container/photo-grid -mx-4 flex flex-col gap-3 rounded-grid px-gutter"
->
+<div class="@container/photo-grid flex flex-col rounded-grid">
 	{#if error !== null}
 		<div class="flex flex-1">
 			<ApiErrorDisplay
@@ -192,9 +208,9 @@
 			/>
 		</div>
 	{:else if albums === null}
-		<div class="photo-grid">
-			{#each Array(6)}
-				<Skeleton class="aspect-3/4 rounded-none" />
+		<div class="photo-grid [--photo-grid-aspect:3/4]">
+			{#each Array(9)}
+				<Skeleton class="aspect-(--photo-grid-aspect) rounded-none" />
 			{/each}
 		</div>
 	{:else if albums.length === 0}
@@ -203,147 +219,120 @@
 				<Empty.Media variant="icon">
 					<FolderOpenIcon weight="fill" />
 				</Empty.Media>
-				<Empty.Title>No albums to share</Empty.Title>
+				<Empty.Title>No albums yet</Empty.Title>
 				<Empty.Description>
 					Albums you create appear here, ready to share.
 				</Empty.Description>
 			</Empty.Header>
 		</Empty.Root>
 	{:else}
-		<div class="photo-grid">
-			{#each albums as album (album.albumId)}
-				{@const isSelected = selectedIds.has(album.albumId)}
-				{@const isShared = sharedAlbumIds.has(album.albumId)}
-				{@const cover =
-					album.content[0]?.coverUrl || album.content[0]?.thumbUrl}
-				<button
-					type="button"
-					class={[
-						"relative aspect-3/4 rounded-[inherit] outline-3 -outline-offset-3 transition-[outline]",
-						{
-							"outline-primary": isSelected,
-							"outline-transparent": !isSelected,
-						},
-					]}
-					aria-pressed={isSelected}
-					aria-label={isSelected ? "Deselect album" : "Select album"}
-					onclick={() => toggle(album.albumId)}
-				>
-					{#if cover}
-						<img
-							src={cover}
-							alt=""
-							class="size-full rounded-[inherit] bg-card-foreground/10 object-cover"
-							draggable="false"
-						/>
-					{:else}
-						<div
-							class="flex size-full items-center justify-center rounded-[inherit] bg-card-foreground/20"
-						>
-							<ImageBrokenIcon
-								weight="fill"
-								class="size-8"
-								color="var(--media-placeholder-foreground)"
-							/>
-						</div>
-					{/if}
-					<div
-						class="pointer-events-none absolute inset-x-0 bottom-0 flex items-end gap-1 rounded-b-[inherit] bg-linear-to-t from-black/70 to-transparent p-2 pt-6 text-start"
-					>
-						<span
-							class="line-clamp-2 text-xs font-medium text-white"
-						>
-							{album.albumName || "Untitled album"}
-						</span>
-					</div>
-					{#if isSelected}
-						<span
-							class="absolute top-1.5 right-1.5 text-primary"
-							aria-hidden="true"
-						>
-							<CheckCircleIcon weight="fill" class="size-6" />
-						</span>
-					{:else if isShared}
-						<span
-							class="pointer-events-none absolute top-1.5 left-1.5 rounded-full bg-primary/90 px-2 py-0.5 text-xs font-medium text-primary-foreground"
-						>
-							Shared
-						</span>
-					{/if}
-				</button>
-			{/each}
-		</div>
-
-		<!-- Reserve room so the last row can scroll clear of the floating bar. -->
-		<div class="h-32 shrink-0" aria-hidden="true"></div>
-
-		<!-- Expiry dropdown + share/stop-share. Floated over the bottom of the
-		     sheet (like the media tab's Send button) so it stays visible without
-		     dragging the sheet up, regardless of how many albums there are. -->
-		<div
-			class="pointer-events-none absolute inset-x-0 bottom-20 flex flex-col items-center gap-3 bg-linear-to-t from-popover via-popover to-transparent px-4 pt-8"
-		>
-			{#if !stopMode}
+		<!-- Only while sharing: an album being taken back does not have an expiry
+		     to pick, and the control would only be dead weight over the grid. -->
+		{#if !stopMode}
+			<div class="flex justify-end pb-2">
 				<DropdownMenu.Root>
 					<DropdownMenu.Trigger>
 						{#snippet child({ props })}
-							<button
-								{...props}
-								type="button"
-								class="pointer-events-auto flex items-center gap-2 text-lg font-semibold"
-							>
-								<CheckCircleIcon
-									weight="regular"
-									class="size-6 text-primary"
-								/>
+							<Button {...props} variant="ghost" size="sm">
 								{expirationLabel}
-								<CaretDownIcon weight="bold" class="size-4" />
-							</button>
+								<CaretDownIcon class="size-3.5" />
+							</Button>
 						{/snippet}
 					</DropdownMenu.Trigger>
-					<DropdownMenu.Content class="w-52" align="center">
-						<DropdownMenu.Label>Share album for…</DropdownMenu.Label
-						>
+					<DropdownMenu.Content align="end">
 						{#each EXPIRATION_OPTIONS as option (option.value)}
 							<DropdownMenu.Item
 								onSelect={() => (expirationType = option.value)}
 							>
-								{#if option.value === expirationType}
-									<CheckCircleIcon
-										weight="fill"
-										class="size-5 text-primary"
-									/>
-								{:else}
-									<span class="size-5"></span>
-								{/if}
 								{option.label}
 							</DropdownMenu.Item>
 						{/each}
 					</DropdownMenu.Content>
 				</DropdownMenu.Root>
-			{/if}
-
-			<Button
-				size="lg"
-				variant={stopMode ? "destructive" : "default"}
-				class="pointer-events-auto w-full shadow-lg"
-				disabled={selectedIds.size === 0 ||
-					recipientId === null ||
-					sharing}
-				onclick={() => void (stopMode ? unshare() : share())}
-			>
-				{#if sharing}
-					{stopMode ? "Stopping…" : "Sharing…"}
-				{:else if stopMode}
-					{selectedIds.size > 1
-						? `Stop Sharing ${selectedIds.size} Albums`
-						: "Stop Sharing"}
-				{:else if selectedIds.size > 1}
-					Share {selectedIds.size} Albums
-				{:else}
-					Share Album
-				{/if}
-			</Button>
+			</div>
+		{/if}
+		<div class="photo-grid [--photo-grid-aspect:3/4]">
+			{#each albums as album (album.albumId)}
+				{@const isSelected = selected.has(album.albumId)}
+				{@const isShared = sharedAlbumIds.has(album.albumId)}
+				{@const hasVideo = album.content.some((item) =>
+					item.contentType.startsWith("video/"),
+				)}
+				<button
+					type="button"
+					data-slot="album-tile"
+					class={[
+						"relative isolate flex aspect-(--photo-grid-aspect) items-end overflow-hidden",
+						{
+							"cursor-pointer":
+								album.isShareable &&
+								(selected.canSelectMore || isSelected),
+						},
+					]}
+					aria-pressed={isSelected}
+					disabled={!album.isShareable}
+					onclick={() => toggleSelected(album.albumId)}
+				>
+					<MediaImage
+						src={proxyMediaUrl(album.content[0]?.thumbUrl)}
+						loading="lazy"
+						class="absolute inset-0 size-full rounded-[inherit]"
+						imgClass="bg-card-foreground/10"
+					/>
+					<div class="z-1 flex w-full items-center p-1.5">
+						<Badge
+							variant="outline"
+							class="min-w-0 bg-popover/20 backdrop-blur-2xl"
+						>
+							<span class="truncate font-semibold">
+								{album.albumName || "Untitled album"}
+							</span>
+						</Badge>
+					</div>
+					<div
+						class="absolute inset-s-1.5 top-1.5 z-1 flex gap-1 text-2xs font-semibold *:flex *:h-6 *:min-w-6 *:items-center *:justify-center *:gap-1 *:rounded-full *:border *:border-white/10 *:bg-popover/40 *:backdrop-blur-2xl"
+					>
+						<div class="px-1.5">
+							<ImagesIcon weight="fill" class="size-3.5" />
+							{album.content.length}<span class="sr-only">
+								{album.content.length === 1 ? "item" : "items"}
+							</span>
+						</div>
+						{#if hasVideo}
+							<div>
+								<VideoIcon weight="fill" class="size-3.5" />
+								<span class="sr-only">contains video</span>
+							</div>
+						{/if}
+						{#if isShared}
+							<div class="px-1.5">
+								Shared<span class="sr-only">
+									with this person already
+								</span>
+							</div>
+						{/if}
+					</div>
+					{#if isSelected}
+						<div
+							class="absolute inset-0 z-2 flex items-center justify-center rounded-[inherit] bg-primary/50 outline-2 -outline-offset-2 outline-primary"
+						>
+							<SelectionCheck />
+						</div>
+					{:else if !album.isShareable}
+						<div
+							class="absolute inset-0 z-2 flex items-center justify-center rounded-[inherit] bg-black/60 text-white"
+						>
+							<LockSimpleIcon weight="fill" class="size-6" />
+							<span class="sr-only">can't be shared</span>
+						</div>
+					{/if}
+				</button>
+			{/each}
 		</div>
 	{/if}
+	<div role="status" class="sr-only">
+		{selected.size === selected.max
+			? `Maximum ${selected.max} selected`
+			: ""}
+	</div>
 </div>

@@ -8,10 +8,14 @@ Thanks for considering contributing to Open Grind.
         - [Development environment](#development-environment)
         - [Project structure](#project-structure)
         - [Interacting with API](#interacting-with-api)
-        - [Checks and tests](#checks-and-tests)
+    - [Architecture](#architecture)
         - [Where state lives](#where-state-lives)
         - [Function parameters](#function-parameters)
+        - [Test selectors](#test-selectors)
+        - [Versioning](#versioning)
     - [Submitting your changes](#submitting-your-changes)
+        - [Checks and tests](#checks-and-tests)
+        - [Sending your changes as a PR](#sending-your-changes-as-a-pr)
         - [Inclusion in GOVERNANCE.md](#inclusion-in-governancemd)
 
 ## Contribution guidelines
@@ -107,6 +111,70 @@ process.stdout.write("Grindr3 " + (await req.json().then((t) => t.sessionId)));
 
 </details>
 
+## Architecture
+
+### Where state lives
+
+Pick the shortest lifetime that still holds the data long enough:
+
+- **Survives navigation and belongs to the signed-in account** — `accountScoped(create)` from [account-caches.ts](./src/lib/api/account-caches.ts). One instance per profile id, the previous one destroyed on account change. Conversations, taps and views use it.
+- **Survives navigation and is not per-account** — a module singleton that calls `registerAccountCache({ reset })` itself, like `gridState` and the API caches. Anything cached across screens must register a reset, or it leaks into the next account.
+- **Belongs to one route parameter** — a class the page constructs and destroys in an `$effect`, rebuilt when the parameter changes: `ConversationState`, `ProfileState`. Use it when reopening the screen should start over.
+- **Belongs to one mount** — plain `$state` in the component.
+
+Data that outlives the component goes in a state class, not in `<script module>`.
+
+### Function parameters
+
+Use named arguments in functions, except when:
+
+- a subject followed by options — `fetchRest(path, { method })`
+- order carries no meaning — `deepEqual(a, b)`
+- the call reads as prose — `formatHeight(180, "cm")`
+- the name already names its only argument — `getProfileById(profileId)`
+
+### Test selectors
+
+Query interactive elements by role and accessible name — `getByRole("button", { name: "Add attachment" })`. [accessible-names.spec.ts](./e2e/accessible-names.spec.ts) already fails the build when a control has no name, so the handle is guaranteed to exist.
+
+When the element is not interactive — a scroller, a measured wrapper, a state-bearing part — give it `data-slot="<component>-<part>"` and select that. It is the same attribute the `ui/` primitives emit, so tests read one vocabulary.
+
+Never select on Tailwind utility classes, tag shape, or computed style: `div.absolute.right-7.bottom-0` turns a padding tweak into a broken test, and scanning every `<div>` for `overflowY === "auto"` silently finds a different element once a second scroller appears. Library-owned classes are not utility classes — PhotoSwipe's `.pswp` and the `.item[href]` it is configured with are API contracts and stay.
+
+### Versioning
+
+Open Grind adopts semver and uses it for canonical version names, i.e. `vMAJOR.MINOR.PATCH` with optional `-TAG` or `-TAG.X` semver metadata (where `MAJOR`, `MINOR`, `PATCH` and `X` are non-negative integers), e.g. `v0.1.0`, `v1.0.0-rc` or `v1.2.3-beta.1`.
+
+Android version code is calculated using `major * 1000000 + minor * 1000 + patch`, but for pre-mvp (v0.1.0) this convention is broken:
+
+```
+v0.1.0-alpha.1 = 1000
+v0.1.0-alpha.2 = 1001
+v0.1.0-alpha.3 = 1002
+v0.1.0-alpha.4 = 1003
+v0.1.0-alpha.5 = 1004
+v0.1.0-beta.1  = 1010 (due to error, the actual release is 1004)
+v0.1.0-beta.2  = 1020 (due to error, the actual release is 1010)
+v0.1.0-beta.3  = 1030 (due to error, the actual release is 1020)
+v0.1.0-beta.4  = 1040 (error fixed, actual release jumps from 1020 to 1040)
+v0.1.0-beta.5  = 1050
+```
+
+Post-mvp versioning:
+
+```
+v0.2.0      =    2000
+v0.2.1      =    2001
+v0.3.0-rc.1 =    3000
+v0.3.0      =    3000
+v0.123.0    =  123000
+v1.0.0      = 1000000
+v1.1.0      = 1001000
+v1.123.0    = 1123000
+```
+
+## Submitting your changes
+
 ### Checks and tests
 
 Before opening a pull request, run the same checks CI runs:
@@ -129,27 +197,7 @@ End-to-end tests are a separate tier:
 
 [ShellCheck](https://www.shellcheck.net/) and [rustfmt](https://github.com/rust-lang/rustfmt) must be on `PATH`. `nix develop` provides both, along with the pinned Rust and Android toolchains.
 
-### Where state lives
-
-Pick the shortest lifetime that still holds the data long enough:
-
-- **Survives navigation and belongs to the signed-in account** — `accountScoped(create)` from [account-caches.ts](./src/lib/api/account-caches.ts). One instance per profile id, the previous one destroyed on account change. Conversations, taps and views use it.
-- **Survives navigation and is not per-account** — a module singleton that calls `registerAccountCache({ reset })` itself, like `gridState` and the API caches. Anything cached across screens must register a reset, or it leaks into the next account.
-- **Belongs to one route parameter** — a class the page constructs and destroys in an `$effect`, rebuilt when the parameter changes: `ConversationState`, `ProfileState`. Use it when reopening the screen should start over.
-- **Belongs to one mount** — plain `$state` in the component.
-
-Data that outlives the component goes in a state class, not in `<script module>`.
-
-### Function parameters
-
-Use named arguments in functions, except when:
-
-- a subject followed by options — `fetchRest(path, { method })`
-- order carries no meaning — `deepEqual(a, b)`
-- the call reads as prose — `formatHeight(180, "cm")`
-- the name already names its only argument — `getProfileById(profileId)`
-
-## Submitting your changes
+### Sending your changes as a PR
 
 1. [Create an account](https://git.opengrind.org/user/sign_up) on git.opengrind.org
 2. [Create an SSH key](https://docs.codeberg.org/security/ssh-key/) for authorization on your computer and add it to your SSH config

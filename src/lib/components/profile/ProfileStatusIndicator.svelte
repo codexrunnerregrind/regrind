@@ -34,7 +34,6 @@
 			{ "text-online": online, "text-ink3": !online },
 			className,
 		]}
-		aria-label={title}
 		{title}
 	>
 		{#if isVisiting}
@@ -42,5 +41,6 @@
 		{:else}
 			<span class="size-2 rounded-full bg-online"></span>
 		{/if}
+		<span class="sr-only">{title}</span>
 	</div>
 {/if}

@@ -30,6 +30,7 @@ import {
 	getProfile,
 	getProfiles,
 	MAX_PROFILES_PER_REQUEST,
+	onProfileEdit,
 	patchOwnProfile,
 	ProfileUnavailableError,
 	type ProfileUpdate,
@@ -441,6 +442,22 @@ describe("deleteProfilePhotos", () => {
 
 		expect((await getProfile(PROFILE_ID)).medias).toEqual([
 			{ mediaHash: "b" },
+		]);
+	});
+
+	it("reports the removal to the profile edit listeners", async () => {
+		await getProfile(PROFILE_ID);
+		const edits: { profileId: number; patch: Partial<Profile> }[] = [];
+		const unsubscribe = onProfileEdit((edit) => edits.push(edit));
+
+		await deleteProfilePhotos({
+			cacheProfileId: PROFILE_ID,
+			mediaHashes: ["a"],
+		});
+		unsubscribe();
+
+		expect(edits).toEqual([
+			{ profileId: PROFILE_ID, patch: { medias: [{ mediaHash: "b" }] } },
 		]);
 	});
 

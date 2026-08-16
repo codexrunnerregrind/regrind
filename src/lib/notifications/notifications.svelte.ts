@@ -12,7 +12,7 @@ import { peekConversationsState } from "$lib/chat/conversations-context.svelte";
 import {
 	previewFromMessage,
 	previewLabel,
-} from "$lib/model/messaging/messages";
+} from "$lib/model/messaging/message-preview";
 import {
 	chatV1MessageSentEventSchema,
 	tapV1TapSentEventSchema,

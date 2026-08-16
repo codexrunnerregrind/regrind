@@ -205,7 +205,7 @@ describe("message API wrappers", () => {
 		await expect(
 			sendMessage({
 				toUserId: 99,
-				message: { type: "Image", body: imageBody },
+				message: { type: "Image", body: { mediaId: 910_001 } },
 			}),
 		).resolves.toEqual(responseMessage);
 

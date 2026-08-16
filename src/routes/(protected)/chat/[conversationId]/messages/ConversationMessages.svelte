@@ -21,11 +21,9 @@
 	let atFloor = $state(true);
 	let seenTimestamp = $state(0);
 
-	$effect(() => {
-		markReadMessagesEffect();
-	});
+	$effect(markLatestMessagesSeen);
 
-	function markReadMessagesEffect(): void {
+	function markLatestMessagesSeen(): void {
 		if (!atFloor) return;
 		const latest = conversationState.messages.reduce(
 			(max, m) => Math.max(max, m.timestamp),
@@ -84,11 +82,9 @@
 		atFloor = floorDistance() <= FLOOR_SLOP_PX;
 	}
 
-	$effect(() => {
-		return addInputEventsEffect();
-	});
+	$effect(stopSmoothScrollOnGesture);
 
-	function addInputEventsEffect() {
+	function stopSmoothScrollOnGesture() {
 		const el = container;
 		if (!el) return;
 		el.addEventListener("wheel", endScrollingToRest, { passive: true });
@@ -104,11 +100,9 @@
 	let scrollDone = false;
 	let lastFirstId = "";
 
-	$effect(() => {
-		onConversationChangeEffect();
-	});
+	$effect(resetForNewConversation);
 
-	function onConversationChangeEffect(): void {
+	function resetForNewConversation(): void {
 		void conversationState.conversationId;
 		untrack(() => {
 			scrollDone = false;
@@ -119,22 +113,18 @@
 		});
 	}
 
-	$effect(() => {
-		onConversationLoadedEffect();
-	});
+	$effect(scrollToRestWhenLoaded);
 
-	function onConversationLoadedEffect(): void {
+	function scrollToRestWhenLoaded(): void {
 		if (!conversationState.loading && !scrollDone && container) {
 			scrollDone = true;
 			void scrollToRest("instant");
 		}
 	}
 
-	$effect(() => {
-		onNewMessageEffect();
-	});
+	$effect(followNewMessages);
 
-	function onNewMessageEffect(): void {
+	function followNewMessages(): void {
 		const firstMessage = conversationState.messages.at(0);
 		const firstId = firstMessage?.messageId ?? "";
 		if (
@@ -183,6 +173,7 @@
 	class="relative flex min-h-0 max-w-full flex-1 flex-col bg-chat-background"
 >
 	<div
+		data-slot="messages-scroller"
 		class="flex min-h-0 max-w-full flex-1 flex-col gap-1 overflow-auto overscroll-contain px-4.5 pt-20 pb-1.5 *:first:mt-auto"
 		bind:this={container}
 		style:overflow-anchor="none"

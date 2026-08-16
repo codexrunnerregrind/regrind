@@ -40,6 +40,7 @@
 		onUnsend,
 		onUnshareAlbum,
 		onReply,
+		onCopyError,
 	}: {
 		message: ApiResponseMessage;
 		isOut: boolean;
@@ -54,6 +55,7 @@
 		onUnsend?: () => void;
 		onUnshareAlbum?: () => void;
 		onReply?: () => void;
+		onCopyError?: () => void;
 	} = $props();
 
 	const swipe = untrack(() =>
@@ -247,7 +249,12 @@
 		{:else if message.type === "Unsent"}
 			<UnsentMessage />
 		{:else}
-			<UnsupportedMessage type={message.type} />
+			<UnsupportedMessage
+				type={"unrecognizedType" in message &&
+				typeof message.unrecognizedType === "string"
+					? message.unrecognizedType
+					: message.type}
+			/>
 		{/if}
 	</MessageWrapper>
 {/snippet}
@@ -350,5 +357,6 @@
 		{onUnsend}
 		{onUnshareAlbum}
 		{onReply}
+		{onCopyError}
 	/>
 {/if}

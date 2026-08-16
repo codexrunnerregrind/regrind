@@ -8,6 +8,7 @@
 		type ExpiringImageMessage,
 		expiringImageMessageSchema,
 	} from "$lib/model/messaging/messages";
+	import { draftFromMessage } from "$lib/model/messaging/messages";
 	import { profileMediaUrl } from "$lib/util/media";
 	import { getConversationState } from "../../conversation-state.svelte";
 	import LockedMedia from "./LockedMedia.svelte";
@@ -122,7 +123,9 @@
 						(m) => m.messageId === messageId,
 					);
 					if (target) conversation.setReplyTo(target);
-					conversation.send({ type: "Text", body: { text } });
+					conversation.send(
+						draftFromMessage({ type: "Text", body: { text } }),
+					);
 					return Promise.resolve();
 				},
 				onReact: async () => {
@@ -136,7 +139,7 @@
 	}
 </script>
 
-{#if message.viewsRemaining === null || message.viewsRemaining > 0}
+{#if message.viewsRemaining === undefined || message.viewsRemaining === null || message.viewsRemaining > 0}
 	<button
 		class={[
 			"flex w-50 items-center gap-2 px-4 py-3 text-start font-medium",
@@ -150,14 +153,14 @@
 		]}
 		onclick={() => void openImage()}
 		disabled={phase !== "idle"}
-		bind:this={media.el}
+		{@attach media.attach}
 	>
 		<ImagesIcon size={24} weight="fill" />
 		<span>View expiring image</span>
 		{@render media.adornments?.()}
 	</button>
 {:else}
-	<div class={["h-12 w-50", className, contentClass]} bind:this={media.el}>
+	<div class={["h-12 w-50", className, contentClass]} {@attach media.attach}>
 		<LockedMedia
 			class={[
 				media.cornerClass,

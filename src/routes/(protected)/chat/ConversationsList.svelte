@@ -9,7 +9,7 @@
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import ListRowSkeleton from "$lib/components/feedback/ListRowSkeleton.svelte";
 	import UnderlineTabs from "$lib/components/shared/UnderlineTabs.svelte";
-	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
 	import { hapticImpact, hapticSelection } from "$lib/platform/haptics";
 	import { below } from "$lib/util/breakpoints.svelte";
 	import { observeIntersection } from "$lib/util/observe-intersection";
@@ -23,6 +23,7 @@
 	import type { Conversation as ConversationEntry } from "$lib/model/messaging/conversations";
 	import AlbumsTab from "./AlbumsTab.svelte";
 	import Conversation from "./Conversation.svelte";
+	import ConversationsFilters from "./ConversationsFilters.svelte";
 	import ConversationsSelectionBar from "./ConversationsSelectionBar.svelte";
 	import DeleteConversationsDialog from "./DeleteConversationsDialog.svelte";
 	import EmptyConversationsList from "./EmptyConversationsList.svelte";
@@ -32,18 +33,10 @@
 
 	const conversations: ConversationsState = getConversations();
 	const mobile = below("split");
+	const visibleEntries = $derived(conversations.visibleEntries);
 
-	const latestActivity = $derived(
-		conversations.entries.reduce(
-			(max, entry) => Math.max(max, entry.data.lastActivityTimestamp),
-			0,
-		),
-	);
-	let lastMarkedActivity = 0;
 	$effect(() => {
-		if (latestActivity === lastMarkedActivity) return;
-		lastMarkedActivity = latestActivity;
-		conversations.markInboxViewed();
+		conversations.noteVisibleActivity();
 	});
 
 	let container: HTMLDivElement | null = $state(null);
@@ -141,20 +134,12 @@
 		}
 	});
 
-	$effect(() => {
-		if (!selecting && !deleteDialogOpen) return;
-		const onBackGesture = () => {
-			if (deleteDialogOpen) {
-				deleteDialogOpen = false;
-			} else {
-				exitSelection();
-			}
-			return false;
-		};
-		backGestureEventHandlers.add(onBackGesture);
-		return () => {
-			backGestureEventHandlers.delete(onBackGesture);
-		};
+	dismissOnBackGesture({ active: () => selecting, dismiss: exitSelection });
+	dismissOnBackGesture({
+		active: () => deleteDialogOpen,
+		dismiss: () => {
+			deleteDialogOpen = false;
+		},
 	});
 
 	function pinSelected() {
@@ -194,10 +179,10 @@
 	// below reads as one uninterrupted run. `entries` is already sorted
 	// pinned-first, so this is a partition, not a re-order.
 	const pinnedEntries = $derived(
-		conversations.entries.filter((entry) => entry.data.pinned),
+		visibleEntries.filter((entry) => entry.data.pinned),
 	);
 	const restEntries = $derived(
-		conversations.entries.filter((entry) => !entry.data.pinned),
+		visibleEntries.filter((entry) => !entry.data.pinned),
 	);
 </script>
 
@@ -306,7 +291,10 @@
 						{@render row(conversation, i < EAGER_COUNT)}
 					{:else}
 						{#if pinnedEntries.length === 0}
-							<EmptyConversationsList />
+							<EmptyConversationsList
+								filtered={conversations.filters.active.length >
+									0}
+							/>
 						{/if}
 					{/each}
 					{#if conversations.loadingMore}
@@ -342,6 +330,11 @@
 				}}
 			/>
 		{/if}
+		<ConversationsFilters
+			filters={conversations.filters}
+			onchange={(active) => conversations.setFilters(active)}
+			inert={selecting}
+		/>
 	{/if}
 </div>
 

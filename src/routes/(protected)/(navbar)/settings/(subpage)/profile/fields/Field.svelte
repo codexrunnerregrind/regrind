@@ -20,9 +20,15 @@
 	<div class="flex items-baseline justify-between gap-3">
 		<Label class={stackedLabelClass}>{label}</Label>
 		{#if error}
-			<span class="shrink-0 text-caption text-destructive">{error}</span>
+			<span
+				data-slot="field-error"
+				class="shrink-0 text-caption text-destructive"
+			>
+				{error}
+			</span>
 		{:else if hint}
 			<span
+				data-slot="field-hint"
 				class="shrink-0 text-caption text-muted-foreground tabular-nums"
 			>
 				{hint}

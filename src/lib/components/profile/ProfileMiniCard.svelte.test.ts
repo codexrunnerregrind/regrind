@@ -59,6 +59,32 @@ describe("ProfileMiniCard", () => {
 		expect(label?.textContent).toContain("Met in Braga");
 	});
 
+	// The dot rides in the identity row, so a nameless profile used to drop it
+	// along with the row it sits in.
+	it("shows the online dot for a profile without a display name", () => {
+		const { container } = render(ProfileMiniCard, {
+			props: {
+				displayName: null,
+				age: null,
+				onlineUntil: Date.now() + 60_000,
+			},
+		});
+
+		expect(container.querySelector('[title="Online now"]')).not.toBeNull();
+	});
+
+	it("shows no status row for an offline profile without a name", () => {
+		const { container } = render(ProfileMiniCard, {
+			props: {
+				displayName: null,
+				age: null,
+				onlineUntil: Date.now() - 60_000,
+			},
+		});
+
+		expect(container.querySelector(".tile-scrim")).toBeNull();
+	});
+
 	it("treats a blank note as none, rather than an empty badge", () => {
 		const { container } = render(ProfileMiniCard, {
 			props: { displayName: "Henry", note: "   " },

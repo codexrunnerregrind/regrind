@@ -7,6 +7,7 @@
 	import ProfileStatusIndicator from "$lib/components/profile/ProfileStatusIndicator.svelte";
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
 	import type { RightNowStatus } from "$lib/model/right-now";
+	import { getNow } from "$lib/util/now";
 
 	let {
 		mediaHash = null,
@@ -46,12 +47,17 @@
 
 	const noteText = $derived(note?.trim() ?? "");
 
+	// Matches what ProfileStatusIndicator itself draws, so the identity line
+	// stays for a profile whose only marker is the online dot.
+	const isOnline = $derived((onlineUntil ?? 0) > getNow());
+
 	// Whether the card has anything to say about who this is — what the note
 	// stacks on top of when it does.
 	const hasIdentity = $derived(
 		displayName !== null ||
 			age !== null ||
 			isVisiting ||
+			isOnline ||
 			(rightNow !== null && rightNow !== "NOT_ACTIVE"),
 	);
 
@@ -80,12 +86,17 @@
 				<StarIcon
 					weight="fill"
 					class="marker text-yellow-400"
-					aria-label="Saved"
+					aria-label="Favorite"
 					role="img"
 				/>
 			{/if}
 			{#if hadRecentChat}
-				<ChatIcon weight="fill" class="marker text-plate-foreground" />
+				<ChatIcon
+					weight="fill"
+					class="marker text-plate-foreground"
+					aria-label="Chatted recently"
+					role="img"
+				/>
 			{/if}
 		</div>
 	{/if}
@@ -160,6 +171,7 @@
 					{:else}
 						{unread}
 					{/if}
+					<span class="sr-only">unread messages</span>
 				</span>
 			{/if}
 		</div>

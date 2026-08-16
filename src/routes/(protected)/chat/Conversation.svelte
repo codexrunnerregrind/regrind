@@ -9,6 +9,7 @@
 	} from "phosphor-svelte";
 
 	import { getConversations } from "$lib/chat/conversations-context.svelte";
+	import FavoriteStar from "$lib/components/profile/FavoriteStar.svelte";
 	import ProfileItem from "$lib/components/profile/ProfileItem.svelte";
 	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
 	import SelectionCheck from "$lib/components/shared/SelectionCheck.svelte";
@@ -37,6 +38,7 @@
 	const participant = $derived(conversation.data.participants[0]);
 	const previewText = $derived(previewLabel(preview));
 	const conversationId = $derived(conversation.data.conversationId);
+	const draft = $derived(conversations.drafts.get(conversationId));
 
 	// A muted conversation still counts unread, it just doesn't shout about it.
 	const unreadSignal = $derived(
@@ -67,11 +69,16 @@
 	}
 </script>
 
-{#snippet mutedBadge()}
-	<BellSimpleSlashIcon
-		weight="fill"
-		class="size-4 shrink-0 text-muted-foreground"
-	/>
+{#snippet titleBadges()}
+	{#if conversation.data.favorite}
+		<FavoriteStar />
+	{/if}
+	{#if conversation.data.muted}
+		<BellSimpleSlashIcon
+			weight="fill"
+			class="size-4 shrink-0 text-muted-foreground"
+		/>
+	{/if}
 {/snippet}
 
 {#snippet selectedOverlay()}
@@ -88,10 +95,7 @@
 			link: participant ? `/profile/${participant.profileId}` : undefined,
 			overlay: isSelected ? selectedOverlay : undefined,
 		}}
-		title={{
-			value: conversation.data.name,
-			badge: conversation.data.muted ? mutedBadge : undefined,
-		}}
+		title={{ value: conversation.data.name, badge: titleBadges }}
 		onlineUntil={conversation.data.onlineUntil ?? participant?.onlineUntil}
 		link="/chat/{conversationId}"
 		selected={isSelected}
@@ -101,14 +105,24 @@
 		{#snippet description()}
 			<Item.Description
 				class={[
-					"text-preview",
-					{ "font-semibold text-foreground": unreadSignal },
+					"text-preview wrap-anywhere",
+					{
+						"font-semibold text-foreground":
+							draft === "" && unreadSignal,
+					},
 				]}
 			>
-				{#if previewText !== null}
+				{#if draft !== ""}
+					<span
+						data-slot="conversation-draft-prefix"
+						class="font-bold text-primary">Draft:&nbsp;</span
+					>{draft}
+				{:else if previewText !== null}
 					{previewText}
 				{:else}
-					<span class="preview-not-available">
+					<span
+						class="font-normal tracking-tight text-muted-foreground italic"
+					>
 						Preview not available
 					</span>
 				{/if}
@@ -145,7 +159,7 @@
 						variant={conversation.data.muted
 							? "secondary"
 							: "default"}
-						class="px-[5.5px] @max-row:hidden"
+						class="px-count-badge @max-row:hidden"
 					>
 						{conversation.data.unreadCount}
 					</Badge>
@@ -198,10 +212,3 @@
 		{/if}
 	</ContextMenu.Root>
 {/if}
-
-<style lang="postcss">
-	@reference "$layout";
-	.preview-not-available {
-		@apply font-normal tracking-tight text-muted-foreground italic;
-	}
-</style>

@@ -9,6 +9,7 @@ import {
 	demoMyAlbums,
 	demoRenameAlbum,
 	demoReorderAlbumContent,
+	demoShareAlbum,
 	demoSharedAlbumsFeed,
 	demoUnshareAlbum,
 } from "./mock/albums";
@@ -28,6 +29,7 @@ import {
 	demoFavoriteNote,
 	demoSetFavoriteNote,
 } from "./mock/favorite-notes";
+import { demoSetFavorite } from "./mock/favorites";
 import {
 	buildFullProfile,
 	demoCascadeV4,
@@ -61,6 +63,8 @@ export function demoCallMethod(method: string): unknown {
 			return { "user-agent": "demo", "l-device-info": "demo" };
 		case "recaptcha_first_party_enabled":
 			return false;
+		case "session_health":
+			return { signedIn: true, expiresAt: null, stale: false };
 		default:
 			return null;
 	}
@@ -146,8 +150,27 @@ export function demoRoute({
 		demoSetBlocked(Number(segments[3]), method === "POST");
 		return ok({});
 	}
+	if (
+		segments[0] === "v3" &&
+		segments[1] === "me" &&
+		segments[2] === "favorites" &&
+		segments.length === 4 &&
+		(method === "POST" || method === "DELETE")
+	) {
+		demoSetFavorite({
+			profileId: Number(segments[3]),
+			favorite: method === "POST",
+		});
+		return ok({});
+	}
 	if (method === "POST" && rawPath === "/v4/inbox") {
-		return ok(demoConversations(num(params.get("page")) ?? 1));
+		const filters = body as { favoritesOnly?: boolean } | undefined;
+		return ok(
+			demoConversations({
+				page: num(params.get("page")) ?? 1,
+				favoritesOnly: filters?.favoritesOnly ?? false,
+			}),
+		);
 	}
 	if (
 		method === "GET" &&
@@ -265,6 +288,7 @@ export function demoRoute({
 		segments[3] === "shares" &&
 		segments.length === 4
 	) {
+		demoShareAlbum(Number(segments[2]), body);
 		return ok({});
 	}
 	if (method === "POST" && rawPath === "/v4/chat/message/send") {

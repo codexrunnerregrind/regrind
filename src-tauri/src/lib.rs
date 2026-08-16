@@ -4,6 +4,7 @@ mod error;
 #[cfg_attr(debug_assertions, allow(dead_code))]
 mod logging;
 pub mod media;
+mod photo;
 mod state;
 mod storage;
 #[cfg(any(target_os = "ios", target_os = "macos"))]
@@ -33,6 +34,8 @@ use crate::storage::{AuthStorage, DeviceStorage, SigningKeyStorage};
 const MIN_CHROMIUM_MAJOR: u32 = 111;
 #[cfg(target_os = "linux")]
 const MIN_WEBKITGTK: (u32, u32) = (2, 42);
+
+const MAIN_WINDOW_LABEL: &str = "main";
 
 const OPEN_GRIND_PLATFORM: &str = if cfg!(target_os = "android") {
 	"android"
@@ -108,6 +111,20 @@ fn outdated_webview_notice() -> Option<String> {
 	None
 }
 
+// Tauri exits only once every window is gone, and sign-in opens a second one.
+#[cfg(desktop)]
+fn quit_when_closed(window: &tauri::WebviewWindow) {
+	if window.label() != MAIN_WINDOW_LABEL {
+		return;
+	}
+	let app = window.app_handle().clone();
+	window.on_window_event(move |event| {
+		if matches!(event, tauri::WindowEvent::Destroyed) {
+			app.exit(0);
+		}
+	});
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
 	#[cfg(not(debug_assertions))]
@@ -118,11 +135,28 @@ pub fn run() {
 
 	let builder = tauri::Builder::default();
 
+	// Plugins run in registration order and this one must be first:
+	// https://github.com/tauri-apps/plugins-workspace/tree/v2/plugins/single-instance
+	#[cfg(desktop)]
+	let builder = builder.plugin(tauri_plugin_single_instance::init(
+		|app, _args, _cwd| {
+			if let Some(window) = app.get_webview_window(MAIN_WINDOW_LABEL) {
+				let _ = window.unminimize();
+				let _ = window.show();
+				let _ = window.set_focus();
+			}
+		},
+	));
+
+	// Gated on the feature rather than debug_assertions: see the note in
+	// Cargo.toml on why tauri-plugin-devtools has to stay opt-in.
 	#[cfg(feature = "devtools")]
 	let builder = builder.plugin(devtools);
 
 	#[cfg(target_os = "android")]
-	let builder = builder.plugin(tauri_plugin_android_fs::init());
+	let builder = builder
+		.plugin(tauri_plugin_android_fs::init())
+		.plugin(photo::plugin());
 
 	#[cfg(mobile)]
 	let builder = builder.plugin(tauri_plugin_haptics::init());
@@ -152,6 +186,7 @@ pub fn run() {
             client: OnceLock::new(),
         })
         .manage(media::MediaProxy::default())
+        .manage(api::session_recovery::SessionRecovery::default())
         .register_asynchronous_uri_scheme_protocol(media::SCHEME, media::handle)
         .invoke_handler(tauri::generate_handler![
             api::auth::login,
@@ -168,6 +203,8 @@ pub fn run() {
             api::ws::ws_connect,
             api::ws::ws_send,
             api::client::rotate_api_params,
+            api::session_recovery::set_app_active,
+            api::session_recovery::session_health,
         ])
         .setup(|app| {
             let user_agent = format!(
@@ -189,6 +226,8 @@ pub fn run() {
                         .on_navigation(is_app_url)
                         .build()?;
                 appearance::unlock_visual_effects(&window);
+                #[cfg(desktop)]
+                quit_when_closed(&window);
             }
 
             #[cfg(desktop)]

@@ -1,8 +1,8 @@
-<script lang="ts">
+<script lang="ts" generics="T extends number">
 	import { CaretUpDownIcon } from "phosphor-svelte";
 
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-	import type { Option } from "../options";
+	import type { Option } from "$lib/util/options";
 	import { inlineLabelClass, inlineRowClass, valueClass } from "./row";
 
 	let {
@@ -12,8 +12,8 @@
 		placeholder = "Not set",
 	}: {
 		label: string;
-		values: number[];
-		options: Option[];
+		values: T[];
+		options: Option<T>[];
 		placeholder?: string;
 	} = $props();
 
@@ -62,7 +62,11 @@
 			bind:value={
 				() => values.map(String),
 				(newValue: string[]) => {
-					values = newValue.map(Number);
+					values = options
+						.filter((option) =>
+							newValue.includes(String(option.value)),
+						)
+						.map((option) => option.value);
 				}
 			}
 		>

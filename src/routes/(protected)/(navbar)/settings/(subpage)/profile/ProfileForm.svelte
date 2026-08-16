@@ -89,125 +89,96 @@
 
 	const initial = untrack(() => $state.snapshot(profile));
 
-	let displayName = $state(initial.displayName ?? "");
-	let aboutMe = $state(initial.aboutMe ?? "");
-	let profileTags = $state<string[]>([...initial.profileTags]);
-
-	let genderIds = $state<number[]>([...(initial.genders ?? [])]);
-	let pronounIds = $state<number[]>([...(initial.pronouns ?? [])]);
-
-	let age = $state(initial.age ?? ageRange.min);
-	let showAge = $state(initial.showAge);
-	let sexualPosition = $state<number | null>(initial.sexualPosition ?? null);
-	let showPosition = $state(initial.showPosition);
-	let height = $state<number | null>(initial.height);
-	let weightKg = $state<number | null>(
-		initial.weight === null ? null : Math.round(initial.weight / 100) / 10,
-	);
-	let bodyType = $state<number | null>(initial.bodyType);
-	let ethnicity = $state<number | null>(initial.ethnicity);
-	let relationshipStatus = $state<number | null>(initial.relationshipStatus);
-
-	let showTribes = $state(initial.showTribes);
-	let grindrTribes = $state<number[]>([...initial.grindrTribes]);
-	let tribesImInto = $state<number[]>([...(initial.tribesImInto ?? [])]);
-	let lookingFor = $state<number[]>([...initial.lookingFor]);
-	let meetAt = $state<number[]>([...(initial.meetAt ?? [])]);
-	let nsfw = $state<number | null>(initial.nsfw);
-
-	let hivStatus = $state<number | null>(initial.hivStatus);
-	let lastTestedDate = $state<number | null>(initial.lastTestedDate);
-	let sexualHealth = $state<number[]>([...initial.sexualHealth]);
-	let vaccineIds = $state<number[]>([...(initial.vaccines ?? [])]);
-
-	let instagram = $state(initial.socialNetworks.instagram?.userId ?? null);
-	let twitter = $state(initial.socialNetworks.twitter?.userId ?? null);
-	let facebook = $state(initial.socialNetworks.facebook?.userId ?? null);
-
-	let medias = $state(
-		initial.medias.map((media) => ({ mediaHash: media.mediaHash })),
-	);
+	let form = $state({
+		displayName: initial.displayName ?? "",
+		aboutMe: initial.aboutMe ?? "",
+		profileTags: [...initial.profileTags],
+		genderIds: [...(initial.genders ?? [])],
+		pronounIds: [...(initial.pronouns ?? [])],
+		age: initial.age ?? ageRange.min,
+		showAge: initial.showAge,
+		sexualPosition: initial.sexualPosition ?? null,
+		showPosition: initial.showPosition,
+		height: initial.height,
+		weightKg:
+			initial.weight === null
+				? null
+				: Math.round(initial.weight / 100) / 10,
+		bodyType: initial.bodyType,
+		ethnicity: initial.ethnicity,
+		relationshipStatus: initial.relationshipStatus,
+		showTribes: initial.showTribes,
+		grindrTribes: [...initial.grindrTribes],
+		tribesImInto: [...(initial.tribesImInto ?? [])],
+		lookingFor: [...initial.lookingFor],
+		meetAt: [...(initial.meetAt ?? [])],
+		nsfw: initial.nsfw,
+		hivStatus: initial.hivStatus,
+		lastTestedDate: initial.lastTestedDate,
+		sexualHealth: [...initial.sexualHealth],
+		vaccineIds: [...(initial.vaccines ?? [])],
+		instagram: initial.socialNetworks.instagram?.userId ?? null,
+		twitter: initial.socialNetworks.twitter?.userId ?? null,
+		facebook: initial.socialNetworks.facebook?.userId ?? null,
+		medias: initial.medias.map((media) => ({ mediaHash: media.mediaHash })),
+	});
 
 	let saving = $state(false);
-	const aboutMeOverLimit = $derived(aboutMe.length > fieldLimits.aboutMe);
+	const aboutMeOverLimit = $derived(
+		form.aboutMe.length > fieldLimits.aboutMe,
+	);
 
-	function formSnapshot() {
-		return {
-			displayName,
-			aboutMe,
-			profileTags: [...profileTags],
-			genderIds: [...genderIds],
-			pronounIds: [...pronounIds],
-			age,
-			showAge,
-			sexualPosition,
-			showPosition,
-			height,
-			weightKg,
-			bodyType,
-			ethnicity,
-			relationshipStatus,
-			showTribes,
-			grindrTribes: [...grindrTribes],
-			tribesImInto: [...tribesImInto],
-			lookingFor: [...lookingFor],
-			meetAt: [...meetAt],
-			nsfw,
-			hivStatus,
-			lastTestedDate,
-			sexualHealth: [...sexualHealth],
-			vaccineIds: [...vaccineIds],
-			instagram,
-			twitter,
-			facebook,
-			mediaHashes: medias.map((media) => media.mediaHash),
-		};
-	}
-
-	let savedForm = $state.raw(formSnapshot());
-	const dirty = $derived(!deepEqual(formSnapshot(), savedForm));
+	let savedForm = $state.raw($state.snapshot(form));
+	const dirty = $derived(!deepEqual($state.snapshot(form), savedForm));
 
 	async function save() {
 		if (saving || aboutMeOverLimit || !dirty) return;
 		saving = true;
-		const sent = formSnapshot();
+		const sent = $state.snapshot(form);
 		const body = {
-			displayName: displayName.trim() || null,
-			aboutMe: aboutMe.trim() || null,
-			genders: genderIds,
-			pronouns: pronounIds,
-			age,
-			showAge,
-			sexualPosition,
-			showPosition,
-			height,
-			weight: weightKg === null ? null : Math.round(weightKg * 1000),
-			bodyType,
-			ethnicity,
-			relationshipStatus,
-			showTribes,
-			grindrTribes,
-			tribesImInto,
-			lookingFor,
-			meetAt,
-			nsfw,
-			hivStatus,
-			lastTestedDate,
-			sexualHealth,
-			vaccines: vaccineIds,
+			displayName: sent.displayName.trim() || null,
+			aboutMe: sent.aboutMe.trim() || null,
+			genders: sent.genderIds,
+			pronouns: sent.pronounIds,
+			age: sent.age,
+			showAge: sent.showAge,
+			sexualPosition: sent.sexualPosition,
+			showPosition: sent.showPosition,
+			height: sent.height,
+			weight:
+				sent.weightKg === null
+					? null
+					: Math.round(sent.weightKg * 1000),
+			bodyType: sent.bodyType,
+			ethnicity: sent.ethnicity,
+			relationshipStatus: sent.relationshipStatus,
+			showTribes: sent.showTribes,
+			grindrTribes: sent.grindrTribes,
+			tribesImInto: sent.tribesImInto,
+			lookingFor: sent.lookingFor,
+			meetAt: sent.meetAt,
+			nsfw: sent.nsfw,
+			hivStatus: sent.hivStatus,
+			lastTestedDate: sent.lastTestedDate,
+			sexualHealth: sent.sexualHealth,
+			vaccines: sent.vaccineIds,
 			socialNetworks: {
-				instagram: instagram ? { userId: instagram } : undefined,
-				twitter: twitter ? { userId: twitter } : undefined,
-				facebook: facebook ? { userId: facebook } : undefined,
+				instagram: sent.instagram
+					? { userId: sent.instagram }
+					: undefined,
+				twitter: sent.twitter ? { userId: sent.twitter } : undefined,
+				facebook: sent.facebook ? { userId: sent.facebook } : undefined,
 			},
 			approximateDistance: initial.approximateDistance,
 			showDistance: initial.showDistance,
-			profileTags,
-		} as ProfileUpdate;
-		const currentHashes = new Set(medias.map((media) => media.mediaHash));
-		const removedHashes = savedForm.mediaHashes.filter(
-			(hash) => !currentHashes.has(hash),
+			profileTags: sent.profileTags,
+		} satisfies ProfileUpdate;
+		const currentHashes = new Set(
+			sent.medias.map((media) => media.mediaHash),
 		);
+		const removedHashes = savedForm.medias
+			.map((media) => media.mediaHash)
+			.filter((hash) => !currentHashes.has(hash));
 		try {
 			await Promise.all([
 				updateOwnProfile({
@@ -243,7 +214,7 @@
 		<SectionHeader>Photos</SectionHeader>
 		<SettingsGroup divider="none">
 			<div class="p-3">
-				<ProfilePicturesUpload bind:medias />
+				<ProfilePicturesUpload bind:medias={form.medias} />
 			</div>
 		</SettingsGroup>
 
@@ -251,19 +222,19 @@
 		<SettingsGroup divider="full">
 			<TextField
 				label="Display name"
-				bind:value={displayName}
+				bind:value={form.displayName}
 				maxLength={fieldLimits.displayName}
 				placeholder="Everyone will see this on the grid..."
 			/>
 			<MultilineField
 				label="About me"
-				bind:value={aboutMe}
+				bind:value={form.aboutMe}
 				maxLength={fieldLimits.aboutMe}
 				placeholder="Tell people who you are and what you're looking for (not what you're not looking for)"
 			/>
 			<ComboField
 				label="Tags"
-				bind:values={profileTags}
+				bind:values={form.profileTags}
 				options={tagOptions}
 				resolveLabel={resolveTagLabel}
 				max={maxProfileTags}
@@ -275,7 +246,7 @@
 		<SettingsGroup divider="full">
 			<ComboField
 				label="Gender"
-				bind:values={genderIds}
+				bind:values={form.genderIds}
 				options={genderOptions}
 				resolveLabel={resolveGenderLabel}
 				exclude={genderExclusions}
@@ -284,7 +255,7 @@
 			/>
 			<ComboField
 				label="Pronouns"
-				bind:values={pronounIds}
+				bind:values={form.pronounIds}
 				options={pronounOptions}
 				resolveLabel={resolvePronounLabel}
 				max={maxProfilePronouns}
@@ -296,23 +267,26 @@
 		<SettingsGroup divider="full">
 			<Field label="Age">
 				<WheelPicker
-					bind:value={age}
+					bind:value={form.age}
 					min={ageRange.min}
 					max={ageRange.max}
 					label="years"
 					disabled={saving}
 				/>
 			</Field>
-			<SwitchRow label="Show my age" bind:checked={showAge} />
+			<SwitchRow label="Show my age" bind:checked={form.showAge} />
 			<SelectField
 				label="Position"
-				bind:value={sexualPosition}
+				bind:value={form.sexualPosition}
 				options={positionOptions}
 			/>
-			<SwitchRow label="Show my position" bind:checked={showPosition} />
+			<SwitchRow
+				label="Show my position"
+				bind:checked={form.showPosition}
+			/>
 			<NumberField
 				label="Height"
-				bind:value={height}
+				bind:value={form.height}
 				min={heightCmRange.min}
 				max={heightCmRange.max}
 				unit="cm"
@@ -320,7 +294,7 @@
 			/>
 			<NumberField
 				label="Weight"
-				bind:value={weightKg}
+				bind:value={form.weightKg}
 				min={weightKgRange.min}
 				max={weightKgRange.max}
 				step={0.5}
@@ -329,47 +303,47 @@
 			/>
 			<SelectField
 				label="Body type"
-				bind:value={bodyType}
+				bind:value={form.bodyType}
 				options={bodyTypeOptions}
 			/>
 			<SelectField
 				label="Ethnicity"
-				bind:value={ethnicity}
+				bind:value={form.ethnicity}
 				options={ethnicityOptions}
 			/>
 			<SelectField
 				label="Relationship status"
-				bind:value={relationshipStatus}
+				bind:value={form.relationshipStatus}
 				options={relationshipOptions}
 			/>
 		</SettingsGroup>
 
 		<SectionHeader>Preferences</SectionHeader>
 		<SettingsGroup divider="full">
-			<SwitchRow label="Show my tribes" bind:checked={showTribes} />
+			<SwitchRow label="Show my tribes" bind:checked={form.showTribes} />
 			<MultiSelectField
 				label="My tribes"
-				bind:values={grindrTribes}
+				bind:values={form.grindrTribes}
 				options={tribeOptions}
 			/>
 			<MultiSelectField
 				label="Tribes I'm into"
-				bind:values={tribesImInto}
+				bind:values={form.tribesImInto}
 				options={tribeOptions}
 			/>
 			<MultiSelectField
 				label="Looking for"
-				bind:values={lookingFor}
+				bind:values={form.lookingFor}
 				options={lookingForOptions}
 			/>
 			<MultiSelectField
 				label="Meet at"
-				bind:values={meetAt}
+				bind:values={form.meetAt}
 				options={meetAtOptions}
 			/>
 			<SelectField
 				label="Accept NSFW pics"
-				bind:value={nsfw}
+				bind:value={form.nsfw}
 				options={nsfwOptions}
 			/>
 		</SettingsGroup>
@@ -378,18 +352,18 @@
 		<SettingsGroup divider="full">
 			<SelectField
 				label="HIV status"
-				bind:value={hivStatus}
+				bind:value={form.hivStatus}
 				options={hivOptions}
 			/>
-			<DateField label="Last tested" bind:value={lastTestedDate} />
+			<DateField label="Last tested" bind:value={form.lastTestedDate} />
 			<MultiSelectField
 				label="Sexual health practices"
-				bind:values={sexualHealth}
+				bind:values={form.sexualHealth}
 				options={healthOptions}
 			/>
 			<MultiSelectField
 				label="Vaccines"
-				bind:values={vaccineIds}
+				bind:values={form.vaccineIds}
 				options={vaccineOptions}
 			/>
 		</SettingsGroup>
@@ -398,13 +372,13 @@
 		<SettingsGroup divider="full">
 			<SocialField
 				label="Instagram"
-				bind:value={instagram}
+				bind:value={form.instagram}
 				icon={InstagramLogoIcon}
 			/>
-			<SocialField label="X" bind:value={twitter} icon={XLogoIcon} />
+			<SocialField label="X" bind:value={form.twitter} icon={XLogoIcon} />
 			<SocialField
 				label="Facebook"
-				bind:value={facebook}
+				bind:value={form.facebook}
 				icon={FacebookLogoIcon}
 			/>
 		</SettingsGroup>

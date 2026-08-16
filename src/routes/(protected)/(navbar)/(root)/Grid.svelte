@@ -86,114 +86,116 @@
 	});
 </script>
 
-<!-- Only the cascade is virtualized: search shows a short, fully-rendered list
-     of matches, so the windowing offsets would only push it off-screen. -->
-<div
-	bind:this={gridElement}
-	class="photo-grid relative"
-	style:padding-top={search.active ? undefined : `${view.paddingTopPx}px`}
-	style:padding-bottom={search.active
-		? undefined
-		: `${view.paddingBottomPx}px`}
-	data-rows-above={(!search.active && view.hasRowsAbove) || undefined}
-	data-rows-below={(!search.active && view.hasRowsBelow) || undefined}
->
-	{#if search.active}
-		<!-- Search replaces the cascade: matches come from every favorite, not
-		     only the ones this paged grid happens to have loaded. -->
-		{#if search.loading && search.results.length === 0}
-			{#each Array.from({ length: 6 })}
+<!-- The sentinel and the status line sit outside the grid: only cells may be
+     direct children of .photo-grid, whose corner rules select on position. -->
+<div class="relative flex flex-1 flex-col">
+	<!-- Only the cascade is virtualized: search shows a short, fully-rendered
+	     list of matches, so the windowing offsets would only push it off-screen. -->
+	<div
+		bind:this={gridElement}
+		class="photo-grid"
+		style:padding-top={search.active ? undefined : `${view.paddingTopPx}px`}
+		style:padding-bottom={search.active
+			? undefined
+			: `${view.paddingBottomPx}px`}
+		data-rows-above={(!search.active && view.hasRowsAbove) || undefined}
+		data-rows-below={(!search.active && view.hasRowsBelow) || undefined}
+	>
+		{#if search.active}
+			<!-- Search replaces the cascade: matches come from every favorite, not
+			     only the ones this paged grid happens to have loaded. -->
+			{#if search.loading && search.results.length === 0}
+				{#each Array.from({ length: 6 })}
+					<GridCellSkeleton />
+				{/each}
+			{:else if search.error}
+				<div class="col-span-full flex p-4">
+					<ApiErrorDisplay
+						error={search.error}
+						onRetry={() => search.search(search.query)}
+						class="m-auto"
+					/>
+				</div>
+			{:else}
+				{#each search.results as result (result.profileId)}
+					<GridProfileMiniCard
+						id={result.profileId}
+						displayName={result.displayName}
+						distance={result.distance}
+						onlineUntil={result.onlineUntil}
+						isFavorite={true}
+						rightNow={result.rightNow}
+						note={result.note}
+						onclick={() => armSearchResults(result.profileId)}
+						medias={result.profileImageMediaHash === null
+							? []
+							: [{ mediaHash: result.profileImageMediaHash }]}
+					/>
+				{:else}
+					<div class="col-span-full">
+						<NoNoteMatches query={search.query} />
+					</div>
+				{/each}
+			{/if}
+		{:else if gridState.loading}
+			{#each Array.from({ length: PAGE_SKELETONS })}
 				<GridCellSkeleton />
 			{/each}
-		{:else if search.error}
+		{:else if gridState.error}
 			<div class="col-span-full flex p-4">
 				<ApiErrorDisplay
-					error={search.error}
-					onRetry={() => search.search(search.query)}
+					error={gridState.error}
+					onRetry={() => gridState.retry()}
 					class="m-auto"
 				/>
 			</div>
 		{:else}
-			{#each search.results as result (result.profileId)}
-				<GridProfileMiniCard
-					id={result.profileId}
-					displayName={result.displayName}
-					distance={result.distance}
-					onlineUntil={result.onlineUntil}
-					isFavorite={true}
-					rightNow={result.rightNow}
-					note={result.note}
-					onclick={() => armSearchResults(result.profileId)}
-					medias={result.profileImageMediaHash === null
-						? []
-						: [{ mediaHash: result.profileImageMediaHash }]}
-				/>
-			{:else}
-				<div class="col-span-full">
-					<NoNoteMatches query={search.query} />
-				</div>
+			{#if gridProfiles.length === 0}
+				<EmptyGrid />
+			{/if}
+			{#each visibleProfiles as item (item.id)}
+				{#if item.type === "rendered"}
+					<GridProfileMiniCard
+						id={item.id}
+						displayName={item.displayName}
+						distance={item.distance}
+						unread={item.unread}
+						onlineUntil={item.onlineUntil}
+						isFavorite={item.isFavorite}
+						isVisiting={item.isVisiting}
+						hadRecentChat={item.hasChattedInLast24Hrs}
+						medias={item.profilePhotosHashes?.map((mediaHash) => ({
+							mediaHash,
+						})) ?? []}
+						rightNow={item.rightNow}
+						note={favoriteNote(item.id)?.notes ?? null}
+						onclick={() => armCascade(item.id)}
+					/>
+				{:else}
+					<GridCellSkeleton
+						onVisible={() => {
+							gridState
+								.resolveProfile(item.id)
+								.catch((error) => console.error(error));
+						}}
+					/>
+				{/if}
+			{/each}
+			{#each Array.from({ length: visibleSkeletons })}
+				<GridCellSkeleton />
 			{/each}
 		{/if}
-	{:else if gridState.loading}
-		{#each Array.from({ length: PAGE_SKELETONS })}
-			<GridCellSkeleton />
-		{/each}
-	{:else if gridState.error}
-		<div class="col-span-full flex p-4">
-			<ApiErrorDisplay
-				error={gridState.error}
-				onRetry={() => gridState.retry()}
-				class="m-auto"
-			/>
-		</div>
-	{:else}
-		{#if gridProfiles.length === 0}
-			<EmptyGrid />
-		{/if}
-		{#each visibleProfiles as item (item.id)}
-			{#if item.type === "rendered"}
-				<GridProfileMiniCard
-					id={item.id}
-					displayName={item.displayName}
-					distance={item.distance}
-					unread={item.unread}
-					onlineUntil={item.onlineUntil}
-					isFavorite={item.isFavorite}
-					isVisiting={item.isVisiting}
-					hadRecentChat={item.hasChattedInLast24Hrs}
-					medias={item.profilePhotosHashes?.map((mediaHash) => ({
-						mediaHash,
-					})) ?? []}
-					rightNow={item.rightNow}
-					note={favoriteNote(item.id)?.notes ?? null}
-					onclick={() => armCascade(item.id)}
-				/>
-			{:else}
-				<GridCellSkeleton
-					onVisible={() => {
-						gridState
-							.resolveProfile(item.id)
-							.catch((error) => console.error(error));
-					}}
-				/>
-			{/if}
-		{/each}
-		{#each Array.from({ length: visibleSkeletons })}
-			<GridCellSkeleton />
-		{/each}
-		{#if gridState.nextPage !== 0 && gridState.nextPage !== null}
-			<div
-				class="pointer-events-none absolute inset-x-0 bottom-0 h-px"
-				use:observeIntersection={{
-					handle: () => {
-						gridState
-							.loadMore()
-							.catch((error) => console.error(error));
-					},
-					root: "scroller",
-					rootMargin: "400px",
-				}}
-			></div>
-		{/if}
+	</div>
+	<div role="status" class="sr-only">
+		{gridState.loadingMore ? "Loading more profiles" : ""}
+	</div>
+	{#if !search.active && gridState.nextPage !== 0 && gridState.nextPage !== null}
+		<div
+			class="pointer-events-none absolute inset-x-0 bottom-0 h-px"
+			use:observeIntersection={{
+				handle: () => gridState.loadMore(),
+				rootMargin: "400px",
+			}}
+		></div>
 	{/if}
 </div>

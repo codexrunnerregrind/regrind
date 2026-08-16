@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { toast } from "svelte-sonner";
 
+	import { promptCopyError } from "$lib/api/error-copy";
 	import { showErrorToast } from "$lib/api/error-toast";
 	import {
 		getAlbumShared,
@@ -151,6 +152,9 @@
 						revert();
 					}
 				}
+			: undefined}
+		onCopyError={message.status === "error"
+			? () => void promptCopyError(message.sendError).catch(() => {})
 			: undefined}
 	/>
 {/each}

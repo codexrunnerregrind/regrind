@@ -7,6 +7,7 @@
 		FlagIcon,
 		FolderSimpleMinusIcon,
 		TrashIcon,
+		WarningCircleIcon,
 	} from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 	import type { ComponentProps } from "svelte";
@@ -23,6 +24,7 @@
 		onUnsend,
 		onUnshareAlbum,
 		onReply,
+		onCopyError,
 		...props
 	}: ComponentProps<typeof ContextMenu> & {
 		textContent?: string;
@@ -31,6 +33,7 @@
 		onUnsend?: () => void;
 		onUnshareAlbum?: () => void;
 		onReply?: () => void;
+		onCopyError?: () => void;
 	} = $props();
 </script>
 
@@ -81,6 +84,17 @@
 					}}
 				>
 					<CopyIcon /> Copy message
+				</Button>
+			{/if}
+			{#if onCopyError}
+				<Button
+					variant="ghost"
+					onclick={() => {
+						onCopyError();
+						props.onClose();
+					}}
+				>
+					<WarningCircleIcon /> Copy error
 				</Button>
 			{/if}
 			<Button
@@ -134,11 +148,3 @@
 		</div>
 	{/snippet}
 </ContextMenu>
-
-<style lang="postcss">
-	@reference "$layout";
-
-	.buttons {
-		@apply flex flex-col rounded-xl bg-black/80 p-1 *:justify-start *:active:translate-y-0!;
-	}
-</style>

@@ -3,11 +3,11 @@
 	import { toast } from "svelte-sonner";
 
 	import {
-		type ApiResponseMessage,
 		previewFromMessage,
 		previewLabel,
-		replyThumbnailUrl,
-	} from "$lib/model/messaging/messages";
+	} from "$lib/model/messaging/message-preview";
+	import { replyThumbnailUrl } from "$lib/model/messaging/message-preview";
+	import { type ApiResponseMessage } from "$lib/model/messaging/messages";
 	import { scrollToMessage } from "$lib/util/scroll";
 	import { getConversationState } from "../../conversation-state.svelte";
 	import { getMessageMetaContext } from "./context";

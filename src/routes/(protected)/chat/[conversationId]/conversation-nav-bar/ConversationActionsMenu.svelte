@@ -7,6 +7,7 @@
 	import { openImageGalleryLightbox } from "$lib/chat/image-gallery";
 	import BlockProfileDialog from "$lib/components/profile/BlockProfileDialog.svelte";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+	import { draftFromMessage } from "$lib/model/messaging/messages";
 	import { profileMediaUrl } from "$lib/util/media";
 	import { getConversationState } from "../conversation-state.svelte";
 	import { collectReceivedPhotos } from "./received-photos";
@@ -47,7 +48,9 @@
 				onReply: (text: string, index: number) => {
 					const target = photos[index]?.message;
 					if (target) conversationState.setReplyTo(target);
-					conversationState.send({ type: "Text", body: { text } });
+					conversationState.send(
+						draftFromMessage({ type: "Text", body: { text } }),
+					);
 					return Promise.resolve();
 				},
 				onReact: async (index: number) => {

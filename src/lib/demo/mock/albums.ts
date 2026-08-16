@@ -52,6 +52,10 @@ function demoAlbumOwner(albumId: number): number {
 	return demoMeProfileId;
 }
 
+export function albumCoverUrl(albumId: number): string {
+	return picsum({ seed: `album-${albumId}-cover`, width: 300, height: 400 });
+}
+
 export function demoAlbumContent(albumId: number) {
 	// Prefer the mutable store so edits made in demo mode are visible here.
 	const owned = demoAlbumStore().find((album) => album.albumId === albumId);
@@ -146,6 +150,23 @@ function albumShareStore(albumId: number): number[] {
 
 export function demoAlbumSharesFor(albumId: number) {
 	return { profileIds: albumShareStore(albumId) };
+}
+
+/**
+ * Records a share so the demo's album state answers the way the real API does —
+ * the share request names the recipients under `profiles`.
+ */
+export function demoShareAlbum(albumId: number, body: unknown) {
+	const profiles = (body as { profiles?: { profileId?: number }[] } | null)
+		?.profiles;
+	if (!profiles) return;
+	const existing = albumShareStore(albumId);
+	const added = profiles
+		.map((p) => p.profileId)
+		.filter(
+			(id): id is number => id !== undefined && !existing.includes(id),
+		);
+	if (added.length > 0) demoAlbumShares.set(albumId, [...existing, ...added]);
 }
 
 export function demoUnshareAlbum(albumId: number, body: unknown) {

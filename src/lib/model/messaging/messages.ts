@@ -206,7 +206,10 @@ export const expiringImageMessageSchema = imageBaseMessageSchema.safeExtend({
 	body: z.object({
 		...imageBaseMessageSchema.shape.body.shape,
 		url: mediaUrlSchema.nullable(),
-		viewsRemaining: z.int().nonnegative().nullable(),
+		viewsRemaining: z.int().nonnegative().nullable().optional(),
+		duration: z.int().optional(),
+		expiresAt: unixTimestampMsSchema.nullable().optional(),
+		viewed: z.boolean().nullable().optional(),
 	}),
 });
 
@@ -252,6 +255,27 @@ export const retractMessageSchema = messageBaseSchema.safeExtend({
 
 export type RetractMessage = z.infer<typeof retractMessageSchema>;
 
+export const rightNowRequestMediaSchema = z.object({
+	mediaHash: z.string(),
+	isNsfw: z.boolean(),
+});
+
+export const rightNowRequestMessageSchema = messageBaseSchema.safeExtend({
+	type: z.literal("RightNowRequest"),
+	body: z.object({
+		requestId: z.int().nonnegative(),
+		requestCreatedAt: unixTimestampMsSchema,
+		requestUpdatedAt: unixTimestampMsSchema,
+		postStatus: z.string().nullable(),
+		postId: z.int().nonnegative().nullable(),
+		medias: z.array(rightNowRequestMediaSchema),
+	}),
+});
+
+export type RightNowRequestMessage = z.infer<
+	typeof rightNowRequestMessageSchema
+>;
+
 export const textMessageSchema = messageBaseSchema.safeExtend({
 	type: z.literal("Text"),
 	body: z.object({ text: z.string() }),
@@ -290,6 +314,7 @@ export const messageSchema = z.discriminatedUnion("type", [
 	profileLinkMessageSchema,
 	profilePhotoReplyMessageSchema,
 	retractMessageSchema,
+	rightNowRequestMessageSchema,
 	textMessageSchema,
 	unknownMessageSchema,
 	nonExpiringVideoMessageSchema,
@@ -314,98 +339,115 @@ export const unsentMessageSchema: z.ZodType<UnsentMessage> = z.intersection(
 	apiResponseMessageOverlaySchema,
 );
 
+const modeledMessageTypes = new Set<string>(
+	messageSchema.options.map((option) => option.shape.type.value),
+);
+const typesAlreadyReportedAsDrifted = new Set<string>();
+
+function warnOnceIfModeledTypeDriftedFromSpec(type: string): void {
+	const isDrift = modeledMessageTypes.has(type);
+	if (!isDrift || typesAlreadyReportedAsDrifted.has(type)) return;
+	typesAlreadyReportedAsDrifted.add(type);
+	console.warn(
+		`[messages] "${type}" no longer matches the body documented in docs/lib/openapi.json and is rendering as Unknown`,
+	);
+}
+
+export type UnrecognizedMessage = Omit<
+	z.infer<typeof messageBaseSchema>,
+	"type"
+> &
+	ApiResponseMessageOverlay & {
+		type: "Unknown";
+		unrecognizedType: string;
+		body: unknown;
+	};
+
+// Annotated rather than inferred: the overlay carries `replyToMessage`, which
+// points back at this very union, so inference would chase its own tail.
+export const unrecognizedMessageSchema: z.ZodType<UnrecognizedMessage> = z
+	.intersection(
+		messageBaseSchema.safeExtend({ type: z.string(), body: z.unknown() }),
+		apiResponseMessageOverlaySchema,
+	)
+	.transform(({ type, ...message }) => {
+		warnOnceIfModeledTypeDriftedFromSpec(type);
+		return { ...message, type: "Unknown" as const, unrecognizedType: type };
+	});
+
 export type ApiResponseMessage =
 	| (Message & ApiResponseMessageOverlay)
-	| UnsentMessage;
+	| UnsentMessage
+	| UnrecognizedMessage;
 
 export const apiResponseMessageSchema: z.ZodType<ApiResponseMessage> = z
 	.intersection(messageSchema, apiResponseMessageOverlaySchema)
-	.or(unsentMessageSchema);
+	.or(unsentMessageSchema)
+	.or(unrecognizedMessageSchema);
 
-// The three shapes a chat video arrives in. They differ only in how long the
-// media stays viewable, so everything downstream treats them alike.
-export const VIDEO_MESSAGE_TYPES = [
-	"Video",
-	"PrivateVideo",
-	"NonExpiringVideo",
-];
+const mediaIdSchema = z.int().nonnegative();
 
-export type MessagePreview = {
-	type: string;
-	text: string | null;
-	albumId: number | null;
-	imageHash: string | null;
-};
+export const outboundMessageSchema = z.discriminatedUnion("type", [
+	z.object({ type: z.literal("Text"), body: textMessageSchema.shape.body }),
+	z.object({
+		type: z.literal("Location"),
+		body: locationMessageSchema.shape.body,
+	}),
+	z.object({
+		type: z.literal("Gaymoji"),
+		body: gaymojiMessageSchema.shape.body,
+	}),
+	z.object({ type: z.literal("Giphy"), body: giphyMessageSchema.shape.body }),
+	z.object({
+		type: z.literal("ProfilePhotoReply"),
+		body: profilePhotoReplyMessageSchema.shape.body,
+	}),
+	z.object({
+		type: z.literal("Image"),
+		body: z.object({ mediaId: mediaIdSchema }),
+	}),
+	z.object({
+		type: z.literal("ExpiringImage"),
+		body: z.object({ mediaId: mediaIdSchema, expiring: z.literal(true) }),
+	}),
+	z.object({
+		type: z.literal("Audio"),
+		body: z.object({ mediaId: mediaIdSchema }),
+	}),
+	z.object({
+		type: z.literal("Video"),
+		body: z.object({
+			mediaId: mediaIdSchema,
+			looping: z.boolean(),
+			maxViews: z.int().nonnegative(),
+		}),
+	}),
+	z.object({
+		type: z.literal("AlbumContentReaction"),
+		body: z.object({
+			albumId: z.int().nonnegative(),
+			albumContentId: z.int().nonnegative(),
+		}),
+	}),
+	z.object({
+		type: z.literal("AlbumContentReply"),
+		body: z.object({
+			albumId: z.int().nonnegative(),
+			albumContentId: z.int().nonnegative(),
+			albumContentReply: z.string(),
+		}),
+	}),
+]);
 
-export function previewFromMessage(
-	message: ApiResponseMessage | undefined,
-): MessagePreview {
-	if (!message)
-		return { type: "", text: null, albumId: null, imageHash: null };
-	switch (message.type) {
-		case "Unsent":
-			return {
-				type: "Unsent",
-				text: null,
-				albumId: null,
-				imageHash: null,
-			};
-		case "Text":
-			return {
-				type: "Text",
-				text: message.body.text,
-				albumId: null,
-				imageHash: null,
-			};
-		case "Image":
-			return {
-				type: "Image",
-				text: null,
-				albumId: null,
-				imageHash: message.body.imageHash,
-			};
-		case "Album":
-		case "ExpiringAlbum":
-		case "ExpiringAlbumV2":
-			return {
-				type: message.type,
-				text: null,
-				albumId: message.body.albumId,
-				imageHash: null,
-			};
-		case "Location":
-		case "ExpiringImage":
-		case "Video":
-		case "PrivateVideo":
-		case "NonExpiringVideo":
-		default:
-			return {
-				type: message.type,
-				text: null,
-				albumId: null,
-				imageHash: null,
-			};
-	}
-}
+export type OutboundMessage = z.infer<typeof outboundMessageSchema>;
 
-/**
- * The image to show alongside a quoted message, or null when the quote has
- * nothing to show. A reply to one of several photos is unreadable as the bare
- * word "Photo" — which photo? — so the quote carries the picture itself.
- */
-export function replyThumbnailUrl(
-	message: ApiResponseMessage | null | undefined,
-): string | null {
-	if (!message) return null;
-	return message.type === "Image" ? message.body.url : null;
-}
+export type MessageDraft = { outbound: OutboundMessage; optimistic: Message };
 
-export function previewLabel(preview: MessagePreview | null): string | null {
-	if (preview === null) return null;
-	if (preview.text !== null) return preview.text;
-	if (preview.albumId !== null) return "Album";
-	if (preview.imageHash !== null || preview.type === "Image") return "Photo";
-	if (preview.type === "Location") return "Location";
-	if (VIDEO_MESSAGE_TYPES.includes(preview.type)) return "Video";
-	return null;
+type SharedShapeMessage = Extract<
+	Message,
+	{ type: "Text" | "Location" | "Gaymoji" | "Giphy" | "ProfilePhotoReply" }
+>;
+
+export function draftFromMessage(message: SharedShapeMessage): MessageDraft {
+	return { outbound: message, optimistic: message };
 }

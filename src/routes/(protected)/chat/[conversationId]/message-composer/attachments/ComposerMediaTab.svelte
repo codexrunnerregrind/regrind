@@ -11,6 +11,7 @@
 		type DrawerMedia,
 		getDrawerMedia,
 	} from "$lib/api/messaging/drawer";
+	import { asAppError } from "$lib/api/methods";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import MediaImage from "$lib/components/shared/MediaImage.svelte";
 	import SelectionCheck from "$lib/components/shared/SelectionCheck.svelte";
@@ -25,8 +26,12 @@
 	let {
 		onClose,
 		onSelectionChange,
-	}: { onClose: () => void; onSelectionChange: (count: number) => void } =
-		$props();
+		expiring,
+	}: {
+		onClose: () => void;
+		onSelectionChange: (count: number) => void;
+		expiring: boolean;
+	} = $props();
 
 	const composer = getMessageComposerContext();
 	const selected = new SelectionSet<number>(10);
@@ -75,7 +80,15 @@
 				];
 			} catch (err) {
 				console.error(err);
-				toast.error("Couldn't add photo");
+				const rejected = asAppError(err);
+				if (
+					rejected?.kind === "Media" &&
+					typeof rejected.message === "string"
+				) {
+					toast.error(rejected.message);
+				} else {
+					toast.error("Couldn't add photo");
+				}
 			} finally {
 				uploadingCount--;
 			}
@@ -106,39 +119,48 @@
 		return /([0-9a-f]{64}|[0-9a-f]{40})/i.exec(url)?.[1] ?? "";
 	}
 
-	export function sendSelected(expiring = false) {
+	export function sendSelected() {
 		if (media === null) return;
 		const items = media.filter((item) => selected.has(item.id));
+		const sendAsExpiring = expiring;
 		selected.clear();
-		onSelectionChange(0);
 		onClose();
 		for (const item of items) {
 			item.used = true;
-			if (expiring) {
-				void composer().sendMessage({
-					type: "ExpiringImage",
-					body: {
-						mediaId: item.id,
-						width: null,
-						height: null,
-						url: item.url,
-						viewsRemaining: 1,
-					},
-				});
-			} else {
-				void composer().sendMessage({
-					type: "Image",
-					body: {
-						mediaId: item.id,
-						width: null,
-						height: null,
-						url: item.url,
-						imageHash: imageHashFromUrl(item.url),
-						takenOnGrindr: item.takenOnGrindr,
-						createdAt: item.createdTs,
-					},
-				});
-			}
+			const mediaBody = {
+				mediaId: item.id,
+				width: null,
+				height: null,
+				url: item.url,
+			};
+			void composer().sendMessage(
+				sendAsExpiring
+					? {
+							outbound: {
+								type: "ExpiringImage",
+								body: { mediaId: item.id, expiring: true },
+							},
+							optimistic: {
+								type: "ExpiringImage",
+								body: mediaBody,
+							},
+						}
+					: {
+							outbound: {
+								type: "Image",
+								body: { mediaId: item.id },
+							},
+							optimistic: {
+								type: "Image",
+								body: {
+									...mediaBody,
+									imageHash: imageHashFromUrl(item.url),
+									takenOnGrindr: item.takenOnGrindr,
+									createdAt: item.createdTs,
+								},
+							},
+						},
+			);
 		}
 	}
 </script>
@@ -157,7 +179,7 @@
 	{:else if media === null}
 		<div class="photo-grid">
 			{#each Array(12)}
-				<Skeleton class="aspect-square rounded-none" />
+				<Skeleton class="aspect-(--photo-grid-aspect) rounded-none" />
 			{/each}
 		</div>
 	{:else if media.length === 0 && uploadingCount === 0}
@@ -179,7 +201,7 @@
 		<div class="photo-grid">
 			<button
 				type="button"
-				class="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 bg-card-foreground/5 text-muted-foreground transition-colors hover:bg-card-foreground/10 hover:text-foreground"
+				class="flex aspect-(--photo-grid-aspect) cursor-pointer flex-col items-center justify-center gap-1 bg-card-foreground/5 text-muted-foreground transition-colors hover:bg-card-foreground/10 hover:text-foreground"
 				aria-label="Add photo"
 				onclick={addPhoto}
 			>
@@ -187,7 +209,7 @@
 				<span class="text-xs font-medium">Add photo</span>
 			</button>
 			{#each Array(uploadingCount)}
-				<Skeleton class="aspect-square rounded-none" />
+				<Skeleton class="aspect-(--photo-grid-aspect) rounded-none" />
 			{/each}
 			{#each media as item (item.id)}
 				{@const isSelected = selected.has(item.id)}
@@ -254,4 +276,9 @@
 			{/each}
 		</div>
 	{/if}
+	<div role="status" class="sr-only">
+		{selected.size === selected.max
+			? `Maximum ${selected.max} selected`
+			: ""}
+	</div>
 </div>

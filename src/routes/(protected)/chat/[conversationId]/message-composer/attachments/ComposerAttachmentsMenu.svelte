@@ -1,8 +1,8 @@
 <script lang="ts">
-	import ClockCountdownIcon from "phosphor-svelte/lib/ClockCountdownIcon";
 	import FolderOpenIcon from "phosphor-svelte/lib/FolderOpenIcon";
 	import ImageIcon from "phosphor-svelte/lib/ImageIcon";
 	import NavigationArrowIcon from "phosphor-svelte/lib/NavigationArrowIcon";
+	import TimerIcon from "phosphor-svelte/lib/TimerIcon";
 	import { expoOut, sineIn } from "svelte/easing";
 	import { fly } from "svelte/transition";
 
@@ -10,7 +10,8 @@
 	import { Button } from "$lib/components/ui/button";
 	import * as Drawer from "$lib/components/ui/drawer";
 	import * as Tabs from "$lib/components/ui/tabs";
-	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+	import { Toggle } from "$lib/components/ui/toggle";
+	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
 	import ComposerAlbumsTab from "./ComposerAlbumsTab.svelte";
 	import ComposerLocationTab from "./ComposerLocationTab.svelte";
 	import ComposerMediaTab from "./ComposerMediaTab.svelte";
@@ -20,33 +21,28 @@
 	let { open = $bindable() }: { open: boolean } = $props();
 
 	type Tab = "media" | "albums" | "location";
+	// `actionLabel` lets a tab rename the confirm button — the albums tab takes a
+	// share back as readily as it grants one, and "Send" is wrong for that.
+	type SelectionTab = {
+		sendSelected: () => void;
+		actionLabel?: () => string;
+	};
 
-	let selectedTab = $state("media");
+	let selectedTab = $state<Tab>("media");
 
 	const isFullsizeTab = $derived(FULLSIZE_TABS.includes(selectedTab));
 
 	let sheet = $state<HTMLDivElement | null>(null);
 	let peek = $state<HTMLDivElement | null>(null);
-	let mediaTab = $state<ComposerMediaTab | null>(null);
-	let mediaCount = $state(0);
-
-	// Off by default; when on, selected photos are sent as expiring (view-once)
-	// images. Only the media tab offers this — albums have their own expiry.
+	let tabs = $state<Partial<Record<Tab, SelectionTab | null>>>({});
+	let counts = $state<Partial<Record<Tab, number>>>({});
 	let expiring = $state(false);
 
-	// The floating Send button belongs to the media tab; albums are shared or
-	// unshared directly by tapping a tile, so they never contribute a count.
-	const selectedCount = $derived(selectedTab === "media" ? mediaCount : 0);
+	const selectedCount = $derived(counts[selectedTab] ?? 0);
 
 	function sendSelected() {
-		if (selectedTab === "media") mediaTab?.sendSelected(expiring);
+		tabs[selectedTab]?.sendSelected();
 	}
-
-	// Reset the timer whenever the sheet closes so it never carries over to the
-	// next photo the user picks.
-	$effect(() => {
-		if (!open) expiring = false;
-	});
 
 	const settleQuietMs = 140;
 	let settleTimer: ReturnType<typeof setTimeout> | null = null;
@@ -70,19 +66,18 @@
 	}
 
 	$effect(() => {
-		if (!open) {
-			if (settleTimer !== null) clearTimeout(settleTimer);
-			settleTimer = null;
-			return;
-		}
-		const dismiss = () => {
+		if (open) return;
+		if (settleTimer !== null) clearTimeout(settleTimer);
+		settleTimer = null;
+		counts = {};
+		expiring = false;
+	});
+
+	dismissOnBackGesture({
+		active: () => open,
+		dismiss: () => {
 			open = false;
-			return false;
-		};
-		backGestureEventHandlers.add(dismiss);
-		return () => {
-			backGestureEventHandlers.delete(dismiss);
-		};
+		},
 	});
 </script>
 
@@ -101,6 +96,7 @@
 				open = false;
 			}
 		}}
+		preventOverflowTextSelection={false}
 	>
 		<Tabs.Root
 			bind:value={selectedTab}
@@ -138,19 +134,22 @@
 					></div>
 					<Tabs.Content value="media">
 						<ComposerMediaTab
-							bind:this={mediaTab}
-							onSelectionChange={(count) => {
-								mediaCount = count;
-							}}
+							bind:this={tabs.media}
+							{expiring}
+							onSelectionChange={(count) =>
+								(counts.media = count)}
 							onClose={() => (open = false)}
 						/>
 					</Tabs.Content>
 					<Tabs.Content value="albums">
-						<!-- Tabs.Content renders regardless of the active tab, so the
-						     tab is told whether it is showing rather than fetching
-						     albums every time the sheet opens. -->
+						<!-- Tabs.Content renders regardless of the active tab, so
+						     the tab is told whether it is showing rather than
+						     fetching albums every time the sheet opens. -->
 						<ComposerAlbumsTab
+							bind:this={tabs.albums}
 							active={selectedTab === "albums"}
+							onSelectionChange={(count) =>
+								(counts.albums = count)}
 							onClose={() => (open = false)}
 						/>
 					</Tabs.Content>
@@ -162,32 +161,42 @@
 
 			{#if selectedCount > 0}
 				<div
-					class="pointer-events-none absolute inset-x-0 bottom-20 flex justify-center gap-2 px-4"
+					class="pointer-events-none absolute inset-x-0 bottom-18 flex justify-center gap-2"
 					in:fly={{ duration: 600, y: 100, easing: expoOut }}
 					out:fly={{ duration: 400, y: 100, easing: sineIn }}
 				>
-					<button
-						type="button"
-						class={[
-							"pointer-events-auto flex h-11 items-center gap-1.5 rounded-full px-4 font-medium shadow-lg transition-colors",
-							{
-								"bg-foreground text-background": expiring,
-								"bg-popover text-foreground": !expiring,
-							},
-						]}
-						aria-pressed={expiring}
-						aria-label="Toggle expiring photo"
-						onclick={() => (expiring = !expiring)}
-					>
-						<ClockCountdownIcon weight="bold" class="size-5" />
-						{expiring ? "10s" : "Off"}
-					</button>
+					{#if selectedTab === "media"}
+						<Toggle
+							aria-label="Set photo as expiring after 10 seconds"
+							size="lg"
+							class={[
+								"pointer-events-auto",
+								{
+									"bg-muted hover:bg-muted/80": !expiring,
+									"bg-popover-foreground! text-popover hover:bg-popover-foreground/80! hover:text-popover":
+										expiring,
+								},
+							]}
+							variant="default"
+							bind:pressed={expiring}
+						>
+							<TimerIcon
+								weight={expiring ? "fill" : "regular"}
+								class="size-5"
+							/>
+							{#if expiring}
+								10s
+							{:else}
+								Off
+							{/if}
+						</Toggle>
+					{/if}
 					<Button
 						size="lg"
 						class="pointer-events-auto shadow-lg"
 						onclick={sendSelected}
 					>
-						{expiring ? "Send Expiring" : "Send"}
+						{tabs[selectedTab]?.actionLabel?.() ?? "Send"}
 						<Badge
 							variant="secondary"
 							class="bg-primary-foreground/10 text-primary-foreground"

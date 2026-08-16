@@ -19,6 +19,7 @@ import {
 	NOW,
 } from "../config";
 import { demoFavoriteNote } from "./favorite-notes";
+import { demoFavoriteOf } from "./favorites";
 import {
 	type DemoSeed,
 	distanceForId,
@@ -47,7 +48,7 @@ export function buildShortProfile(seed: DemoSeed): DemoShortProfile {
 		onlineUntil: onlineUntilOf(seed),
 		distance: seed.distanceM ?? null,
 		profileImageMediaHash: photos[0] ?? null,
-		isFavorite: seed.favorite,
+		isFavorite: demoFavoriteOf({ profileId: seed.id, seed: seed.favorite }),
 		lastViewed: null,
 		seen: lastOnlineOf(seed),
 		rightNow: "NOT_ACTIVE",
@@ -105,7 +106,7 @@ export function buildFullProfile(seed: DemoSeed): Profile {
 		sexualHealth: [],
 		isVisiting: false,
 		travelPlans: [],
-		isInAList: seed.favorite,
+		isInAList: demoFavoriteOf({ profileId: seed.id, seed: seed.favorite }),
 		tribesImInto: null,
 		showVipBadge: false,
 		rightNowShareLocation: null,
@@ -133,7 +134,7 @@ function cascadeProfileData(seed: DemoSeed) {
 		primaryImageUrl: photos[0]
 			? `https://cdns.grindr.com/images/profile/480x480/${photos[0]}`
 			: undefined,
-		favorite: seed.favorite,
+		favorite: demoFavoriteOf({ profileId: seed.id, seed: seed.favorite }),
 		viewed: false,
 		chatted: seed.unread > 0,
 		roaming: false,
@@ -186,7 +187,11 @@ function filteredGridIds(params: URLSearchParams): number[] {
 	}
 	return demoGridOrder.filter((id) => {
 		const seed = profileSeed(id);
-		if (favorites && !seed.favorite) return false;
+		if (
+			favorites &&
+			!demoFavoriteOf({ profileId: id, seed: seed.favorite })
+		)
+			return false;
 		if (onlineOnly && !seed.online) return false;
 		if (ageMin !== undefined && (seed.age === null || seed.age < ageMin))
 			return false;

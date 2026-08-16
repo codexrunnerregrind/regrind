@@ -3,10 +3,8 @@
 
 	import { showErrorToast } from "$lib/api/error-toast";
 	import { getSingleMessage } from "$lib/api/messaging/messages";
-	import {
-		apiResponseMessageSchema,
-		VIDEO_MESSAGE_TYPES,
-	} from "$lib/model/messaging/messages";
+	import { VIDEO_MESSAGE_TYPES } from "$lib/model/messaging/message-preview";
+	import { apiResponseMessageSchema } from "$lib/model/messaging/messages";
 	import LockedMedia from "./LockedMedia.svelte";
 	import { MessageMediaState } from "./message-media.svelte";
 

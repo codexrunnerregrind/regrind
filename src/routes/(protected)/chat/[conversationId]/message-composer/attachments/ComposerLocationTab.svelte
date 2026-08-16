@@ -5,6 +5,7 @@
 	import GeoMapPicker from "$lib/components/location-chooser/GeoMapPicker.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import { decodeGeohash } from "$lib/model/geohash";
+	import { draftFromMessage } from "$lib/model/messaging/messages";
 	import { hapticImpact } from "$lib/platform/haptics";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
 
@@ -38,10 +39,12 @@
 
 	function send() {
 		if (!pinPos) return;
-		void composer().sendMessage({
-			type: "Location",
-			body: { lat: pinPos.lat, lon: pinPos.lon },
-		});
+		void composer().sendMessage(
+			draftFromMessage({
+				type: "Location",
+				body: { lat: pinPos.lat, lon: pinPos.lon },
+			}),
+		);
 		hapticImpact("light");
 		onClose();
 	}

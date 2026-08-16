@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import z from "zod";
 
-import { myAlbumsResponseSchema } from "$lib/api/messaging/albums";
 import { demoRoute } from "$lib/demo";
 import { demoMeProfileId } from "$lib/demo/config";
 import { cascadeV4ResponseSchema } from "$lib/model/browse/grid/cascade/response/v4";
@@ -15,6 +14,7 @@ import {
 	albumContentSchema,
 	albumDetailsSchema,
 	albumMinSchema,
+	myAlbumsResponseSchema,
 } from "$lib/model/messaging/albums";
 import { fullConversationSchema } from "$lib/model/messaging/conversations";
 import { previewLabel } from "$lib/model/messaging/message-preview";
@@ -239,6 +239,22 @@ describe("demo route data matches the real schemas", () => {
 		apiResponseMessageSchema.parse(body);
 	});
 
+	it("sending media echoes it back under the type it was sent as", () => {
+		const send = (type: string, body: unknown) =>
+			apiResponseMessageSchema.parse(
+				route("/v4/chat/message/send", "POST", {
+					type,
+					target: { type: "Direct", targetId: 100001 },
+					body,
+				}),
+			);
+
+		expect(send("Image", { mediaId: 800_001 }).type).toBe("Image");
+		expect(
+			send("ExpiringImage", { mediaId: 800_001, expiring: true }).type,
+		).toBe("ExpiringImage");
+	});
+
 	it("taps and views validate", () => {
 		const taps = route("/v2/taps/received") as { profiles: unknown[] };
 		for (const tap of taps.profiles) tapProfileSchema.parse(tap);
@@ -336,5 +352,71 @@ describe("demo route data matches the real schemas", () => {
 				(e) => e.data.conversationId === third.data.conversationId,
 			),
 		).toBe(false);
+	});
+
+	it("favorite mutations persist across inbox and profile fetches", () => {
+		const inbox = () => {
+			const body = route("/v4/inbox?page=1", "POST") as {
+				entries: unknown[];
+			};
+			return z.array(fullConversationSchema).parse(body.entries);
+		};
+		const starred = inbox().find((entry) => entry.data.favorite);
+		if (!starred)
+			throw new Error("the demo inbox has no favorited conversation");
+		const profileId = starred.data.participants[0]?.profileId;
+		if (!profileId)
+			throw new Error("the favorited conversation has no participant");
+
+		route(`/v3/me/favorites/${profileId}`, "DELETE");
+
+		const conversationAfter = inbox().find(
+			(entry) =>
+				entry.data.conversationId === starred.data.conversationId,
+		);
+		expect(conversationAfter?.data.favorite).toBe(false);
+		const profileAfter = route(`/v7/profiles/${profileId}`, "GET") as {
+			profiles: { isFavorite: boolean }[];
+		};
+		expect(profileAfter.profiles[0]?.isFavorite).toBe(false);
+
+		route(`/v3/me/favorites/${profileId}`, "POST");
+		expect(
+			inbox().find(
+				(entry) =>
+					entry.data.conversationId === starred.data.conversationId,
+			)?.data.favorite,
+		).toBe(true);
+	});
+
+	it("keeps every conversation peer's profile favorite in agreement with its row", () => {
+		const body = route("/v4/inbox?page=1", "POST") as {
+			entries: unknown[];
+		};
+		const entries = z.array(fullConversationSchema).parse(body.entries);
+		expect(entries.length).toBeGreaterThan(0);
+
+		for (const entry of entries) {
+			const profileId = entry.data.participants[0]?.profileId;
+			const profile = (
+				route(`/v7/profiles/${profileId}`, "GET") as {
+					profiles: { isFavorite: boolean }[];
+				}
+			).profiles[0];
+			expect(
+				profile?.isFavorite,
+				`profile ${profileId} vs its conversation row`,
+			).toBe(entry.data.favorite);
+		}
+	});
+
+	it("filters the inbox server-side when the body asks for favorites only", () => {
+		const body = route("/v4/inbox?page=1", "POST", {
+			favoritesOnly: true,
+		}) as { entries: unknown[] };
+		const entries = z.array(fullConversationSchema).parse(body.entries);
+
+		expect(entries.length).toBeGreaterThan(0);
+		expect(entries.every((entry) => entry.data.favorite)).toBe(true);
 	});
 });

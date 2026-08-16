@@ -2,6 +2,7 @@
 	import { showErrorToast } from "$lib/api/error-toast";
 	import { openImageGalleryLightbox } from "$lib/chat/image-gallery";
 	import MediaImage from "$lib/components/shared/MediaImage.svelte";
+	import { draftFromMessage } from "$lib/model/messaging/messages";
 	import { profileMediaUrl } from "$lib/util/media";
 	import type {
 		MediaViewerActions,
@@ -101,7 +102,9 @@
 						(m) => m.messageId === sideImages[index]?.messageId,
 					);
 					if (target) conversationState.setReplyTo(target);
-					conversationState.send({ type: "Text", body: { text } });
+					conversationState.send(
+						draftFromMessage({ type: "Text", body: { text } }),
+					);
 					return Promise.resolve();
 				},
 				onReact: async (index) => {
@@ -155,7 +158,7 @@
 
 <div
 	class={["relative", { "w-2/5 max-w-60 min-w-35": !media.clone }]}
-	bind:this={media.el}
+	{@attach media.attach}
 >
 	<a
 		href={failed ? undefined : message.url}

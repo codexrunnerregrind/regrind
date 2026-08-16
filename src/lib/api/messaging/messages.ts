@@ -1,5 +1,6 @@
 import z from "zod";
 
+import { errorUrnFromBody } from "$lib/api/error-urn";
 import { fetchRest } from "$lib/api/transport";
 import {
 	type ApiResponseMessage,
@@ -8,7 +9,7 @@ import {
 import { unixTimestampMsSchema } from "$lib/model/types";
 import { ws } from "$lib/ws.svelte";
 import type { Conversation } from "$lib/model/messaging/conversations";
-import type { messageSchema } from "$lib/model/messaging/messages";
+import type { OutboundMessage } from "$lib/model/messaging/messages";
 
 const conversationMessagesSchema = z.object({
 	lastReadTimestamp: unixTimestampMsSchema.nullable(),
@@ -23,10 +24,6 @@ const conversationMessagesSchema = z.object({
 	}),
 });
 
-const unauthorizedActionSchema = z.object({
-	type: z.literal("urn:gr:err:unauthorized_action"),
-});
-
 export class ConversationUnavailableError extends Error {
 	readonly conversationId: string;
 
@@ -35,16 +32,6 @@ export class ConversationUnavailableError extends Error {
 		this.name = "ConversationUnavailableError";
 		this.conversationId = conversationId;
 	}
-}
-
-function isUnauthorizedAction(body: string): boolean {
-	let parsed: unknown;
-	try {
-		parsed = JSON.parse(body);
-	} catch {
-		return false;
-	}
-	return unauthorizedActionSchema.safeParse(parsed).success;
 }
 
 export async function getConversationMessages({
@@ -60,7 +47,10 @@ export async function getConversationMessages({
 		`/v5/chat/conversation/${conversationId}/message?` + params.toString(),
 		{ method: "GET" },
 	);
-	if (res.status === 403 && isUnauthorizedAction(res.text())) {
+	if (
+		res.status === 403 &&
+		errorUrnFromBody(res.text()) === "urn:gr:err:unauthorized_action"
+	) {
 		throw new ConversationUnavailableError(conversationId);
 	}
 	res.assertOk();
@@ -83,26 +73,19 @@ export async function getSingleMessage({
 	return message;
 }
 
-function toOutboundBody(message: z.infer<typeof messageSchema>): unknown {
-	if (message.type === "Image" || message.type === "ExpiringImage") {
-		return { mediaId: message.body.mediaId };
-	}
-	return message.body;
-}
-
 export async function sendMessage({
 	toUserId,
 	message,
 	replyToMessageId,
 }: {
 	toUserId: number;
-	message: z.infer<typeof messageSchema>;
+	message: OutboundMessage;
 	replyToMessageId?: string;
 }) {
 	const body = {
 		type: message.type,
 		target: { type: "Direct", targetId: toUserId },
-		body: toOutboundBody(message),
+		body: message.body,
 		...(replyToMessageId !== undefined ? { replyToMessageId } : {}),
 	};
 	// The HTTP endpoint 400s when `replyToMessageId` is set — it's only

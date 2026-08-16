@@ -6,8 +6,9 @@ import {
 	albumDetailsSchema,
 	type AlbumExpirationType,
 	albumMinSchema,
+	type AlbumShareRequest,
 	albumSharesSchema,
-	myAlbumSchema,
+	myAlbumsResponseSchema,
 	pressieAlbumsFeedResponseSchema,
 	pressieAlbumsPaywallResponseSchema,
 	sharedAlbumSchema,
@@ -150,10 +151,6 @@ export async function getAlbumsSharedByProfile(profileId: number) {
 	return albums;
 }
 
-export const myAlbumsResponseSchema = z.object({
-	albums: z.array(myAlbumSchema),
-});
-
 export async function getMyAlbums() {
 	const { albums } = await fetchRest("/v1/albums").then((res) =>
 		res.jsonParsed(myAlbumsResponseSchema),
@@ -168,11 +165,11 @@ export async function getMyAlbums() {
 export async function shareAlbum({
 	albumId,
 	profileIds,
-	expirationType,
+	expirationType = "INDEFINITE",
 }: {
 	albumId: number;
 	profileIds: number[];
-	expirationType: AlbumExpirationType;
+	expirationType?: AlbumExpirationType;
 }) {
 	return await fetchRest(`/v4/albums/${albumId}/shares`, {
 		method: "POST",
@@ -181,7 +178,7 @@ export async function shareAlbum({
 				profileId,
 				expirationType,
 			})),
-		},
+		} satisfies AlbumShareRequest,
 	}).then((res) => res.assertOk());
 }
 

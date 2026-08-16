@@ -12,6 +12,7 @@
 </script>
 
 <div
+	data-slot="composer-attachments-trigger"
 	class={["shrink-0", { "pointer-events-none": disabled }]}
 	transition:scale={{ duration: 400, easing: expoOut, start: 0 }}
 >

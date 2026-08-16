@@ -72,8 +72,7 @@ export const albumContentSchema = albumContentMin.extend({
 	rejectionId: z.unknown().nullable(),
 });
 
-export const myAlbumSchema = z.object({
-	...albumDetailsSchema.shape,
+export const myAlbumSchema = albumDetailsSchema.extend({
 	albumId: z.int(),
 	albumName: z.string().nullable(),
 	profileId: z.int(),
@@ -83,6 +82,21 @@ export const myAlbumSchema = z.object({
 });
 
 export type MyAlbum = z.infer<typeof myAlbumSchema>;
+
+export const myAlbumsResponseSchema = z.object({
+	albums: z.array(myAlbumSchema),
+});
+
+export const albumShareRequestSchema = z.object({
+	profiles: z.array(
+		z.object({
+			profileId: z.int(),
+			expirationType: albumExpirationTypeSchema,
+		}),
+	),
+});
+
+export type AlbumShareRequest = z.infer<typeof albumShareRequestSchema>;
 
 /**
  * An album another profile has shared with us. Unlike {@link myAlbumSchema},

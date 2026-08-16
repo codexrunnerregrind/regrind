@@ -1,9 +1,13 @@
 <script lang="ts">
+	import { untrack } from "svelte";
+
 	import { showErrorToast } from "$lib/api/error-toast";
+	import { getConversations } from "$lib/chat/conversations-context.svelte";
+	import { draftFromMessage } from "$lib/model/messaging/messages";
 	import { hapticImpact } from "$lib/platform/haptics";
 	import type {
 		ApiResponseMessage,
-		Message,
+		MessageDraft,
 	} from "$lib/model/messaging/messages";
 	import ComposerAttachments from "./attachments/ComposerAttachments.svelte";
 	import ComposerReplyPreview from "./ComposerReplyPreview.svelte";
@@ -13,31 +17,53 @@
 	import ComposerVoiceMessage from "./voice-message/ComposerVoiceMessage.svelte";
 
 	let {
+		conversationId,
 		onSend,
 		disabled,
 		replyTo,
 		onCancelReply,
 	}: {
-		onSend: (params: Message) => void | Promise<void>;
+		conversationId: string;
+		onSend: (draft: MessageDraft) => void | Promise<void>;
 		disabled: boolean;
 		replyTo?: ApiResponseMessage | null;
 		onCancelReply?: () => void;
 	} = $props();
 
-	let textContent = $state("");
+	const { drafts } = getConversations();
 
+	let textContent = $state(untrack(() => drafts.get(conversationId)));
 	async function onSubmit() {
 		const text = textContent.trim();
 		if (text === "") return;
 		try {
-			await onSend({ type: "Text", body: { text } });
+			await onSend(draftFromMessage({ type: "Text", body: { text } }));
 			hapticImpact("light");
 			textContent = "";
+			drafts.discard(conversationId);
 		} catch (error) {
 			console.error(error);
 			showErrorToast({ label: "Failed to send message", error });
 		}
 	}
+
+	$effect(() => {
+		const openedConversationId = conversationId;
+		untrack(() => {
+			const stored = drafts.open(openedConversationId);
+			if (textContent === stored) return;
+			textContent = stored;
+		});
+		return () =>
+			drafts.save({
+				conversationId: openedConversationId,
+				text: textContent,
+			});
+	});
+
+	$effect(() => {
+		drafts.autosave({ conversationId, text: textContent });
+	});
 
 	setMessageComposerContext(() => ({ disabled, sendMessage: onSend }));
 </script>
@@ -66,7 +92,11 @@
 	<!-- One row, three controls: attach, field, send. `items-end` keeps the two
 	     buttons on the bottom line as the field grows to multiple lines. -->
 	<div class="flex w-full items-end gap-2">
-		<ComposerAttachments />
+		<!-- Keyed so switching conversation tears the drawer down with the old one
+		     rather than leaving it open over the new chat. -->
+		{#key conversationId}
+			<ComposerAttachments />
+		{/key}
 		<MessageTextInput bind:value={textContent} />
 		<!-- Fixed slot: mic and send cross-fade over each other, so without a
 		     reserved box the row would resize for a frame mid-swap. -->
