@@ -50,6 +50,24 @@
 	let sentTimer: ReturnType<typeof setTimeout> | undefined;
 
 	const hasBar = $derived(chromeHasBar(actions));
+	// Once there is something to send, the bar becomes the chat composer's: the
+	// tap and chat buttons give up their place to a single send button beside
+	// the field, and give it their width back when the draft is cleared.
+	const composing = $derived(draft.trim() !== "");
+
+	// 44pt control plus the 10pt that separates it from the field. The trailing
+	// box is exactly as wide as whatever is currently in it, so the field takes
+	// the rest of the row.
+	const SLOT = 54;
+	const restSlots = $derived(
+		(actions.onReact === undefined ? 0 : 1) +
+			(actions.onOpenChat === undefined ? 0 : 1),
+	);
+	const trailingWidth = $derived(
+		composing && actions.onReply !== undefined ? SLOT : restSlots * SLOT,
+	);
+	// Fire gives up the end position to chat when both are there.
+	const fireEnd = $derived(actions.onOpenChat === undefined ? 0 : SLOT);
 	const header = $derived(
 		typeof headerProp === "function" ? headerProp(index) : headerProp,
 	);
@@ -375,7 +393,7 @@
 		     photo on a scrim, so the controls carry their own fill (blurred, since
 		     what's behind them is the photo rather than a bar). -->
 		<form
-			class="pswp__hide-on-close pointer-events-auto relative flex items-center gap-2.5 bg-linear-to-t from-black/70 to-transparent px-screen pt-6 pb-[calc(26px+var(--safe-area-bottom,0px))]"
+			class="pswp__hide-on-close pointer-events-auto relative flex items-center bg-linear-to-t from-black/70 to-transparent px-screen pt-6 pb-[calc(26px+var(--safe-area-bottom,0px))]"
 			onpointerdown={stopPointer}
 			onsubmit={sendReply}
 		>
@@ -409,54 +427,69 @@
 							event.preventDefault();
 							event.currentTarget.form?.requestSubmit();
 						}}
-						class={[
-							"h-11 w-full rounded-composer bg-viewer-chip/80 px-4.5 text-sm text-viewer-ink backdrop-blur-md outline-none placeholder:text-viewer-ink3 focus-visible:ring-2 focus-visible:ring-viewer-ink/40 disabled:opacity-60",
-							{ "pe-12": draft.trim() !== "" },
-						]}
+						class="h-11 w-full rounded-composer bg-viewer-chip/80 px-4.5 text-sm text-viewer-ink backdrop-blur-md outline-none placeholder:text-viewer-ink3 focus-visible:ring-2 focus-visible:ring-viewer-ink/40 disabled:opacity-60"
 					/>
-					{#if draft.trim() !== ""}
-						<!-- Only while there is something to send: the handoff draws the bar
-						     at rest, where the field runs its full width. -->
-						<button
-							type="submit"
-							disabled={sending}
-							aria-label="Send reply"
-							class="absolute end-1 top-1 flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-60"
-						>
-							<PaperPlaneRightIcon
-								weight="fill"
-								class="size-4.5"
-							/>
-						</button>
-					{/if}
 				</div>
 			{:else}
 				<div class="flex-1"></div>
 			{/if}
-			{#if actions.onReact !== undefined}
-				<button
-					type="button"
-					onclick={react}
-					disabled={reacting}
-					aria-label="React with fire"
-					class="flex size-11 shrink-0 items-center justify-center rounded-full bg-viewer-chip/80 text-viewer-ink backdrop-blur-md transition-transform active:scale-90 disabled:opacity-60"
-				>
-					<!-- A line glyph, not the emoji the chat reactions use: this is one of
-					     the viewer's controls, and a color illustration among line icons
-					     reads as content rather than as a button. -->
-					<FireIcon class="size-5" />
-				</button>
-			{/if}
-			{#if actions.onOpenChat !== undefined}
-				<button
-					type="button"
-					onclick={openChat}
-					aria-label="Open chat"
-					class="flex size-11 shrink-0 items-center justify-center rounded-full bg-viewer-chip/80 text-viewer-ink backdrop-blur-md transition-transform active:scale-90"
-				>
-					<ChatIcon class="size-5" />
-				</button>
-			{/if}
+			<!-- The trailing controls are pinned to the bar's end rather than laid
+			     out in the row, so swapping them moves nothing sideways: each one
+			     simply fades where it stands, and send comes up in the place the
+			     chat button just left. Only this box's width animates, which is
+			     what lets the flexed field grow into the space smoothly. -->
+			<div
+				class="relative h-11 shrink-0 transition-[width] duration-200 ease-out"
+				style:width="{trailingWidth}px"
+			>
+				{#if actions.onReact !== undefined}
+					<button
+						type="button"
+						onclick={react}
+						disabled={reacting}
+						inert={composing}
+						style:inset-inline-end="{fireEnd}px"
+						class={[
+							"absolute top-0 flex size-11 items-center justify-center rounded-full bg-viewer-chip/80 text-viewer-ink backdrop-blur-md transition-[opacity,transform] duration-200 ease-out active:scale-90 disabled:opacity-60",
+							{ "opacity-0": composing },
+						]}
+						aria-label="React with fire"
+					>
+						<!-- A line glyph, not the emoji the chat reactions use: this is one of
+						     the viewer's controls, and a color illustration among line icons
+						     reads as content rather than as a button. -->
+						<FireIcon class="size-5" />
+					</button>
+				{/if}
+				{#if actions.onOpenChat !== undefined}
+					<button
+						type="button"
+						onclick={openChat}
+						inert={composing}
+						class={[
+							"absolute end-0 top-0 flex size-11 items-center justify-center rounded-full bg-viewer-chip/80 text-viewer-ink backdrop-blur-md transition-[opacity,transform] duration-200 ease-out active:scale-90",
+							{ "opacity-0": composing },
+						]}
+						aria-label="Open chat"
+					>
+						<ChatIcon class="size-5" />
+					</button>
+				{/if}
+				{#if actions.onReply !== undefined}
+					<button
+						type="submit"
+						disabled={sending}
+						inert={!composing}
+						class={[
+							"absolute end-0 top-0 flex size-11 items-center justify-center rounded-full bg-primary text-primary-foreground transition-[opacity,transform] duration-200 ease-out active:scale-90 disabled:opacity-60",
+							{ "opacity-0": !composing },
+						]}
+						aria-label="Send reply"
+					>
+						<PaperPlaneRightIcon weight="fill" class="size-5" />
+					</button>
+				{/if}
+			</div>
 		</form>
 	{/if}
 </div>
