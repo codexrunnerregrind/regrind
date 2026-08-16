@@ -2,7 +2,6 @@
 	import { tick } from "svelte";
 	import { toast } from "svelte-sonner";
 
-	import MediaImage from "$lib/components/shared/MediaImage.svelte";
 	import {
 		type ApiResponseMessage,
 		previewFromMessage,
@@ -12,6 +11,7 @@
 	import { scrollToMessage } from "$lib/util/scroll";
 	import { getConversationState } from "../../conversation-state.svelte";
 	import { getMessageMetaContext } from "./context";
+	import MessageQuoteBlock from "./MessageQuoteBlock.svelte";
 
 	let {
 		replyTo,
@@ -64,40 +64,17 @@
 	}
 </script>
 
-<!-- Sits inside the bubble, above the reply's own body, so a reply and what it
-     answers stay one block. The bar and fill are drawn from the bubble's own
-     text color, so this works on either side without knowing the theme. -->
-<!-- The min-width is load-bearing: the bubble is `w-fit`, and both lines here
-     truncate, so their min-content width is zero — without it a one-emoji reply
-     would squeeze the quote down to "R… / Ph…". -->
-<button
-	type="button"
-	class="mb-1.5 flex w-full min-w-45 items-stretch gap-2 overflow-hidden rounded-md bg-current/10 text-start active:bg-current/20"
-	disabled={clone}
-	aria-busy={jumping}
-	onclick={(event) => {
-		// The bubble row itself is a button (long-press menu, double-tap react);
-		// jumping to the quoted message is this quote's own action.
-		event.stopPropagation();
-		jumpToQuoted().catch((error) => console.error(error));
-	}}
->
-	<span class="w-0.75 shrink-0 bg-current/40"></span>
-	{#if thumbnail !== null}
-		<MediaImage
-			src={thumbnail}
-			alt=""
-			loading="lazy"
-			class="size-9.5 shrink-0 self-center rounded-sm object-cover"
-			aspectRatio="1 / 1"
-		/>
-	{/if}
-	<div
-		class="flex min-w-0 flex-1 flex-col justify-center gap-0.5 py-1.5 pe-2.5"
-	>
-		<span class="truncate text-2xs font-semibold">
-			{isOut ? "Reply to them" : "Reply to me"}
-		</span>
-		<span class="truncate text-2xs opacity-70">{label}</span>
-	</div>
-</button>
+<MessageQuoteBlock
+	{thumbnail}
+	title={isOut ? "Reply to them" : "Reply to me"}
+	label={label ?? ""}
+	busy={jumping}
+	onclick={clone
+		? undefined
+		: (event) => {
+				// The bubble row itself is a button (long-press menu, double-tap
+				// react); jumping to the quoted message is this quote's own action.
+				event.stopPropagation();
+				jumpToQuoted().catch((error) => console.error(error));
+			}}
+/>

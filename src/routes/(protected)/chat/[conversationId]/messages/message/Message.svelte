@@ -19,6 +19,7 @@
 	import MessageDateGroup from "./MessageDateGroup.svelte";
 	import MessageTime from "./MessageTime.svelte";
 	import MessageWrapper from "./MessageWrapper.svelte";
+	import ProfilePhotoReplyMessage from "./ProfilePhotoReplyMessage.svelte";
 	import Reaction from "./Reaction.svelte";
 	import TextMessage from "./TextMessage.svelte";
 	import UnsentMessage from "./UnsentMessage.svelte";
@@ -241,6 +242,8 @@
 			<LocationMessage message={message.body} />
 		{:else if message.type === "AlbumContentReply" || message.type === "AlbumContentReaction"}
 			<AlbumContentMessage message={message.body} />
+		{:else if message.type === "ProfilePhotoReply"}
+			<ProfilePhotoReplyMessage message={message.body} />
 		{:else if message.type === "Unsent"}
 			<UnsentMessage />
 		{:else}
