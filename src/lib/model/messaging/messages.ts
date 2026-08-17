@@ -13,7 +13,7 @@ import { unixTimestampMsSchema, unmodeledSchema } from "$lib/model/types";
 
 const messageBaseSchema = z.object({ type: z.string(), body: z.unknown() });
 
-const apiResponseMessageOverlayBaseSchema = z.object({
+const messageOverlayBaseSchema = z.object({
 	messageId: z.string(),
 	conversationId: z.string(),
 	senderId: z.int().nonnegative(),
@@ -25,20 +25,10 @@ const apiResponseMessageOverlayBaseSchema = z.object({
 			reactionType: z.int().nonnegative(),
 		}),
 	),
-	replyToMessage: unmodeledSchema,
 	dynamic: unmodeledSchema,
 	chat1Type: unmodeledSchema,
 	replyPreview: unmodeledSchema,
 });
-
-export type ApiResponseMessageOverlay = z.infer<
-	typeof apiResponseMessageOverlayBaseSchema
-> & { replyToMessage?: ApiResponseMessage | null };
-
-export const apiResponseMessageOverlaySchema: z.ZodType<ApiResponseMessageOverlay> =
-	apiResponseMessageOverlayBaseSchema.extend({
-		replyToMessage: z.lazy(() => apiResponseMessageSchema).nullish(),
-	});
 
 export const albumMessageSchema = messageBaseSchema.safeExtend({
 	type: z.literal("Album"),
@@ -322,23 +312,6 @@ export const messageSchema = z.discriminatedUnion("type", [
 	videoMessageSchema,
 ]);
 
-export type Message = z.infer<typeof messageSchema>;
-
-export type UnsentMessage = ApiResponseMessageOverlay & {
-	type: "Unsent";
-	unsent: true;
-	body: null;
-};
-
-export const unsentMessageSchema: z.ZodType<UnsentMessage> = z.intersection(
-	messageBaseSchema.safeExtend({
-		type: z.string().transform((): "Unsent" => "Unsent"),
-		unsent: z.literal(true),
-		body: z.null(),
-	}),
-	apiResponseMessageOverlaySchema,
-);
-
 const modeledMessageTypes = new Set<string>(
 	messageSchema.options.map((option) => option.shape.type.value),
 );
@@ -353,37 +326,91 @@ function warnOnceIfModeledTypeDriftedFromSpec(type: string): void {
 	);
 }
 
-export type UnrecognizedMessage = Omit<
-	z.infer<typeof messageBaseSchema>,
-	"type"
-> &
-	ApiResponseMessageOverlay & {
-		type: "Unknown";
-		unrecognizedType: string;
-		body: unknown;
+function messageBranchesWithOverlay<Overlay extends z.ZodObject>({
+	overlay,
+}: {
+	overlay: Overlay;
+}) {
+	const unsent = z.intersection(
+		messageBaseSchema.safeExtend({
+			type: z.string().transform((): "Unsent" => "Unsent"),
+			unsent: z.literal(true),
+			body: z.null(),
+		}),
+		overlay,
+	);
+	const unrecognized = z
+		.intersection(
+			messageBaseSchema.safeExtend({
+				type: z.string(),
+				body: z.unknown(),
+			}),
+			overlay,
+		)
+		.transform(({ type, ...message }) => {
+			warnOnceIfModeledTypeDriftedFromSpec(type);
+			return {
+				...message,
+				type: "Unknown" as const,
+				unrecognizedType: type,
+			};
+		});
+	return {
+		unsent,
+		unrecognized,
+		all: z.intersection(messageSchema, overlay).or(unsent).or(unrecognized),
 	};
+}
 
-// Annotated rather than inferred: the overlay carries `replyToMessage`, which
-// points back at this very union, so inference would chase its own tail.
-export const unrecognizedMessageSchema: z.ZodType<UnrecognizedMessage> = z
-	.intersection(
-		messageBaseSchema.safeExtend({ type: z.string(), body: z.unknown() }),
-		apiResponseMessageOverlaySchema,
-	)
-	.transform(({ type, ...message }) => {
-		warnOnceIfModeledTypeDriftedFromSpec(type);
-		return { ...message, type: "Unknown" as const, unrecognizedType: type };
+// One level deep by design: a recursive quote makes parse cost grow with
+// nesting depth. The relaxed fields are the ones a trimmed quote omits.
+const quotedMessageOverlaySchema = messageOverlayBaseSchema
+	.partial({
+		conversationId: true,
+		timestamp: true,
+		unsent: true,
+		reactions: true,
+	})
+	.safeExtend({ replyToMessage: unmodeledSchema });
+
+export const quotedMessageSchema = messageBranchesWithOverlay({
+	overlay: quotedMessageOverlaySchema,
+}).all;
+
+export type QuotedMessage = z.infer<typeof quotedMessageSchema>;
+
+let unmodelableQuoteReported = false;
+
+export const apiResponseMessageOverlaySchema =
+	messageOverlayBaseSchema.safeExtend({
+		// A quote we cannot model must never cost us the message carrying it.
+		replyToMessage: quotedMessageSchema.nullish().catch(({ error }) => {
+			if (!unmodelableQuoteReported) {
+				unmodelableQuoteReported = true;
+				console.warn(
+					"[messages] a quoted reply did not match the modeled shape and was dropped",
+					error,
+				);
+			}
+			return null;
+		}),
 	});
 
-export type ApiResponseMessage =
-	| (Message & ApiResponseMessageOverlay)
-	| UnsentMessage
-	| UnrecognizedMessage;
+const apiResponseMessageBranches = messageBranchesWithOverlay({
+	overlay: apiResponseMessageOverlaySchema,
+});
 
-export const apiResponseMessageSchema: z.ZodType<ApiResponseMessage> = z
-	.intersection(messageSchema, apiResponseMessageOverlaySchema)
-	.or(unsentMessageSchema)
-	.or(unrecognizedMessageSchema);
+export const unsentMessageSchema = apiResponseMessageBranches.unsent;
+export type UnsentMessage = z.infer<typeof unsentMessageSchema>;
+
+export const unrecognizedMessageSchema =
+	apiResponseMessageBranches.unrecognized;
+export type UnrecognizedMessage = z.infer<typeof unrecognizedMessageSchema>;
+
+export const apiResponseMessageSchema = apiResponseMessageBranches.all;
+
+export type Message = z.infer<typeof messageSchema>;
+export type ApiResponseMessage = z.infer<typeof apiResponseMessageSchema>;
 
 const mediaIdSchema = z.int().nonnegative();
 

@@ -1,6 +1,15 @@
-<script lang="ts">
-	import BlockedUsersList from "./BlockedUsersList.svelte";
+<script lang="ts" module>
+	const scroll = { scrollY: 0 };
 </script>
+
+<script lang="ts">
+	import { getBlockedUsers, unblockUser } from "$lib/api/browse/blocks";
+	import ProfileList from "../profile-list/ProfileList.svelte";
+</script>
+
+<svelte:head>
+	<title>Blocked users</title>
+</svelte:head>
 
 <!-- The explanation leads, above the count and the list: what a block does is
      what someone came here to check. -->
@@ -9,4 +18,14 @@
 	Because a block hides their profile from you as well, most entries here show
 	only a profile ID.
 </p>
-<BlockedUsersList />
+<ProfileList
+	loadIds={async () =>
+		(await getBlockedUsers()).map(({ profileId }) => profileId)}
+	lift={({ profileId }) => unblockUser({ profileId })}
+	{scroll}
+	actionLabel="Unblock"
+	countLabel="blocked"
+	emptyMessage="You haven't blocked anyone."
+	successMessage="User unblocked"
+	errorLabel="Failed to unblock user"
+/>

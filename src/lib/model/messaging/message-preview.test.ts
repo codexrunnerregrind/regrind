@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	previewFromMessage,
 	previewLabel,
+	quoteLabel,
 } from "$lib/model/messaging/message-preview";
 
 describe("previewFromMessage", () => {
@@ -110,5 +111,44 @@ describe("previewFromMessage", () => {
 			imageHash: null,
 		});
 		expect(previewLabel(preview)).toBe("Expiring photo");
+	});
+});
+
+describe("quoteLabel", () => {
+	const preview = (type: string, text: string | null = null) => ({
+		type,
+		text,
+		albumId: null,
+		imageHash: null,
+	});
+
+	it("uses the message text when there is any", () => {
+		expect(quoteLabel(preview("Text", "hello"))).toBe("hello");
+	});
+
+	it.each([
+		["Unsent", "Unsent message"],
+		["Audio", "Voice message"],
+		["Giphy", "GIF"],
+		["Unknown", "Message"],
+	])("names a %s quote rather than rendering nothing", (type, expected) => {
+		expect(previewLabel(preview(type))).toBeNull();
+		expect(quoteLabel(preview(type))).toBe(expected);
+	});
+
+	// Unlike the types above, the inbox names a Location too, so the quote takes
+	// that wording rather than falling back to its own.
+	it("names a Location quote the way the inbox does", () => {
+		expect(previewLabel(preview("Location"))).toBe("Location");
+		expect(quoteLabel(preview("Location"))).toBe("Location");
+	});
+
+	it("defers to the inbox wording for a type the preview already names", () => {
+		expect(previewLabel(preview("ExpiringImage"))).toBe("Expiring photo");
+		expect(quoteLabel(preview("ExpiringImage"))).toBe("Expiring photo");
+	});
+
+	it("does not render an empty pill for a blank text message", () => {
+		expect(quoteLabel(preview("Text", "   "))).toBe("Message");
 	});
 });

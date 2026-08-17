@@ -2,7 +2,8 @@ import { tick } from "svelte";
 
 export type ScrollableListState = {
 	loading: boolean;
-	error: Error | null;
+	/** Anything caught, unwrapped: a list keeps the error its API threw. */
+	error: unknown;
 	scrollY: number;
 };
 

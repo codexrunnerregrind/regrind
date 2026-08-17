@@ -4,9 +4,9 @@
 	import MediaImage from "$lib/components/shared/MediaImage.svelte";
 	import {
 		previewFromMessage,
-		previewLabel,
+		quoteLabel,
+		replyThumbnailUrl,
 	} from "$lib/model/messaging/message-preview";
-	import { replyThumbnailUrl } from "$lib/model/messaging/message-preview";
 	import { type ApiResponseMessage } from "$lib/model/messaging/messages";
 	import { getConversationState } from "../conversation-state.svelte";
 
@@ -15,7 +15,7 @@
 		onCancel,
 	}: { message: ApiResponseMessage; onCancel?: () => void } = $props();
 
-	const label = $derived(previewLabel(previewFromMessage(message)));
+	const label = $derived(quoteLabel(previewFromMessage(message)));
 	const thumbnail = $derived(replyThumbnailUrl(message));
 
 	const conversationState = $derived(getConversationState()());

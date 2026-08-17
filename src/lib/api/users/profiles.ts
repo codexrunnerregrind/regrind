@@ -2,6 +2,7 @@ import z from "zod";
 
 import { ApiError } from "$lib/api/api-error";
 import { getBlockedUsers } from "$lib/api/browse/blocks";
+import { getHiddenUsers } from "$lib/api/browse/hides";
 import { FetchCache } from "$lib/api/cache";
 import { fetchRest } from "$lib/api/transport";
 import {
@@ -86,6 +87,13 @@ export class BlockedProfileError extends Error {
 	}
 }
 
+export class HiddenProfileError extends Error {
+	constructor() {
+		super("Hidden");
+		this.name = "HiddenProfileError";
+	}
+}
+
 export class ProfileUnavailableError extends Error {
 	constructor() {
 		super("Profile unavailable");
@@ -96,6 +104,7 @@ export class ProfileUnavailableError extends Error {
 export function isUnviewableProfileError(error: unknown): boolean {
 	return (
 		error instanceof BlockedProfileError ||
+		error instanceof HiddenProfileError ||
 		error instanceof ProfileUnavailableError
 	);
 }
@@ -119,6 +128,11 @@ async function fetchProfile(profileId: number): Promise<Profile> {
 			const blockedByUs = await getBlockedUsers().then((blocking) =>
 				blocking.some((blocked) => blocked.profileId === profileId),
 			);
+			if (blockedByUs) throw new BlockedProfileError({ blockedByUs });
+			const hiddenByUs = await getHiddenUsers().then((hides) =>
+				hides.some((hidden) => hidden.profileId === profileId),
+			);
+			if (hiddenByUs) throw new HiddenProfileError();
 			throw new BlockedProfileError({ blockedByUs });
 		} else if (
 			profile.displayName === MAGIC_PROFILE_UNAVAILABLE_DISPLAY_NAME

@@ -32,6 +32,7 @@ import {
 import { demoSetFavorite } from "./mock/favorites";
 import {
 	buildFullProfile,
+	buildMaskedProfile,
 	demoCascadeV4,
 	demoFavoriteNotes,
 	demoGetProfiles,
@@ -39,6 +40,11 @@ import {
 	demoSearchProfiles,
 	num,
 } from "./mock/grid";
+import {
+	demoHiddenUsers,
+	demoProfileHidden,
+	demoSetHidden,
+} from "./mock/hides";
 import { demoReceivedTaps, demoViews } from "./mock/interest";
 import { profileSeed } from "./mock/profiles";
 import { demoGenders, demoPronouns, demoTags } from "./mock/reference";
@@ -93,7 +99,14 @@ export function demoRoute({
 	}
 	if (method === "GET" && rawPath.startsWith("/v7/profiles/")) {
 		const id = Number(segments.at(-1));
-		return ok({ profiles: [buildFullProfile(profileSeed(id))] });
+		const seed = profileSeed(id);
+		return ok({
+			profiles: [
+				demoProfileHidden(id)
+					? buildMaskedProfile(seed)
+					: buildFullProfile(seed),
+			],
+		});
 	}
 	if (method === "POST" && rawPath === "/v3/profiles") {
 		const ids =
@@ -112,6 +125,42 @@ export function demoRoute({
 	if (rawPath === "/v7/views/list") return ok(demoViews());
 	if (method === "GET" && rawPath === "/v1/favorites/notes")
 		return ok(demoFavoriteNotes());
+	if (rawPath === "/v3.1/me/blocks")
+		return ok({ blocking: demoBlockedUsers() });
+	if (
+		(method === "POST" || method === "DELETE") &&
+		segments[0] === "v3" &&
+		segments[1] === "me" &&
+		segments[2] === "blocks" &&
+		segments.length === 4
+	) {
+		demoSetBlocked({
+			profileId: Number(segments[3]),
+			blocked: method === "POST",
+		});
+		return ok(method === "POST" ? { updateTime: 0 } : {});
+	}
+	if (method === "GET" && rawPath === "/v1/hides")
+		return ok({ hides: demoHiddenUsers() });
+	if (
+		method === "POST" &&
+		segments[0] === "v1" &&
+		segments[1] === "me" &&
+		segments[2] === "hides" &&
+		segments.length === 4
+	) {
+		demoSetHidden({ profileId: Number(segments[3]), hidden: true });
+		return ok({});
+	}
+	if (
+		method === "DELETE" &&
+		segments[0] === "v1" &&
+		segments[1] === "hides" &&
+		segments.length === 3
+	) {
+		demoSetHidden({ profileId: Number(segments[2]), hidden: false });
+		return ok({});
+	}
 	if (
 		segments[0] === "v1" &&
 		segments[1] === "favorites" &&
@@ -137,18 +186,6 @@ export function demoRoute({
 			demoDeleteFavoriteNote(profileId);
 			return { status: 204, body: null };
 		}
-	}
-	if (rawPath === "/v3.1/me/blocks")
-		return ok({ blocking: demoBlockedUsers() });
-	if (
-		segments[0] === "v3" &&
-		segments[1] === "me" &&
-		segments[2] === "blocks" &&
-		segments.length === 4 &&
-		(method === "POST" || method === "DELETE")
-	) {
-		demoSetBlocked(Number(segments[3]), method === "POST");
-		return ok({});
 	}
 	if (
 		segments[0] === "v3" &&

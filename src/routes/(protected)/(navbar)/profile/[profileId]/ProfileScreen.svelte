@@ -12,6 +12,7 @@
 
 	import {
 		BlockedProfileError,
+		HiddenProfileError,
 		ProfileUnavailableError,
 	} from "$lib/api/users/profiles";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
@@ -32,6 +33,7 @@
 	import { profileMediaUrl } from "$lib/util/media";
 	import AboutMe from "./AboutMe.svelte";
 	import BlockedProfile from "./BlockedProfile.svelte";
+	import HiddenProfile from "./HiddenProfile.svelte";
 	import Distance from "./Distance.svelte";
 	import Genders from "./fields/GendersPronouns.svelte";
 	import HivStatusIcon from "./fields/HivStatusIcon.svelte";
@@ -133,7 +135,12 @@
 			<BlockedProfile
 				profileId={profileState.profileId}
 				blockedByUs={error.blockedByUs}
-				onRefresh={() => profileState.markUnblocked()}
+				onRefresh={() => profileState.markViewable()}
+			/>
+		{:else if error instanceof HiddenProfileError}
+			<HiddenProfile
+				profileId={profileState.profileId}
+				onRefresh={() => profileState.markViewable()}
 			/>
 		{:else if error instanceof ProfileUnavailableError}
 			<NotFound />
@@ -231,6 +238,7 @@
 						ourProfileId={profileState.ourProfileId}
 						{profile}
 						onBlocked={() => profileState.markBlocked()}
+						onHidden={() => profileState.markHidden()}
 						onFavorite={(isFavorite) =>
 							profileState.setFavorite(isFavorite)}
 					/>

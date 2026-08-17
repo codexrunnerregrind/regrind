@@ -16,6 +16,7 @@
 		onclick = undefined,
 		description,
 		actions,
+		control,
 		onToggleSelected,
 		onLongPress,
 	}: {
@@ -24,7 +25,11 @@
 			overlay?: import("svelte").Snippet;
 			link?: string;
 		};
-		title: { value: string | null; badge?: import("svelte").Snippet };
+		title: {
+			value: string | null;
+			fallback?: string;
+			badge?: import("svelte").Snippet;
+		};
 		onlineUntil?: number | null;
 		active?: boolean;
 		selected?: boolean;
@@ -33,6 +38,7 @@
 		onclick?: import("svelte/elements").MouseEventHandler<HTMLAnchorElement>;
 		description?: import("svelte").Snippet;
 		actions?: import("svelte").Snippet;
+		control?: import("svelte").Snippet;
 		onToggleSelected?: () => void;
 		onLongPress?: () => void;
 	} = $props();
@@ -41,6 +47,7 @@
 		onLongPress ? longPressHandlers(onLongPress) : {},
 	);
 	const linkTabindex = $derived(onToggleSelected ? -1 : undefined);
+	const accessibleName = $derived(title.value ?? title.fallback ?? "Someone");
 </script>
 
 {#snippet avatarNode()}
@@ -64,7 +71,11 @@
 		>
 			{@render title.badge?.()}
 			<ProfileStatusIndicator {onlineUntil} />
-			<DisplayName name={title.value} class="truncate" />
+			<DisplayName
+				name={title.value}
+				fallback={title.fallback}
+				class="truncate"
+			/>
 		</Item.Title>
 		{@render description?.()}
 	</Item.Content>
@@ -87,7 +98,7 @@
 	{#if avatar.link}
 		<a
 			href={avatar.link}
-			aria-label="{title.value ?? 'Someone'}'s profile"
+			aria-label="{accessibleName}'s profile"
 			class="flex items-center rounded-l-2xl py-3 ps-4 pe-3 @max-row:hidden"
 			tabindex={linkTabindex}
 		>
@@ -104,7 +115,7 @@
 		<a
 			href={link}
 			{onclick}
-			aria-label={title.value ?? "Someone"}
+			aria-label={accessibleName}
 			class="min-w-24 rounded-2xl @row:hidden"
 			tabindex={linkTabindex}
 		>
@@ -121,6 +132,11 @@
 			{@render contentNode()}
 		</a>
 	{/if}
+	{#if control}
+		<div class="flex shrink-0 items-center ps-3 pe-4">
+			{@render control()}
+		</div>
+	{/if}
 	{#if selected}
 		<div
 			class="pointer-events-none absolute -inset-px z-1 rounded-[inherit] bg-primary/20"
@@ -131,7 +147,7 @@
 			type="button"
 			class="absolute inset-0 z-2 rounded-[inherit] outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
 			aria-pressed={selected ?? false}
-			aria-label={title.value ?? "Someone"}
+			aria-label={accessibleName}
 			onclick={onToggleSelected}
 		></button>
 	{/if}

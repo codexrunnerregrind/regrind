@@ -2,11 +2,13 @@
 	import {
 		CopyIcon,
 		DotsThreeIcon,
+		EyeSlashIcon,
 		FlagIcon,
 		ProhibitIcon,
 	} from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
+	import { hideUser } from "$lib/api/browse/hides";
 	import { showErrorToast } from "$lib/api/error-toast";
 	import ToastUnimplemented from "$lib/components/feedback/ToastUnimplemented.svelte";
 	import BlockProfileDialog from "$lib/components/profile/BlockProfileDialog.svelte";
@@ -17,10 +19,12 @@
 		profileId,
 		name = null,
 		onBlocked,
+		onHidden,
 	}: {
 		profileId: number;
 		name?: string | null;
 		onBlocked: () => void;
+		onHidden: () => void;
 	} = $props();
 
 	let submitting = $state(false);
@@ -71,6 +75,25 @@
 		>
 			<FlagIcon class="size-5" />
 			Report profile
+		</DropdownMenu.Item>
+		<DropdownMenu.Item
+			disabled={submitting}
+			onSelect={async () => {
+				if (submitting) return;
+				submitting = true;
+				try {
+					await hideUser({ profileId });
+					onHidden();
+				} catch (error) {
+					console.error(error);
+					showErrorToast({ label: "Failed to hide user", error });
+				} finally {
+					submitting = false;
+				}
+			}}
+		>
+			<EyeSlashIcon class="size-5" />
+			Hide profile
 		</DropdownMenu.Item>
 		<DropdownMenu.Item
 			variant="destructive"

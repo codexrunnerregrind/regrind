@@ -4,10 +4,10 @@
 
 	import {
 		previewFromMessage,
-		previewLabel,
+		quoteLabel,
+		replyThumbnailUrl,
 	} from "$lib/model/messaging/message-preview";
-	import { replyThumbnailUrl } from "$lib/model/messaging/message-preview";
-	import { type ApiResponseMessage } from "$lib/model/messaging/messages";
+	import { type QuotedMessage } from "$lib/model/messaging/messages";
 	import { scrollToMessage } from "$lib/util/scroll";
 	import { getConversationState } from "../../conversation-state.svelte";
 	import { getMessageMetaContext } from "./context";
@@ -17,12 +17,12 @@
 		replyTo,
 		isOut,
 	}: {
-		replyTo: ApiResponseMessage;
+		replyTo: QuotedMessage;
 		/** Whose bubble the quote is sitting in — the label says so. */
 		isOut: boolean;
 	} = $props();
 
-	const label = $derived(previewLabel(previewFromMessage(replyTo)));
+	const label = $derived(quoteLabel(previewFromMessage(replyTo)));
 
 	const thumbnail = $derived(replyThumbnailUrl(replyTo));
 

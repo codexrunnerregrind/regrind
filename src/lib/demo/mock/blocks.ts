@@ -1,16 +1,30 @@
-import { DEMO_ID_START } from "../config";
+const BLOCKED_ID = 100801;
+const BLOCKED_US_BACK_ID = 100802;
 
-// Mutable so the settings list agrees with blocks made from the profile or chat
-// menus during a demo session.
-const blocked = new Set<number>([DEMO_ID_START + 3, DEMO_ID_START + 11]);
+const blockedIds = new Set([
+	BLOCKED_ID,
+	BLOCKED_US_BACK_ID,
+	...Array.from({ length: 10 }, (_, index) => 100805 + index),
+]);
 
-// `blockedTime` is `0` here because that is what the real endpoint returns —
-// nothing in the app reads it.
-export function demoBlockedUsers() {
-	return [...blocked].map((profileId) => ({ profileId, blockedTime: 0 }));
+export function demoBlockedUsers(): {
+	profileId: number;
+	blockedTime: number;
+}[] {
+	return [...blockedIds].map((profileId) => ({ profileId, blockedTime: 0 }));
 }
 
-export function demoSetBlocked(profileId: number, isBlocked: boolean): void {
-	if (isBlocked) blocked.add(profileId);
-	else blocked.delete(profileId);
+export function demoSetBlocked({
+	profileId,
+	blocked,
+}: {
+	profileId: number;
+	blocked: boolean;
+}): void {
+	if (blocked) blockedIds.add(profileId);
+	else blockedIds.delete(profileId);
+}
+
+export function demoProfileResolves(profileId: number): boolean {
+	return profileId !== BLOCKED_US_BACK_ID;
 }

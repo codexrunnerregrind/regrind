@@ -3689,6 +3689,7 @@ dependencies = [
  "android-native-keyring-store",
  "apple-native-keyring-store",
  "base64 0.22.1",
+ "block2",
  "dbus-secret-service-keyring-store",
  "getrandom 0.3.4",
  "grindr",
@@ -3697,6 +3698,7 @@ dependencies = [
  "keyring-core",
  "moxcms",
  "objc2",
+ "objc2-app-kit",
  "reqwest",
  "rmp-serde",
  "serde",
@@ -3717,7 +3719,6 @@ dependencies = [
  "tauri-plugin-single-instance",
  "tokio",
  "tracing",
- "tracing-subscriber",
  "windows-native-keyring-store",
 ]
 

@@ -48,9 +48,9 @@
 				onReply: (text: string, index: number) => {
 					const target = photos[index]?.message;
 					if (target) conversationState.setReplyTo(target);
-					conversationState.send(
+					conversationState.send([
 						draftFromMessage({ type: "Text", body: { text } }),
-					);
+					]);
 					return Promise.resolve();
 				},
 				onReact: async (index: number) => {

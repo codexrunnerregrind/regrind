@@ -123,9 +123,9 @@
 						(m) => m.messageId === messageId,
 					);
 					if (target) conversation.setReplyTo(target);
-					conversation.send(
+					conversation.send([
 						draftFromMessage({ type: "Text", body: { text } }),
-					);
+					]);
 					return Promise.resolve();
 				},
 				onReact: async () => {

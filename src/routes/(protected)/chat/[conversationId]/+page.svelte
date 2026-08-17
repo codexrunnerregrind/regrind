@@ -64,7 +64,7 @@
 	<ConversationMessages />
 	<MessageComposer
 		conversationId={conversationState.conversationId}
-		onSend={(draft: MessageDraft) => conversationState.send(draft)}
+		onSend={(drafts: MessageDraft[]) => conversationState.send(drafts)}
 		disabled={conversationState.loading || conversationState.error !== null}
 		replyTo={conversationState.replyTo}
 		onCancelReply={() => conversationState.clearReplyTo()}

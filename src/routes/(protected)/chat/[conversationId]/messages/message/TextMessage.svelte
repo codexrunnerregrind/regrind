@@ -1,6 +1,6 @@
 <script lang="ts">
 	import {
-		type ApiResponseMessage,
+		type QuotedMessage,
 		type TextMessage,
 	} from "$lib/model/messaging/messages";
 	import { getMessageContext, getMessageMetaContext } from "./context";
@@ -9,7 +9,7 @@
 	let {
 		message,
 		replyTo,
-	}: { message: TextMessage["body"]; replyTo?: ApiResponseMessage | null } =
+	}: { message: TextMessage["body"]; replyTo?: QuotedMessage | null } =
 		$props();
 
 	const { lastInStack, isOut } = $derived(getMessageContext()());

@@ -55,7 +55,7 @@
 			<ProhibitIcon weight="fill" />
 		{/snippet}
 	</SettingsRow>
-	<SettingsRow title="Hidden users" onclick={unimplemented}>
+	<SettingsRow title="Hidden users" href="/settings/account/hidden">
 		{#snippet icon()}
 			<EyeSlashIcon weight="fill" />
 		{/snippet}

@@ -7,11 +7,13 @@
 		ourProfileId,
 		profile,
 		onBlocked,
+		onHidden,
 		onFavorite,
 	}: {
 		ourProfileId: number;
 		profile: import("$lib/model/users/profiles").Profile;
 		onBlocked: () => void;
+		onHidden: () => void;
 		onFavorite: (isFavorite: boolean) => void;
 	} = $props();
 
@@ -34,6 +36,7 @@
 			{profileId}
 			name={profile.displayName}
 			{onBlocked}
+			{onHidden}
 		/>
 	{/if}
 </nav>

@@ -1,5 +1,6 @@
 import { accountScoped } from "$lib/api/account-caches";
 import { markBlockedProfilesUnviewable } from "$lib/api/browse/blocks";
+import { markHiddenProfilesUnviewable } from "$lib/api/browse/hides";
 import { getViews } from "$lib/api/interest/views";
 import {
 	isProfileViewable,
@@ -101,7 +102,12 @@ export class ViewsState extends ReconcilingListState<
 	}
 
 	protected fetch(): Promise<ViewsSnapshot> {
-		void markBlockedProfilesUnviewable().catch(console.error);
+		void markBlockedProfilesUnviewable().catch((error) =>
+			console.error(error),
+		);
+		void markHiddenProfilesUnviewable().catch((error) =>
+			console.error(error),
+		);
 		return getViews();
 	}
 

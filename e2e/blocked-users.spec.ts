@@ -5,7 +5,7 @@ import { installTauriShim } from "./support/app";
 // The demo API keeps its blocked set in page memory, so every navigation here is
 // client-side — a full reload would reset it and hide whether a block landed.
 async function openBlockedUsers(page: Page): Promise<void> {
-	await page.getByText("Blocked users", { exact: true }).click();
+	await page.getByRole("link", { name: "Blocked users" }).click();
 	await expect(page).toHaveURL(/\/settings\/account\/blocked$/);
 }
 
@@ -16,15 +16,15 @@ test.describe("blocked users settings screen", () => {
 
 		await openBlockedUsers(page);
 		await expect(
-			page.getByText("Blocked Users", { exact: true }),
+			page.locator("nav").getByText("Blocked users", { exact: true }),
 			"the nav bar is titled rather than blank",
 		).toBeVisible();
 
 		const unblockButtons = page.getByRole("button", { name: "Unblock" });
-		await expect(unblockButtons).toHaveCount(2);
+		await expect(unblockButtons).toHaveCount(12);
 
 		await unblockButtons.first().click();
-		await expect(unblockButtons).toHaveCount(1);
+		await expect(unblockButtons).toHaveCount(11);
 		await expect(
 			page,
 			"the row is a link, but its Unblock button must not navigate",
@@ -36,7 +36,7 @@ test.describe("blocked users settings screen", () => {
 		await expect(page).toHaveURL(/\/settings\/account$/);
 		await openBlockedUsers(page);
 		await expect(page.getByRole("button", { name: "Unblock" })).toHaveCount(
-			1,
+			11,
 		);
 	});
 
@@ -73,7 +73,7 @@ test.describe("blocked users settings screen", () => {
 		await openBlockedUsers(page);
 		await expect(
 			page.getByRole("button", { name: "Unblock" }),
-			"the person just blocked joins the two seeded blocks",
-		).toHaveCount(3);
+			"the person just blocked joins the seeded blocks",
+		).toHaveCount(13);
 	});
 });

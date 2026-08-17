@@ -15,6 +15,28 @@ vi.mock("$lib/chat/conversations-context.svelte", () => ({
 	getConversations: () => conversations,
 }));
 
+// The reply bar names whose message it quotes, which reaches for the open
+// conversation — and that module builds a WsState on import, for a Tauri host a
+// jsdom run has no business providing.
+vi.mock("../conversation-state.svelte", () => ({
+	getConversationState: () => () => ({
+		ourProfileId: 1,
+		profile: { name: "Sam" },
+	}),
+}));
+
+vi.mock("$lib/ws.svelte", () => ({
+	ws: {
+		status: "connected",
+		connect: () => {},
+		on: () => Promise.resolve(() => {}),
+		onConnected: () => Promise.resolve(() => {}),
+		onEventsDropped: () => Promise.resolve(() => {}),
+		send: () => {},
+		sendCommand: () => Promise.resolve(undefined),
+	},
+}));
+
 vi.stubGlobal(
 	"ResizeObserver",
 	class {
@@ -44,12 +66,22 @@ let drafts: Drafts;
 function renderComposer({
 	conversationId = A,
 	onSend = () => {},
+	replyTo = null,
+	onCancelReply = () => {},
 }: {
 	conversationId?: string;
-	onSend?: (message: unknown) => void | Promise<void>;
+	onSend?: (drafts: unknown) => void | Promise<void>;
+	replyTo?: unknown;
+	onCancelReply?: () => void;
 } = {}) {
 	const result = render(MessageComposer, {
-		props: { conversationId, onSend, disabled: false },
+		props: {
+			conversationId,
+			onSend,
+			disabled: false,
+			replyTo,
+			onCancelReply,
+		} as never,
 	});
 	return { ...result, textarea: result.container.querySelector("textarea")! };
 }
@@ -163,8 +195,89 @@ describe("MessageComposer drafts", () => {
 		await fireEvent.submit(textarea.form!);
 		await tick();
 
-		expect(onSend).toHaveBeenCalledWith(
+		expect(onSend).toHaveBeenCalledWith([
 			draftFromMessage({ type: "Text", body: { text: "sending this" } }),
-		);
+		]);
+	});
+});
+
+describe("MessageComposer reply bar", () => {
+	beforeEach(() => {
+		drafts = new Drafts();
+		conversations.drafts = drafts;
+	});
+
+	afterEach(cleanup);
+
+	function quoted(overrides: Record<string, unknown> = {}) {
+		return {
+			type: "Text",
+			body: { text: "the quoted text" },
+			messageId: "msg-quoted",
+			conversationId: A,
+			senderId: 7,
+			timestamp: 1_710_000_000_000,
+			unsent: false,
+			reactions: [],
+			...overrides,
+		};
+	}
+
+	it("shows nothing when no reply is armed", () => {
+		const { queryByLabelText } = renderComposer();
+
+		expect(queryByLabelText("Cancel reply")).toBeNull();
+	});
+
+	it("names the message being replied to", () => {
+		const { getByText } = renderComposer({ replyTo: quoted() });
+
+		expect(getByText("the quoted text")).toBeTruthy();
+	});
+
+	it.each([
+		["Image", { mediaId: 1, width: null, height: null }, "Photo"],
+		["Audio", { mediaId: 1 }, "Voice message"],
+		["Giphy", { id: "g" }, "GIF"],
+	])(
+		"names a %s reply rather than showing a blank bar",
+		(type, body, label) => {
+			const { getByText } = renderComposer({
+				replyTo: quoted({ type, body }),
+			});
+
+			expect(getByText(label)).toBeTruthy();
+		},
+	);
+
+	it("cancels the reply when the close button is used", async () => {
+		const onCancelReply = vi.fn();
+		const { getByLabelText } = renderComposer({
+			replyTo: quoted(),
+			onCancelReply,
+		});
+
+		await fireEvent.click(getByLabelText("Cancel reply"));
+
+		expect(onCancelReply).toHaveBeenCalledOnce();
+	});
+
+	it("cancels the reply on Escape, so the keyboard can back out", async () => {
+		const onCancelReply = vi.fn();
+		const { textarea } = renderComposer({
+			replyTo: quoted(),
+			onCancelReply,
+		});
+
+		await fireEvent.keyDown(textarea, { key: "Escape" });
+
+		expect(onCancelReply).toHaveBeenCalledOnce();
+	});
+
+	it("hands focus to the composer when a reply is armed", async () => {
+		const { textarea } = renderComposer({ replyTo: quoted() });
+		await tick();
+
+		expect(document.activeElement).toBe(textarea);
 	});
 });

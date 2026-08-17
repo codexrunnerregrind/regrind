@@ -102,9 +102,9 @@
 						(m) => m.messageId === sideImages[index]?.messageId,
 					);
 					if (target) conversationState.setReplyTo(target);
-					conversationState.send(
+					conversationState.send([
 						draftFromMessage({ type: "Text", body: { text } }),
-					);
+					]);
 					return Promise.resolve();
 				},
 				onReact: async (index) => {

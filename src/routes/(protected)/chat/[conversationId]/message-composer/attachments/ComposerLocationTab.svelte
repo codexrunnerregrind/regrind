@@ -39,12 +39,12 @@
 
 	function send() {
 		if (!pinPos) return;
-		void composer().sendMessage(
+		void composer().sendMessages([
 			draftFromMessage({
 				type: "Location",
 				body: { lat: pinPos.lat, lon: pinPos.lon },
 			}),
-		);
+		]);
 		hapticImpact("light");
 		onClose();
 	}

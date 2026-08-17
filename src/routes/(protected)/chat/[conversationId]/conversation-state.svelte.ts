@@ -47,7 +47,18 @@ export class ConversationState {
 	refreshing = $state(false);
 	error: Error | null = $state(null);
 	lastReadTimestamp: number | null = $state(null);
-	replyTo: ApiResponseMessage | null = $state(null);
+	// Resolved from the stored id on every read, so unsending, deleting or
+	// failing to load the target drops the quote with no clearing code.
+	readonly replyTo: ApiResponseMessage | null = $derived.by(() => {
+		const messageId = this.#conversations.drafts.replyTo(
+			this.conversationId,
+		);
+		if (messageId === null) return null;
+		const target = this.messages.find(
+			(message) => message.messageId === messageId,
+		);
+		return target && !target.unsent ? target : null;
+	});
 
 	readonly conversationId: string;
 	readonly ourProfileId: number;
@@ -176,7 +187,9 @@ export class ConversationState {
 		this.#destroyed = true;
 		this.#conversations.clearActive(this.conversationId);
 		for (const promise of this.#wsPromises) {
-			promise.then((unlisten) => unlisten()).catch(console.error);
+			promise
+				.then((unlisten) => unlisten())
+				.catch((error) => console.error(error));
 		}
 		this.#wsPromises = [];
 		this.#unsubscribeReconcile();
@@ -329,17 +342,33 @@ export class ConversationState {
 	}
 
 	setReplyTo(message: ApiResponseMessage): void {
-		this.replyTo = message;
+		this.#conversations.drafts.setReplyTo({
+			conversationId: this.conversationId,
+			messageId: message.messageId,
+		});
 	}
 
 	clearReplyTo(): void {
-		this.replyTo = null;
+		this.#conversations.drafts.clearReplyTo(this.conversationId);
 	}
 
-	send(draft: MessageDraft): void {
+	// One call per batch: the target is read once and cleared once, so every
+	// message of a multi-photo reply quotes it, not just the first.
+	send(drafts: MessageDraft[]): void {
 		if (!this.profile) return;
-		const tempId = `pending-${crypto.randomUUID()}`;
 		const replyToMessage = this.replyTo;
+		for (const draft of drafts) this.#sendOne({ draft, replyToMessage });
+		if (replyToMessage) this.clearReplyTo();
+	}
+
+	#sendOne({
+		draft,
+		replyToMessage,
+	}: {
+		draft: MessageDraft;
+		replyToMessage: ApiResponseMessage | null;
+	}): void {
+		const tempId = `pending-${crypto.randomUUID()}`;
 		const optimistic: OptimisticMessage = {
 			...draft.optimistic,
 			messageId: tempId,
@@ -351,7 +380,6 @@ export class ConversationState {
 			replyToMessage,
 			status: "pending" as const,
 		};
-		this.replyTo = null;
 		this.messages = removeDuplicateMessages([optimistic, ...this.messages]);
 		this.#updatePreview(optimistic);
 		void this.#resolveMessage({
@@ -376,6 +404,7 @@ export class ConversationState {
 				message,
 				replyToMessageId,
 			});
+			if (this.#destroyed) return;
 			const msg = this.messages.find((m) => m.messageId === tempId);
 			if (msg) {
 				this.#adoptServerVersion({
@@ -562,7 +591,7 @@ export class ConversationState {
 		} catch (err) {
 			const idx = msg.reactions.findIndex((r) => r === optimistic);
 			if (idx !== -1) msg.reactions.splice(idx, 1);
-			this.#syncCache();
+			if (!this.#destroyed) this.#syncCache();
 			throw err;
 		}
 	}
