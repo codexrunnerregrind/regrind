@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { StarIcon } from "phosphor-svelte";
+	import StarIcon from "phosphor-svelte/lib/StarIcon";
 
 	import {
 		CONVERSATION_FILTER_KEYS,
 		type ConversationFilterKey,
 		type ConversationFilters,
 	} from "$lib/chat/conversation-filters.svelte";
-	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
+	import { ACTIVE_FILTER_PRESSED } from "$lib/components/filters/active-filter";
 	import { buttonVariants } from "$lib/components/ui/button";
 	import * as ToggleGroup from "$lib/components/ui/toggle-group";
 
@@ -14,31 +14,32 @@
 		filters,
 		onchange,
 		inert = false,
+		class: className,
 	}: {
 		filters: ConversationFilters;
 		onchange: (active: ConversationFilterKey[]) => void;
 		inert?: boolean;
+		class?: import("svelte/elements").ClassValue;
 	} = $props();
 
-	const pills: Record<
-		ConversationFilterKey,
-		{ label: string; icon: typeof StarIcon }
-	> = { favorites: { label: "Favorites only", icon: StarIcon } };
+	// Favorites is the star everywhere else in the app, so it reads without a
+	// word; the other two have no icon anyone would guess at, so they say what
+	// they are. The star still carries an aria-label, being icon-only.
+	const labels: Record<ConversationFilterKey, string> = {
+		favorites: "Favorites",
+		unread: "Unread",
+		online: "Online",
+	};
 </script>
 
-<ProgressiveBlur
-	direction="topToBottom"
-	data-fixed-header
-	class="absolute inset-x-0 top-0 z-10"
-	bgClass="bg-linear-to-b from-background to-transparent"
-	contentClass="scrollbar-thin flex gap-0.5 overflow-x-auto px-4 pt-4 pb-2"
-	{inert}
->
+<!-- The grid's quick filters in miniature — same pill, same inverted fill when
+     on, same row that scrolls rather than wraps. -->
+<div class={["scrollbar-thin flex gap-0.5 overflow-x-auto", className]} {inert}>
 	<ToggleGroup.Root
 		type="multiple"
 		variant="default"
 		size="sm"
-		class="h-9"
+		class="h-9 gap-0.5"
 		bind:value={
 			() => filters.active,
 			(values: string[]) =>
@@ -50,16 +51,24 @@
 		}
 	>
 		{#each CONVERSATION_FILTER_KEYS as key (key)}
-			{@const pill = pills[key]}
 			<ToggleGroup.Item
 				value={key}
-				aria-label={pill.label}
-				class={buttonVariants({ variant: "secondary" })}
+				aria-label={key === "favorites" ? labels[key] : undefined}
+				class={[
+					buttonVariants({ variant: "secondary" }),
+					ACTIVE_FILTER_PRESSED,
+				]}
 			>
-				<pill.icon
-					weight={filters.active.includes(key) ? "fill" : "bold"}
-				/>
+				{#if key === "favorites"}
+					<StarIcon
+						weight={filters.active.includes(key)
+							? "fill"
+							: "regular"}
+					/>
+				{:else}
+					{labels[key]}
+				{/if}
 			</ToggleGroup.Item>
 		{/each}
 	</ToggleGroup.Root>
-</ProgressiveBlur>
+</div>

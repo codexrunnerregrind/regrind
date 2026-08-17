@@ -1,25 +1,42 @@
+import { getNow } from "$lib/util/now";
 import type { InboxFilterRequest } from "$lib/api/messaging/conversations";
 import type { Conversation } from "$lib/model/messaging/conversations";
 
-export const CONVERSATION_FILTER_KEYS = ["favorites"] as const;
+export const CONVERSATION_FILTER_KEYS = [
+	"favorites",
+	"unread",
+	"online",
+] as const;
 
 export type ConversationFilterKey = (typeof CONVERSATION_FILTER_KEYS)[number];
 
 const matchers: Record<
 	ConversationFilterKey,
 	(conversation: Conversation) => boolean
-> = { favorites: (conversation) => conversation.data.favorite };
+> = {
+	favorites: (conversation) => conversation.data.favorite,
+	// Muting silences a conversation's notifications, not its unread count — the
+	// filter shows muted threads with unread messages like any other.
+	unread: (conversation) => conversation.data.unreadCount > 0,
+	// The same reading the row's own status dot takes, so the filter keeps
+	// exactly the conversations showing one. `getNow` ticks, so a thread that
+	// goes offline drops out of a filtered list on its own.
+	online: (conversation) =>
+		(conversation.data.onlineUntil ??
+			conversation.data.participants[0]?.onlineUntil ??
+			0) > getNow(),
+};
 
 export function inboxFilterRequest(
 	active: ConversationFilterKey[],
 ): InboxFilterRequest | null {
 	if (active.length === 0) return null;
 	return {
-		unreadOnly: false,
+		unreadOnly: active.includes("unread"),
 		chemistryOnly: false,
 		favoritesOnly: active.includes("favorites"),
 		rightNowOnly: false,
-		onlineNowOnly: false,
+		onlineNowOnly: active.includes("online"),
 		distanceMeters: null,
 		positions: [],
 	};

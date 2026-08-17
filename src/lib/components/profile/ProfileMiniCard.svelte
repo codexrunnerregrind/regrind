@@ -6,8 +6,8 @@
 	import ProfileRightNowIndicator from "$lib/components/profile/ProfileRightNowIndicator.svelte";
 	import ProfileStatusIndicator from "$lib/components/profile/ProfileStatusIndicator.svelte";
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
-	import type { RightNowStatus } from "$lib/model/right-now";
 	import { getNow } from "$lib/util/now";
+	import type { RightNowStatus } from "$lib/model/right-now";
 
 	let {
 		mediaHash = null,

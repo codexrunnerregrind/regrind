@@ -253,9 +253,13 @@ function threadMessages(conv: DemoConversation): ApiResponseMessage[] {
 export function demoConversations({
 	page,
 	favoritesOnly = false,
+	unreadOnly = false,
+	onlineNowOnly = false,
 }: {
 	page: number;
 	favoritesOnly?: boolean;
+	unreadOnly?: boolean;
+	onlineNowOnly?: boolean;
 }): { entries: Conversation[]; nextPage: number | null } {
 	if (page > 1) return { entries: [], nextPage: null };
 	const entries: Conversation[] = demoConversationSeeds
@@ -267,6 +271,12 @@ export function demoConversations({
 			(conv) =>
 				!favoritesOnly ||
 				demoFavoriteOf({ profileId: conv.withId, seed: conv.favorite }),
+		)
+		.filter((conv) => !unreadOnly || conv.unread > 0)
+		.filter(
+			(conv) =>
+				!onlineNowOnly ||
+				(onlineUntilOf(profileSeed(conv.withId)) ?? 0) > Date.now(),
 		)
 		.map((conv): Conversation => {
 			const conversationId = conversationIdFor(conv.withId);

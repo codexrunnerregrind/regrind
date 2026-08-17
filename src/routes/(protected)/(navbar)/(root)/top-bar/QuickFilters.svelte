@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { SlidersHorizontalIcon, StarIcon } from "phosphor-svelte";
 
+	import {
+		ACTIVE_FILTER,
+		ACTIVE_FILTER_PRESSED,
+	} from "$lib/components/filters/active-filter";
 	import { Button, buttonVariants } from "$lib/components/ui/button";
 	import * as ToggleGroup from "$lib/components/ui/toggle-group";
 	import { gridState } from "$lib/grid/grid-state.svelte";
@@ -14,14 +18,6 @@
 		$props();
 
 	const TOGGLE_FILTER_KEYS = ["isOnline", "isRightNow", "isFresh"] as const;
-
-	// One "on" look for the whole filter row. The buttons apply it from their own
-	// state; the toggle-group items get the aria-pressed variant of it, which
-	// also has to beat the group's default pressed fill.
-	const ACTIVE_FILTER =
-		"bg-foreground text-background hover:bg-foreground/90 hover:text-background";
-	const ACTIVE_FILTER_PRESSED =
-		"aria-pressed:bg-foreground aria-pressed:text-background aria-pressed:hover:bg-foreground/90 aria-pressed:hover:text-background";
 
 	const filters = $derived(gridState.filters.value ?? defaultFilters);
 	const { ageEnabled, positionEnabled, isFavorite } = $derived(filters);

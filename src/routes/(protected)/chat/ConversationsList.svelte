@@ -229,7 +229,23 @@
 	}}
 >
 	<div class="shrink-0 px-screen pt-4">
-		<h1 class="screen-title">Inbox</h1>
+		<!-- The pills are taller than the title's own line box, so they hang off
+		     it rather than sitting in the flow: the header then measures exactly
+		     the title, and this screen's heading stays on the same line as
+		     Interest's and Settings'. -->
+		<div class="relative">
+			<h1 class="screen-title">Inbox</h1>
+			<!-- Albums are not conversations, so the filters go with the tab they
+			     act on rather than sitting inert above both. -->
+			{#if activeTab === "inbox"}
+				<ConversationsFilters
+					filters={conversations.filters}
+					onchange={(active) => conversations.setFilters(active)}
+					inert={selecting}
+					class="absolute inset-y-0 right-0 my-auto h-9 max-w-2/3 items-center"
+				/>
+			{/if}
+		</div>
 		<UnderlineTabs
 			{tabs}
 			value={activeTab}
@@ -330,11 +346,6 @@
 				}}
 			/>
 		{/if}
-		<ConversationsFilters
-			filters={conversations.filters}
-			onchange={(active) => conversations.setFilters(active)}
-			inert={selecting}
-		/>
 	{/if}
 </div>
 

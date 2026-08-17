@@ -164,11 +164,19 @@ export function demoRoute({
 		return ok({});
 	}
 	if (method === "POST" && rawPath === "/v4/inbox") {
-		const filters = body as { favoritesOnly?: boolean } | undefined;
+		const filters = body as
+			| {
+					favoritesOnly?: boolean;
+					unreadOnly?: boolean;
+					onlineNowOnly?: boolean;
+			  }
+			| undefined;
 		return ok(
 			demoConversations({
 				page: num(params.get("page")) ?? 1,
 				favoritesOnly: filters?.favoritesOnly ?? false,
+				unreadOnly: filters?.unreadOnly ?? false,
+				onlineNowOnly: filters?.onlineNowOnly ?? false,
 			}),
 		);
 	}
