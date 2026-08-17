@@ -1,14 +1,14 @@
 <script lang="ts">
+	import CaretDownIcon from "phosphor-svelte/lib/CaretDownIcon";
 	import FolderOpenIcon from "phosphor-svelte/lib/FolderOpenIcon";
 	import ImageIcon from "phosphor-svelte/lib/ImageIcon";
 	import NavigationArrowIcon from "phosphor-svelte/lib/NavigationArrowIcon";
 	import TimerIcon from "phosphor-svelte/lib/TimerIcon";
-	import { expoOut, sineIn } from "svelte/easing";
-	import { fly } from "svelte/transition";
 
 	import { Badge } from "$lib/components/ui/badge";
 	import { Button } from "$lib/components/ui/button";
 	import * as Drawer from "$lib/components/ui/drawer";
+	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
 	import * as Tabs from "$lib/components/ui/tabs";
 	import { Toggle } from "$lib/components/ui/toggle";
 	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
@@ -23,9 +23,18 @@
 	type Tab = "media" | "albums" | "location";
 	// `actionLabel` lets a tab rename the confirm button — the albums tab takes a
 	// share back as readily as it grants one, and "Send" is wrong for that.
+	// `expiryControl` lets a tab put a setting of its own on the line above the
+	// send button, where it stays put as the tab's own content scrolls.
+	type ExpiryControl = {
+		label: string;
+		selected: string;
+		options: { value: string; label: string }[];
+		select: (value: never) => void;
+	};
 	type SelectionTab = {
 		sendSelected: () => void;
 		actionLabel?: () => string;
+		expiryControl?: () => ExpiryControl | null;
 	};
 
 	let selectedTab = $state<Tab>("media");
@@ -39,6 +48,21 @@
 	let expiring = $state(false);
 
 	const selectedCount = $derived(counts[selectedTab] ?? 0);
+
+	// Closed with the selection: the dropdown's content is portalled out of the
+	// row, so nothing else would take it off screen with the button that opened
+	// it.
+	let expiryOpen = $state(false);
+
+	const expiry = $derived(
+		selectedCount === 0
+			? null
+			: (tabs[selectedTab]?.expiryControl?.() ?? null),
+	);
+
+	$effect(() => {
+		if (expiry === null) expiryOpen = false;
+	});
 
 	function sendSelected() {
 		tabs[selectedTab]?.sendSelected();
@@ -159,12 +183,61 @@
 				</div>
 			</div>
 
-			{#if selectedCount > 0}
-				<div
-					class="pointer-events-none absolute inset-x-0 bottom-18 flex justify-center gap-2"
-					in:fly={{ duration: 600, y: 100, easing: expoOut }}
-					out:fly={{ duration: 400, y: 100, easing: sineIn }}
-				>
+			<!-- The row stays mounted and animates by class rather than flying in
+			     and out of the DOM: as a leaving branch it stopped updating mid
+			     flight, so the expiry menu opened from inside it hung on screen,
+			     still open, until the flight finished. `inert` closes it to input
+			     while it is away. -->
+			<div
+				class={[
+					"pointer-events-none absolute inset-x-0 bottom-18 flex flex-col items-center gap-2",
+					// `visibility` rides along so the row is gone for good once it
+					// has flown out — opacity alone leaves the buttons standing
+					// in the page, reachable by anything that goes by role.
+					"transition-[opacity,transform,visibility] duration-300 ease-out motion-reduce:transition-none",
+					{
+						"visible translate-y-0 opacity-100": selectedCount > 0,
+						"invisible translate-y-28 opacity-0":
+							selectedCount === 0,
+					},
+				]}
+				inert={selectedCount === 0}
+			>
+				<!-- The menu is mounted with its trigger, not around the whole
+				     row: a root that comes up before its trigger exists takes no
+				     anchor from the trigger that arrives later, and the content
+				     then opens unpositioned, parked off screen above the sheet. -->
+				{#if expiry}
+					<DropdownMenu.Root bind:open={expiryOpen}>
+						<DropdownMenu.Trigger>
+							{#snippet child({ props })}
+								<Button
+									{...props}
+									variant="secondary"
+									size="sm"
+									class="pointer-events-auto shadow-lg"
+								>
+									{expiry.label}
+									<CaretDownIcon class="size-3.5" />
+								</Button>
+							{/snippet}
+						</DropdownMenu.Trigger>
+						<DropdownMenu.Content align="center">
+							<DropdownMenu.Label
+								>Share album for…</DropdownMenu.Label
+							>
+							{#each expiry.options as option (option.value)}
+								<DropdownMenu.Item
+									onSelect={() =>
+										expiry.select(option.value as never)}
+								>
+									{option.label}
+								</DropdownMenu.Item>
+							{/each}
+						</DropdownMenu.Content>
+					</DropdownMenu.Root>
+				{/if}
+				<div class="flex justify-center gap-2">
 					{#if selectedTab === "media"}
 						<Toggle
 							aria-label="Set photo as expiring after 10 seconds"
@@ -196,7 +269,9 @@
 						class="pointer-events-auto shadow-lg"
 						onclick={sendSelected}
 					>
-						{tabs[selectedTab]?.actionLabel?.() ?? "Send"}
+						{expiring && selectedTab === "media"
+							? "Send Expiring"
+							: (tabs[selectedTab]?.actionLabel?.() ?? "Send")}
 						<Badge
 							variant="secondary"
 							class="bg-primary-foreground/10 text-primary-foreground"
@@ -205,7 +280,7 @@
 						</Badge>
 					</Button>
 				</div>
-			{/if}
+			</div>
 
 			<Drawer.Footer
 				class="absolute inset-x-0 bottom-0 items-center rounded-b-4xl pt-1 pb-2 select-none"

@@ -105,6 +105,37 @@ test.describe("composer albums tab", () => {
 		).toBeHidden();
 	});
 
+	test("the expiry menu opens over the sheet, not off screen", async ({
+		page,
+	}) => {
+		await serveImages(page, CHAT_MEDIA_HOST);
+		await openAttachments(page);
+
+		await page.getByRole("tab", { name: "Albums" }).click();
+		const tiles = page.locator(ALBUM_TILE);
+		await expect(tiles.first()).toBeVisible({ timeout: 30_000 });
+		await tiles.first().click();
+
+		await page.getByRole("button", { name: /Indefinitely/ }).click();
+		const menu = page.getByRole("menu");
+		await expect(menu).toBeVisible();
+
+		// An unanchored menu still counts as visible: it is laid out, only
+		// parked above the viewport where no tap can reach it.
+		const box = (await menu.boundingBox())!;
+		const viewport = page.viewportSize()!;
+		expect(box.y, "the menu must sit inside the viewport").toBeGreaterThan(
+			0,
+		);
+		expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+
+		await page.getByRole("menuitem", { name: "For 24 hours" }).click();
+		await expect(
+			page.getByRole("button", { name: /For 24 hours/ }),
+			"the picked expiry names the button it was picked from",
+		).toBeVisible();
+	});
+
 	test("album tiles are taller than the square media tiles", async ({
 		page,
 	}) => {

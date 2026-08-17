@@ -1,5 +1,4 @@
 <script lang="ts">
-	import CaretDownIcon from "phosphor-svelte/lib/CaretDownIcon";
 	import FolderOpenIcon from "phosphor-svelte/lib/FolderOpenIcon";
 	import ImagesIcon from "phosphor-svelte/lib/ImagesIcon";
 	import LockSimpleIcon from "phosphor-svelte/lib/LockSimpleIcon";
@@ -21,8 +20,6 @@
 	import MediaImage from "$lib/components/shared/MediaImage.svelte";
 	import SelectionCheck from "$lib/components/shared/SelectionCheck.svelte";
 	import { Badge } from "$lib/components/ui/badge";
-	import { Button } from "$lib/components/ui/button";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
 	import * as Empty from "$lib/components/ui/empty";
 	import { Skeleton } from "$lib/components/ui/skeleton";
 	import { proxyMediaUrl } from "$lib/util/media";
@@ -132,6 +129,19 @@
 		return stopMode ? "Stop sharing" : "Send";
 	}
 
+	// Handed to the sheet's floating row so the expiry sits directly above the
+	// send button it belongs to. In this tab's own flow it appeared and
+	// disappeared with the selection, and every album below it jumped a row.
+	export function expiryControl() {
+		if (stopMode || selected.size === 0) return null;
+		return {
+			label: expirationLabel,
+			selected: expirationType,
+			options: EXPIRATION_OPTIONS,
+			select: (value: AlbumExpirationType) => (expirationType = value),
+		};
+	}
+
 	export function sendSelected() {
 		if (albums === null || recipientId === null || sharing) return;
 		const albumIds = selected.values();
@@ -226,31 +236,6 @@
 			</Empty.Header>
 		</Empty.Root>
 	{:else}
-		<!-- Only while sharing: an album being taken back does not have an expiry
-		     to pick, and the control would only be dead weight over the grid. -->
-		{#if !stopMode}
-			<div class="flex justify-end pb-2">
-				<DropdownMenu.Root>
-					<DropdownMenu.Trigger>
-						{#snippet child({ props })}
-							<Button {...props} variant="ghost" size="sm">
-								{expirationLabel}
-								<CaretDownIcon class="size-3.5" />
-							</Button>
-						{/snippet}
-					</DropdownMenu.Trigger>
-					<DropdownMenu.Content align="end">
-						{#each EXPIRATION_OPTIONS as option (option.value)}
-							<DropdownMenu.Item
-								onSelect={() => (expirationType = option.value)}
-							>
-								{option.label}
-							</DropdownMenu.Item>
-						{/each}
-					</DropdownMenu.Content>
-				</DropdownMenu.Root>
-			</div>
-		{/if}
 		<div class="photo-grid [--photo-grid-aspect:3/4]">
 			{#each albums as album (album.albumId)}
 				{@const isSelected = selected.has(album.albumId)}
