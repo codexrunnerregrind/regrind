@@ -55,6 +55,7 @@ function conversation(
 			rightNow: "NOT_ACTIVE",
 			onlineUntil: null,
 			hasUnreadThrob: false,
+			locked: false,
 		},
 	};
 }

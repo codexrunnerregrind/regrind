@@ -69,10 +69,46 @@ describe("conversation API wrappers", () => {
 		const data = { entries: [conversation()], nextPage: 2 };
 		fetchRestMock.mockResolvedValue(response(data));
 
-		await expect(getConversations({ page: 3 })).resolves.toEqual(data);
+		// Parsing marks every entry with whether the account can act on it.
+		await expect(getConversations({ page: 3 })).resolves.toEqual({
+			...data,
+			entries: [
+				{
+					...data.entries[0],
+					data: { ...data.entries[0]!.data, locked: false },
+				},
+			],
+		});
 
 		expect(fetchRestMock).toHaveBeenCalledWith("/v4/inbox?page=3", {
 			method: "POST",
+		});
+	});
+
+	it("keeps the locked entries a filtered page comes back with", async () => {
+		const locked = {
+			type: "partial_conversation_v1",
+			data: {
+				conversationId: "conversation-2",
+				name: "Sam",
+				participants: [participant],
+				lastActivityTimestamp: 1_710_000_000_000,
+				unreadCount: 3,
+				preview: null,
+			},
+		};
+		fetchRestMock.mockResolvedValue(
+			response({ entries: [conversation(), locked], nextPage: null }),
+		);
+
+		const { entries } = await getConversations({ page: 1 });
+
+		expect(entries.map((entry) => entry.data.locked)).toEqual([false, true]);
+		expect(entries[1]?.data).toMatchObject({
+			name: "Sam",
+			unreadCount: 3,
+			pinned: false,
+			muted: false,
 		});
 	});
 

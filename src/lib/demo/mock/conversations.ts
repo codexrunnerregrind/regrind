@@ -305,6 +305,7 @@ export function demoConversations({
 					rightNow: "NOT_ACTIVE",
 					onlineUntil: onlineUntilOf(seed),
 					hasUnreadThrob: false,
+					locked: false,
 				},
 			};
 		})

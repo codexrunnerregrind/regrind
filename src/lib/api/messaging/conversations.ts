@@ -3,11 +3,11 @@ import z from "zod";
 import { fetchRest } from "$lib/api/transport";
 import {
 	type Conversation,
-	fullConversationSchema,
+	conversationSchema,
 } from "$lib/model/messaging/conversations";
 
 const conversationsSchema = z.object({
-	entries: z.array(fullConversationSchema),
+	entries: z.array(conversationSchema),
 	nextPage: z.number().nullable(),
 });
 
