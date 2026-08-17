@@ -707,6 +707,18 @@ a {
 	z-index: 149999;
 }
 
+/* The bubble is a small centered pill, but sonner's row spans the full width —
+   and carries an invisible hit strip above it while the toaster is expanded — so
+   it swallows every tap and scroll in that band for as long as it is up. Only
+   the pill itself should take input; the rest of the row is click-through. */
+.profile-view-toast[data-sonner-toast] {
+	pointer-events: none;
+}
+
+.profile-view-toast[data-sonner-toast] > * {
+	pointer-events: auto;
+}
+
 .incoming-message-toast[data-sonner-toast] {
 	opacity: 1 !important;
 	--fly-out: translateY(calc(-100% - var(--offset-top, 24px) - 12px));
