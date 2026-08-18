@@ -139,6 +139,7 @@
 					: await resolveAlbumForViewing({
 							albumId,
 							ownerProfileId: album?.profileId,
+							ours: isMine,
 						});
 			await openAlbumLightbox(loaded, {
 				// A teaser lost the original ordering, so it always opens at the top.

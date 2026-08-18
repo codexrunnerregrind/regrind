@@ -5,7 +5,7 @@ const { getMyAlbumsMock } = vi.hoisted(() => ({ getMyAlbumsMock: vi.fn() }));
 vi.mock("$lib/api/messaging/albums", () => ({ getMyAlbums: getMyAlbumsMock }));
 
 import { resetNowForTesting, setNowForTesting } from "$lib/util/clock";
-import { clearMyAlbumCoverCache, myAlbumCoverUrl } from "./my-album-covers";
+import { clearMyAlbumsCache, myAlbumCoverUrl } from "./my-albums";
 
 let clock = 0;
 
@@ -24,7 +24,7 @@ function photo(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
 	clock = 1_000_000;
 	setNowForTesting(() => clock);
-	clearMyAlbumCoverCache();
+	clearMyAlbumsCache();
 	getMyAlbumsMock.mockReset();
 });
 

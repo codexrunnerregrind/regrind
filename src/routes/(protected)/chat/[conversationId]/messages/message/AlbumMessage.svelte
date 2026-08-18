@@ -15,7 +15,7 @@
 		openAlbumLightbox,
 		resolveAlbumForViewing,
 	} from "$lib/chat/album-viewer";
-	import { myAlbumCoverUrl } from "$lib/chat/my-album-covers";
+	import { myAlbumCoverUrl } from "$lib/chat/my-albums";
 	import { paywallCoverUrl } from "$lib/chat/paywall-covers";
 	import LockIcon from "$lib/components/shared/LockIcon.svelte";
 	import { profileMediaUrl } from "$lib/util/media";
@@ -23,6 +23,7 @@
 	import type { AlbumMessage } from "$lib/model/messaging/messages";
 	import { getConversationState } from "../../conversation-state.svelte";
 	import { albumExpiry } from "./album-expiry";
+	import { getMessageContext } from "./context";
 	import LockedMedia from "./LockedMedia.svelte";
 	import { MessageMediaState } from "./message-media.svelte";
 
@@ -47,8 +48,15 @@
 		media.cornerClass,
 	]);
 
+	// An album bubble we sent is one of our own albums — an album can only be
+	// shared by whoever owns it. The direction of the message is what says so:
+	// the body's `ownerProfileId` is not always filled in, and a bubble of ours
+	// that came back without one was being treated as somebody else's, which is
+	// what sent a revoked share off to the paywall teaser and had it report our
+	// own album as locked or expired.
+	const { isOut } = $derived(getMessageContext()());
 	const isOurs = $derived(
-		message.ownerProfileId === conversation.ourProfileId,
+		isOut || message.ownerProfileId === conversation.ourProfileId,
 	);
 
 	// Someone else's album gets the viewer's reply chrome; our own share opens
@@ -136,7 +144,11 @@
 				const resolved = await resolveAlbumForViewing({
 					albumId: message.albumId,
 					ownerProfileId: message.ownerProfileId,
-					viewable: message.isViewable || isOurs,
+					// `ours` covers a locked bubble of ours, so there is no
+					// point spending a request on the viewer endpoint that
+					// would only refuse it.
+					viewable: message.isViewable,
+					ours: isOurs,
 				});
 				cachedAlbum = resolved.album;
 				cachedFromPaywall = resolved.fromPaywall;

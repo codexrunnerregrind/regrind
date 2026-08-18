@@ -80,6 +80,13 @@ export class AlbumBubbleOpener {
 				const resolved = await resolveAlbumForViewing({
 					albumId,
 					ownerProfileId: options.ownerProfileId,
+					// A reply or reaction to one of our own photos points at our
+					// album, and ours stays ours however the share ends up — so it
+					// opens from our album list rather than from a teaser that only
+					// lists albums we are being upsold.
+					ours:
+						options.ownerProfileId ===
+						this.#conversation.ourProfileId,
 				});
 				this.#album = resolved.album;
 				this.#fromPaywall = resolved.fromPaywall;

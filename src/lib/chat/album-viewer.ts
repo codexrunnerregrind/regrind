@@ -24,6 +24,7 @@ import {
 } from "$lib/util/media-dimensions";
 import { applyPhotoSwipeVideo } from "$lib/util/photoswipe";
 import { downloadMedia } from "./lightbox-download";
+import { myAlbum } from "./my-albums";
 import {
 	type MediaViewerActions,
 	registerMediaViewerChrome,
@@ -192,6 +193,34 @@ export async function loadPaywallAlbum({
 	};
 }
 
+/**
+ * One of our own albums, straight from our album list.
+ *
+ * `GET /v2/albums/{albumId}` is the entitled-*viewer* endpoint: it answers with
+ * nothing once the share behind a bubble is revoked or expired, and it does that
+ * even for an album we own — which is what used to make our own locked bubble
+ * report itself as locked or expired. `GET /v1/albums` has no share to consult,
+ * so it is the one that still hands over our album in full.
+ *
+ * Returns `null` when we own no such album (it was deleted, or it was never
+ * ours), which is the caller's cue to keep looking.
+ */
+async function loadOwnAlbum(albumId: number): Promise<LoadedAlbum | null> {
+	const album = await myAlbum(albumId);
+	if (album === null || album.content.length === 0) return null;
+	return {
+		albumId: album.albumId,
+		albumName: album.albumName,
+		hasUnseenContent: false,
+		profileId: album.profileId,
+		albumViewable: true,
+		sharedCount: album.sharedCount,
+		createdAt: album.createdAt,
+		updatedAt: album.updatedAt,
+		content: album.content,
+	};
+}
+
 /** An album ready for the viewer, and where it had to be found. */
 export type AlbumForViewing = {
 	album: LoadedAlbum;
@@ -208,23 +237,29 @@ export type AlbumForViewing = {
  * Resolves an album to something the viewer can show, however it has to.
  *
  * Every way into the viewer wants the same chain, so it lives here rather than
- * in each of them: the album itself, and failing that the paywall teaser, which
- * still carries previews for shares we have lost access to. Throws
- * {@link AlbumLockedError} when neither has anything — the genuinely-gone case.
+ * in each of them: the album itself, then our own album list when the album is
+ * ours, and failing both the paywall teaser, which still carries previews for
+ * shares we have lost access to. Throws {@link AlbumLockedError} when none has
+ * anything — the genuinely-gone case.
  *
  * Pass `viewable: false` for an album already known to be locked (a chat
- * message says so on its face) to skip the request that would only 403.
+ * message says so on its face) to skip the request that would only 403. Pass
+ * `ours: true` for an album we own: the lock on it is the recipient's side of a
+ * share we revoked, so it opens in full from {@link loadOwnAlbum} — and never
+ * from the teaser, which only ever lists albums we are being upsold.
  */
 export async function resolveAlbumForViewing({
 	albumId,
 	ownerProfileId,
 	albumName,
 	viewable = true,
+	ours = false,
 }: {
 	albumId: number;
 	ownerProfileId?: number | null;
 	albumName?: string | null;
 	viewable?: boolean;
+	ours?: boolean;
 }): Promise<AlbumForViewing> {
 	// 403 is the API's other way of saying "not for you"; an album that comes
 	// back present but empty means the same thing. Both fall through.
@@ -237,6 +272,16 @@ export async function resolveAlbumForViewing({
 		: null;
 	if (album !== null && album.content.length > 0)
 		return { album, fromPaywall: false };
+
+	// Our own album, refused by the viewer endpoint because the share is off:
+	// our album list still has it, in full and with nothing blurred.
+	if (ours) {
+		const own = await loadOwnAlbum(albumId).catch((error: unknown) => {
+			console.error(error);
+			return null;
+		});
+		if (own !== null) return { album: own, fromPaywall: false };
+	}
 
 	// A teaser that errors out is still just an album we cannot show, so it
 	// reports as locked rather than as a failure of its own.
