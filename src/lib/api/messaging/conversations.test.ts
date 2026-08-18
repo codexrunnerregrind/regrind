@@ -103,7 +103,10 @@ describe("conversation API wrappers", () => {
 
 		const { entries } = await getConversations({ page: 1 });
 
-		expect(entries.map((entry) => entry.data.locked)).toEqual([false, true]);
+		expect(entries.map((entry) => entry.data.locked)).toEqual([
+			false,
+			true,
+		]);
 		expect(entries[1]?.data).toMatchObject({
 			name: "Sam",
 			unreadCount: 3,

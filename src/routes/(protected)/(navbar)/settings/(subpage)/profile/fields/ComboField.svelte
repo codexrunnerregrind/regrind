@@ -105,7 +105,6 @@
 		values = newValue;
 		searchValue = "";
 	}
-
 </script>
 
 <Field {label} hint={effectiveHint}>
