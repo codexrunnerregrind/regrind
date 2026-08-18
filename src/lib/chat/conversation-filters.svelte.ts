@@ -1,5 +1,7 @@
+import { FilterPosition } from "$lib/model/browse/grid/filters";
 import { getNow } from "$lib/util/now";
 import type { InboxFilterRequest } from "$lib/api/messaging/conversations";
+import type { FilterPositionId } from "$lib/model/browse/grid/filters";
 import type { Conversation } from "$lib/model/messaging/conversations";
 
 export const CONVERSATION_FILTER_KEYS = [
@@ -9,6 +11,22 @@ export const CONVERSATION_FILTER_KEYS = [
 ] as const;
 
 export type ConversationFilterKey = (typeof CONVERSATION_FILTER_KEYS)[number];
+
+/**
+ * Everything the inbox can be narrowed by: the three on/off pills, plus the two
+ * that carry a value of their own and so open a sheet rather than toggling.
+ */
+export type ConversationFilterSelection = {
+	active: ConversationFilterKey[];
+	/** A ceiling, in metres; `null` while the distance filter is off. */
+	distanceMetres: number | null;
+	/** Empty while the position filter is off. */
+	positions: FilterPositionId[];
+};
+
+export const DISTANCE_METRES_MIN = 1000;
+export const DISTANCE_METRES_MAX = 100_000;
+export const DISTANCE_METRES_STEP = 1000;
 
 const matchers: Record<
 	ConversationFilterKey,
@@ -27,34 +45,107 @@ const matchers: Record<
 			0) > getNow(),
 };
 
+// A conversation the server sends without a distance cannot be shown to be
+// within one, so a distance ceiling drops it — the same call the online filter
+// makes for a thread with no status.
+function withinDistance(
+	conversation: Conversation,
+	distanceMetres: number,
+): boolean {
+	const distance = conversation.data.participants[0]?.distanceMetres;
+	return distance !== null && distance !== undefined
+		? distance <= distanceMetres
+		: false;
+}
+
+// "Not specified" is a position in the filter, so a participant who published
+// none matches it and nothing else.
+function matchesPosition(
+	conversation: Conversation,
+	positions: FilterPositionId[],
+): boolean {
+	const position = conversation.data.participants[0]?.position ?? null;
+	return positions.includes(
+		position === null ? FilterPosition.NotSpecified : position,
+	);
+}
+
 export function inboxFilterRequest(
-	active: ConversationFilterKey[],
+	selection: ConversationFilterSelection,
 ): InboxFilterRequest | null {
-	if (active.length === 0) return null;
+	const { active, distanceMetres, positions } = selection;
+	if (
+		active.length === 0 &&
+		distanceMetres === null &&
+		positions.length === 0
+	)
+		return null;
 	return {
 		unreadOnly: active.includes("unread"),
 		chemistryOnly: false,
 		favoritesOnly: active.includes("favorites"),
 		rightNowOnly: false,
 		onlineNowOnly: active.includes("online"),
-		distanceMeters: null,
-		positions: [],
+		distanceMeters: distanceMetres,
+		positions: [...positions],
 	};
 }
 
 export class ConversationFilters {
 	active = $state<ConversationFilterKey[]>([]);
+	distanceMetres = $state<number | null>(null);
+	positions = $state<FilterPositionId[]>([]);
 
-	matches(conversation: Conversation): boolean {
-		return this.active.every((key) => matchers[key](conversation));
+	/** Whether the list is narrowed at all — nothing to filter locally if not. */
+	get any(): boolean {
+		return (
+			this.active.length > 0 ||
+			this.distanceMetres !== null ||
+			this.positions.length > 0
+		);
 	}
 
-	set(active: ConversationFilterKey[]): boolean {
+	snapshot(): ConversationFilterSelection {
+		return {
+			active: [...this.active],
+			distanceMetres: this.distanceMetres,
+			positions: [...this.positions],
+		};
+	}
+
+	matches(conversation: Conversation): boolean {
+		if (!this.active.every((key) => matchers[key](conversation)))
+			return false;
+		if (
+			this.distanceMetres !== null &&
+			!withinDistance(conversation, this.distanceMetres)
+		)
+			return false;
+		if (
+			this.positions.length > 0 &&
+			!matchesPosition(conversation, this.positions)
+		)
+			return false;
+		return true;
+	}
+
+	set(selection: Partial<ConversationFilterSelection>): boolean {
+		const active = selection.active ?? this.active;
+		const distanceMetres =
+			selection.distanceMetres === undefined
+				? this.distanceMetres
+				: selection.distanceMetres;
+		const positions = selection.positions ?? this.positions;
 		const unchanged =
 			active.length === this.active.length &&
-			active.every((key) => this.active.includes(key));
+			active.every((key) => this.active.includes(key)) &&
+			distanceMetres === this.distanceMetres &&
+			positions.length === this.positions.length &&
+			positions.every((position) => this.positions.includes(position));
 		if (unchanged) return false;
-		this.active = active;
+		this.active = [...active];
+		this.distanceMetres = distanceMetres;
+		this.positions = [...positions];
 		return true;
 	}
 }

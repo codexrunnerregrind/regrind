@@ -2,73 +2,96 @@
 	import StarIcon from "phosphor-svelte/lib/StarIcon";
 
 	import {
-		CONVERSATION_FILTER_KEYS,
 		type ConversationFilterKey,
 		type ConversationFilters,
+		type ConversationFilterSelection,
 	} from "$lib/chat/conversation-filters.svelte";
-	import { ACTIVE_FILTER_PRESSED } from "$lib/components/filters/active-filter";
-	import { buttonVariants } from "$lib/components/ui/button";
-	import * as ToggleGroup from "$lib/components/ui/toggle-group";
+	import { ACTIVE_FILTER } from "$lib/components/filters/active-filter";
+	import { Button } from "$lib/components/ui/button";
+	import InboxDistanceFilter from "./InboxDistanceFilter.svelte";
+	import InboxPositionFilter from "./InboxPositionFilter.svelte";
 
 	let {
 		filters,
 		onchange,
-		inert = false,
 		class: className,
 	}: {
 		filters: ConversationFilters;
-		onchange: (active: ConversationFilterKey[]) => void;
-		inert?: boolean;
+		onchange: (selection: Partial<ConversationFilterSelection>) => void;
 		class?: import("svelte/elements").ClassValue;
 	} = $props();
 
+	let open = $state({ distance: false, position: false });
+
 	// Favorites is the star everywhere else in the app, so it reads without a
-	// word; the other two have no icon anyone would guess at, so they say what
-	// they are. The star still carries an aria-label, being icon-only.
-	const labels: Record<ConversationFilterKey, string> = {
-		favorites: "Favorites",
-		unread: "Unread",
-		online: "Online",
-	};
+	// word; the rest have no icon anyone would guess at, so they say what they
+	// are. The star still carries an aria-label, being icon-only.
+	const favorite = $derived(filters.active.includes("favorites"));
+	const unread = $derived(filters.active.includes("unread"));
+	const online = $derived(filters.active.includes("online"));
+
+	function toggle(key: ConversationFilterKey) {
+		onchange({
+			active: filters.active.includes(key)
+				? filters.active.filter((active) => active !== key)
+				: [...filters.active, key],
+		});
+	}
 </script>
 
-<!-- The grid's quick filters in miniature — same pill, same inverted fill when
-     on, same row that scrolls rather than wraps. -->
-<div class={["scrollbar-thin flex gap-0.5 overflow-x-auto", className]} {inert}>
-	<ToggleGroup.Root
-		type="multiple"
-		variant="default"
-		size="sm"
-		class="h-9 gap-0.5"
-		bind:value={
-			() => filters.active,
-			(values: string[]) =>
-				onchange(
-					CONVERSATION_FILTER_KEYS.filter((key) =>
-						values.includes(key),
-					),
-				)
-		}
+<!-- The grid's quick filters in miniature — same pills, same inverted fill when
+     on, same row that scrolls rather than wraps, and the same two that carry a
+     value of their own open a sheet instead of toggling. The order matches the
+     official app's: favorites, unread, distance, online, position. -->
+<div class={["scrollbar-thin flex gap-0.5 overflow-x-auto", className]}>
+	<Button
+		variant="secondary"
+		aria-label="Favorites"
+		aria-pressed={favorite}
+		onclick={() => toggle("favorites")}
+		class={{ [ACTIVE_FILTER]: favorite }}
 	>
-		{#each CONVERSATION_FILTER_KEYS as key (key)}
-			<ToggleGroup.Item
-				value={key}
-				aria-label={key === "favorites" ? labels[key] : undefined}
-				class={[
-					buttonVariants({ variant: "secondary" }),
-					ACTIVE_FILTER_PRESSED,
-				]}
-			>
-				{#if key === "favorites"}
-					<StarIcon
-						weight={filters.active.includes(key)
-							? "fill"
-							: "regular"}
-					/>
-				{:else}
-					{labels[key]}
-				{/if}
-			</ToggleGroup.Item>
-		{/each}
-	</ToggleGroup.Root>
+		<StarIcon weight={favorite ? "fill" : "regular"} />
+	</Button>
+	<Button
+		variant="secondary"
+		aria-pressed={unread}
+		onclick={() => toggle("unread")}
+		class={{ [ACTIVE_FILTER]: unread }}
+	>
+		Unread
+	</Button>
+	<Button
+		variant="secondary"
+		onclick={() => (open.distance = true)}
+		class={{ [ACTIVE_FILTER]: filters.distanceMetres !== null }}
+	>
+		Distance
+	</Button>
+	<Button
+		variant="secondary"
+		aria-pressed={online}
+		onclick={() => toggle("online")}
+		class={{ [ACTIVE_FILTER]: online }}
+	>
+		Online
+	</Button>
+	<Button
+		variant="secondary"
+		onclick={() => (open.position = true)}
+		class={{ [ACTIVE_FILTER]: filters.positions.length > 0 }}
+	>
+		Position
+	</Button>
 </div>
+
+<InboxDistanceFilter
+	bind:open={open.distance}
+	distanceMetres={filters.distanceMetres}
+	onapply={(distanceMetres) => onchange({ distanceMetres })}
+/>
+<InboxPositionFilter
+	bind:open={open.position}
+	positions={filters.positions}
+	onapply={(positions) => onchange({ positions })}
+/>

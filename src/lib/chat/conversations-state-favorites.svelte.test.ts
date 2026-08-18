@@ -156,7 +156,7 @@ describe("inbox favorites filter", () => {
 		await settled(state);
 		expect(visible(state)).toEqual(["a:1", "b:2"]);
 
-		state.setFilters(["favorites"]);
+		state.setFilters({ active: ["favorites"] });
 		await settled(state);
 
 		expect(getConversationsMock).toHaveBeenLastCalledWith({
@@ -166,7 +166,7 @@ describe("inbox favorites filter", () => {
 		expect(loaded(state)).toEqual(["a:1"]);
 		expect(visible(state)).toEqual(["a:1"]);
 
-		state.setFilters([]);
+		state.setFilters({ active: [] });
 		await settled(state);
 
 		expect(getConversationsMock).toHaveBeenLastCalledWith({
@@ -183,7 +183,7 @@ describe("inbox favorites filter", () => {
 			onIncomingMessage: vi.fn(),
 		});
 		await settled(state);
-		state.setFilters(["favorites"]);
+		state.setFilters({ active: ["favorites"] });
 		await settled(state);
 		expect(loaded(state)).toEqual(["a:1"]);
 		getConversationsMock.mockClear();
@@ -240,7 +240,7 @@ describe("inbox favorites filter", () => {
 			onIncomingMessage: vi.fn(),
 		});
 		await settled(state);
-		state.setFilters(["favorites"]);
+		state.setFilters({ active: ["favorites"] });
 		await settled(state);
 		await state.ensureLoaded("b:2");
 		expect(loaded(state)).toContain("b:2");
@@ -269,7 +269,7 @@ describe("inbox favorites filter", () => {
 			ourProfileId: OUR_ID,
 			onIncomingMessage: vi.fn(),
 		});
-		state.setFilters(["favorites"]);
+		state.setFilters({ active: ["favorites"] });
 		await settled(state);
 		expect(visible(state)).toEqual(["a:1"]);
 
@@ -290,7 +290,7 @@ describe("inbox favorites filter", () => {
 			ourProfileId: OUR_ID,
 			onIncomingMessage: vi.fn(),
 		});
-		state.setFilters(["favorites"]);
+		state.setFilters({ active: ["favorites"] });
 
 		first.resolve({
 			entries: [
@@ -333,7 +333,7 @@ describe("inbox favorites filter", () => {
 			onIncomingMessage: vi.fn(),
 		});
 		await settled(state);
-		state.setFilters(["favorites"]);
+		state.setFilters({ active: ["favorites"] });
 		await settled(state);
 		expect(state.nextPage).toBe(2);
 

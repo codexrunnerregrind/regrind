@@ -255,11 +255,15 @@ export function demoConversations({
 	favoritesOnly = false,
 	unreadOnly = false,
 	onlineNowOnly = false,
+	distanceMeters = null,
+	positions = [],
 }: {
 	page: number;
 	favoritesOnly?: boolean;
 	unreadOnly?: boolean;
 	onlineNowOnly?: boolean;
+	distanceMeters?: number | null;
+	positions?: number[];
 }): { entries: Conversation[]; nextPage: number | null } {
 	if (page > 1) return { entries: [], nextPage: null };
 	const entries: Conversation[] = demoConversationSeeds
@@ -278,6 +282,17 @@ export function demoConversations({
 				!onlineNowOnly ||
 				(onlineUntilOf(profileSeed(conv.withId)) ?? 0) > Date.now(),
 		)
+		.filter((conv) => {
+			if (distanceMeters === null) return true;
+			const distance = profileSeed(conv.withId).distanceM;
+			return distance !== null && distance <= distanceMeters;
+		})
+		.filter((conv) => {
+			if (positions.length === 0) return true;
+			// -1 is the filter's "not specified", which is what a seed with no
+			// position published answers to.
+			return positions.includes(profileSeed(conv.withId).position ?? -1);
+		})
 		.map((conv): Conversation => {
 			const conversationId = conversationIdFor(conv.withId);
 			const seed = profileSeed(conv.withId);

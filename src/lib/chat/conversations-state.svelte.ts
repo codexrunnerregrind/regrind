@@ -24,8 +24,8 @@ import type { ApiResponseMessage } from "$lib/model/messaging/messages";
 import type { CachedConversation } from "./cached-conversation";
 import {
 	applyFavoriteEdit,
-	type ConversationFilterKey,
 	ConversationFilters,
+	type ConversationFilterSelection,
 	inboxFilterRequest,
 } from "./conversation-filters.svelte";
 import { fetchConversationWindow } from "./conversation-window";
@@ -142,12 +142,12 @@ class ConversationsState {
 	}
 
 	get visibleEntries(): Conversation[] {
-		if (this.filters.active.length === 0) return this.entries;
+		if (!this.filters.any) return this.entries;
 		return this.entries.filter((entry) => this.filters.matches(entry));
 	}
 
-	setFilters(active: ConversationFilterKey[]): void {
-		if (this.filters.set(active)) this.retry();
+	setFilters(selection: Partial<ConversationFilterSelection>): void {
+		if (this.filters.set(selection)) this.retry();
 	}
 
 	async #handleMessageSent(message: ApiResponseMessage): Promise<void> {
@@ -220,7 +220,7 @@ class ConversationsState {
 			const { fetched, oldestFetchedTs, reachedEnd, nextPage } =
 				await fetchConversationWindow({
 					oldestLoadedTs,
-					filters: inboxFilterRequest(this.filters.active),
+					filters: inboxFilterRequest(this.filters.snapshot()),
 				});
 			if (this.#fetches.isStale(fetchEpoch)) return;
 			this.nextPage = reachedEnd ? null : nextPage;
@@ -317,7 +317,7 @@ class ConversationsState {
 		const fetchEpoch = this.#fetches.claim();
 		const result = await getConversations({
 			page,
-			filters: inboxFilterRequest(this.filters.active),
+			filters: inboxFilterRequest(this.filters.snapshot()),
 		});
 		if (this.#fetches.isStale(fetchEpoch)) return;
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- function-local lookup, never mutated after construction

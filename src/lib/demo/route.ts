@@ -206,6 +206,8 @@ export function demoRoute({
 					favoritesOnly?: boolean;
 					unreadOnly?: boolean;
 					onlineNowOnly?: boolean;
+					distanceMeters?: number | null;
+					positions?: number[];
 			  }
 			| undefined;
 		return ok(
@@ -214,6 +216,8 @@ export function demoRoute({
 				favoritesOnly: filters?.favoritesOnly ?? false,
 				unreadOnly: filters?.unreadOnly ?? false,
 				onlineNowOnly: filters?.onlineNowOnly ?? false,
+				distanceMeters: filters?.distanceMeters ?? null,
+				positions: filters?.positions ?? [],
 			}),
 		);
 	}

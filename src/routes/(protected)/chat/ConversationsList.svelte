@@ -8,6 +8,7 @@
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import ListRowSkeleton from "$lib/components/feedback/ListRowSkeleton.svelte";
+	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
 	import UnderlineTabs from "$lib/components/shared/UnderlineTabs.svelte";
 	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
 	import { hapticImpact, hapticSelection } from "$lib/platform/haptics";
@@ -229,23 +230,7 @@
 	}}
 >
 	<div class="shrink-0 px-screen pt-4">
-		<!-- The pills are taller than the title's own line box, so they hang off
-		     it rather than sitting in the flow: the header then measures exactly
-		     the title, and this screen's heading stays on the same line as
-		     Interest's and Settings'. -->
-		<div class="relative">
-			<h1 class="screen-title">Inbox</h1>
-			<!-- Albums are not conversations, so the filters go with the tab they
-			     act on rather than sitting inert above both. -->
-			{#if activeTab === "inbox"}
-				<ConversationsFilters
-					filters={conversations.filters}
-					onchange={(active) => conversations.setFilters(active)}
-					inert={selecting}
-					class="absolute inset-y-0 right-0 my-auto h-9 max-w-2/3 items-center"
-				/>
-			{/if}
-		</div>
+		<h1 class="screen-title">Inbox</h1>
 		<UnderlineTabs
 			{tabs}
 			value={activeTab}
@@ -256,96 +241,131 @@
 	{#if activeTab === "albums"}
 		<AlbumsTab class={className} />
 	{:else}
-		<div
-			bind:this={container}
-			data-scroll-root
-			class={[
-				"flex min-h-0 flex-1 flex-col gap-0 overflow-auto overscroll-contain px-0 pt-1 pb-0",
-				{ "pt-(--selection-bar-height)": selecting },
-				className,
-			]}
-			onscroll={() => (conversations.scrollY = container?.scrollTop ?? 0)}
-		>
-			{#if conversations.loading}
-				{#each Array(8)}
-					<ListRowSkeleton />
-				{/each}
-			{:else if conversations.error}
-				<div class="flex flex-1">
-					<ApiErrorDisplay
-						error={conversations.error}
-						onRetry={() => conversations.retry()}
-						class="m-auto"
-					/>
-				</div>
-			{:else}
-				<div
-					class="flex min-h-overscrollable shrink-0 flex-col gap-0 pb-nav-clear"
+		<!-- The row sits over the list rather than above it, as the grid's quick
+		     filters do: rows scroll behind it through the same nine blur layers
+		     and background-to-transparent gradient, so nothing but the pills is
+		     opaque. Albums are not conversations, so the filters go with the tab
+		     they act on rather than sitting inert above both. -->
+		<div class="relative flex min-h-0 flex-1 flex-col">
+			<!-- Selecting takes the row away rather than leaving it inert: the
+			     selection bar covers the top of the screen while it is up, and a
+			     dead row of pills there would only collect scrolling rows behind
+			     it. -->
+			{#if !selecting}
+				<ProgressiveBlur
+					data-fixed-header
+					class="pointer-events-none absolute top-0 left-0 z-10 w-full"
+					bgClass="bg-linear-to-b from-background to-transparent"
+					contentClass="flex flex-col pt-3 pb-6"
+					direction="topToBottom"
 				>
-					{#if pinnedEntries.length > 0}
-						<div
-							class="flex items-center gap-1.5 px-screen pt-5.5 pb-2.5"
-						>
-							<PushPinIcon
-								weight="fill"
-								class="size-3 text-ink3"
-							/>
-							<span class="section-label">Pinned</span>
-						</div>
-						<!-- The card closes the group, so the last row's separator would
-						     draw a stray line just inside its bottom edge. -->
-						<div
-							class="pinned-group mx-screen overflow-hidden rounded-xl bg-card [&>:last-child_a]:after:border-b-0"
-						>
-							{#each pinnedEntries as conversation (conversation.data.conversationId)}
-								{@render row(conversation, true)}
-							{/each}
-						</div>
-						<div class="h-5"></div>
-					{/if}
-					{#each restEntries as conversation, i (conversation.data.conversationId)}
-						{@render row(conversation, i < EAGER_COUNT)}
-					{:else}
-						{#if pinnedEntries.length === 0}
-							<EmptyConversationsList
-								filtered={conversations.filters.active.length >
-									0}
-							/>
-						{/if}
+					<ConversationsFilters
+						filters={conversations.filters}
+						onchange={(selection) =>
+							conversations.setFilters(selection)}
+						class="pointer-events-auto h-9 items-center px-screen"
+					/>
+				</ProgressiveBlur>
+			{/if}
+			<div
+				bind:this={container}
+				data-scroll-root
+				class={[
+					"flex min-h-0 flex-1 flex-col gap-0 overflow-auto overscroll-contain px-0 pb-0",
+					// pt-12 puts the first row at the pills' bottom edge
+					// (pt-3 + h-9), not at the overlay's: the pb-6 below them
+					// is blur tail, and rows are meant to fade out through it.
+					{
+						"pt-(--selection-bar-height)": selecting,
+						"pt-12": !selecting,
+					},
+					className,
+				]}
+				onscroll={() =>
+					(conversations.scrollY = container?.scrollTop ?? 0)}
+			>
+				{#if conversations.loading}
+					{#each Array(8)}
+						<ListRowSkeleton />
 					{/each}
-					{#if conversations.loadingMore}
-						{#each Array(6)}
-							<ListRowSkeleton />
+				{:else if conversations.error}
+					<div class="flex flex-1">
+						<ApiErrorDisplay
+							error={conversations.error}
+							onRetry={() => conversations.retry()}
+							class="m-auto"
+						/>
+					</div>
+				{:else}
+					<div
+						class="flex min-h-overscrollable shrink-0 flex-col gap-0 pb-nav-clear"
+					>
+						{#if pinnedEntries.length > 0}
+							<div
+								class="flex items-center gap-1.5 px-screen pt-5.5 pb-2.5"
+							>
+								<PushPinIcon
+									weight="fill"
+									class="size-3 text-ink3"
+								/>
+								<span class="section-label">Pinned</span>
+							</div>
+							<!-- The card closes the group, so the last row's separator would
+						     draw a stray line just inside its bottom edge. -->
+							<div
+								class="pinned-group mx-screen overflow-hidden rounded-xl bg-card [&>:last-child_a]:after:border-b-0"
+							>
+								{#each pinnedEntries as conversation (conversation.data.conversationId)}
+									{@render row(conversation, true)}
+								{/each}
+							</div>
+							<div class="h-5"></div>
+						{/if}
+						{#each restEntries as conversation, i (conversation.data.conversationId)}
+							{@render row(conversation, i < EAGER_COUNT)}
+						{:else}
+							{#if pinnedEntries.length === 0}
+								<EmptyConversationsList
+									filtered={conversations.filters.any}
+								/>
+							{/if}
 						{/each}
-					{/if}
-					{#if conversations.nextPage !== null}
-						<div
-							class="h-0"
-							use:observeIntersection={{
-								handle: () => {
-									conversations
-										.loadMore()
-										.catch((error) => console.error(error));
-								},
-								rootMargin: "400px",
-							}}
-						></div>
-					{/if}
-				</div>
+						{#if conversations.loadingMore}
+							{#each Array(6)}
+								<ListRowSkeleton />
+							{/each}
+						{/if}
+						{#if conversations.nextPage !== null}
+							<div
+								class="h-0"
+								use:observeIntersection={{
+									handle: () => {
+										conversations
+											.loadMore()
+											.catch((error) =>
+												console.error(error),
+											);
+									},
+									rootMargin: "400px",
+								}}
+							></div>
+						{/if}
+					</div>
+				{/if}
+			</div>
+			{#if !conversations.loading && !conversations.error}
+				<DataRefreshControl
+					{container}
+					updating={conversations.refreshing}
+					position="top"
+					hintOffset={12}
+					onrefresh={() => {
+						hapticImpact("light");
+						void conversations.refresh();
+					}}
+				/>
 			{/if}
 		</div>
-		{#if !conversations.loading && !conversations.error}
-			<DataRefreshControl
-				{container}
-				updating={conversations.refreshing}
-				position="top"
-				hintOffset={12}
-				onrefresh={() => {
-					hapticImpact("light");
-					void conversations.refresh();
-				}}
-			/>
-		{/if}
 	{/if}
 </div>
 
