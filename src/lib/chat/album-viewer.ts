@@ -17,6 +17,11 @@ import {
 } from "$lib/api/messaging/messages";
 import { callMethod } from "$lib/api/methods";
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+import {
+	measureImage,
+	measureVideo,
+	type MediaDimensions,
+} from "$lib/util/media-dimensions";
 import { applyPhotoSwipeVideo } from "$lib/util/photoswipe";
 import { downloadMedia } from "./lightbox-download";
 import {
@@ -44,91 +49,72 @@ export type AlbumSharer = {
 	distanceKm?: number | null;
 };
 
-// An album whose slides have been measured so PhotoSwipe can size them.
-export type LoadedAlbum = AlbumContentResponse & {
-	content: (AlbumContentResponse["content"][number] & {
-		width: number;
-		height: number;
-	})[];
-};
+/**
+ * An album ready for the viewer. Slides carry no dimensions: the API does not
+ * report any, and measuring them all up front is what used to make opening an
+ * album slow (see {@link createSlideSizer}).
+ */
+export type LoadedAlbum = AlbumContentResponse;
 
-// Measures every slide's intrinsic dimensions, which PhotoSwipe needs up front
-// to lay out the lightbox.
-async function measureSlides<
-	TSlide extends { contentType: string; url: string },
->(slides: TSlide[]): Promise<(TSlide & { width: number; height: number })[]> {
-	return await Promise.all(
-		slides.map(async (slide) => {
-			if (slide.contentType.startsWith("video/")) {
-				const video = document.createElement("video");
-				video.src = slide.url ?? "";
-				video.load();
-				try {
-					await new Promise<void>((resolve, reject) => {
-						if (video.readyState >= 1) resolve();
-						video.addEventListener(
-							"loadedmetadata",
-							() => resolve(),
-							{ once: true },
-						);
-						video.addEventListener(
-							"error",
-							({ error }) =>
-								reject(
-									new Error(
-										`Failed to load video: ${slide.url}`,
-										{ cause: error },
-									),
-								),
-							{ once: true },
-						);
-					});
-					return {
-						...slide,
-						width: video.videoWidth,
-						height: video.videoHeight,
-					};
-				} finally {
-					video.remove();
-				}
-			} else {
-				const img = document.createElement("img");
-				img.src = slide.url ?? "";
-				try {
-					await new Promise<void>((resolve, reject) => {
-						if (img.complete) resolve();
-						img.addEventListener("load", () => resolve(), {
-							once: true,
-						});
-						img.addEventListener(
-							"error",
-							({ error }) =>
-								reject(
-									new Error(
-										`Failed to load image: ${slide.url}`,
-										{ cause: error },
-									),
-								),
-							{ once: true },
-						);
-					});
-					return {
-						...slide,
-						width: img.naturalWidth,
-						height: img.naturalHeight,
-					};
-				} finally {
-					img.remove();
-				}
-			}
-		}),
-	);
+// A slide's size while its media is still being measured. PhotoSwipe lays a
+// slide out from its intrinsic size and given 0x0 it stretches it over the whole
+// viewport, so the viewport is the placeholder that looks least wrong.
+function viewportSize(): MediaDimensions {
+	return { width: window.innerWidth, height: window.innerHeight };
 }
 
-// Fetches an album and measures its slides.
+type SlideSizer = {
+	/** Whether this slide's real size is already in hand. */
+	measured(index: number): boolean;
+	/** The real size if known, and the placeholder until then. */
+	sizeAt(index: number): MediaDimensions;
+	/** Measures the slide, or joins the measurement already under way. */
+	ensure(index: number): Promise<void>;
+};
+
+/**
+ * Measures slides one at a time, on demand.
+ *
+ * PhotoSwipe needs a slide's intrinsic size to lay it out and the album payload
+ * carries none, so every size costs a media load. Measuring the whole album up
+ * front meant an album only opened once every one of its photos had been
+ * downloaded in full — a wait that grew with the album. So the viewer measures
+ * the slide it opens on, and leaves the rest to be measured as PhotoSwipe
+ * reaches them, which is media it was going to load anyway.
+ */
+function createSlideSizer(content: LoadedAlbum["content"]): SlideSizer {
+	const sizes: (MediaDimensions | null)[] = content.map(() => null);
+	const pending = new Map<number, Promise<void>>();
+	const measure = async (index: number) => {
+		const slide = content[index];
+		if (slide === undefined) return;
+		try {
+			sizes[index] = slide.contentType.startsWith("video/")
+				? await measureVideo(slide.url)
+				: await measureImage(slide.url);
+		} catch (error) {
+			// A slide we cannot measure keeps the placeholder — and counts as
+			// measured, so it is not asked for again on every re-render.
+			console.error(error);
+			sizes[index] = viewportSize();
+		}
+	};
+	return {
+		measured: (index) => (sizes[index] ?? null) !== null,
+		sizeAt: (index) => sizes[index] ?? viewportSize(),
+		ensure: (index) => {
+			const existing = pending.get(index);
+			if (existing !== undefined) return existing;
+			const measuring = measure(index);
+			pending.set(index, measuring);
+			return measuring;
+		},
+	};
+}
+
+// Fetches an album. Its slides are measured later, by the viewer.
 export async function loadAlbum(albumId: number): Promise<LoadedAlbum> {
-	const res = await getAlbumContent(albumId);
-	return { ...res, content: await measureSlides(res.content) };
+	return await getAlbumContent(albumId);
 }
 
 /**
@@ -183,18 +169,16 @@ export async function loadPaywallAlbum({
 	if (urls.length === 0) return null;
 
 	const now = new Date().toISOString().slice(0, 19);
-	const content = await measureSlides(
-		urls.map((url, index) => ({
-			contentId: -(index + 1),
-			contentType: "image/jpeg",
-			coverUrl: url,
-			statusId: 0,
-			thumbUrl: url,
-			url,
-			processing: false,
-			rejectionId: null,
-		})),
-	);
+	const content = urls.map((url, index) => ({
+		contentId: -(index + 1),
+		contentType: "image/jpeg",
+		coverUrl: url,
+		statusId: 0,
+		thumbUrl: url,
+		url,
+		processing: false,
+		rejectionId: null,
+	}));
 	return {
 		albumId,
 		albumName: albumName ?? null,
@@ -288,6 +272,16 @@ export async function openAlbumLightbox(
 	if (album.content.length === 0) {
 		throw new AlbumLockedError();
 	}
+	// Measuring the opening slide and fetching PhotoSwipe are both waits before
+	// anything can appear, so they run together. The core module is its own chunk
+	// that PhotoSwipe would otherwise only start fetching from `init`, by which
+	// point it is the last thing standing between the tap and the photo.
+	const sizer = createSlideSizer(album.content);
+	const measuringStart = sizer.ensure(startIndex);
+	const pswpModule = import("photoswipe");
+	// The rejection is reported where PhotoSwipe awaits it; this only keeps it
+	// from counting as unhandled in the meantime.
+	pswpModule.catch(() => {});
 	const { default: PhotoSwipeLightboxCtor } =
 		await import("photoswipe/lightbox");
 	// The album payload names its owner, so replies reach the right person even
@@ -341,7 +335,7 @@ export async function openAlbumLightbox(
 	};
 	const lightbox: PhotoSwipeLightbox = new PhotoSwipeLightboxCtor({
 		showHideAnimationType: "fade",
-		pswpModule: () => import("photoswipe"),
+		pswpModule: () => pswpModule,
 		mainClass: `pswp--buttons-visible`,
 		// The album fills the screen the way the official viewer does, instead of
 		// letting the screen underneath show through a translucent backdrop.
@@ -353,7 +347,16 @@ export async function openAlbumLightbox(
 	lightbox.addFilter("itemData", (itemData, index) => {
 		const slide = album.content[index];
 		if (!slide) return itemData;
-		return { src: slide.url, width: slide.width, height: slide.height };
+		// A slide PhotoSwipe reaches before its media has been measured is laid
+		// out at the placeholder size and re-rendered once the real one is in.
+		// The slide the viewer opens on is measured below before `init`, so this
+		// only ever re-renders slides being preloaded off-screen.
+		if (!sizer.measured(index)) {
+			void sizer
+				.ensure(index)
+				.then(() => lightbox.pswp?.refreshSlideContent(index));
+		}
+		return { src: slide.url, ...sizer.sizeAt(index) };
 	});
 	// Video slides are handed to the custom player, which draws its own poster
 	// and controls in place of PhotoSwipe's image content.
@@ -393,6 +396,9 @@ export async function openAlbumLightbox(
 	if (onClosed) {
 		lightbox.on("closingAnimationEnd", onClosed);
 	}
+	// The viewer opens as soon as the slide it lands on can be laid out; the rest
+	// are measured as PhotoSwipe reaches them.
+	await measuringStart;
 	lightbox.init();
 	lightbox.loadAndOpen(startIndex);
 	return () => lightbox.destroy();

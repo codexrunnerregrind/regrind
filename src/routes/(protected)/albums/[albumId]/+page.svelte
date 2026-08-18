@@ -128,12 +128,19 @@
 		opening = true;
 		hapticImpact("light");
 		try {
-			// A view-once album can expire between this page loading and the tap,
-			// so the grid can outlive our access to it. The paywall teaser still
-			// carries previews in that case — the same fallback the album grids use.
-			const { album: loaded, fromPaywall } = await resolveAlbumForViewing(
-				{ albumId, ownerProfileId: album?.profileId },
-			);
+			// Our own album is already in hand — the grid below is drawn from it —
+			// and nothing can revoke our access to it between the two, so the tap
+			// opens it without a round trip. Somebody else's is re-resolved: a
+			// view-once album can expire between this page loading and the tap, and
+			// the paywall teaser still carries previews in that case — the same
+			// fallback the album grids use.
+			const { album: loaded, fromPaywall } =
+				isMine && album !== null && album.content.length > 0
+					? { album, fromPaywall: false }
+					: await resolveAlbumForViewing({
+							albumId,
+							ownerProfileId: album?.profileId,
+						});
 			await openAlbumLightbox(loaded, {
 				// A teaser lost the original ordering, so it always opens at the top.
 				startIndex: fromPaywall ? 0 : index,

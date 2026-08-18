@@ -29,6 +29,9 @@ export async function measureImage(url: string): Promise<MediaDimensions> {
 
 export async function measureVideo(url: string): Promise<MediaDimensions> {
 	const video = document.createElement("video");
+	// Only the header is needed to learn the dimensions; without this the browser
+	// would start pulling the whole file down just to measure it.
+	video.preload = "metadata";
 	video.src = url;
 	video.load();
 	try {
