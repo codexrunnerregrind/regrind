@@ -144,10 +144,10 @@
 			await openAlbumLightbox(loaded, {
 				// A teaser lost the original ordering, so it always opens at the top.
 				startIndex: fromPaywall ? 0 : index,
-				// Someone else's album gets the reply chrome. This page knows no
+				// Someone else's album gets the sender chrome. This page knows no
 				// profile to put in its header, so it falls back to the album name.
-				// A teaser has no content ids to reply to, so it opens bare.
-				sharer: isMine || fromPaywall ? undefined : {},
+				sharer: isMine ? undefined : {},
+				fromPaywall,
 			});
 			if (fromPaywall) announcePaywallTeaser();
 		} catch (err) {

@@ -42,9 +42,7 @@ export class AlbumOpener {
 				ownerProfileId,
 				albumName,
 			});
-			await openAlbumLightbox(album, {
-				sharer: fromPaywall ? undefined : sharer,
-			});
+			await openAlbumLightbox(album, { sharer, fromPaywall });
 			if (fromPaywall) announcePaywallTeaser();
 		} catch (error) {
 			if (error instanceof AlbumLockedError) {

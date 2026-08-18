@@ -66,6 +66,14 @@
 	const trailingWidth = $derived(
 		composing && actions.onReply !== undefined ? SLOT : restSlots * SLOT,
 	);
+	// The field is there whenever the bar is, working or not: a locked album's
+	// previews keep it greyed out and saying why, which reads as "not here" far
+	// better than a bar with a hole in it.
+	const replyPlaceholder = $derived(
+		actions.onReply === undefined
+			? actions.replyUnavailable
+			: "Reply to this...",
+	);
 	// Fire gives up the end position to chat when both are there.
 	const fireEnd = $derived(actions.onOpenChat === undefined ? 0 : SLOT);
 	const header = $derived(
@@ -411,14 +419,14 @@
 					</span>
 				</div>
 			{/if}
-			{#if actions.onReply !== undefined}
+			{#if replyPlaceholder !== undefined}
 				<div class="relative min-w-0 flex-1">
 					<input
 						type="text"
 						bind:value={draft}
-						disabled={sending}
+						disabled={sending || actions.onReply === undefined}
 						enterkeyhint="send"
-						placeholder="Reply to this..."
+						placeholder={replyPlaceholder}
 						aria-label="Reply to this photo"
 						onkeydown={(event) => {
 							// Explicit rather than relying on implicit submission: PhotoSwipe

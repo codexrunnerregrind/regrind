@@ -125,7 +125,7 @@ export async function loadAlbum(albumId: number): Promise<LoadedAlbum> {
  *
  * The teaser carries no per-item metadata, so the slides are synthesised: the
  * urls are images, and reply/react ids would be meaningless here anyway — the
- * caller opens the result without a `sharer` so that chrome stays off.
+ * caller opens the result as `fromPaywall` so those controls stay off.
  *
  * Returns `null` when the album is not in the teaser either, which is the
  * genuinely-gone case the lock message is for.
@@ -197,8 +197,9 @@ export type AlbumForViewing = {
 	album: LoadedAlbum;
 	/**
 	 * The album itself was out of reach and this is the paywall teaser standing
-	 * in for it: blurred previews, synthesised slide ids. Callers open it without
-	 * reply chrome — there is nothing on it to reply to — and say so on screen.
+	 * in for it: blurred previews, synthesised slide ids. Callers pass this on to
+	 * {@link openAlbumLightbox}, which drops the controls that point at a single
+	 * photo, and say so on screen.
 	 */
 	fromPaywall: boolean;
 };
@@ -264,9 +265,16 @@ export async function openAlbumLightbox(
 		startIndex?: number;
 		onClosed?: () => void;
 		sharer?: AlbumSharer;
+		/**
+		 * These slides stand in for an album we were refused — see
+		 * {@link loadPaywallAlbum}. Their ids are synthesised, so the controls that
+		 * point at one photo are left off; the ones that only need the person are
+		 * not.
+		 */
+		fromPaywall?: boolean;
 	} = {},
 ): Promise<() => void> {
-	const { startIndex = 0, onClosed, sharer } = options;
+	const { startIndex = 0, onClosed, sharer, fromPaywall = false } = options;
 	// Locked/expired albums come back with no viewable content. PhotoSwipe would
 	// crash trying to lay out zero slides, so surface a clear error instead.
 	if (album.content.length === 0) {
@@ -285,8 +293,11 @@ export async function openAlbumLightbox(
 	const { default: PhotoSwipeLightboxCtor } =
 		await import("photoswipe/lightbox");
 	// The album payload names its owner, so replies reach the right person even
-	// when the caller had no profile to hand.
+	// when the caller had no profile to hand. A teaser does not always know whose
+	// album it stood in for, and settles for 0 when it does not — with no profile
+	// there is no chat to open and nowhere for the header to link.
 	const toUserId = album.profileId;
+	const ownerKnown = toUserId > 0;
 	// Saving is offered either way — it is the viewer's own control, in the sender
 	// row rather than the reply bar. Our own albums have nobody to reply to, so
 	// that is all they get.
@@ -296,7 +307,14 @@ export async function openAlbumLightbox(
 			if (!slide) return;
 			downloadMedia({ url: slide.url, mimeType: slide.contentType });
 		},
-		...(sharer === undefined
+		// A teaser's slides are synthesised — placeholder ids standing in for
+		// content we were never handed — so there is nothing on them to reply to
+		// or react to. The field stays on screen saying as much, since a bar that
+		// silently loses its composer just looks broken.
+		...(sharer !== undefined && fromPaywall
+			? { replyUnavailable: "Preview only" }
+			: {}),
+		...(sharer === undefined || fromPaywall
 			? {}
 			: {
 					onReply: async (reply, index) => {
@@ -318,6 +336,13 @@ export async function openAlbumLightbox(
 							albumContentId: slide.contentId,
 						});
 					},
+				}),
+		// Reaching the person needs only the person, so this survives a teaser: an
+		// album we have lost access to is still a reason to say something to
+		// whoever shared it.
+		...(sharer === undefined || !ownerKnown
+			? {}
+			: {
 					onOpenChat: async () => {
 						const ourProfileId = await callMethod(
 							"auth_state",
@@ -385,7 +410,9 @@ export async function openAlbumLightbox(
 					// profile to link to that we aren't already.
 					{ fallbackName: album.albumName?.trim() || "Your album" }
 				: {
-						profileId: toUserId,
+						// Without an owner the header is a name rather than a way into
+						// a profile — better than linking to nobody.
+						...(ownerKnown ? { profileId: toUserId } : {}),
 						name: sharer.name,
 						avatarUrl: sharer.avatarUrl,
 						distanceKm: sharer.distanceKm,

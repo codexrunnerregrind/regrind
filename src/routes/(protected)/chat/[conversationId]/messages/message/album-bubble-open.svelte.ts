@@ -96,11 +96,10 @@ export class AlbumBubbleOpener {
 							(slide) => slide.contentId === options.contentId,
 						);
 			this.#destroy = await openAlbumLightbox(album, {
+				sharer: this.#sharer(options.ownerProfileId),
 				// A teaser carries no content ids to reply or react to, so it opens
-				// without the chrome offering those.
-				sharer: this.#fromPaywall
-					? undefined
-					: this.#sharer(options.ownerProfileId),
+				// without the controls offering those.
+				fromPaywall: this.#fromPaywall,
 				startIndex: index < 0 ? 0 : index,
 				onClosed: () => {
 					this.phase = "idle";

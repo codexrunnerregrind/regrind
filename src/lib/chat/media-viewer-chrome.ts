@@ -31,6 +31,13 @@ export type MediaViewerActions = {
 	onReact?: (index: number) => Promise<void>;
 	onOpenChat?: () => void | Promise<void>;
 	/**
+	 * Why this media cannot be replied to — a locked album's previews, say. The
+	 * bar keeps its field rather than leaving a gap where the composer usually
+	 * is, greyed out with this as its placeholder. Ignored when `onReply` is
+	 * given, which is the field working normally.
+	 */
+	replyUnavailable?: string;
+	/**
 	 * Save the current slide to the device. Sits in the sender row rather than
 	 * the reply bar, beside zoom and close, and so does not imply a bar.
 	 */
@@ -40,6 +47,7 @@ export type MediaViewerActions = {
 export function chromeHasBar(actions: MediaViewerActions): boolean {
 	return (
 		actions.onReply !== undefined ||
+		actions.replyUnavailable !== undefined ||
 		actions.onReact !== undefined ||
 		actions.onOpenChat !== undefined
 	);

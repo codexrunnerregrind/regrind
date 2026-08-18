@@ -100,7 +100,8 @@
 				cachedFromPaywall = resolved.fromPaywall;
 			}
 			destroyLightbox = await openAlbumLightbox(cachedAlbum, {
-				sharer: cachedFromPaywall ? undefined : sharer,
+				sharer,
+				fromPaywall: cachedFromPaywall,
 				onClosed: () => {
 					phase = "idle";
 					destroyLightbox = null;
