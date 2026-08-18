@@ -78,7 +78,7 @@
 {#if spent}
 	<!-- Matches the expired-image placeholder: nothing left to show, so the
 	     bubble shrinks to a one-line notice rather than holding open a frame. -->
-	<div class={["h-12", className, contentClass]} bind:this={media.el}>
+	<div class={["h-12", className, contentClass]} {@attach media.attach}>
 		<LockedMedia
 			class={[
 				media.cornerClass,
@@ -91,7 +91,7 @@
 		{@render media.adornments?.()}
 	</div>
 {:else if url !== null}
-	<div class={className} bind:this={media.el}>
+	<div class={className} {@attach media.attach}>
 		<!-- svelte-ignore a11y_media_has_caption -->
 		<video
 			src={url}
@@ -124,7 +124,7 @@
 		]}
 		onclick={() => void loadVideo()}
 		disabled={loading}
-		bind:this={media.el}
+		{@attach media.attach}
 	>
 		<VideoIcon size={24} weight="fill" class="shrink-0" />
 		<span class="min-w-0 truncate">

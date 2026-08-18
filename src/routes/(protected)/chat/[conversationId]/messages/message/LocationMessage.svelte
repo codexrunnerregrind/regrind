@@ -46,8 +46,8 @@
 </script>
 
 <div
-	class={["relative", { "w-3/5 max-w-72 min-w-45": !media.clone }]}
-	bind:this={media.el}
+	class={["relative", { "w-1/2 max-w-56 min-w-40": !media.clone }]}
+	{@attach media.attach}
 >
 	<button
 		type="button"
