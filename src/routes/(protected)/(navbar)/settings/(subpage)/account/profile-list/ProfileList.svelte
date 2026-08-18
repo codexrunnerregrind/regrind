@@ -6,8 +6,9 @@
 	import { getProfiles } from "$lib/api/users/profiles";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import ProfileActionRow from "$lib/components/profile/ProfileActionRow.svelte";
+	import ProfileActionRowSkeleton from "$lib/components/profile/ProfileActionRowSkeleton.svelte";
 	import { Button } from "$lib/components/ui/button";
-	import { Skeleton } from "$lib/components/ui/skeleton";
+	import { observeIntersection } from "$lib/util/observe-intersection";
 	import { nearestScrollableAncestor } from "$lib/util/scroll";
 	import { restoreScrollOnce } from "$lib/util/scroll-restore.svelte";
 	import type {
@@ -39,6 +40,9 @@
 	let loading = $state(true);
 	let error = $state<unknown>(null);
 	let loadingMore = $state(false);
+	// A failed page stops the sentinel from firing again: it stays on screen
+	// after the error, and retrying on sight would loop the failure.
+	let moreError = $state(false);
 	let lifting = $state<number | null>(null);
 	let root = $state<HTMLElement | null>(null);
 
@@ -103,13 +107,15 @@
 	}
 
 	async function loadMore() {
-		if (ids === null || loadingMore || remaining <= 0) return;
+		if (ids === null || loadingMore || moreError || remaining <= 0) return;
 		loadingMore = true;
 		try {
 			const next = ids.slice(entries.length, entries.length + PAGE_SIZE);
 			entries = [...entries, ...(await resolvePage(next))];
+			moreError = false;
 		} catch (caught) {
 			console.error(caught);
+			moreError = true;
 			showErrorToast({ label: "Failed to load more", error: caught });
 		} finally {
 			loadingMore = false;
@@ -147,9 +153,9 @@
 	{#if error !== null}
 		<ApiErrorDisplay {error} onRetry={() => void load()} class="my-2" />
 	{:else if loading || ids === null}
-		<div class="flex flex-col gap-2">
-			{#each Array(3)}
-				<Skeleton class="h-21 w-full rounded-xl" />
+		<div class="flex flex-col">
+			{#each Array(6)}
+				<ProfileActionRowSkeleton />
 			{/each}
 		</div>
 	{:else if ids.length === 0}
@@ -181,18 +187,36 @@
 					{/snippet}
 				</ProfileActionRow>
 			{/each}
+			<!-- The next page resolves as the list is scrolled, the way it does
+			     everywhere else; the skeletons stand in for the rows in flight
+			     so the scroller keeps its height. -->
+			{#if loadingMore}
+				{#each Array(Math.min(remaining, 3))}
+					<ProfileActionRowSkeleton />
+				{/each}
+			{/if}
 		</div>
-		{#if remaining > 0}
-			<Button
-				variant="outline"
-				class="mt-3 w-full"
-				disabled={loadingMore}
-				onclick={() => void loadMore()}
-			>
-				{loadingMore
-					? "Loading…"
-					: `Show ${Math.min(remaining, PAGE_SIZE)} more`}
-			</Button>
+		{#if remaining > 0 && !loadingMore}
+			{#if moreError}
+				<Button
+					variant="outline"
+					class="mt-3 w-full"
+					onclick={() => {
+						moreError = false;
+						void loadMore();
+					}}
+				>
+					Try again
+				</Button>
+			{:else}
+				<div
+					class="h-0"
+					use:observeIntersection={{
+						handle: () => void loadMore(),
+						rootMargin: "400px",
+					}}
+				></div>
+			{/if}
 		{/if}
 	{/if}
 </div>

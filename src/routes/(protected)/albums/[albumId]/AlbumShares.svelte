@@ -7,9 +7,10 @@
 	import { getProfiles } from "$lib/api/users/profiles";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import ProfileActionRow from "$lib/components/profile/ProfileActionRow.svelte";
+	import ProfileActionRowSkeleton from "$lib/components/profile/ProfileActionRowSkeleton.svelte";
 	import * as AlertDialog from "$lib/components/ui/alert-dialog";
 	import { Button } from "$lib/components/ui/button";
-	import { Skeleton } from "$lib/components/ui/skeleton";
+	import { observeIntersection } from "$lib/util/observe-intersection";
 
 	let {
 		albumId,
@@ -35,6 +36,9 @@
 	let shares = $state<Share[]>([]);
 	let error = $state<unknown>(null);
 	let loadingMore = $state(false);
+	// A failed page disarms the sentinel: it stays on screen after the error,
+	// and retrying on sight would loop the failure.
+	let moreError = $state(false);
 	let revoking = $state<number | null>(null);
 	let unshareAllOpen = $state(false);
 	let unsharingAll = $state(false);
@@ -74,7 +78,8 @@
 	}
 
 	async function loadMore() {
-		if (sharedIds === null || loadingMore || remaining <= 0) return;
+		if (sharedIds === null || loadingMore || moreError || remaining <= 0)
+			return;
 		loadingMore = true;
 		try {
 			const next = sharedIds.slice(
@@ -82,8 +87,10 @@
 				shares.length + PAGE_SIZE,
 			);
 			shares = [...shares, ...(await resolvePage(next))];
+			moreError = false;
 		} catch (err) {
 			console.error(err);
+			moreError = true;
 			showErrorToast({ label: "Failed to load more", error: err });
 		} finally {
 			loadingMore = false;
@@ -185,9 +192,9 @@
 			class="my-2"
 		/>
 	{:else if sharedIds === null}
-		<div class="flex flex-col gap-2">
-			{#each Array(2)}
-				<Skeleton class="h-21 w-full rounded-xl" />
+		<div class="flex flex-col">
+			{#each Array(4)}
+				<ProfileActionRowSkeleton />
 			{/each}
 		</div>
 	{:else if sharedIds.length === 0}
@@ -208,18 +215,36 @@
 					onAction={() => void revoke(share.profileId)}
 				/>
 			{/each}
+			<!-- The next page resolves as the list is scrolled; the skeletons
+			     stand in for the rows in flight so the list keeps its height. -->
+			{#if loadingMore}
+				{#each Array(Math.min(remaining, 3))}
+					<ProfileActionRowSkeleton />
+				{/each}
+			{/if}
 		</div>
-		{#if remaining > 0}
-			<Button
-				variant="outline"
-				class="w-full"
-				disabled={loadingMore || unsharingAll}
-				onclick={() => void loadMore()}
-			>
-				{loadingMore
-					? "Loading…"
-					: `Show ${Math.min(remaining, PAGE_SIZE)} more`}
-			</Button>
+		{#if remaining > 0 && !loadingMore}
+			{#if moreError}
+				<Button
+					variant="outline"
+					class="w-full"
+					disabled={unsharingAll}
+					onclick={() => {
+						moreError = false;
+						void loadMore();
+					}}
+				>
+					Try again
+				</Button>
+			{:else}
+				<div
+					class="h-0"
+					use:observeIntersection={{
+						handle: () => void loadMore(),
+						rootMargin: "400px",
+					}}
+				></div>
+			{/if}
 		{/if}
 	{/if}
 </div>
