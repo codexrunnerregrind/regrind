@@ -6,7 +6,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Drafts } from "$lib/chat/drafts.svelte";
 import type { ApiResponseMessage } from "$lib/model/messaging/messages";
 import ComposerReplyPreview from "./ComposerReplyPreview.svelte";
-import MessageComposer from "./MessageComposer.svelte";
 
 const { conversations } = vi.hoisted(() => ({
 	conversations: { drafts: null as Drafts | null },

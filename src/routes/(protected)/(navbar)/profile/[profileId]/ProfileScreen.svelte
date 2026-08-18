@@ -33,7 +33,6 @@
 	import { profileMediaUrl } from "$lib/util/media";
 	import AboutMe from "./AboutMe.svelte";
 	import BlockedProfile from "./BlockedProfile.svelte";
-	import HiddenProfile from "./HiddenProfile.svelte";
 	import Distance from "./Distance.svelte";
 	import Genders from "./fields/GendersPronouns.svelte";
 	import HivStatusIcon from "./fields/HivStatusIcon.svelte";
@@ -41,6 +40,7 @@
 	import LookupField from "./fields/LookupField.svelte";
 	import Socials from "./fields/Socials.svelte";
 	import Height from "./HeightWeightBodyType.svelte";
+	import HiddenProfile from "./HiddenProfile.svelte";
 	import ImageCarousel from "./ImageCarousel.svelte";
 	import OnlineStatus from "./OnlineStatus.svelte";
 	import { ProfileState } from "./profile-state.svelte";
