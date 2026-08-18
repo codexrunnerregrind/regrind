@@ -46,6 +46,11 @@ import {
 	demoSetHidden,
 } from "./mock/hides";
 import { demoReceivedTaps, demoViews } from "./mock/interest";
+import {
+	demoCreateSavedPhrase,
+	demoDeleteSavedPhrase,
+	demoSavedPhrases,
+} from "./mock/phrases";
 import { profileSeed } from "./mock/profiles";
 import { demoGenders, demoPronouns, demoTags } from "./mock/reference";
 import { demoRightNowFeed } from "./mock/right-now";
@@ -123,6 +128,32 @@ export function demoRoute({
 		return ok({ profiles: demoReceivedTaps() });
 	if (rawPath === "/v2/taps/add") return ok({ isMutual: false });
 	if (rawPath === "/v7/views/list") return ok(demoViews());
+	if (rawPath === "/v1/chat/phrases") {
+		if (method === "GET") return ok({ phrases: demoSavedPhrases() });
+		if (method === "POST") {
+			const { text = "" } = (body as { text?: string }) ?? {};
+			return ok({ phrase: demoCreateSavedPhrase(text) });
+		}
+	}
+	if (
+		method === "DELETE" &&
+		segments[0] === "v3" &&
+		segments[1] === "me" &&
+		segments[2] === "prefs" &&
+		segments[3] === "phrases" &&
+		segments.length === 5
+	) {
+		demoDeleteSavedPhrase(segments[4] ?? "");
+		return ok({});
+	}
+	if (
+		method === "POST" &&
+		segments[0] === "v4" &&
+		segments[1] === "phrases" &&
+		segments[2] === "frequency"
+	) {
+		return ok({});
+	}
 	if (method === "GET" && rawPath === "/v1/favorites/notes")
 		return ok(demoFavoriteNotes());
 	if (rawPath === "/v3.1/me/blocks")

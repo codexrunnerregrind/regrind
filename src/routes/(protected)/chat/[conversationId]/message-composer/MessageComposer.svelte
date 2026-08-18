@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { untrack } from "svelte";
+	import { tick, untrack } from "svelte";
 
 	import { showErrorToast } from "$lib/api/error-toast";
 	import { getConversations } from "$lib/chat/conversations-context.svelte";
@@ -12,6 +12,7 @@
 	} from "$lib/model/messaging/messages";
 	import ComposerAttachments from "./attachments/ComposerAttachments.svelte";
 	import ComposerReplyPreview from "./ComposerReplyPreview.svelte";
+	import ComposerSavedPhrases from "./ComposerSavedPhrases.svelte";
 	import ComposerSubmitButton from "./ComposerSubmitButton.svelte";
 	import { setMessageComposerContext } from "./message-composer-context.svelte";
 	import MessageTextInput from "./MessageTextInput.svelte";
@@ -117,6 +118,24 @@
 	{#if replyTo}
 		<ComposerReplyPreview message={replyTo} onCancel={onCancelReply} />
 	{/if}
+	<!-- Picking a phrase replaces the draft outright rather than appending to it:
+	     the chips are openers, and a half-typed line is what you reached for one
+	     instead of. The field is deliberately not focused: the bar leaves the
+	     keyboard however it found it, raised or down. -->
+	<ComposerSavedPhrases
+		draft={textContent}
+		onSelect={(text) => {
+			textContent = text;
+			// Focus rides the tap that picked the phrase, which is what raises the
+			// keyboard on touch — a phrase is an opener you carry on typing from,
+			// so the caret goes to the end of it rather than the start.
+			const field = textInput;
+			field?.focus();
+			void tick().then(() =>
+				field?.setSelectionRange(text.length, text.length),
+			);
+		}}
+	/>
 	<!-- One row, three controls: attach, field, send. `items-end` keeps the two
 	     buttons on the bottom line as the field grows to multiple lines. -->
 	<div class="relative flex w-full items-end gap-2">

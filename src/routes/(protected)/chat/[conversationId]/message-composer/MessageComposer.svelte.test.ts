@@ -26,6 +26,16 @@ vi.mock("../conversation-state.svelte", () => ({
 	}),
 }));
 
+// The saved-phrase bar loads the account's phrases as soon as the composer
+// mounts; a jsdom run has no backend to answer that.
+vi.mock("$lib/api/messaging/phrases", () => ({
+	getSavedPhrases: () =>
+		Promise.resolve([{ id: "1", text: "Hey there", type: "user" }]),
+	createSavedPhrase: () => Promise.resolve(null),
+	deleteSavedPhrase: () => Promise.resolve(),
+	trackSavedPhraseUsage: () => Promise.resolve(),
+}));
+
 const uploadChatAudio = vi.hoisted(() => vi.fn());
 vi.mock("$lib/api/messaging/chat-media", () => ({ uploadChatAudio }));
 
@@ -519,5 +529,27 @@ describe("MessageComposer voice messages", () => {
 		await tick();
 
 		expect(onSend).not.toHaveBeenCalled();
+	});
+});
+
+describe("MessageComposer saved phrases", () => {
+	beforeEach(() => {
+		drafts = new Drafts();
+		conversations.drafts = drafts;
+	});
+
+	afterEach(cleanup);
+
+	it("replaces the draft with the phrase and hands the field back the caret", async () => {
+		const { textarea, getByRole } = renderComposer();
+		await type(textarea, "half a thou");
+		await tick();
+
+		await fireEvent.click(getByRole("button", { name: "Hey there" }));
+		await tick();
+
+		expect(textarea.value).toBe("Hey there");
+		expect(document.activeElement).toBe(textarea);
+		expect(textarea.selectionStart).toBe("Hey there".length);
 	});
 });
