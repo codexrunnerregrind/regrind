@@ -7,6 +7,10 @@ import {
 	rightNowFiltersSchema,
 } from "$lib/model/browse/grid/filters";
 import { geohashSchema } from "$lib/model/geohash";
+import {
+	type SavedLocation,
+	savedLocationSchema,
+} from "$lib/model/saved-location";
 import { type UnitSystem, unitSystemSchema } from "$lib/util/units";
 import {
 	existsAppDataFile,
@@ -47,6 +51,10 @@ const preferencesSchema = z.object({
 	// Which of the two locations above is active. When true the grid follows the
 	// device (refresh re-detects); when false it stays on the mock `geohash`.
 	usingCurrentLocation: z.boolean().default(false),
+	// Favorites and history for the map picker, so a spot can be picked again
+	// without hunting for it. `.catch` keeps a malformed entry from failing the
+	// whole parse and offering to reset every preference.
+	savedLocations: z.array(savedLocationSchema).default([]).catch([]),
 	gridSearchFilters: gridSearchFiltersSchema.optional(),
 	notifyMessages: z.boolean().default(true),
 	notifyTaps: z.boolean().default(true),
@@ -143,6 +151,10 @@ export function getActiveGeohashSnapshot(): string | null {
 	return snapshot.usingCurrentLocation
 		? snapshot.currentGeohash
 		: snapshot.geohash;
+}
+
+export function getSavedLocationsSnapshot(): SavedLocation[] {
+	return snapshot.savedLocations;
 }
 
 export function getUnitsSnapshot(): UnitSystem {

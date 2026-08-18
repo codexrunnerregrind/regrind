@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { rememberLocation } from "$lib/app-data/saved-locations";
 	import Button from "$lib/components/ui/button/button.svelte";
 	import * as Dialog from "$lib/components/ui/dialog";
 	import * as Drawer from "$lib/components/ui/drawer/index";
@@ -12,18 +13,30 @@
 		onSubmit,
 		open = $bindable(),
 		pinPos = $bindable(),
+		savedPlacesOpen = $bindable(false),
 	}: {
 		onSubmit: (geohash: string) => void;
 		open: boolean;
 		pinPos?: { lat: number; lon: number; zoom: number } | undefined;
+		// Opens the picker straight onto the saved places list, for callers that
+		// send the user there ("View all saved places").
+		savedPlacesOpen?: boolean;
 	} = $props();
 
 	const isDesktop = above("md");
 
+	let pinLabel: string | undefined = $state();
+
 	function onSubmitPin() {
 		if (!pinPos) return;
-		const geohash = encodeGeohash({ lat: pinPos.lat, lon: pinPos.lon });
+		const { lat, lon } = pinPos;
+		const geohash = encodeGeohash({ lat, lon });
 		open = false;
+		// Every confirmed pick lands in the history so it can be reused from the
+		// saved places list; a failed write must not block the pick itself.
+		void rememberLocation({ lat, lon, label: pinLabel }).catch(
+			(error: unknown) => console.error(error),
+		);
 		void onSubmit(geohash);
 	}
 
@@ -68,7 +81,12 @@
 			<Spinner class="size-8" />
 		</div>
 	{:then { default: GeoMapPicker }}
-		<GeoMapPicker bind:pinPos bind:this={geoMapPicker} />
+		<GeoMapPicker
+			bind:pinPos
+			bind:pinLabel
+			bind:savedPlacesOpen
+			bind:this={geoMapPicker}
+		/>
 	{/await}
 {/snippet}
 {#if isDesktop.current}
@@ -92,12 +110,15 @@
 	</Dialog.Root>
 {:else}
 	<Drawer.Root bind:open>
+		<!-- Height stays a class, never `h-full!`: vaul shrinks the drawer to the
+		visual viewport with an inline height when the keyboard opens, and an
+		important utility would outrank it, leaving the fields under the keyboard. -->
 		<Drawer.Content
 			preventOverflowTextSelection={false}
-			class="mt-0! mb-(--safe-area-bottom) h-full!"
+			class="mt-0! mb-(--safe-area-bottom) h-full"
 		>
 			<div
-				class="mt-4 mb-2 h-full touch-manipulation overflow-clip rounded-lg"
+				class="mt-4 mb-2 h-full min-h-0 flex-1 touch-manipulation overflow-clip rounded-lg"
 				data-vaul-no-drag
 			>
 				{@render mapPicker()}

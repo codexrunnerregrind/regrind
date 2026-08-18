@@ -72,7 +72,7 @@
 					{disabled}
 				>
 					<GpsFixIcon color="currentColor" weight="fill" />
-					Use current location
+					Use live location
 				</Button>
 			{/if}
 			<Button
