@@ -53,7 +53,7 @@
 		type="button"
 		aria-label="Open location in maps"
 		class={[
-			"block aspect-video w-full cursor-pointer overflow-clip rounded-lg bg-card-foreground/10",
+			"block aspect-square w-full cursor-pointer overflow-clip rounded-lg bg-card-foreground/10",
 			media.cornerClass,
 		]}
 		onclick={openInMaps}
