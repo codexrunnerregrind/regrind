@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Drafts } from "$lib/chat/drafts.svelte";
 import { draftFromMessage } from "$lib/model/messaging/messages";
+import { MAX_DURATION_MS } from "$lib/platform/voice-recorder.svelte";
 
 const { conversations } = vi.hoisted(() => ({
 	conversations: { drafts: null as Drafts | null },
@@ -24,6 +25,9 @@ vi.mock("../conversation-state.svelte", () => ({
 		profile: { name: "Sam" },
 	}),
 }));
+
+const uploadChatAudio = vi.hoisted(() => vi.fn());
+vi.mock("$lib/api/messaging/chat-media", () => ({ uploadChatAudio }));
 
 vi.mock("$lib/ws.svelte", () => ({
 	ws: {
@@ -279,5 +283,241 @@ describe("MessageComposer reply bar", () => {
 		await tick();
 
 		expect(document.activeElement).toBe(textarea);
+	});
+});
+
+class FakeMediaRecorder {
+	static instances: FakeMediaRecorder[] = [];
+	static isTypeSupported() {
+		return true;
+	}
+
+	ondataavailable: ((event: { data: Blob }) => void) | null = null;
+	onstop: (() => void) | null = null;
+	onerror: ((event: unknown) => void) | null = null;
+	mimeType = "audio/mp4";
+
+	constructor() {
+		FakeMediaRecorder.instances.push(this);
+	}
+
+	start() {}
+
+	stop() {
+		this.ondataavailable?.({
+			data: new Blob(["clip"], { type: this.mimeType }),
+		});
+		this.onstop?.();
+	}
+}
+
+let stoppedTracks = 0;
+
+describe("MessageComposer voice messages", () => {
+	beforeEach(() => {
+		drafts = new Drafts();
+		conversations.drafts = drafts;
+		FakeMediaRecorder.instances = [];
+		uploadChatAudio.mockReset();
+		uploadChatAudio.mockResolvedValue({
+			mediaId: 77,
+			url: "https://cdns.grindr.com/audio/sent.aac",
+			mediaHash: "abc",
+		});
+		vi.stubGlobal("MediaRecorder", FakeMediaRecorder);
+		// Only the clock the recorder reads: jsdom's FileReader and vi.waitFor both
+		// need their own timers left alone.
+		vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] });
+		stoppedTracks = 0;
+		Object.defineProperty(navigator, "mediaDevices", {
+			value: {
+				getUserMedia: () =>
+					Promise.resolve({
+						getTracks: () => [
+							{
+								stop: () => {
+									stoppedTracks += 1;
+								},
+							},
+						],
+					}),
+			},
+			configurable: true,
+		});
+	});
+
+	afterEach(() => {
+		cleanup();
+		vi.useRealTimers();
+		vi.unstubAllGlobals();
+	});
+
+	/** jsdom ships no PointerEvent, and a bare Event carries no coordinates. */
+	function pointer(
+		target: Element,
+		type: string,
+		{ x = 0, y = 0 }: { x?: number; y?: number } = {},
+	) {
+		const event = new MouseEvent(type, {
+			bubbles: true,
+			cancelable: true,
+			clientX: x,
+			clientY: y,
+		});
+		Object.defineProperty(event, "pointerId", { value: 1 });
+		return fireEvent(target, event);
+	}
+
+	/**
+	 * Presses the mic at x=300 and pins the bin to 0–40, so the drag has 280px to
+	 * run and anything left of x=207 is past the third that arms the cancel.
+	 */
+	async function hold(onSend = vi.fn()) {
+		const view = renderComposer({ onSend });
+		const mic = view.getByLabelText("Record voice message");
+		await pointer(mic, "pointerdown", { x: 300 });
+		await tick();
+		view.getByLabelText(
+			"Discard recording",
+		).parentElement!.getBoundingClientRect = () =>
+			({ left: 0, right: 40, top: 0, bottom: 40 }) as DOMRect;
+		return { ...view, mic, onSend };
+	}
+
+	it("lays the recording over the composer instead of replacing it", async () => {
+		const { container, getByLabelText, getByText } = await hold();
+
+		expect(getByText("‹ Slide to cancel")).toBeTruthy();
+		expect(getByLabelText("Discard recording")).toBeTruthy();
+		// The field stays mounted underneath, so nothing reflows on the way in or
+		// out and the fade reveals it rather than stacking two rows.
+		expect(container.querySelector("textarea")).toBeTruthy();
+	});
+
+	it("sends on release, and plays it back from the upload", async () => {
+		const { mic, onSend } = await hold();
+
+		// Past the point where a hold counts as a recording rather than a mis-tap.
+		vi.advanceTimersByTime(1_200);
+		await pointer(mic, "pointerup");
+		await vi.waitFor(() => expect(onSend).toHaveBeenCalled());
+
+		expect(uploadChatAudio).toHaveBeenCalledWith(
+			expect.objectContaining({ contentType: "audio/mp4" }),
+		);
+		const [[[draft]]] = onSend.mock.calls as [[[Record<string, never>]]];
+		expect(draft).toMatchObject({
+			outbound: { type: "Audio", body: { mediaId: 77 } },
+			optimistic: {
+				type: "Audio",
+				body: {
+					mediaId: 77,
+					url: "https://cdns.grindr.com/audio/sent.aac",
+				},
+			},
+		});
+	});
+
+	it("throws the take away once the finger is dragged a third of the way", async () => {
+		const { mic, getByText, container, onSend } = await hold();
+
+		vi.advanceTimersByTime(1_200);
+		// Nowhere near the bin, and not even halfway, which is the whole point.
+		await pointer(mic, "pointermove", { x: 190 });
+		await tick();
+		expect(getByText("Release to cancel")).toBeTruthy();
+		await pointer(mic, "pointerup", { x: 190 });
+		await tick();
+
+		expect(onSend).not.toHaveBeenCalled();
+		expect(uploadChatAudio).not.toHaveBeenCalled();
+		expect(container.querySelector("textarea")).toBeTruthy();
+	});
+
+	it("sends when the drag stops short of the threshold", async () => {
+		const { mic, getByText, onSend } = await hold();
+
+		vi.advanceTimersByTime(1_200);
+		await pointer(mic, "pointermove", { x: 250 });
+		await tick();
+		expect(getByText("‹ Slide to cancel")).toBeTruthy();
+		await pointer(mic, "pointerup", { x: 250 });
+		await vi.waitFor(() => expect(onSend).toHaveBeenCalled());
+	});
+
+	it("still sends when the finger wanders past the threshold and comes back", async () => {
+		const { mic, onSend } = await hold();
+
+		vi.advanceTimersByTime(1_200);
+		await pointer(mic, "pointermove", { x: 120 });
+		await pointer(mic, "pointermove", { x: 290 });
+		await pointer(mic, "pointerup", { x: 290 });
+		await vi.waitFor(() => expect(onSend).toHaveBeenCalled());
+
+		expect(uploadChatAudio).toHaveBeenCalled();
+	});
+
+	it("locks the recorder when the mic is tapped rather than held", async () => {
+		const { mic, getByLabelText, getByText, onSend } = await hold();
+
+		// Up again almost at once: that is a tap, and it leaves the recorder
+		// running with nobody holding it.
+		vi.advanceTimersByTime(200);
+		await pointer(mic, "pointerup", { x: 300 });
+		await tick();
+
+		expect(onSend).not.toHaveBeenCalled();
+		expect(getByText("Tap to send")).toBeTruthy();
+
+		vi.advanceTimersByTime(3_000);
+		await fireEvent.click(getByLabelText("Send voice message"));
+		await vi.waitFor(() => expect(onSend).toHaveBeenCalled());
+	});
+
+	it("keeps the bin for a locked recording", async () => {
+		const { mic, getByLabelText, container, onSend } = await hold();
+
+		vi.advanceTimersByTime(200);
+		await pointer(mic, "pointerup", { x: 300 });
+		await tick();
+		await fireEvent.click(getByLabelText("Discard recording"));
+		await tick();
+
+		expect(onSend).not.toHaveBeenCalled();
+		expect(container.querySelector("textarea")).toBeTruthy();
+		expect(getByLabelText("Record voice message")).toBeTruthy();
+	});
+
+	it("sends a recording that runs to the time limit rather than losing it", async () => {
+		const { mic, onSend } = await hold();
+
+		vi.advanceTimersByTime(200);
+		await pointer(mic, "pointerup", { x: 300 });
+		await tick();
+		// Locked and left running: five minutes later it goes out on its own.
+		vi.advanceTimersByTime(MAX_DURATION_MS);
+		await vi.waitFor(() => expect(onSend).toHaveBeenCalled());
+
+		expect(uploadChatAudio).toHaveBeenCalled();
+	});
+
+	it("closes the microphone when the conversation is left mid-recording", async () => {
+		const { unmount } = await hold();
+
+		unmount();
+		await tick();
+
+		expect(stoppedTracks).toBeGreaterThan(0);
+		expect(uploadChatAudio).not.toHaveBeenCalled();
+	});
+
+	it("tapping the bin discards too, for a pointer that cannot drag", async () => {
+		const { getByLabelText, onSend } = await hold();
+
+		vi.advanceTimersByTime(1_200);
+		await fireEvent.click(getByLabelText("Discard recording"));
+		await tick();
+
+		expect(onSend).not.toHaveBeenCalled();
 	});
 });

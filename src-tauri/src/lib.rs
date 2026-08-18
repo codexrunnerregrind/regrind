@@ -194,6 +194,7 @@ pub fn run() {
             api::auth::recaptcha_first_party_enabled,
             api::rest::request,
             api::media_upload::upload_chat_media,
+            api::media_upload::upload_chat_audio,
             api::media_download::download_media,
             api::ws::ws_connect,
             api::ws::ws_send,

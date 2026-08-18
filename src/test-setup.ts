@@ -53,3 +53,17 @@ if (typeof Element !== "undefined" && !Element.prototype.animate) {
 			onfinish: null,
 		}) as unknown as Animation;
 }
+
+// jsdom's Blob stops at the constructor: no arrayBuffer(), which anything
+// handling recorded media has to read it through.
+if (typeof Blob !== "undefined" && !Blob.prototype.arrayBuffer) {
+	Blob.prototype.arrayBuffer = function () {
+		return new Promise<ArrayBuffer>((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () => resolve(reader.result as ArrayBuffer);
+			reader.onerror = () =>
+				reject(reader.error ?? new Error("read failed"));
+			reader.readAsArrayBuffer(this);
+		});
+	};
+}

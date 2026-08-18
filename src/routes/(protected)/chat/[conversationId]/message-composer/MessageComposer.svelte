@@ -16,6 +16,9 @@
 	import { setMessageComposerContext } from "./message-composer-context.svelte";
 	import MessageTextInput from "./MessageTextInput.svelte";
 	import ComposerVoiceMessage from "./voice-message/ComposerVoiceMessage.svelte";
+	import ComposerVoiceRecording from "./voice-message/ComposerVoiceRecording.svelte";
+	import ComposerVoiceSendButton from "./voice-message/ComposerVoiceSendButton.svelte";
+	import { VoiceMessageComposer } from "./voice-message/voice-message-composer.svelte";
 
 	let {
 		conversationId,
@@ -79,7 +82,18 @@
 		dismiss: () => onCancelReply?.(),
 	});
 
-	setMessageComposerContext(() => ({ disabled, sendMessages: onSend }));
+	const voice = untrack(
+		() => new VoiceMessageComposer((drafts) => onSend(drafts)),
+	);
+
+	// Leaving the conversation mid-hold must not leave the microphone open.
+	$effect(() => () => voice.abandon());
+
+	setMessageComposerContext(() => ({
+		disabled,
+		sendMessages: onSend,
+		voice,
+	}));
 </script>
 
 <!-- In the flow rather than floating over the list: the messages then end
@@ -105,7 +119,7 @@
 	{/if}
 	<!-- One row, three controls: attach, field, send. `items-end` keeps the two
 	     buttons on the bottom line as the field grows to multiple lines. -->
-	<div class="flex w-full items-end gap-2">
+	<div class="relative flex w-full items-end gap-2">
 		<!-- Keyed so switching conversation tears the drawer down with the old one
 		     rather than leaving it open over the new chat. -->
 		{#key conversationId}
@@ -117,13 +131,22 @@
 			onEscape={onCancelReply}
 		/>
 		<!-- Fixed slot: mic and send cross-fade over each other, so without a
-		     reserved box the row would resize for a frame mid-swap. -->
-		<div class="relative size-10 shrink-0">
-			{#if textContent === ""}
+		     reserved box the row would resize for a frame mid-swap. The mic stays
+		     put through a recording — swapping it out mid-hold would drop the
+		     pointer capture the gesture rides on. -->
+		<!-- Above the recording bar, not behind it: the mic travels left across the
+		     bar as the drag goes, and sliding underneath it looked like a fault. -->
+		<div class="relative z-20 size-10 shrink-0">
+			{#if voice.locked}
+				<ComposerVoiceSendButton />
+			{:else if textContent === "" || voice.active}
 				<ComposerVoiceMessage />
 			{:else}
 				<ComposerSubmitButton />
 			{/if}
 		</div>
+		{#if voice.active}
+			<ComposerVoiceRecording />
+		{/if}
 	</div>
 </form>

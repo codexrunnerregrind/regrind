@@ -30,6 +30,30 @@ async function uploadChatMedia(
 	return mediaUploadResponseSchema.parse(response);
 }
 
+/**
+ * Uploads a voice note. Unlike a photo it never enters the drawer — a recording
+ * is made to be sent, and there is nothing to pick it out of later.
+ */
+export async function uploadChatAudio({
+	bytes,
+	contentType,
+	durationMs,
+}: {
+	bytes: Uint8Array<ArrayBuffer>;
+	contentType: string;
+	durationMs: number | null;
+}): Promise<MediaUploadResponse> {
+	if (demoEnabled) {
+		return demoUploadChatMedia({ bytes, contentType });
+	}
+	const response = await invoke("upload_chat_audio", {
+		contentType,
+		lengthMs: durationMs,
+		data: toBase64(bytes),
+	});
+	return mediaUploadResponseSchema.parse(response);
+}
+
 export async function addMediaToDrawer(
 	media: PickedMedia,
 ): Promise<DrawerMedia> {
