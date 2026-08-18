@@ -126,26 +126,37 @@ describe("quoteLabel", () => {
 		expect(quoteLabel(preview("Text", "hello"))).toBe("hello");
 	});
 
+	// The inbox and the quote pill read the same table, so a type named in one is
+	// named the same way in the other.
 	it.each([
 		["Unsent", "Unsent message"],
 		["Audio", "Voice message"],
+		["ExpiringImage", "Expiring photo"],
 		["Giphy", "GIF"],
-		["Unknown", "Message"],
-	])("names a %s quote rather than rendering nothing", (type, expected) => {
-		expect(previewLabel(preview(type))).toBeNull();
+		["Gaymoji", "Gaymoji"],
+		["Location", "Location"],
+		["VideoCall", "Video call"],
+		["NonExpiringVideo", "Video"],
+		["ProfilePhotoReply", "Photo"],
+		["RightNowRequest", "Right Now"],
+	])("names a %s in the inbox and in a quote alike", (type, expected) => {
+		expect(previewLabel(preview(type))).toBe(expected);
 		expect(quoteLabel(preview(type))).toBe(expected);
 	});
 
-	// Unlike the types above, the inbox names a Location too, so the quote takes
-	// that wording rather than falling back to its own.
-	it("names a Location quote the way the inbox does", () => {
-		expect(previewLabel(preview("Location"))).toBe("Location");
-		expect(quoteLabel(preview("Location"))).toBe("Location");
-	});
+	it.each(["Unknown", "Generative", "SomethingNewFromTheApi"])(
+		"falls back to a plain name for %s",
+		(type) => {
+			expect(previewLabel(preview(type))).toBe("Message");
+			expect(quoteLabel(preview(type))).toBe("Message");
+		},
+	);
 
-	it("defers to the inbox wording for a type the preview already names", () => {
-		expect(previewLabel(preview("ExpiringImage"))).toBe("Expiring photo");
-		expect(quoteLabel(preview("ExpiringImage"))).toBe("Expiring photo");
+	// A conversation with no last message at all is the one case with nothing to
+	// name: the inbox row shows no preview line rather than the word "Message".
+	it("names nothing when there is no message", () => {
+		expect(previewLabel(null)).toBeNull();
+		expect(previewLabel(preview(""))).toBeNull();
 	});
 
 	it("does not render an empty pill for a blank text message", () => {

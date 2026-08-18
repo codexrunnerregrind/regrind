@@ -65,15 +65,44 @@ export function previewFromMessage(
 	}
 }
 
+// What a message with nothing quotable in it is called. A voice note, a video
+// call, an expiring pic — none of them carry text, and a preview left blank is
+// indistinguishable from a conversation with nothing in it, so every type names
+// itself instead.
+const TYPE_LABELS: Record<string, string> = {
+	Album: "Album",
+	AlbumContentReaction: "Album",
+	AlbumContentReply: "Album",
+	Audio: "Voice message",
+	ExpiringAlbum: "Album",
+	ExpiringAlbumV2: "Album",
+	ExpiringImage: "Expiring photo",
+	Gaymoji: "Gaymoji",
+	Giphy: "GIF",
+	Image: "Photo",
+	Location: "Location",
+	NonExpiringVideo: "Video",
+	PrivateVideo: "Video",
+	ProfileLink: "Profile",
+	ProfilePhotoReply: "Photo",
+	RightNowRequest: "Right Now",
+	Unsent: "Unsent message",
+	Video: "Video",
+	VideoCall: "Video call",
+};
+
+// Anything the API adds that we do not know by name yet — and the deliberately
+// opaque types (Generative, Unknown) — still has to read as something.
+const FALLBACK_LABEL = "Message";
+
 export function previewLabel(preview: MessagePreview | null): string | null {
-	if (preview === null) return null;
+	// An empty type is the absence of a message, not a message without a
+	// preview: a conversation with no last message names nothing at all.
+	if (preview === null || preview.type === "") return null;
 	if (preview.text !== null) return preview.text;
 	if (preview.albumId !== null) return "Album";
-	if (preview.type === "ExpiringImage") return "Expiring photo";
-	if (preview.imageHash !== null || preview.type === "Image") return "Photo";
-	if (preview.type === "Location") return "Location";
-	if (VIDEO_MESSAGE_TYPES.includes(preview.type)) return "Video";
-	return null;
+	if (preview.imageHash !== null) return "Photo";
+	return TYPE_LABELS[preview.type] ?? FALLBACK_LABEL;
 }
 
 /**
@@ -88,27 +117,10 @@ export function replyThumbnailUrl(
 	return message.type === "Image" ? message.body.url : null;
 }
 
-const QUOTE_LABELS: Record<string, string> = {
-	Unsent: "Unsent message",
-	Audio: "Voice message",
-	Video: "Video",
-	PrivateVideo: "Video",
-	NonExpiringVideo: "Video",
-	VideoCall: "Video call",
-	Gaymoji: "Gaymoji",
-	Giphy: "GIF",
-	Location: "Location",
-	ProfileLink: "Profile",
-	ProfilePhotoReply: "Photo",
-	AlbumContentReaction: "Album",
-	AlbumContentReply: "Album",
-	RightNowRequest: "Right Now",
-};
-
-// Unlike previewLabel, a quote always needs something to render — the inbox
-// and the toast deliberately render its null, a quote pill cannot.
+// A quote pill can never be blank, where the inbox can: a message whose text is
+// nothing but whitespace still needs a name inside the pill.
 export function quoteLabel(preview: MessagePreview): string {
 	const label = previewLabel(preview);
 	if (label !== null && label.trim() !== "") return label;
-	return QUOTE_LABELS[preview.type] ?? "Message";
+	return FALLBACK_LABEL;
 }
