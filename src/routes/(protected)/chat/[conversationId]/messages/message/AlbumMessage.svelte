@@ -15,6 +15,7 @@
 		openAlbumLightbox,
 		resolveAlbumForViewing,
 	} from "$lib/chat/album-viewer";
+	import { myAlbumCoverUrl } from "$lib/chat/my-album-covers";
 	import { paywallCoverUrl } from "$lib/chat/paywall-covers";
 	import LockIcon from "$lib/components/shared/LockIcon.svelte";
 	import { profileMediaUrl } from "$lib/util/media";
@@ -46,12 +47,15 @@
 		media.cornerClass,
 	]);
 
+	const isOurs = $derived(
+		message.ownerProfileId === conversation.ourProfileId,
+	);
+
 	// Someone else's album gets the viewer's reply chrome; our own share opens
 	// bare. The conversation partner is the sharer, so its profile is what the
 	// header describes.
 	const sharer = $derived.by<AlbumSharer | undefined>(() => {
-		if (message.ownerProfileId === conversation.ourProfileId)
-			return undefined;
+		if (isOurs) return undefined;
 		const profile = conversation.profile;
 		return {
 			name: profile?.name,
@@ -70,28 +74,33 @@
 		};
 	});
 
-	// A locked album is still one somebody shared with us, and the paywall teaser
-	// hands over its blurred cover — so the bubble shows that rather than a bare
-	// lock plate. The message's own `coverUrl` is signed at send time and lapses
-	// within the hour, so it only stands in until the fresh teaser url lands.
-	let teaserCover = $state<string | null>(null);
+	// A locked bubble still has something to show, so it shows it rather than a
+	// bare lock plate: the paywall teaser's blurred cover for somebody else's
+	// album, and for one of ours the album's own cover — a share we revoked is
+	// locked for them, not for us. The message's `coverUrl` stands in until that
+	// lands, and only as long as the signature it was sent with holds.
+	let freshCover = $state<string | null>(null);
 	let coverBroken = $state(false);
 
 	const preview = $derived(
-		teaserCover ?? (coverBroken ? null : message.coverUrl),
+		freshCover ?? (coverBroken ? null : message.coverUrl),
 	);
 
 	$effect(() => {
-		// Only somebody else's locked album: our own share we revoked is not in a
-		// teaser being sold to us, and a viewable album needs nothing fetched.
-		if (message.isViewable || sharer === undefined) return;
+		// A viewable bubble's own cover is current; only a locked one needs asking.
+		if (message.isViewable) return;
 		const { albumId, ownerProfileId } = message;
+		const ours = isOurs;
 		let cancelled = false;
-		void paywallCoverUrl({ albumId, ownerProfileId })
+		void (
+			ours
+				? myAlbumCoverUrl(albumId)
+				: paywallCoverUrl({ albumId, ownerProfileId })
+		)
 			.then((url) => {
-				if (!cancelled && url !== null) teaserCover = url;
+				if (!cancelled && url !== null) freshCover = url;
 			})
-			// A teaser we cannot reach just leaves the lock plate up.
+			// A cover we cannot reach just leaves the lock plate up.
 			.catch((error: unknown) => {
 				console.error(error);
 			});
@@ -120,12 +129,14 @@
 		phase = "loading";
 		try {
 			if (cachedAlbum === null) {
-				// A locked bubble says so on its face, so there is no point asking
-				// for an album the API will refuse: go straight to the teaser.
+				// Somebody else's locked bubble says so on its face, so there is no
+				// point asking for an album the API will refuse: go straight to the
+				// teaser. One of ours is a different kind of locked — the share is
+				// off, but the album is still ours to open in full.
 				const resolved = await resolveAlbumForViewing({
 					albumId: message.albumId,
 					ownerProfileId: message.ownerProfileId,
-					viewable: message.isViewable,
+					viewable: message.isViewable || isOurs,
 				});
 				cachedAlbum = resolved.album;
 				cachedFromPaywall = resolved.fromPaywall;
