@@ -52,7 +52,7 @@
 	{/if}
 {/snippet}
 
-<div class="@container/photo-grid flex min-h-0 flex-1 flex-col">
+<div class="@container/photo-grid flex flex-1 flex-col">
 	{#if error !== null}
 		<div class="flex flex-1">
 			<ApiErrorDisplay

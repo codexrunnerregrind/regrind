@@ -19,6 +19,16 @@ export class SharedAlbumsState {
 	error = $state<unknown>(null);
 	/** A refresh over albums we are already showing. */
 	refreshing = $state(false);
+	/**
+	 * The tab's scroll offset. Opening an album leaves the inbox entirely, so
+	 * the position has to outlive the component the same way the feed does.
+	 */
+	scrollY = $state(0);
+
+	/** Nothing cached yet — the grid is showing skeletons. */
+	get loading(): boolean {
+		return this.albums === null && this.error === null;
+	}
 
 	#fetchedAt = 0;
 	#inFlight: Promise<void> | null = null;
