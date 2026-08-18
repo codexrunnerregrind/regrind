@@ -8,7 +8,6 @@ import {
 	openAlbumLightbox,
 	resolveAlbumForViewing,
 } from "$lib/chat/album-viewer";
-import { announcePaywallTeaser } from "$lib/components/albums/paywall-teaser-toast";
 import { profileMediaUrl } from "$lib/util/media";
 import { getConversationState } from "../../conversation-state.svelte";
 
@@ -107,7 +106,6 @@ export class AlbumBubbleOpener {
 				},
 			});
 			this.phase = "open";
-			if (this.#fromPaywall) announcePaywallTeaser();
 		} catch (error) {
 			this.phase = "idle";
 			if (error instanceof AlbumLockedError) {

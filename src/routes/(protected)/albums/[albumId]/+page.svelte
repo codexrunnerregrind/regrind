@@ -23,7 +23,6 @@
 		openAlbumLightbox,
 		resolveAlbumForViewing,
 	} from "$lib/chat/album-viewer";
-	import { announcePaywallTeaser } from "$lib/components/albums/paywall-teaser-toast";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
 	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
@@ -149,7 +148,6 @@
 				sharer: isMine ? undefined : {},
 				fromPaywall,
 			});
-			if (fromPaywall) announcePaywallTeaser();
 		} catch (err) {
 			if (err instanceof AlbumLockedError) {
 				toast.info(err.message);

@@ -8,7 +8,6 @@ import {
 	resolveAlbumForViewing,
 } from "$lib/chat/album-viewer";
 import { hapticImpact } from "$lib/platform/haptics";
-import { announcePaywallTeaser } from "./paywall-teaser-toast";
 
 // Shared "tap an album cover → load its content → open the PhotoSwipe viewer"
 // behavior, used by both the my-albums and shared-with-me grids. Tracks which
@@ -43,7 +42,6 @@ export class AlbumOpener {
 				albumName,
 			});
 			await openAlbumLightbox(album, { sharer, fromPaywall });
-			if (fromPaywall) announcePaywallTeaser();
 		} catch (error) {
 			if (error instanceof AlbumLockedError) {
 				toast.info(error.message);
