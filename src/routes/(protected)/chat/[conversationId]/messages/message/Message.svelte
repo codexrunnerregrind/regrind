@@ -11,6 +11,7 @@
 	import type { ApiResponseMessage } from "$lib/model/messaging/messages";
 	import AlbumContentMessage from "./AlbumContentMessage.svelte";
 	import AlbumMessage from "./AlbumMessage.svelte";
+	import AudioMessage from "./AudioMessage.svelte";
 	import { setMessageContext } from "./context";
 	import ExpiringImageMessage from "./ExpiringImageMessage.svelte";
 	import ImageMessage from "./ImageMessage.svelte";
@@ -236,6 +237,12 @@
 			<AlbumMessage message={message.body} />
 		{:else if message.type === "Video" || message.type === "PrivateVideo" || message.type === "NonExpiringVideo"}
 			<VideoMessage
+				message={message.body}
+				conversationId={message.conversationId}
+				messageId={message.messageId}
+			/>
+		{:else if message.type === "Audio"}
+			<AudioMessage
 				message={message.body}
 				conversationId={message.conversationId}
 				messageId={message.messageId}

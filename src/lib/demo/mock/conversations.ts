@@ -151,6 +151,27 @@ function buildMessage({
 				...base,
 				unsent: false,
 			};
+		case "audio":
+			return {
+				type: "Audio",
+				body: {
+					mediaId: 930_000 + conv.withId + index,
+					mediaHash: null,
+					// The demo has no audio asset of its own, and the CSP already
+					// admits this host for the demo video — an <audio> element plays
+					// its audio track and ignores the pictures.
+					url: DEMO_VIDEO_URL,
+					contentType: "audio/aac",
+					length: 10 * SECOND,
+					// A signature already past its deadline: tapping play refetches
+					// the message for a fresh URL first.
+					expiresAt: message.expiredUrl
+						? NOW - MINUTE
+						: NOW + 30 * MINUTE,
+				},
+				...base,
+				unsent: false,
+			};
 		case "album": {
 			const albumBody = {
 				albumId: message.albumId,

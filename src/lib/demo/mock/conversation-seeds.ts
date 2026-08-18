@@ -8,6 +8,7 @@ export type DemoMessage = {
 	| { kind: "image" }
 	| { kind: "expiringImage"; expired?: boolean }
 	| { kind: "video"; expired?: boolean; needsLoad?: boolean }
+	| { kind: "audio"; expiredUrl?: boolean }
 	| {
 			kind: "album";
 			albumId: number;
@@ -110,6 +111,8 @@ export const demoConversationSeeds: DemoConversation[] = [
 			{ fromMe: false, kind: "video" },
 			{ fromMe: true, kind: "video", needsLoad: true },
 			{ fromMe: false, kind: "video", expired: true },
+			{ fromMe: false, kind: "audio" },
+			{ fromMe: true, kind: "audio", expiredUrl: true },
 			// Kept last so this conversation's preview stays an Image, which
 			// demo.test.ts asserts.
 			{ fromMe: false, kind: "image", reactions: 1 },
