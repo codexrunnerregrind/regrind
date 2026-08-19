@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { ImagesIcon } from "phosphor-svelte";
+
 	import { myAlbumCoverUrl } from "$lib/chat/my-albums";
 	import { paywallCoverUrl } from "$lib/chat/paywall-covers";
 	import { getNow } from "$lib/util/now";
@@ -87,6 +89,14 @@
 		};
 	});
 
+	// A tap carries no text, so without this line it is just a photo with a fire
+	// badge on it — the same thing a tap on a picture sent in the conversation
+	// looks like. Whose album it was is the part that has to be said out loud:
+	// the thumbnail is the photo, not the album it came from.
+	const reactionCaption = $derived(
+		isOurs ? "Tapped your album photo" : "Tapped their album photo",
+	);
+
 	function openAlbum() {
 		void opener.open(message.albumId, {
 			ownerProfileId: message.ownerProfileId,
@@ -142,9 +152,11 @@
 	<div
 		class={[
 			"flex flex-col gap-1",
+			{ "items-end": media.isOut },
 			{
-				// Sized to the preview, which is all a reaction is: a thumbnail
-				// of the photo it answers, with the tap badge hanging off it.
+				// Sized to its contents: a thumbnail of the photo the tap
+				// landed on, with the tap badge hanging off it, over the line
+				// that says the photo lives in an album.
 				"w-fit max-w-60": !media.clone,
 				"size-full": media.clone,
 			},
@@ -171,6 +183,12 @@
 				{@render previewContent()}
 			</button>
 		{/if}
+		<div
+			class="flex max-w-full items-center gap-1 text-2xs text-muted-foreground"
+		>
+			<ImagesIcon weight="fill" class="size-3 shrink-0" />
+			<span class="truncate">{reactionCaption}</span>
+		</div>
 		{@render media.adornments?.()}
 	</div>
 {:else}
