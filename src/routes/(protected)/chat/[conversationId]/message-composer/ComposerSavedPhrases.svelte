@@ -8,6 +8,7 @@
 	import { SAVED_PHRASE_MAX_LENGTH } from "$lib/model/messaging/phrases";
 	import { hapticImpact } from "$lib/platform/haptics";
 	import { longPressHandlers } from "$lib/util/long-press";
+	import { keepKeyboard } from "./keep-keyboard";
 	import { getMessageComposerContext } from "./message-composer-context.svelte";
 
 	let {
@@ -60,15 +61,6 @@
 		editing = true;
 	}
 
-	/**
-	 * Keeps the field's focus — and so the keyboard — exactly where it was, for
-	 * the controls that only rearrange the bar. Picking a phrase is the
-	 * exception: that one hands focus to the field on purpose.
-	 */
-	function keepKeyboard(event: PointerEvent) {
-		event.preventDefault();
-	}
-
 	function pick(phrase: { id: string; text: string }) {
 		if (editing) {
 			openRename(phrase.id, phrase.text);
@@ -98,6 +90,7 @@
 					type="button"
 					class="text-meta font-semibold text-primary"
 					onpointerdown={keepKeyboard}
+					onmousedown={keepKeyboard}
 					onclick={() => (editing = false)}
 				>
 					Done
@@ -123,6 +116,7 @@
 						class="max-w-52 truncate rounded-full px-2.5 py-1 text-left text-meta text-foreground active:bg-foreground/10 disabled:opacity-50"
 						{disabled}
 						onclick={() => pick(phrase)}
+						onmousedown={keepKeyboard}
 						oncontextmenu={longPress.oncontextmenu}
 						onpointerdown={longPress.onpointerdown}
 						onpointermove={longPress.onpointermove}
@@ -137,6 +131,7 @@
 							aria-label={`Delete phrase "${phrase.text}"`}
 							class="flex size-4.5 shrink-0 items-center justify-center rounded-full bg-foreground/15 text-foreground active:bg-foreground/25"
 							onpointerdown={keepKeyboard}
+							onmousedown={keepKeyboard}
 							onclick={() => void savedPhrases.remove(phrase.id)}
 						>
 							<XIcon size={11} weight="bold" />
@@ -152,6 +147,7 @@
 					class="flex shrink-0 items-center gap-1.5 rounded-full border border-dashed border-border px-2.5 py-1 text-meta text-muted-foreground active:bg-foreground/5 disabled:opacity-50"
 					{disabled}
 					onpointerdown={keepKeyboard}
+					onmousedown={keepKeyboard}
 					onclick={openAdd}
 				>
 					<PlusIcon size={13} />
@@ -164,6 +160,7 @@
 					class="flex size-7 shrink-0 items-center justify-center rounded-full border border-border text-muted-foreground active:bg-foreground/10 disabled:opacity-50"
 					{disabled}
 					onpointerdown={keepKeyboard}
+					onmousedown={keepKeyboard}
 					onclick={openAdd}
 				>
 					<PlusIcon size={13} />

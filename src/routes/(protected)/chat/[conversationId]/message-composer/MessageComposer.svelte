@@ -90,6 +90,16 @@
 	// Leaving the conversation mid-hold must not leave the microphone open.
 	$effect(() => () => voice.abandon());
 
+	// Tapping the composer's own padding shouldn't dismiss the keyboard — a
+	// near-miss on a chip or a button lands here. Both events, because WebKit
+	// ignores preventDefault on a touch-derived pointerdown and only honours the
+	// mousedown it dispatches after touchend.
+	function keepKeyboardOnPadding(event: Event) {
+		const target = event.target as HTMLElement | null;
+		if (!target?.closest("textarea, input, button, a, [role='button']"))
+			event.preventDefault();
+	}
+
 	setMessageComposerContext(() => ({
 		disabled,
 		sendMessages: onSend,
@@ -102,14 +112,11 @@
      padding the list by that number instead left the newest message under the
      composer whenever the measurement lagged the layout — which on iOS it did
      until something else forced a resize. -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <form
 	class="flex min-h-11 min-w-0 shrink-0 flex-col gap-2 border-t border-border bg-background px-4.5 pt-3 pb-3"
-	onpointerdown={(event) => {
-		// Tapping the composer's own padding shouldn't dismiss the keyboard
-		const target = event.target as HTMLElement | null;
-		if (!target?.closest("textarea, input, button, a, [role='button']"))
-			event.preventDefault();
-	}}
+	onpointerdown={keepKeyboardOnPadding}
+	onmousedown={keepKeyboardOnPadding}
 	onsubmit={(event) => {
 		event.preventDefault();
 		onSubmit().catch((error) => console.error(error));
