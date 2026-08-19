@@ -354,21 +354,25 @@
 	}
 }
 
-/* How far the software keyboard covers the layout viewport, written by
-   applyKeyboardInset to the root element. Zero unless iOS left the webview at
-   full height with the keyboard over it — see keyboard-inset.ts.
+/* The window height the software keyboard leaves over, written by
+   applyKeyboardInset to the root element; 100dvh until it says otherwise, and
+   on every platform but iOS. Screens that must end above the keyboard use this
+   in place of 100dvh — see keyboard-inset.ts.
 
    Declared on :root alone, deliberately. The block below sets its tokens on
    :root *and* body, and a copy on body would shadow what applyKeyboardInset
-   writes to the root for everything inside it — leaving the fallback 0px to
-   win over a real keyboard. */
+   writes to the root for everything inside it — leaving the fallback to win
+   over a real keyboard. */
 :root {
-	--keyboard-inset: 0px;
+	--viewport-height: 100dvh;
 }
 
 :root,
 body {
-	min-height: 100dvh;
+	/* Not 100dvh: with the keyboard up the app is sized to the window it leaves
+	   over, and a document taller than that hands WebKit room to scroll the
+	   composer back out of sight. */
+	min-height: var(--viewport-height);
 	/* No app-level rubber-banding; scroll containers opt back in via
 	   overscroll-behavior: contain for pull-to-refresh. */
 	overscroll-behavior: none;
@@ -378,12 +382,11 @@ body {
 	--selection-bar-height: 4.75rem;
 	--content-pb: calc(var(--nav-height) + var(--safe-area-bottom));
 	--screen-safe: calc(
-		100dvh - var(--safe-area-top) - var(--safe-area-bottom) -
-			var(--keyboard-inset)
+		var(--viewport-height) - var(--safe-area-top) - var(--safe-area-bottom)
 	);
 	/* Runs under the bottom navbar; pair with -mb-(--content-pb) and
 	   pb-nav-clear so content scrolls beneath the navbar's blur. */
-	--screen-nav: calc(100dvh - var(--safe-area-top) - var(--keyboard-inset));
+	--screen-nav: calc(var(--viewport-height) - var(--safe-area-top));
 	text-rendering: geometricPrecision;
 	image-rendering: optimizeQuality;
 	shape-rendering: geometricPrecision;

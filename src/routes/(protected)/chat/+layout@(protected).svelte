@@ -51,7 +51,7 @@
 </script>
 
 <main
-	class="flex h-dvh w-full flex-1 pt-(--safe-area-top) pb-[calc(var(--safe-area-bottom)_+_var(--keyboard-inset))]"
+	class="flex h-(--viewport-height) w-full flex-1 pt-(--safe-area-top) pb-(--safe-area-bottom)"
 >
 	{#if !mobile.current}
 		<Resizable.PaneGroup
