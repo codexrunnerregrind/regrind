@@ -169,9 +169,6 @@
 			);
 			for (const albumId of albumIds)
 				setAlbumShared(albumId, profileId, true);
-			toast.success(
-				albumIds.length === 1 ? "Album shared" : "Albums shared",
-			);
 		} catch (err) {
 			console.error(err);
 			showErrorToast({ label: "Failed to share album", error: err });
