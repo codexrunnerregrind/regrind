@@ -47,6 +47,7 @@ export class ConversationState {
 	refreshing = $state(false);
 	error: Error | null = $state(null);
 	lastReadTimestamp: number | null = $state(null);
+	#focusComposer: (() => void) | null = null;
 	// Resolved from the stored id on every read, so unsending, deleting or
 	// failing to load the target drops the quote with no clearing code.
 	readonly replyTo: ApiResponseMessage | null = $derived.by(() => {
@@ -341,11 +342,29 @@ export class ConversationState {
 		}
 	}
 
+	/**
+	 * Hands the composer back the caret the moment a reply is armed, rather than
+	 * leaving it to an effect. iOS only makes room for a keyboard it raised from
+	 * a user-initiated focus: a focus() deferred past the gesture's own task
+	 * still gets the keyboard, but not the viewport shrink that goes with it, so
+	 * visualViewport keeps reporting full height and applyKeyboardInset has
+	 * nothing to compensate for — the swipe's keyboard lands on top of the
+	 * field. Registered by the composer; the last one mounted wins.
+	 */
+	registerComposerFocus(focus: () => void): () => void {
+		this.#focusComposer = focus;
+		return () => {
+			if (this.#focusComposer === focus) this.#focusComposer = null;
+		};
+	}
+
 	setReplyTo(message: ApiResponseMessage): void {
 		this.#conversations.drafts.setReplyTo({
 			conversationId: this.conversationId,
 			messageId: message.messageId,
 		});
+		// Synchronous on purpose — see registerComposerFocus.
+		this.#focusComposer?.();
 	}
 
 	clearReplyTo(): void {

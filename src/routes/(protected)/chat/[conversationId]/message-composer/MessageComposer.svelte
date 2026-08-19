@@ -27,12 +27,16 @@
 		disabled,
 		replyTo,
 		onCancelReply,
+		registerFocus,
 	}: {
 		conversationId: string;
 		onSend: (drafts: MessageDraft[]) => void | Promise<void>;
 		disabled: boolean;
 		replyTo?: ApiResponseMessage | null;
 		onCancelReply?: () => void;
+		/** Lends the field's focus out, so whoever arms a reply can take the
+		 *  caret in the same task as the gesture. Returns a disposer. */
+		registerFocus?: (focus: () => void) => () => void;
 	} = $props();
 
 	const { drafts } = getConversations();
@@ -73,7 +77,13 @@
 	});
 
 	// Arming a reply should hand the user straight back to the composer, which
-	// on touch is also what raises the keyboard.
+	// on touch is also what raises the keyboard. The focus has to happen in the
+	// same task as the gesture that armed the reply, or iOS raises the keyboard
+	// without making room for it — so the state calls this the moment the reply
+	// is set, and the effect below is left only to cover a replyTo that arrives
+	// from anywhere else.
+	$effect(() => registerFocus?.(() => textInput?.focus()));
+
 	$effect(() => {
 		if (replyTo) textInput?.focus();
 	});

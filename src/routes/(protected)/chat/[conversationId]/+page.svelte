@@ -68,5 +68,7 @@
 		disabled={conversationState.loading || conversationState.error !== null}
 		replyTo={conversationState.replyTo}
 		onCancelReply={() => conversationState.clearReplyTo()}
+		registerFocus={(focus) =>
+			conversationState.registerComposerFocus(focus)}
 	/>
 </Card.Content>
