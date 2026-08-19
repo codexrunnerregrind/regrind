@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it } from "vitest";
 
-import { isAndroidPlatform, isMobilePlatform } from "$lib/platform/os";
+import {
+	isAndroidPlatform,
+	isIosPlatform,
+	isMobilePlatform,
+} from "$lib/platform/os";
 
 const tauri = globalThis as {
 	isTauri?: boolean;
@@ -47,5 +51,19 @@ describe("isAndroidPlatform", () => {
 
 		runningOn("ios");
 		expect(isAndroidPlatform()).toBe(false);
+	});
+});
+
+describe("isIosPlatform", () => {
+	it("is false outside Tauri instead of reading the missing os plugin", () => {
+		expect(isIosPlatform()).toBe(false);
+	});
+
+	it("distinguishes ios from the other mobile platform", () => {
+		runningOn("ios");
+		expect(isIosPlatform()).toBe(true);
+
+		runningOn("android");
+		expect(isIosPlatform()).toBe(false);
 	});
 });

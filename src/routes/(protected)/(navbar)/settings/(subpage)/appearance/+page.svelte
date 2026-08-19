@@ -1,5 +1,6 @@
 <script lang="ts">
 	import {
+		AppWindowIcon,
 		CheckIcon,
 		DesktopIcon,
 		GridFourIcon,
@@ -22,10 +23,12 @@
 		getAccentColorSnapshot,
 		getAlbumGridColumnsSnapshot,
 		getIncomingBubbleColorSnapshot,
+		getNavBarGlassSnapshot,
 		getOutgoingBubbleColorSnapshot,
 		getPreferences,
 		getProfileGridColumnsSnapshot,
 		getThemeModeSnapshot,
+		preferencesLoaded,
 		setPreferences,
 		type ThemeMode,
 	} from "$lib/app-data/preferences.svelte";
@@ -33,6 +36,7 @@
 	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
 	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
 	import SettingsSegmented from "$lib/components/settings/SettingsSegmented.svelte";
+	import SettingsSwitchRow from "$lib/components/settings/SettingsSwitchRow.svelte";
 	import { hapticSelection } from "$lib/platform/haptics";
 	import GridColumnsSetting from "./GridColumnsSetting.svelte";
 
@@ -40,6 +44,7 @@
 	let accent = $state<AccentColor>(getAccentColorSnapshot());
 	let outgoing = $state<BubbleColor>(getOutgoingBubbleColorSnapshot());
 	let incoming = $state<BubbleColor>(getIncomingBubbleColorSnapshot());
+	let navGlass = $state(getNavBarGlassSnapshot());
 
 	onMount(() => {
 		void getPreferences()
@@ -48,6 +53,7 @@
 				accent = preferences.accentColor;
 				outgoing = preferences.outgoingBubbleColor;
 				incoming = preferences.incomingBubbleColor;
+				navGlass = preferences.navBarGlass;
 			})
 			.catch((error) => {
 				console.error("Failed to load preferences", error);
@@ -201,6 +207,31 @@
 </SettingsGroup>
 <SectionFooter>
 	{bubbleLabel(selected)} — {footnotes[target]}
+</SectionFooter>
+
+<SectionHeader>Navigation bar</SectionHeader>
+<SettingsGroup divider="none">
+	<SettingsSwitchRow
+		title="Floating glass"
+		description="A rounded, see-through bar that floats above the screen."
+		disabled={!preferencesLoaded()}
+		bind:checked={
+			() => navGlass,
+			(next: boolean) => {
+				hapticSelection();
+				navGlass = next;
+				persist({ navBarGlass: next });
+			}
+		}
+	>
+		{#snippet icon()}
+			<AppWindowIcon weight="fill" />
+		{/snippet}
+	</SettingsSwitchRow>
+</SettingsGroup>
+<SectionFooter>
+	The tabs sit in a rounded bar that lifts off the bottom of the screen,
+	instead of one that spans it.
 </SectionFooter>
 
 <SectionHeader>Grid</SectionHeader>

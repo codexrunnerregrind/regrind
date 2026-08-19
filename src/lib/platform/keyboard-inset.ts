@@ -1,5 +1,4 @@
-import { isTauri } from "@tauri-apps/api/core";
-import { platform } from "@tauri-apps/plugin-os";
+import { isIosPlatform } from "$lib/platform/os";
 
 /** A keyboard is at least this tall; smaller shrinks are chrome, not an IME. */
 const KEYBOARD_MIN_HEIGHT = 100;
@@ -34,7 +33,7 @@ function isEditable(element: Element | null): boolean {
  * runs on iOS.
  */
 export function applyKeyboardInset(): () => void {
-	if (!isTauri() || platform() !== "ios") return () => {};
+	if (!isIosPlatform()) return () => {};
 
 	const viewport = window.visualViewport;
 	if (!viewport) return () => {};

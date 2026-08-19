@@ -8,3 +8,7 @@ export function isMobilePlatform(): boolean {
 export function isAndroidPlatform(): boolean {
 	return isTauri() && platform() === "android";
 }
+
+export function isIosPlatform(): boolean {
+	return isTauri() && platform() === "ios";
+}

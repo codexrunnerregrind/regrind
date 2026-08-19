@@ -74,6 +74,11 @@ const preferencesSchema = z.object({
 	// scanned in bulk, album covers are picked one at a time.
 	profileGridColumns: gridColumnsSchema.default(3).catch(3),
 	albumGridColumns: gridColumnsSchema.default(3).catch(3),
+	// The floating capsule, on by default. iOS draws it in the system glass
+	// material; everywhere else it is a blur behind a tint, which is the same
+	// shape and the same behaviour, only a plainer surface. Turning this off
+	// returns the docked bar the redesign shipped with.
+	navBarGlass: z.boolean().default(true),
 	units: unitSystemSchema.default("metric"),
 	rightNowFilters: rightNowFiltersSchema.optional(),
 });
@@ -183,6 +188,10 @@ export function getProfileGridColumnsSnapshot(): GridColumns {
 /** Grids of albums and of the photos inside them. */
 export function getAlbumGridColumnsSnapshot(): GridColumns {
 	return snapshot.albumGridColumns;
+}
+
+export function getNavBarGlassSnapshot(): boolean {
+	return snapshot.navBarGlass;
 }
 
 export function getAccentColorSnapshot(): AccentColor {
