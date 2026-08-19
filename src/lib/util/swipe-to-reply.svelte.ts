@@ -1,6 +1,8 @@
 import { createAttachmentKey } from "svelte/attachments";
 import { Spring } from "svelte/motion";
 
+import { hapticImpact } from "$lib/platform/haptics";
+
 const TRIGGER_DISTANCE_PX = 44;
 const MAX_DRAG_PX = 76;
 /**
@@ -122,7 +124,11 @@ export class SwipeToReply {
 		}
 		const magnitude = Math.min(Math.max(alongX, 0), MAX_DRAG_PX);
 		void this.#offset.set(magnitude * this.#dragSign, { instant: true });
-		this.armed = magnitude > TRIGGER_DISTANCE_PX;
+		const armed = magnitude > TRIGGER_DISTANCE_PX;
+		// A tap the moment the swipe passes the point of no return, so the reply
+		// can be committed by feel without watching the arrow fill in.
+		if (armed !== this.armed) hapticImpact(armed ? "medium" : "light");
+		this.armed = armed;
 		return true;
 	}
 
