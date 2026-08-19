@@ -18,6 +18,7 @@
 		renameAlbum,
 		reorderAlbumContent,
 	} from "$lib/api/messaging/albums";
+	import { getAlbumGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
 	import {
 		AlbumLockedError,
 		openAlbumLightbox,
@@ -256,7 +257,10 @@
 							<Skeleton class="h-9 w-36 rounded-full" />
 						</div>
 					</div>
-					<div class="object-grid">
+					<div
+						class="object-grid"
+						data-grid-columns={getAlbumGridColumnsSnapshot()}
+					>
 						{#each Array(6)}
 							<Skeleton class="aspect-album-photo rounded-lg" />
 						{/each}
@@ -348,6 +352,7 @@
 						{#if album.content.length > 0}
 							<div
 								class="object-grid reorder-grid"
+								data-grid-columns={getAlbumGridColumnsSnapshot()}
 								use:dragReorder={{
 									enabled: isMine && !busy,
 									onReorder: (from, to) =>

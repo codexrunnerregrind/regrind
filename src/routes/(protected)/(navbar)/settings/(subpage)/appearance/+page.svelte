@@ -2,9 +2,11 @@
 	import {
 		CheckIcon,
 		DesktopIcon,
+		GridFourIcon,
 		MoonIcon,
 		PaperPlaneRightIcon,
 		SunIcon,
+		UsersThreeIcon,
 	} from "phosphor-svelte";
 	import { onMount } from "svelte";
 
@@ -18,9 +20,11 @@
 	} from "$lib/app-data/palette";
 	import {
 		getAccentColorSnapshot,
+		getAlbumGridColumnsSnapshot,
 		getIncomingBubbleColorSnapshot,
 		getOutgoingBubbleColorSnapshot,
 		getPreferences,
+		getProfileGridColumnsSnapshot,
 		getThemeModeSnapshot,
 		setPreferences,
 		type ThemeMode,
@@ -30,6 +34,7 @@
 	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
 	import SettingsSegmented from "$lib/components/settings/SettingsSegmented.svelte";
 	import { hapticSelection } from "$lib/platform/haptics";
+	import GridColumnsSetting from "./GridColumnsSetting.svelte";
 
 	let mode = $state<ThemeMode>(getThemeModeSnapshot());
 	let accent = $state<AccentColor>(getAccentColorSnapshot());
@@ -196,4 +201,26 @@
 </SettingsGroup>
 <SectionFooter>
 	{bubbleLabel(selected)} — {footnotes[target]}
+</SectionFooter>
+
+<SectionHeader>Grid</SectionHeader>
+<SettingsGroup divider="full">
+	<GridColumnsSetting
+		title="Profiles"
+		description="The browse grid and profile views."
+		icon={UsersThreeIcon}
+		value={getProfileGridColumnsSnapshot()}
+		save={(profileGridColumns) => ({ profileGridColumns })}
+	/>
+	<GridColumnsSetting
+		title="Albums"
+		description="Album covers and the photos inside them."
+		icon={GridFourIcon}
+		value={getAlbumGridColumnsSnapshot()}
+		save={(albumGridColumns) => ({ albumGridColumns })}
+	/>
+</SettingsGroup>
+<SectionFooter>
+	How many tiles fit across at phone width. Wider screens step up from
+	whichever count you pick.
 </SectionFooter>

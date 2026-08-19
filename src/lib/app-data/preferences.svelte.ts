@@ -29,6 +29,10 @@ export const themeModeSchema = z.enum(["light", "dark", "system"]);
 export type ThemeMode = z.infer<typeof themeModeSchema>;
 
 export const accentColorSchema = z.enum(accentColors);
+
+/** How many columns a grid shows at phone width. */
+export const gridColumnsSchema = z.union([z.literal(2), z.literal(3)]);
+export type GridColumns = z.infer<typeof gridColumnsSchema>;
 export const bubbleColorSchema = z.enum(bubbleColors);
 
 const preferencesSchema = z.object({
@@ -64,6 +68,12 @@ const preferencesSchema = z.object({
 	// location-based app is mostly used at night. Both themes are fully
 	// specified, so switching to light or back to system is one tap away.
 	themeMode: themeModeSchema.default("dark"),
+	// Three across is the redesign's default; two trades reach for bigger tiles.
+	// Wider screens step up from whichever of the two the user picked. Profiles
+	// and albums are set apart because they are browsed differently — faces are
+	// scanned in bulk, album covers are picked one at a time.
+	profileGridColumns: gridColumnsSchema.default(3).catch(3),
+	albumGridColumns: gridColumnsSchema.default(3).catch(3),
 	units: unitSystemSchema.default("metric"),
 	rightNowFilters: rightNowFiltersSchema.optional(),
 });
@@ -163,6 +173,16 @@ export function getUnitsSnapshot(): UnitSystem {
 
 export function getThemeModeSnapshot(): ThemeMode {
 	return snapshot.themeMode;
+}
+
+/** Grids of people: the browse grid and profile views. */
+export function getProfileGridColumnsSnapshot(): GridColumns {
+	return snapshot.profileGridColumns;
+}
+
+/** Grids of albums and of the photos inside them. */
+export function getAlbumGridColumnsSnapshot(): GridColumns {
+	return snapshot.albumGridColumns;
 }
 
 export function getAccentColorSnapshot(): AccentColor {

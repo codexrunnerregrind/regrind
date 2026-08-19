@@ -4,6 +4,7 @@
 	import { onMount } from "svelte";
 	import { toast } from "svelte-sonner";
 
+	import { getAlbumGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import ToastUnimplemented from "$lib/components/feedback/ToastUnimplemented.svelte";
 	import * as Empty from "$lib/components/ui/empty";
@@ -62,7 +63,10 @@
 			/>
 		</div>
 	{:else if albums === null}
-		<div class="object-grid gap-1">
+		<div
+			class="object-grid gap-1"
+			data-grid-columns={getAlbumGridColumnsSnapshot()}
+		>
 			{@render myAlbumsTile()}
 			{#each Array(6)}
 				<Skeleton class="aspect-album rounded-lg" />
@@ -70,7 +74,10 @@
 		</div>
 	{:else if albums.length === 0}
 		{#if onOpenMyAlbums}
-			<div class="object-grid gap-1">
+			<div
+				class="object-grid gap-1"
+				data-grid-columns={getAlbumGridColumnsSnapshot()}
+			>
 				{@render myAlbumsTile()}
 			</div>
 		{/if}
@@ -86,7 +93,10 @@
 			</Empty.Header>
 		</Empty.Root>
 	{:else}
-		<div class="object-grid gap-1">
+		<div
+			class="object-grid gap-1"
+			data-grid-columns={getAlbumGridColumnsSnapshot()}
+		>
 			{@render myAlbumsTile()}
 			{#each albums as album (album.albumId)}
 				<AlbumTile

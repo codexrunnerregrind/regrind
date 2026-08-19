@@ -16,6 +16,7 @@
 		shareAlbum,
 		unshareAlbum,
 	} from "$lib/api/messaging/albums";
+	import { getAlbumGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import MediaImage from "$lib/components/shared/MediaImage.svelte";
 	import SelectionCheck from "$lib/components/shared/SelectionCheck.svelte";
@@ -215,7 +216,10 @@
 			/>
 		</div>
 	{:else if albums === null}
-		<div class="photo-grid [--photo-grid-aspect:3/4]">
+		<div
+			class="photo-grid [--photo-grid-aspect:3/4]"
+			data-grid-columns={getAlbumGridColumnsSnapshot()}
+		>
 			{#each Array(9)}
 				<Skeleton class="aspect-(--photo-grid-aspect) rounded-none" />
 			{/each}
@@ -233,7 +237,10 @@
 			</Empty.Header>
 		</Empty.Root>
 	{:else}
-		<div class="photo-grid [--photo-grid-aspect:3/4]">
+		<div
+			class="photo-grid [--photo-grid-aspect:3/4]"
+			data-grid-columns={getAlbumGridColumnsSnapshot()}
+		>
 			{#each albums as album (album.albumId)}
 				{@const isSelected = selected.has(album.albumId)}
 				{@const isShared = sharedAlbumIds.has(album.albumId)}

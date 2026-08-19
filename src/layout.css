@@ -550,7 +550,18 @@ a {
 	}
 
 	.object-grid {
-		@apply mx-auto grid w-full max-w-400 grid-cols-3 content-start gap-2 @grid4/photo-grid:grid-cols-4 @grid5/photo-grid:grid-cols-5 @grid6/photo-grid:grid-cols-6 @grid7/photo-grid:grid-cols-7;
+		@apply mx-auto grid w-full max-w-400 content-start gap-2;
+
+		/* Columns follow the same two ladders as .photo-grid — see the bands
+		   below — one rung narrower when the grid carries data-grid-columns="2".
+		   The attribute sits on the grid itself rather than the document, so a
+		   screen can feed each of its grids a different preference. */
+		&:not([data-grid-columns="2"]) {
+			@apply grid-cols-3 @grid4/photo-grid:grid-cols-4 @grid5/photo-grid:grid-cols-5 @grid6/photo-grid:grid-cols-6 @grid7/photo-grid:grid-cols-7;
+		}
+		&[data-grid-columns="2"] {
+			@apply grid-cols-2 @grid4/photo-grid:grid-cols-3 @grid5/photo-grid:grid-cols-4 @grid6/photo-grid:grid-cols-5 @grid7/photo-grid:grid-cols-6;
+		}
 
 		/* Three tiles across is half again as many covers on screen as the old
 		   two, so tiles that have scrolled out of view skip their paint and
@@ -588,85 +599,128 @@ a {
 		--grid-radius-bottom: 0px;
 	}
 
-	/* Each band repeats its column count four times: grid-cols-N and three N's in the selectors.
-	   e2e/photo-grid-corners.spec.ts asserts the resolved count and all four corners in every band */
+	/* Column counts come in two ladders: the default one, and the rung-narrower
+	   one a grid opts into with data-grid-columns="2" (set from the Appearance >
+	   Grid preferences, one per kind of grid). Two across is the floor, so the
+	   narrowest band is the same either way. The corner rounding for each rung
+	   lives in the photo-cols-N utilities.
+	   e2e/photo-grid-corners.spec.ts asserts the resolved count and all four
+	   corners in every band of the default ladder. */
 	@container photo-grid (width < theme(--container-grid3)) {
 		.photo-grid {
-			@apply grid-cols-2;
-
-			> :nth-child(2),
-			> :last-child:nth-child(-n + 2) {
-				border-top-right-radius: var(--grid-radius-top);
-			}
-			> :nth-child(2n + 1):nth-last-child(-n + 2) {
-				border-bottom-left-radius: var(--grid-radius-bottom);
-			}
+			@apply photo-cols-2;
 		}
 	}
 	@container photo-grid (width >= theme(--container-grid3)) and (width < theme(--container-grid4)) {
-		.photo-grid {
-			@apply grid-cols-3;
-
-			> :nth-child(3),
-			> :last-child:nth-child(-n + 3) {
-				border-top-right-radius: var(--grid-radius-top);
-			}
-			> :nth-child(3n + 1):nth-last-child(-n + 3) {
-				border-bottom-left-radius: var(--grid-radius-bottom);
-			}
+		.photo-grid:not([data-grid-columns="2"]) {
+			@apply photo-cols-3;
+		}
+		.photo-grid[data-grid-columns="2"] {
+			@apply photo-cols-2;
 		}
 	}
 	@container photo-grid (width >= theme(--container-grid4)) and (width < theme(--container-grid5)) {
-		.photo-grid {
-			@apply grid-cols-4;
-
-			> :nth-child(4),
-			> :last-child:nth-child(-n + 4) {
-				border-top-right-radius: var(--grid-radius-top);
-			}
-			> :nth-child(4n + 1):nth-last-child(-n + 4) {
-				border-bottom-left-radius: var(--grid-radius-bottom);
-			}
+		.photo-grid:not([data-grid-columns="2"]) {
+			@apply photo-cols-4;
+		}
+		.photo-grid[data-grid-columns="2"] {
+			@apply photo-cols-3;
 		}
 	}
 	@container photo-grid (width >= theme(--container-grid5)) and (width < theme(--container-grid6)) {
-		.photo-grid {
-			@apply grid-cols-5;
-
-			> :nth-child(5),
-			> :last-child:nth-child(-n + 5) {
-				border-top-right-radius: var(--grid-radius-top);
-			}
-			> :nth-child(5n + 1):nth-last-child(-n + 5) {
-				border-bottom-left-radius: var(--grid-radius-bottom);
-			}
+		.photo-grid:not([data-grid-columns="2"]) {
+			@apply photo-cols-5;
+		}
+		.photo-grid[data-grid-columns="2"] {
+			@apply photo-cols-4;
 		}
 	}
 	@container photo-grid (width >= theme(--container-grid6)) and (width < theme(--container-grid7)) {
-		.photo-grid {
-			@apply grid-cols-6;
-
-			> :nth-child(6),
-			> :last-child:nth-child(-n + 6) {
-				border-top-right-radius: var(--grid-radius-top);
-			}
-			> :nth-child(6n + 1):nth-last-child(-n + 6) {
-				border-bottom-left-radius: var(--grid-radius-bottom);
-			}
+		.photo-grid:not([data-grid-columns="2"]) {
+			@apply photo-cols-6;
+		}
+		.photo-grid[data-grid-columns="2"] {
+			@apply photo-cols-5;
 		}
 	}
 	@container photo-grid (width >= theme(--container-grid7)) {
-		.photo-grid {
-			@apply grid-cols-7;
-
-			> :nth-child(7),
-			> :last-child:nth-child(-n + 7) {
-				border-top-right-radius: var(--grid-radius-top);
-			}
-			> :nth-child(7n + 1):nth-last-child(-n + 7) {
-				border-bottom-left-radius: var(--grid-radius-bottom);
-			}
+		.photo-grid:not([data-grid-columns="2"]) {
+			@apply photo-cols-7;
 		}
+		.photo-grid[data-grid-columns="2"] {
+			@apply photo-cols-6;
+		}
+	}
+}
+
+/* One rung of the .photo-grid column ladder: N columns, with the four outer
+   cells of the block rounded — first, last, the end of the first row and the
+   start of the last. Which rung a band uses depends on the Grid preference, so
+   every count from 2 to 7 is spelled out here and picked in layout above. */
+@utility photo-cols-2 {
+	@apply grid-cols-2;
+
+	> :nth-child(2),
+	> :last-child:nth-child(-n + 2) {
+		border-top-right-radius: var(--grid-radius-top);
+	}
+	> :nth-child(2n + 1):nth-last-child(-n + 2) {
+		border-bottom-left-radius: var(--grid-radius-bottom);
+	}
+}
+@utility photo-cols-3 {
+	@apply grid-cols-3;
+
+	> :nth-child(3),
+	> :last-child:nth-child(-n + 3) {
+		border-top-right-radius: var(--grid-radius-top);
+	}
+	> :nth-child(3n + 1):nth-last-child(-n + 3) {
+		border-bottom-left-radius: var(--grid-radius-bottom);
+	}
+}
+@utility photo-cols-4 {
+	@apply grid-cols-4;
+
+	> :nth-child(4),
+	> :last-child:nth-child(-n + 4) {
+		border-top-right-radius: var(--grid-radius-top);
+	}
+	> :nth-child(4n + 1):nth-last-child(-n + 4) {
+		border-bottom-left-radius: var(--grid-radius-bottom);
+	}
+}
+@utility photo-cols-5 {
+	@apply grid-cols-5;
+
+	> :nth-child(5),
+	> :last-child:nth-child(-n + 5) {
+		border-top-right-radius: var(--grid-radius-top);
+	}
+	> :nth-child(5n + 1):nth-last-child(-n + 5) {
+		border-bottom-left-radius: var(--grid-radius-bottom);
+	}
+}
+@utility photo-cols-6 {
+	@apply grid-cols-6;
+
+	> :nth-child(6),
+	> :last-child:nth-child(-n + 6) {
+		border-top-right-radius: var(--grid-radius-top);
+	}
+	> :nth-child(6n + 1):nth-last-child(-n + 6) {
+		border-bottom-left-radius: var(--grid-radius-bottom);
+	}
+}
+@utility photo-cols-7 {
+	@apply grid-cols-7;
+
+	> :nth-child(7),
+	> :last-child:nth-child(-n + 7) {
+		border-top-right-radius: var(--grid-radius-top);
+	}
+	> :nth-child(7n + 1):nth-last-child(-n + 7) {
+		border-bottom-left-radius: var(--grid-radius-bottom);
 	}
 }
 

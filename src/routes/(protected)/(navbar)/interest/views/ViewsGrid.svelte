@@ -2,6 +2,7 @@
 	import { untrack } from "svelte";
 
 	import { ensureFavoriteNotes } from "$lib/api/users/favorite-notes-state.svelte";
+	import { getProfileGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import { Skeleton } from "$lib/components/ui/skeleton";
@@ -41,7 +42,10 @@
 			class="@container/photo-grid flex min-h-overscrollable w-full flex-col gap-3 pt-(--interest-header) pb-nav-clear"
 		>
 			{#if views.loading}
-				<div class="photo-grid">
+				<div
+					class="photo-grid"
+					data-grid-columns={getProfileGridColumnsSnapshot()}
+				>
 					{#each Array(24)}
 						<Skeleton class="aspect-square rounded-none" />
 					{/each}
@@ -57,7 +61,10 @@
 			{:else if views.views.length === 0}
 				<EmptyViewsGrid />
 			{:else}
-				<div class="photo-grid">
+				<div
+					class="photo-grid"
+					data-grid-columns={getProfileGridColumnsSnapshot()}
+				>
 					{#each views.views as entry (entry.key)}
 						{#if entry.type === "profile"}
 							<ViewedProfile view={entry.profile} />

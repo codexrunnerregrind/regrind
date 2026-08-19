@@ -10,6 +10,7 @@
 		deleteAlbum,
 		getMyAlbums,
 	} from "$lib/api/messaging/albums";
+	import { getAlbumGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import * as AlertDialog from "$lib/components/ui/alert-dialog";
 	import { Skeleton } from "$lib/components/ui/skeleton";
@@ -99,14 +100,20 @@
 			/>
 		</div>
 	{:else if albums === null}
-		<div class="object-grid gap-1">
+		<div
+			class="object-grid gap-1"
+			data-grid-columns={getAlbumGridColumnsSnapshot()}
+		>
 			{@render newAlbumTile()}
 			{#each Array(5)}
 				<Skeleton class="aspect-album rounded-lg" />
 			{/each}
 		</div>
 	{:else}
-		<div class="object-grid gap-1">
+		<div
+			class="object-grid gap-1"
+			data-grid-columns={getAlbumGridColumnsSnapshot()}
+		>
 			{@render newAlbumTile()}
 			{#each albums as album (album.albumId)}
 				<AlbumTile

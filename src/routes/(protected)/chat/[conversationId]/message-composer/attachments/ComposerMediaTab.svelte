@@ -12,6 +12,7 @@
 		getDrawerMedia,
 	} from "$lib/api/messaging/drawer";
 	import { asAppError } from "$lib/api/methods";
+	import { getAlbumGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import MediaImage from "$lib/components/shared/MediaImage.svelte";
 	import SelectionCheck from "$lib/components/shared/SelectionCheck.svelte";
@@ -177,7 +178,10 @@
 			/>
 		</div>
 	{:else if media === null}
-		<div class="photo-grid">
+		<div
+			class="photo-grid"
+			data-grid-columns={getAlbumGridColumnsSnapshot()}
+		>
 			{#each Array(12)}
 				<Skeleton class="aspect-(--photo-grid-aspect) rounded-none" />
 			{/each}
@@ -198,7 +202,10 @@
 			</Empty.Content>
 		</Empty.Root>
 	{:else}
-		<div class="photo-grid">
+		<div
+			class="photo-grid"
+			data-grid-columns={getAlbumGridColumnsSnapshot()}
+		>
 			<button
 				type="button"
 				class="flex aspect-(--photo-grid-aspect) cursor-pointer flex-col items-center justify-center gap-1 bg-card-foreground/5 text-muted-foreground transition-colors hover:bg-card-foreground/10 hover:text-foreground"

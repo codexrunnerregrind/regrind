@@ -3,6 +3,7 @@
 	import LockKeyIcon from "phosphor-svelte/lib/LockKeyIcon";
 
 	import { getSharedAlbumsFeed } from "$lib/api/messaging/albums";
+	import { getAlbumGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
 	import { AlbumOpener } from "$lib/components/albums/album-open.svelte";
 	import AlbumTile from "$lib/components/albums/AlbumTile.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
@@ -86,7 +87,10 @@
 					<ApiErrorDisplay {error} onRetry={() => void load()} />
 				</div>
 			{:else if albums === null}
-				<div class="photo-grid">
+				<div
+					class="photo-grid"
+					data-grid-columns={getAlbumGridColumnsSnapshot()}
+				>
 					{#each Array(2)}
 						<Skeleton class="aspect-3/4 rounded-lg" />
 					{/each}
@@ -104,7 +108,10 @@
 					</Empty.Header>
 				</Empty.Root>
 			{:else}
-				<div class="photo-grid">
+				<div
+					class="photo-grid"
+					data-grid-columns={getAlbumGridColumnsSnapshot()}
+				>
 					{#each albums as album (album.albumId)}
 						<AlbumTile
 							coverUrl={album.coverContent?.location ??

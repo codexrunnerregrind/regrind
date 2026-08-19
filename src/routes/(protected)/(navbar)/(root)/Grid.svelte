@@ -3,6 +3,7 @@
 		ensureFavoriteNotes,
 		favoriteNote,
 	} from "$lib/api/users/favorite-notes-state.svelte";
+	import { getProfileGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import { gridState } from "$lib/grid/grid-state.svelte";
 	import { armProfileDeck } from "$lib/profile/profile-deck";
@@ -94,6 +95,7 @@
 	<div
 		bind:this={gridElement}
 		class="photo-grid"
+		data-grid-columns={getProfileGridColumnsSnapshot()}
 		style:padding-top={search.active ? undefined : `${view.paddingTopPx}px`}
 		style:padding-bottom={search.active
 			? undefined
