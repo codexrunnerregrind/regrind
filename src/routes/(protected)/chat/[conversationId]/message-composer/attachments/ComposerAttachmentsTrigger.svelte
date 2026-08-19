@@ -4,7 +4,7 @@
 	import { scale } from "svelte/transition";
 
 	import ComposerButton from "../ComposerButton.svelte";
-	import { keepKeyboard } from "../keep-keyboard";
+	import { dropKeyboard, keepKeyboard } from "../keep-keyboard";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
 
 	let { onClick }: { onClick?: () => void } = $props();
@@ -17,12 +17,15 @@
 	class={["shrink-0", { "pointer-events-none": disabled }]}
 	transition:scale={{ duration: 400, easing: expoOut, start: 0 }}
 >
-	<!-- The drawer is welcome to take the keyboard down once it is up; what it
-	     must not do is take it down through the tap that opens it, which leaves
-	     the button somewhere else by the time the press lands. -->
+	<!-- The drawer wants the keyboard out of its way, but taking it down through
+	     the tap that opens it leaves the button somewhere else by the time the
+	     press lands. So the press holds the focus and the click that follows hands
+	     it back — the keys go as the sheet comes up, which is the order the drawer
+	     wanted anyway. -->
 	<ComposerButton
 		aria-label="Add attachment"
 		onclick={() => {
+			dropKeyboard();
 			onClick?.();
 		}}
 		onpointerdown={keepKeyboard}

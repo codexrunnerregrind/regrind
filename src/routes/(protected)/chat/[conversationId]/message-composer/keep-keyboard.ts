@@ -19,3 +19,24 @@
 export function keepKeyboard(event: Event) {
 	event.preventDefault();
 }
+
+/**
+ * Lets the keyboard go on purpose, once a control has done its work.
+ *
+ * The counterpart to `keepKeyboard` for anything that opens over the composer: a
+ * drawer wants the keys out of its way, but taking them down through the press
+ * itself is what moves the button out from under the finger. So the press keeps
+ * the focus long enough to land, and this drops it on the click that follows.
+ * Only an editable element is blurred — a control that has taken the focus for
+ * itself is not the keyboard's doing and is not ours to clear.
+ */
+export function dropKeyboard() {
+	const active = document.activeElement;
+	if (!(active instanceof HTMLElement)) return;
+	if (
+		active.isContentEditable ||
+		active.tagName === "INPUT" ||
+		active.tagName === "TEXTAREA"
+	)
+		active.blur();
+}
