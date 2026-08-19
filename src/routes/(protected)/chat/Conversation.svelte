@@ -39,6 +39,7 @@
 	const previewText = $derived(previewLabel(preview));
 	const conversationId = $derived(conversation.data.conversationId);
 	const draft = $derived(conversations.drafts.get(conversationId));
+	const typing = $derived(conversations.typing.isTyping(conversationId));
 
 	// A muted conversation still counts unread, it just doesn't shout about it.
 	const unreadSignal = $derived(
@@ -112,7 +113,12 @@
 					},
 				]}
 			>
-				{#if draft !== ""}
+				{#if typing}
+					<span
+						data-slot="conversation-typing"
+						class="font-medium text-primary">Typing…</span
+					>
+				{:else if draft !== ""}
 					<span
 						data-slot="conversation-draft-prefix"
 						class="font-bold text-primary">Draft:&nbsp;</span

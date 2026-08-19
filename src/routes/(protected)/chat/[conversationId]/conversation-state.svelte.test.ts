@@ -57,6 +57,7 @@ vi.mock("$lib/ws.svelte", async (importOriginal) => ({
 import { ApiError } from "$lib/api/api-error";
 import { ConversationUnavailableError } from "$lib/api/messaging/messages";
 import { Drafts } from "$lib/chat/drafts.svelte";
+import { TypingTracker } from "$lib/chat/typing.svelte";
 import type {
 	Message,
 	MessageDraft,
@@ -99,6 +100,7 @@ function conversationsStub() {
 		ensureLoaded: vi.fn(),
 		remove: vi.fn(() => ({ revert: vi.fn() })),
 		drafts: new Drafts(),
+		typing: new TypingTracker(),
 	};
 }
 

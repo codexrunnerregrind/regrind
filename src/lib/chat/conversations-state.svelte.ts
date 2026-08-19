@@ -14,32 +14,36 @@ import { applyOptimisticBatch } from "$lib/chat/optimistic-batch";
 import { previewFromMessage } from "$lib/model/messaging/message-preview";
 import { below } from "$lib/util/breakpoints.svelte";
 import { reconciler } from "$lib/util/reconcile";
-import {
-	chatV1ConversationDeleteEventSchema,
-	chatV1MessageSentEventSchema,
-	ws,
-} from "$lib/ws.svelte";
 import type { Conversation } from "$lib/model/messaging/conversations";
 import type { ApiResponseMessage } from "$lib/model/messaging/messages";
 import type { CachedConversation } from "./cached-conversation";
+import { CoalescedRefresh } from "./coalesced-refresh";
 import {
 	applyFavoriteEdit,
 	ConversationFilters,
 	type ConversationFilterSelection,
 	inboxFilterRequest,
 } from "./conversation-filters.svelte";
+import {
+	type OptimisticFlagField,
+	setConversationFlag,
+} from "./conversation-flags";
 import { fetchConversationWindow } from "./conversation-window";
+import { subscribeInboxRealtime } from "./conversations-realtime";
 import { Drafts } from "./drafts.svelte";
 import { FetchEpochs } from "./fetch-epochs";
+import { mergeIntoExisting, sortConversations } from "./inbox-entries";
 import { MessageCache } from "./message-cache";
 import { PendingDeletes } from "./pending-deletes";
 import { PendingFlags } from "./pending-flags";
 import { SeenMessages } from "./seen-messages";
+import { TypingTracker } from "./typing.svelte";
 import { UnreadWhileMissing } from "./unread-while-missing";
 
 const singleColumnLayout = below("split");
 
-type OptimisticFlagField = "pinned" | "muted";
+/** Long enough to fold a burst of server signals into one refetch. */
+const REFRESH_COALESCE_MS = 500;
 
 /** The two tabs of the inbox list. */
 export type InboxTab = "inbox" | "albums";
@@ -70,6 +74,7 @@ class ConversationsState {
 	readonly drafts = new Drafts();
 	readonly filters = new ConversationFilters();
 	readonly inboxViewed: InboxViewedMarker;
+	readonly typing = new TypingTracker();
 	#onIncomingMessage: IncomingMessageHandler;
 	#activeConversationId: string | null = null;
 	#wsPromises: Promise<() => void>[] = [];
@@ -83,6 +88,10 @@ class ConversationsState {
 	#fetches = new FetchEpochs();
 	#refreshRequestedSinceFetchStart = false;
 	#syncLatestInFlight: Promise<boolean> | null = null;
+	#coalescedRefresh = new CoalescedRefresh({
+		run: () => void this.refresh(),
+		delayMs: REFRESH_COALESCE_MS,
+	});
 	#unsubscribeProfileEdits = onProfileEdit(({ profileId, patch }) => {
 		if (patch.isFavorite === undefined) return;
 		applyFavoriteEdit({
@@ -109,31 +118,47 @@ class ConversationsState {
 		);
 
 		this.#wsPromises.push(
-			ws.on(
-				"chat.v1.message_sent",
-				chatV1MessageSentEventSchema,
-				(event) => {
-					if (this.#destroyed) return;
-					void this.#handleMessageSent(event.payload);
+			...subscribeInboxRealtime({
+				alive: () => !this.#destroyed,
+				onMessageSent: (message) => {
+					void this.#handleMessageSent(message);
 				},
-			),
-			ws.on(
-				"chat.v1.conversation.delete",
-				chatV1ConversationDeleteEventSchema,
-				(event) => {
-					if (this.#destroyed) return;
-					for (const id of event.payload.conversationIds) {
+				onConversationsDeleted: (ids) => {
+					for (const id of ids) {
 						this.remove(id);
+						this.typing.forget(id);
 						this.#markServerDeleted(id);
 					}
 				},
-			),
+				// The rows are already on screen, so a refetch of the window is
+				// what shows the change.
+				onConversationsUpdated: (ids) => {
+					for (const id of ids) this.invalidateConversation(id);
+					this.#coalescedRefresh.request();
+				},
+				onInboxStale: () => this.#coalescedRefresh.request(),
+				// The stored messages still say what they said when sent, so
+				// drop them and let the screen refetch.
+				onAlbumChanged: (id) => this.invalidateConversation(id),
+				onMessagesDeleted: (ids) => {
+					for (const id of ids) this.invalidateConversation(id);
+					// The deleted message may be the one a row previews.
+					this.#coalescedRefresh.request();
+				},
+				onTyping: ({ conversationId, profileId, status }) => {
+					// Our own typing, echoed from another device, is not news.
+					if (profileId === this.ourProfileId) return;
+					this.typing.note({ conversationId, profileId, status });
+				},
+			}),
 		);
 	}
 
 	async destroy(): Promise<void> {
 		this.#destroyed = true;
 		this.drafts.destroy();
+		this.typing.destroy();
+		this.#coalescedRefresh.cancel();
 		this.#unsubscribeReconcile();
 		this.#unsubscribeProfileEdits();
 		const unlisteners = await Promise.all(this.#wsPromises);
@@ -153,6 +178,9 @@ class ConversationsState {
 	async #handleMessageSent(message: ApiResponseMessage): Promise<void> {
 		const conversationId = message.conversationId;
 		const isIncoming = message.senderId !== this.ourProfileId;
+		// Sending ends typing. The server says so too, with a `Sent` status,
+		// but the message is the one signal that cannot arrive out of order.
+		this.typing.clear({ conversationId, profileId: message.senderId });
 		let entry = this.#find(conversationId);
 
 		if (this.#seenMessages.has(message.messageId)) {
@@ -462,53 +490,19 @@ class ConversationsState {
 		}
 	}
 
-	async #setFlag({
-		conversationIds,
-		field,
-		value,
-		request,
-		errorLabel,
-	}: {
+	#setFlag(args: {
 		conversationIds: string[];
 		field: OptimisticFlagField;
 		value: boolean;
 		request: (conversationId: string) => Promise<unknown>;
 		errorLabel: string;
 	}): Promise<void> {
-		const targets = conversationIds
-			.map((id) => this.#find(id))
-			.filter(
-				(entry): entry is Conversation =>
-					entry !== undefined && entry.data[field] !== value,
-			);
-		if (targets.length === 0) return;
-		for (const entry of targets) {
-			entry.data[field] = value;
-			this.#pendingFlags.mark({
-				conversationId: entry.data.conversationId,
-				field,
-			});
-		}
-		if (field === "pinned") this.#sortEntries();
-
-		try {
-			const rolledBack = await applyOptimisticBatch({
-				items: targets,
-				request: (entry) => request(entry.data.conversationId),
-				rollback: (entry) => {
-					entry.data[field] = !value;
-				},
-				errorLabel,
-			});
-			if (rolledBack) this.#sortEntries();
-		} finally {
-			for (const entry of targets) {
-				this.#pendingFlags.unmark({
-					conversationId: entry.data.conversationId,
-					field,
-				});
-			}
-		}
+		return setConversationFlag({
+			...args,
+			find: (id) => this.#find(id),
+			pendingFlags: this.#pendingFlags,
+			sort: () => this.#sortEntries(),
+		});
 	}
 
 	setPinned({
@@ -621,24 +615,18 @@ class ConversationsState {
 		existing: Conversation;
 		incoming: Conversation;
 	}): void {
-		const { unreadCount, ...data } = incoming.data;
-		for (const field of this.#pendingFlags.fields(
-			incoming.data.conversationId,
-		)) {
-			data[field] = existing.data[field];
-		}
-		Object.assign(existing.data, data);
-		if (incoming.data.conversationId !== this.#activeConversationId) {
-			existing.data.unreadCount = unreadCount;
-		}
+		mergeIntoExisting({
+			existing,
+			incoming,
+			pendingFields: this.#pendingFlags.fields(
+				incoming.data.conversationId,
+			),
+			activeConversationId: this.#activeConversationId,
+		});
 	}
 
 	#sortEntries(): void {
-		this.entries = this.entries.toSorted(
-			(a, b) =>
-				Number(b.data.pinned) - Number(a.data.pinned) ||
-				b.data.lastActivityTimestamp - a.data.lastActivityTimestamp,
-		);
+		this.entries = sortConversations(this.entries);
 	}
 
 	getCachedConversation(id: string): CachedConversation | undefined {

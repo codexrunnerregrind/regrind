@@ -1,19 +1,29 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { callMethodMock, connectedHandlers, droppedHandlers } = vi.hoisted(
-	() => ({
-		callMethodMock: vi.fn(() => Promise.resolve(1)),
-		connectedHandlers: [] as (() => void)[],
-		droppedHandlers: [] as ((skipped: number) => void)[],
-	}),
-);
+const {
+	callMethodMock,
+	connectedHandlers,
+	droppedHandlers,
+	undeliveredHandlers,
+} = vi.hoisted(() => ({
+	callMethodMock: vi.fn(() => Promise.resolve(1)),
+	connectedHandlers: [] as (() => void)[],
+	droppedHandlers: [] as ((skipped: number) => void)[],
+	undeliveredHandlers: [] as ((event: unknown) => void)[],
+}));
 
 vi.mock("$lib/api/methods", async (importOriginal) => ({
 	...(await importOriginal<typeof import("$lib/api/methods")>()),
 	callMethod: callMethodMock,
 }));
 vi.mock("$lib/ws.svelte", () => ({
+	notificationUndeliveredEventSchema: {},
 	ws: {
+		on(eventType: string, _schema: unknown, handler: (e: unknown) => void) {
+			if (eventType === "notification.undelivered")
+				undeliveredHandlers.push(handler);
+			return Promise.resolve(vi.fn());
+		},
 		onConnected(handler: () => void) {
 			connectedHandlers.push(handler);
 			return Promise.resolve(vi.fn());
@@ -30,6 +40,7 @@ const flushMockSubscriptions = () => vi.advanceTimersByTimeAsync(0);
 async function freshReconciler() {
 	connectedHandlers.length = 0;
 	droppedHandlers.length = 0;
+	undeliveredHandlers.length = 0;
 	vi.resetModules();
 	const { reconciler } = await import("./reconcile");
 	await flushMockSubscriptions();
@@ -40,6 +51,13 @@ function dropEvents(skipped: number) {
 	const [handler] = droppedHandlers;
 	if (!handler) throw new Error("nothing subscribed to ws:events-dropped");
 	handler(skipped);
+}
+
+function undeliveredNotification() {
+	const [handler] = undeliveredHandlers;
+	if (!handler)
+		throw new Error("nothing subscribed to notification.undelivered");
+	handler({ type: "notification.undelivered", payload: null });
 }
 
 function reconnect() {
@@ -126,5 +144,30 @@ describe("Reconciler resync after dropped websocket events", () => {
 
 		await vi.advanceTimersByTimeAsync(2000);
 		expect(handler).toHaveBeenCalledTimes(2);
+	});
+});
+
+describe("Reconciler resync after an undelivered notification", () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+		vi.spyOn(console, "warn").mockImplementation(() => undefined);
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.restoreAllMocks();
+	});
+
+	// The server holding events it could not deliver means anything may be
+	// stale, not just messages — the same position dropped events leave us in.
+	it("resyncs when the server reports it could not deliver an event", async () => {
+		const reconciler = await freshReconciler();
+		const handler = vi.fn();
+		reconciler.subscribe(handler);
+
+		undeliveredNotification();
+		await vi.advanceTimersByTimeAsync(0);
+
+		expect(handler).toHaveBeenCalledTimes(1);
 	});
 });

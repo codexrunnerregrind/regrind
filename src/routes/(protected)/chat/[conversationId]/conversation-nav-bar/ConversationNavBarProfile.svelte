@@ -7,7 +7,10 @@
 	import * as Card from "$lib/components/ui/card";
 	import type { ConversationProfile } from "../conversation-state.svelte";
 
-	let { profile }: { profile: ConversationProfile } = $props();
+	let {
+		profile,
+		typing = false,
+	}: { profile: ConversationProfile; typing?: boolean } = $props();
 </script>
 
 <a href="/profile/{profile.profileId}" class="flex-1 py-4 ps-1 pe-2">
@@ -29,7 +32,14 @@
 				<ProfileStatusIndicator onlineUntil={profile.onlineUntil} />
 				<DisplayName name={profile.name} class="truncate" />
 			</Card.Title>
-			{#if profile.distance === null}
+			{#if typing}
+				<Card.Description
+					data-slot="conversation-typing"
+					class="truncate text-meta font-medium text-primary"
+				>
+					Typing…
+				</Card.Description>
+			{:else if profile.distance === null}
 				<Card.Description class="truncate text-meta text-ink3">
 					Distance unknown
 				</Card.Description>

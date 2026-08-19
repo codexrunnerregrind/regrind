@@ -9,20 +9,20 @@ import {
 	sendMessage,
 } from "$lib/api/messaging/messages";
 import { getPreferences } from "$lib/app-data/preferences.svelte";
+import {
+	deletedConversationIds,
+	deletedMessageIds,
+} from "$lib/chat/message-deleted";
 import { previewFromMessage } from "$lib/model/messaging/message-preview";
 import { reconciler } from "$lib/util/reconcile";
-import {
-	chatV1ConversationDeleteEventSchema,
-	chatV1ConversationReadEventSchema,
-	chatV1MessageSentEventSchema,
-	ws,
-} from "$lib/ws.svelte";
 import type { ConversationsState } from "$lib/chat/conversations-state.svelte";
 import type {
 	ApiResponseMessage,
 	MessageDraft,
 	OutboundMessage,
 } from "$lib/model/messaging/messages";
+import type { ChatV1MessageDeletedEventPayload } from "$lib/ws.svelte";
+import { subscribeConversationRealtime } from "./conversation-realtime";
 import {
 	matchPendingEcho,
 	mergeServerMessages,
@@ -64,6 +64,11 @@ export class ConversationState {
 	readonly conversationId: string;
 	readonly ourProfileId: number;
 
+	/** Is the other side typing right now? */
+	get typing(): boolean {
+		return this.#conversations.typing.isTyping(this.conversationId);
+	}
+
 	#conversations: ConversationsState;
 	#readReceipts = new ReadReceiptQueue({
 		markRead: (messageId) => this.#markRead(messageId),
@@ -91,88 +96,20 @@ export class ConversationState {
 		);
 
 		this.#wsPromises.push(
-			ws.on(
-				"chat.v1.message_sent",
-				chatV1MessageSentEventSchema,
-				(event) => {
-					if (this.#destroyed) return;
-					const incoming = event.payload;
-					if (incoming.conversationId !== this.conversationId) return;
-
-					const existing = this.messages.find(
-						(m) => m.messageId === incoming.messageId,
-					);
-					if (existing) {
-						const moved = existing.timestamp !== incoming.timestamp;
-						Object.assign(existing, incoming, {
-							status: "sent" as const,
-						});
-						if (moved) this.#resortNewestFirst();
-						this.#syncCache();
-						return;
-					}
-
-					if (incoming.senderId === this.ourProfileId) {
-						const pending = matchPendingEcho({
-							messages: this.messages,
-							incoming,
-						});
-						if (pending) {
-							this.#adoptServerVersion({
-								message: pending,
-								serverMessageId: incoming.messageId,
-								serverTimestamp: incoming.timestamp,
-							});
-							return;
-						}
-					}
-
-					const newestTimestamp = this.messages.reduce(
-						(max, m) => Math.max(max, m.timestamp),
-						Number.NEGATIVE_INFINITY,
-					);
-					if (incoming.timestamp < newestTimestamp) return;
-
-					const msg: OptimisticMessage = {
-						...incoming,
-						status: "sent",
-					};
-					this.messages = [msg, ...this.messages];
-					this.#syncCache();
-					if (msg.senderId !== this.ourProfileId) {
-						void this.reportRead({
-							messageId: msg.messageId,
-							timestamp: msg.timestamp,
-						});
-					}
+			...subscribeConversationRealtime({
+				conversationId,
+				alive: () => !this.#destroyed,
+				onMessageSent: (message) => this.#handleMessageSent(message),
+				onReadReceipt: ({ profileId, timestamp }) => {
+					if (profileId === this.ourProfileId) return;
+					if (this.#advanceLastRead(timestamp)) this.#syncCache();
 				},
-			),
-			ws.on(
-				"chat.v1.conversation_read",
-				chatV1ConversationReadEventSchema,
-				(event) => {
-					if (this.#destroyed) return;
-					if (event.payload.conversationId !== this.conversationId)
-						return;
-					if (event.payload.profileId === this.ourProfileId) return;
-					if (this.#advanceLastRead(event.payload.timestamp))
-						this.#syncCache();
-				},
-			),
-			ws.on(
-				"chat.v1.conversation.delete",
-				chatV1ConversationDeleteEventSchema,
-				(event) => {
-					if (this.#destroyed) return;
-					if (
-						!event.payload.conversationIds.includes(
-							this.conversationId,
-						)
-					)
-						return;
+				onStale: () => {
 					void this.#reconcileMessages();
 				},
-			),
+				onMessagesDeleted: (payload) =>
+					this.#handleMessageDeleted(payload),
+			}),
 		);
 	}
 
@@ -195,6 +132,79 @@ export class ConversationState {
 		this.#wsPromises = [];
 		this.#unsubscribeReconcile();
 		this.#readReceipts.destroy();
+	}
+
+	/**
+	 * Fold an arriving message into the list: the server's version of one we
+	 * already show, the echo of one we just sent, or a new one at the top.
+	 */
+	#handleMessageSent(incoming: ApiResponseMessage): void {
+		const existing = this.messages.find(
+			(m) => m.messageId === incoming.messageId,
+		);
+		if (existing) {
+			const moved = existing.timestamp !== incoming.timestamp;
+			Object.assign(existing, incoming, { status: "sent" as const });
+			if (moved) this.#resortNewestFirst();
+			this.#syncCache();
+			return;
+		}
+
+		if (incoming.senderId === this.ourProfileId) {
+			const pending = matchPendingEcho({
+				messages: this.messages,
+				incoming,
+			});
+			if (pending) {
+				this.#adoptServerVersion({
+					message: pending,
+					serverMessageId: incoming.messageId,
+					serverTimestamp: incoming.timestamp,
+				});
+				return;
+			}
+		}
+
+		const newestTimestamp = this.messages.reduce(
+			(max, m) => Math.max(max, m.timestamp),
+			Number.NEGATIVE_INFINITY,
+		);
+		if (incoming.timestamp < newestTimestamp) return;
+
+		const msg: OptimisticMessage = { ...incoming, status: "sent" };
+		this.messages = [msg, ...this.messages];
+		this.#syncCache();
+		if (msg.senderId !== this.ourProfileId) {
+			void this.reportRead({
+				messageId: msg.messageId,
+				timestamp: msg.timestamp,
+			});
+		}
+	}
+
+	/**
+	 * Drop the messages a delete names. The payload is undocumented, so we only
+	 * trust ids we can match against what we hold, and refetch whenever the
+	 * event leaves us unable to point at anything — including when it names no
+	 * conversation, since a delete we ignore would leave a message on screen
+	 * that no longer exists.
+	 */
+	#handleMessageDeleted(
+		payload: ChatV1MessageDeletedEventPayload["payload"],
+	): void {
+		const conversationIds = deletedConversationIds(payload);
+		if (
+			conversationIds.length > 0 &&
+			!conversationIds.includes(this.conversationId)
+		) {
+			return;
+		}
+
+		const removed = deletedMessageIds(payload).filter((messageId) =>
+			this.messages.some((message) => message.messageId === messageId),
+		);
+		for (const messageId of removed) this.remove(messageId);
+		if (removed.length === 0) void this.#reconcileMessages();
 	}
 
 	async #reconcileMessages(): Promise<void> {

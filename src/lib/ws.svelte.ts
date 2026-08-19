@@ -43,6 +43,72 @@ export const chatV1ConversationReadEventSchema =
 		}),
 	});
 
+export const chatV1ConversationUpdateEventSchema =
+	notificationEventSchema.safeExtend({
+		type: z.literal("chat.v1.conversation.update"),
+		payload: z.object({ conversationIds: z.array(z.string()) }),
+	});
+
+/**
+ * A share, unshare, expiry change or view on an album already sent to a
+ * conversation. The message itself never changes, so only a refetch of the
+ * conversation can tell the album bubble what it now says.
+ */
+export const chatV1RefreshDynamicEventSchema =
+	notificationEventSchema.safeExtend({
+		type: z.literal("chat.v1.refresh_dynamic"),
+		payload: z.object({
+			conversationId: z.string(),
+			messageType: z.string().nullish(),
+		}),
+	});
+
+export const TYPING_STATUSES = ["Typing", "Cleared", "Sent"] as const;
+export type TypingStatus = (typeof TYPING_STATUSES)[number];
+
+export const chatV1TypingStatusEventSchema = notificationEventSchema.safeExtend(
+	{
+		type: z.literal("chat.v1.typing_status"),
+		payload: z.object({
+			conversationId: z.string(),
+			profileId: z.coerce.number(),
+			status: z.enum(TYPING_STATUSES),
+		}),
+	},
+);
+
+/**
+ * A hard delete of a message, as opposed to the unsend that arrives as a
+ * `chat.v1.message_sent` carrying `unsent`. The payload is undocumented, so we
+ * read whichever of the ids it turns out to carry and fall back to refetching
+ * the conversation when it carries none we recognise.
+ */
+export const chatV1MessageDeletedEventSchema =
+	notificationEventSchema.safeExtend({
+		type: z.literal("chat.v1.message_deleted"),
+		payload: z.looseObject({
+			conversationId: z.string().nullish(),
+			conversationIds: z.array(z.string()).nullish(),
+			messageId: z.string().nullish(),
+			messageIds: z.array(z.string()).nullish(),
+		}),
+	});
+
+/** Undocumented payload; the type alone is the signal to refresh the inbox. */
+export const chatV1CacheBombInboxEventSchema =
+	notificationEventSchema.safeExtend({
+		type: z.literal("chat.v1.cache_bomb.inbox"),
+	});
+
+/**
+ * The server telling us it holds events it could not deliver — so our local
+ * state may be missing anything, not just messages. Undocumented payload.
+ */
+export const notificationUndeliveredEventSchema =
+	notificationEventSchema.safeExtend({
+		type: z.literal("notification.undelivered"),
+	});
+
 export const tapV1TapSentEventSchema = notificationEventSchema.safeExtend({
 	type: z.literal("tap.v1.tap_sent"),
 	payload: z.object({
@@ -83,6 +149,18 @@ export type ChatV1ConversationDeleteEventPayload = z.infer<
 >;
 export type ChatV1ConversationReadEventPayload = z.infer<
 	typeof chatV1ConversationReadEventSchema
+>;
+export type ChatV1ConversationUpdateEventPayload = z.infer<
+	typeof chatV1ConversationUpdateEventSchema
+>;
+export type ChatV1RefreshDynamicEventPayload = z.infer<
+	typeof chatV1RefreshDynamicEventSchema
+>;
+export type ChatV1TypingStatusEventPayload = z.infer<
+	typeof chatV1TypingStatusEventSchema
+>;
+export type ChatV1MessageDeletedEventPayload = z.infer<
+	typeof chatV1MessageDeletedEventSchema
 >;
 
 export type WsStatus = "disconnected" | "connected";

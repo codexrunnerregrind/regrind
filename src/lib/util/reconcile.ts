@@ -1,6 +1,6 @@
 import { appLifecycle } from "$lib/api/app-lifecycle.svelte";
 import { callMethod } from "$lib/api/methods";
-import { ws } from "$lib/ws.svelte";
+import { notificationUndeliveredEventSchema, ws } from "$lib/ws.svelte";
 
 const THROTTLE_MS = 2000;
 
@@ -26,6 +26,20 @@ class Reconciler {
 			console.warn(`[ws] resyncing after ${skipped} dropped events`);
 			this.#scheduleResync();
 		}).catch((error) => console.error(error));
+
+		// The server admitting it holds events it could not deliver. What we
+		// missed is unknowable from here, so treat it exactly like events we
+		// dropped ourselves and resync every subscriber.
+		ws.on(
+			"notification.undelivered",
+			notificationUndeliveredEventSchema,
+			() => {
+				console.warn(
+					"[ws] resyncing after an undelivered notification",
+				);
+				this.#scheduleResync();
+			},
+		).catch((error) => console.error(error));
 
 		if (typeof document !== "undefined") {
 			document.addEventListener("visibilitychange", () => {

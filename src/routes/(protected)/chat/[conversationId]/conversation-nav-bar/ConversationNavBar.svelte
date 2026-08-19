@@ -36,7 +36,10 @@
 	{:else if conversationState.error}
 		<span class="flex-1">Failed to load conversation</span>
 	{:else}
-		<ConversationNavBarProfile profile={conversationState.profile} />
+		<ConversationNavBarProfile
+			profile={conversationState.profile}
+			typing={conversationState.typing}
+		/>
 		<ConversationSharedAlbums
 			profileId={conversationState.profile.profileId}
 			name={conversationState.profile.name}
