@@ -125,14 +125,15 @@
 		onSelectionChange(selected.size);
 	}
 
-	// Read by the sheet to label its confirm button.
+	// Read by the sheet, which hosts the button and the expiry picker on the line
+	// above the tab bar, level with the media tab's own send button.
 	export function actionLabel(): string {
-		return stopMode ? "Stop sharing" : "Send";
+		if (stopMode) return "Stop sharing";
+		return selected.size > 1
+			? `Share ${selected.size} Albums`
+			: "Share Album";
 	}
 
-	// Handed to the sheet's floating row so the expiry sits directly above the
-	// send button it belongs to. In this tab's own flow it appeared and
-	// disappeared with the selection, and every album below it jumped a row.
 	export function expiryControl() {
 		if (stopMode || selected.size === 0) return null;
 		return {

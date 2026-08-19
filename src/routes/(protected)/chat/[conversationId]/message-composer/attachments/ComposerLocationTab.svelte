@@ -3,13 +3,16 @@
 
 	import { getGeohashSnapshot } from "$lib/app-data/preferences.svelte";
 	import GeoMapPicker from "$lib/components/location-chooser/GeoMapPicker.svelte";
-	import { Button } from "$lib/components/ui/button";
 	import { decodeGeohash } from "$lib/model/geohash";
 	import { draftFromMessage } from "$lib/model/messaging/messages";
 	import { hapticImpact } from "$lib/platform/haptics";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
 
-	let { onClose }: { onClose: () => void } = $props();
+	let {
+		onClose,
+		onSelectionChange,
+	}: { onClose: () => void; onSelectionChange: (count: number) => void } =
+		$props();
 
 	const composer = getMessageComposerContext();
 
@@ -37,7 +40,18 @@
 		void geoMapPicker?.locate({ silent: true });
 	});
 
-	function send() {
+	// A dropped pin arms the sheet's send button the way a picked photo does, so
+	// the button sits level with the one on the media tab instead of under the
+	// map.
+	$effect(() => {
+		onSelectionChange(pinPos ? 1 : 0);
+	});
+
+	export function actionLabel(): string {
+		return atCurrentLocation ? "Send current location" : "Send location";
+	}
+
+	export function sendSelected() {
 		if (!pinPos) return;
 		void composer().sendMessages([
 			draftFromMessage({
@@ -61,7 +75,4 @@
 			bind:this={geoMapPicker}
 		/>
 	</div>
-	<Button size="lg" disabled={!pinPos} onclick={send}>
-		{atCurrentLocation ? "Send current location" : "Send location"}
-	</Button>
 </div>

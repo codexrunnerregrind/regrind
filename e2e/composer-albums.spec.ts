@@ -14,7 +14,7 @@ import { expectNoToast } from "./support/toast";
 const OTHER_CONVERSATION = "/chat/100009:123456000";
 
 test.describe("composer albums tab", () => {
-	test("each tab arms Send from its own selection", async ({ page }) => {
+	test("the albums tab shares from its own button", async ({ page }) => {
 		await serveImages(page, CHAT_MEDIA_HOST);
 		await openAttachments(page);
 
@@ -26,20 +26,24 @@ test.describe("composer albums tab", () => {
 			"a non-shareable album cannot be picked",
 		).toHaveCount(1);
 
-		const send = page.getByRole("button", { name: /^Send/ });
+		const share = page.getByRole("button", { name: /^Share Album/ });
+		await expect(
+			share,
+			"the share button waits on a selection",
+		).toBeDisabled();
 		await tiles.first().click();
-		await expect(send).toBeVisible();
+		await expect(share).toBeEnabled();
 
 		await page.getByRole("tab", { name: "Media" }).click();
 		await expect(
-			send,
-			"an album selection must not arm Send on the media tab",
+			share,
+			"an album selection must not arm anything on the media tab",
 		).toBeHidden();
 
 		await page.getByRole("tab", { name: "Albums" }).click();
-		await expect(send).toBeVisible();
+		await expect(share).toBeVisible();
 
-		await send.click();
+		await share.click();
 		await expect(page.locator(DRAWER)).toBeHidden();
 
 		await expectNoToast(page, "Couldn't share album");
@@ -63,8 +67,8 @@ test.describe("composer albums tab", () => {
 		await expect(tiles.first()).toBeVisible({ timeout: 30_000 });
 		await tiles.first().click();
 
-		const send = page.getByRole("button", { name: /^Send/ });
-		await expect(send).toBeVisible();
+		const share = page.getByRole("button", { name: /^Share Album/ });
+		await expect(share).toBeVisible();
 
 		await page.goBack();
 		await expect(page).toHaveURL(new RegExp(`${DEMO_CONVERSATION}$`));
@@ -72,7 +76,7 @@ test.describe("composer albums tab", () => {
 			page.locator(DRAWER),
 			"a selection armed for the previous conversation must not survive",
 		).toBeHidden();
-		await expect(send).toBeHidden();
+		await expect(share).toBeHidden();
 	});
 
 	test("closing the drawer forgets the selection it was armed with", async ({
@@ -85,9 +89,9 @@ test.describe("composer albums tab", () => {
 		const tiles = page.locator(ALBUM_TILE);
 		await expect(tiles.first()).toBeVisible({ timeout: 30_000 });
 
-		const send = page.getByRole("button", { name: /^Send/ });
+		const share = page.getByRole("button", { name: /^Share Album/ });
 		await tiles.first().click();
-		await expect(send).toBeVisible();
+		await expect(share).toBeVisible();
 
 		await page.keyboard.press("Escape");
 		await expect(page.locator(DRAWER)).toBeHidden();
@@ -100,8 +104,8 @@ test.describe("composer albums tab", () => {
 			"the reopened tab starts with nothing selected",
 		).toHaveCount(0);
 		await expect(
-			send,
-			"so Send must not still be armed from the closed drawer",
+			share,
+			"so the share button must not still be armed from the closed drawer",
 		).toBeHidden();
 	});
 

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import CaretDownIcon from "phosphor-svelte/lib/CaretDownIcon";
+	import CheckCircleIcon from "phosphor-svelte/lib/CheckCircleIcon";
 	import FolderOpenIcon from "phosphor-svelte/lib/FolderOpenIcon";
 	import ImageIcon from "phosphor-svelte/lib/ImageIcon";
 	import NavigationArrowIcon from "phosphor-svelte/lib/NavigationArrowIcon";
@@ -24,7 +25,7 @@
 	// `actionLabel` lets a tab rename the confirm button — the albums tab takes a
 	// share back as readily as it grants one, and "Send" is wrong for that.
 	// `expiryControl` lets a tab put a setting of its own on the line above the
-	// send button, where it stays put as the tab's own content scrolls.
+	// confirm button, where it stays put as the tab's own content scrolls.
 	type ExpiryControl = {
 		label: string;
 		selected: string;
@@ -48,6 +49,10 @@
 	let expiring = $state(false);
 
 	const selectedCount = $derived(counts[selectedTab] ?? 0);
+
+	// Every tab confirms from the same row, so its button sits at one height
+	// whichever tab is showing.
+	const showActionRow = $derived(selectedCount > 0);
 
 	// Closed with the selection: the dropdown's content is portalled out of the
 	// row, so nothing else would take it off screen with the button that opened
@@ -178,30 +183,34 @@
 						/>
 					</Tabs.Content>
 					<Tabs.Content value="location">
-						<ComposerLocationTab onClose={() => (open = false)} />
+						<ComposerLocationTab
+							bind:this={tabs.location}
+							onSelectionChange={(count) =>
+								(counts.location = count)}
+							onClose={() => (open = false)}
+						/>
 					</Tabs.Content>
 				</div>
 			</div>
 
 			<!-- The row stays mounted and animates by class rather than flying in
 			     and out of the DOM: as a leaving branch it stopped updating mid
-			     flight, so the expiry menu opened from inside it hung on screen,
-			     still open, until the flight finished. `inert` closes it to input
-			     while it is away. -->
+			     flight, so anything opened from inside it hung on screen until
+			     the flight finished. `inert` closes it to input while it is
+			     away. -->
 			<div
 				class={[
-					"pointer-events-none absolute inset-x-0 bottom-18 flex flex-col items-center gap-2",
+					"pointer-events-none absolute inset-x-0 bottom-20 z-1100 flex flex-col items-center gap-3",
 					// `visibility` rides along so the row is gone for good once it
 					// has flown out — opacity alone leaves the buttons standing
 					// in the page, reachable by anything that goes by role.
 					"transition-[opacity,transform,visibility] duration-300 ease-out motion-reduce:transition-none",
 					{
-						"visible translate-y-0 opacity-100": selectedCount > 0,
-						"invisible translate-y-28 opacity-0":
-							selectedCount === 0,
+						"visible translate-y-0 opacity-100": showActionRow,
+						"invisible translate-y-28 opacity-0": !showActionRow,
 					},
 				]}
-				inert={selectedCount === 0}
+				inert={!showActionRow}
 			>
 				<!-- The menu is mounted with its trigger, not around the whole
 				     row: a root that comes up before its trigger exists takes no
@@ -211,18 +220,24 @@
 					<DropdownMenu.Root bind:open={expiryOpen}>
 						<DropdownMenu.Trigger>
 							{#snippet child({ props })}
-								<Button
+								<button
 									{...props}
-									variant="secondary"
-									size="sm"
-									class="pointer-events-auto shadow-lg"
+									type="button"
+									class="pointer-events-auto flex items-center gap-1.5 text-base font-semibold"
 								>
+									<CheckCircleIcon
+										weight="regular"
+										class="size-5 text-primary"
+									/>
 									{expiry.label}
-									<CaretDownIcon class="size-3.5" />
-								</Button>
+									<CaretDownIcon
+										weight="bold"
+										class="size-3.5"
+									/>
+								</button>
 							{/snippet}
 						</DropdownMenu.Trigger>
-						<DropdownMenu.Content align="center">
+						<DropdownMenu.Content class="w-52" align="center">
 							<DropdownMenu.Label
 								>Share album for…</DropdownMenu.Label
 							>
@@ -231,6 +246,14 @@
 									onSelect={() =>
 										expiry.select(option.value as never)}
 								>
+									{#if option.value === expiry.selected}
+										<CheckCircleIcon
+											weight="fill"
+											class="size-5 text-primary"
+										/>
+									{:else}
+										<span class="size-5"></span>
+									{/if}
 									{option.label}
 								</DropdownMenu.Item>
 							{/each}
@@ -272,12 +295,14 @@
 						{expiring && selectedTab === "media"
 							? "Send Expiring"
 							: (tabs[selectedTab]?.actionLabel?.() ?? "Send")}
-						<Badge
-							variant="secondary"
-							class="bg-primary-foreground/10 text-primary-foreground"
-						>
-							{selectedCount}
-						</Badge>
+						{#if selectedTab === "media"}
+							<Badge
+								variant="secondary"
+								class="bg-primary-foreground/10 text-primary-foreground"
+							>
+								{selectedCount}
+							</Badge>
+						{/if}
 					</Button>
 				</div>
 			</div>
