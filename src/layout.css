@@ -354,6 +354,18 @@
 	}
 }
 
+/* How far the software keyboard covers the layout viewport, written by
+   applyKeyboardInset to the root element. Zero unless iOS left the webview at
+   full height with the keyboard over it — see keyboard-inset.ts.
+
+   Declared on :root alone, deliberately. The block below sets its tokens on
+   :root *and* body, and a copy on body would shadow what applyKeyboardInset
+   writes to the root for everything inside it — leaving the fallback 0px to
+   win over a real keyboard. */
+:root {
+	--keyboard-inset: 0px;
+}
+
 :root,
 body {
 	min-height: 100dvh;
@@ -366,11 +378,12 @@ body {
 	--selection-bar-height: 4.75rem;
 	--content-pb: calc(var(--nav-height) + var(--safe-area-bottom));
 	--screen-safe: calc(
-		100dvh - var(--safe-area-top) - var(--safe-area-bottom)
+		100dvh - var(--safe-area-top) - var(--safe-area-bottom) -
+			var(--keyboard-inset)
 	);
 	/* Runs under the bottom navbar; pair with -mb-(--content-pb) and
 	   pb-nav-clear so content scrolls beneath the navbar's blur. */
-	--screen-nav: calc(100dvh - var(--safe-area-top));
+	--screen-nav: calc(100dvh - var(--safe-area-top) - var(--keyboard-inset));
 	text-rendering: geometricPrecision;
 	image-rendering: optimizeQuality;
 	shape-rendering: geometricPrecision;
