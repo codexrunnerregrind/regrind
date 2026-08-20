@@ -62,10 +62,14 @@
 		conversations.activeTab = value as InboxTab;
 	}
 
-	function cycleTab(delta: number) {
+	// False past either end, handing the swipe to the tab-bar swipe around this
+	// list: a flick past Albums carries on to the You tab.
+	function cycleTab(delta: number): boolean {
 		const index = tabs.findIndex((tab) => tab.value === activeTab);
 		const next = tabs[index + delta];
-		if (next) selectTab(next.value);
+		if (!next) return false;
+		selectTab(next.value);
+		return true;
 	}
 
 	const selection = new SelectionSet<string>();

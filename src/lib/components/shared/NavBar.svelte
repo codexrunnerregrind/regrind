@@ -1,15 +1,11 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import ChatCircleIcon from "phosphor-svelte/lib/ChatCircleIcon";
-	import FireIcon from "phosphor-svelte/lib/FireIcon";
-	import LightningIcon from "phosphor-svelte/lib/LightningIcon";
-	import SquaresFourIcon from "phosphor-svelte/lib/SquaresFourIcon";
-	import UserIcon from "phosphor-svelte/lib/UserIcon";
 	import { untrack } from "svelte";
 
 	import { getProfile } from "$lib/api/users/profiles";
 	import { getOrCreateConversationsState } from "$lib/chat/conversations-context.svelte";
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
+	import { navTabs } from "$lib/components/shared/nav-tabs";
 	import { getTapsState } from "$lib/interest/taps-state.svelte";
 	import { getViewActivityState } from "$lib/interest/view-activity.svelte";
 	import { hapticSelection } from "$lib/platform/haptics";
@@ -54,57 +50,17 @@
 		),
 	);
 
-	// Each tab owns a route prefix rather than an exact id so subpages (a
-	// settings subpage, an interest sub-tab) keep their tab lit.
-	const tabs = [
-		{
-			href: "/",
-			label: "Browse",
-			icon: SquaresFourIcon,
-			match: (id: string) => id === "/(protected)/(navbar)/(root)",
-		},
-		{
-			href: "/right-now",
-			label: "Right Now",
-			icon: LightningIcon,
-			match: (id: string) => id === "/(protected)/(navbar)/right-now",
-		},
-		{
-			href: "/interest",
-			// The flame the rest of the app taps with (TapIcon, the profile
-			// composer, the media viewer). A star meant nothing here — the tab is
-			// where taps and views are read, so it wears the tap's own glyph.
-			label: "Interest",
-			icon: FireIcon,
-			match: (id: string) =>
-				id.startsWith("/(protected)/(navbar)/interest"),
-		},
-		{
-			href: "/chat",
-			label: "Inbox",
-			icon: ChatCircleIcon,
-			match: (id: string) => id.startsWith("/(protected)/chat"),
-		},
-		{
-			href: "/settings",
-			label: "You",
-			icon: UserIcon,
-			match: (id: string) =>
-				id.startsWith("/(protected)/(navbar)/settings"),
-		},
-	];
-
 	// Which tab the pill sits over. A route no tab claims (there is none today,
 	// but a future one would) leaves it under the first rather than off-screen.
 	const activeIndex = $derived(
 		Math.max(
-			tabs.findIndex((tab) => tab.match(page.route.id ?? "")),
+			navTabs.findIndex((tab) => tab.match(page.route.id ?? "")),
 			0,
 		),
 	);
 </script>
 
-{#snippet glyph(Icon: (typeof tabs)[number]["icon"])}
+{#snippet glyph(Icon: (typeof navTabs)[number]["icon"])}
 	<Icon class="size-5.25" />
 {/snippet}
 
@@ -152,7 +108,7 @@
 				style:transform="translateX(calc({activeIndex} * 100%))"
 			></span>
 		{/if}
-		{#each tabs as tab (tab.href)}
+		{#each navTabs as tab (tab.href)}
 			{@const active = tab.match(page.route.id ?? "")}
 			<a
 				href={tab.href}

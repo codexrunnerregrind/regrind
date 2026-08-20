@@ -6,10 +6,12 @@
 		getOrCreateConversationsState,
 		setConversations,
 	} from "$lib/chat/conversations-context.svelte";
+	import { swipeToNavTab } from "$lib/components/shared/nav-tabs";
 	import NavBar from "$lib/components/shared/NavBar.svelte";
 	import * as Card from "$lib/components/ui/card";
 	import * as Resizable from "$lib/components/ui/resizable";
 	import { below } from "$lib/util/breakpoints.svelte";
+	import { swipeTabs } from "$lib/util/swipe-tabs";
 	import ConversationsList from "./ConversationsList.svelte";
 
 	let { data, children }: import("./$types").LayoutProps = $props();
@@ -50,8 +52,17 @@
 	const mobile = below("split");
 </script>
 
+<!-- Inbox sits outside the (navbar) layout, so the tab-bar swipe is attached
+     here too. Only on mobile, and `swipeToNavTab` itself declines inside a
+     conversation, where a horizontal swipe belongs to the message rows. The
+     list's own Messages/Albums swipe nests inside and goes first. -->
 <main
 	class="flex h-(--viewport-height) w-full flex-1 pt-(--safe-area-top) pb-(--safe-area-bottom)"
+	use:swipeTabs={{
+		enabled: mobile.current,
+		onNext: () => swipeToNavTab(page.route.id, 1),
+		onPrev: () => swipeToNavTab(page.route.id, -1),
+	}}
 >
 	{#if !mobile.current}
 		<Resizable.PaneGroup

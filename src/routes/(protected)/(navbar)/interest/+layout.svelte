@@ -50,9 +50,13 @@
 		void goto(value);
 	}
 
-	function selectIndex(index: number) {
+	// False when the swipe runs off either end, which hands it to the tab-bar
+	// swipe wrapping this layout: a flick past Taps carries on to Inbox.
+	function selectIndex(index: number): boolean {
 		const tab = tabs[index];
-		if (tab) select(tab.value);
+		if (!tab) return false;
+		select(tab.value);
+		return true;
 	}
 </script>
 
