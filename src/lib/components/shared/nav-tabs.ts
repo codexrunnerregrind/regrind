@@ -73,34 +73,22 @@ export function swipeableTabIndex(routeId: string | null | undefined): number {
 }
 
 /**
- * Whether there is a tab `delta` along from wherever the route sits.
+ * Move `delta` tabs from wherever the route sits. Returns false — declining
+ * the swipe, so anything wrapping this can have it — when there is no tab that
+ * way, which is both ends of the bar and every screen that is not a tab root.
  *
  * Deliberately not wrapping: the tab bar is a row of five, and a flick off one
- * end landing at the other end is disorienting in a way a dead end is not. The
- * drag rubber-bands there instead.
- */
-export function canSwipeToNavTab(
-	routeId: string | null | undefined,
-	delta: number,
-): boolean {
-	const index = swipeableTabIndex(routeId);
-	return index !== -1 && navTabs[index + delta] !== undefined;
-}
-
-/**
- * Move `delta` tabs from wherever the route sits. Returns false — declining the
- * swipe, so anything wrapping this can have it — when there is no tab that way,
- * and otherwise the navigation, so the gesture can hold the incoming tab
- * off-screen until its content is there.
+ * end landing at the other end is disorienting in a way a dead end is not.
  */
 export function swipeToNavTab(
 	routeId: string | null | undefined,
 	delta: number,
-): false | Promise<void> {
+): boolean {
 	const index = swipeableTabIndex(routeId);
 	if (index === -1) return false;
 	const tab = navTabs[index + delta];
 	if (!tab) return false;
 	hapticSelection();
-	return goto(tab.href);
+	void goto(tab.href);
+	return true;
 }

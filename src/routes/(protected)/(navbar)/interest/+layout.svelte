@@ -52,13 +52,11 @@
 
 	// False when the swipe runs off either end, which hands it to the tab-bar
 	// swipe wrapping this layout: a flick past Taps carries on to Inbox.
-	// Otherwise the navigation, which is what the gesture holds the incoming
-	// sub-tab off-screen for.
-	function selectIndex(index: number): false | Promise<void> {
+	function selectIndex(index: number): boolean {
 		const tab = tabs[index];
-		if (!tab || tab.value === page.url.pathname) return false;
-		hapticSelection();
-		return goto(tab.value);
+		if (!tab) return false;
+		select(tab.value);
+		return true;
 	}
 </script>
 
@@ -83,8 +81,6 @@
 	class="contents"
 	style:--interest-header="calc({headerHeight}px - var(--safe-area-top))"
 	use:swipeTabs={{
-		canNext: () => tabs[activeIndex + 1] !== undefined,
-		canPrev: () => tabs[activeIndex - 1] !== undefined,
 		onNext: () => selectIndex(activeIndex + 1),
 		onPrev: () => selectIndex(activeIndex - 1),
 	}}

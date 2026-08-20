@@ -6,10 +6,7 @@
 		getOrCreateConversationsState,
 		setConversations,
 	} from "$lib/chat/conversations-context.svelte";
-	import {
-		canSwipeToNavTab,
-		swipeToNavTab,
-	} from "$lib/components/shared/nav-tabs";
+	import { swipeToNavTab } from "$lib/components/shared/nav-tabs";
 	import NavBar from "$lib/components/shared/NavBar.svelte";
 	import * as Card from "$lib/components/ui/card";
 	import * as Resizable from "$lib/components/ui/resizable";
@@ -63,8 +60,6 @@
 	class="flex h-(--viewport-height) w-full flex-1 pt-(--safe-area-top) pb-(--safe-area-bottom)"
 	use:swipeTabs={{
 		enabled: mobile.current,
-		canNext: () => canSwipeToNavTab(page.route.id, 1),
-		canPrev: () => canSwipeToNavTab(page.route.id, -1),
 		onNext: () => swipeToNavTab(page.route.id, 1),
 		onPrev: () => swipeToNavTab(page.route.id, -1),
 	}}
