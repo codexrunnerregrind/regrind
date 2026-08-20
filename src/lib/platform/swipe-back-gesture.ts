@@ -118,6 +118,20 @@ export function applySwipeBackGesture(): () => void {
 			screen!.style.transition = "none";
 			screen!.style.willChange = "transform";
 			screen!.style.boxShadow = "-12px 0 24px rgba(0, 0, 0, 0.35)";
+			// iOS draws a focused field's caret and selection in a native
+			// overlay that neither the transform nor a layout offset carries
+			// along, so a drag strands it as a dark bar across the composer —
+			// and being native, no CSS on the field reaches it. Ending the
+			// editing session is the only thing that clears it, which is also
+			// what a back gesture does in most iOS apps. The cost is a
+			// cancelled swipe coming back without the keyboard.
+			const editing = document.activeElement;
+			if (
+				editing instanceof HTMLInputElement ||
+				editing instanceof HTMLTextAreaElement ||
+				(editing instanceof HTMLElement && editing.isContentEditable)
+			)
+				editing.blur();
 		}
 
 		const dt = event.timeStamp - lastT;
