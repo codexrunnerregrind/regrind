@@ -13,7 +13,6 @@
 	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
 	import { hapticImpact, hapticSelection } from "$lib/platform/haptics";
 	import { below } from "$lib/util/breakpoints.svelte";
-	import { observeIntersection } from "$lib/util/observe-intersection";
 	import { restoreScrollOnce } from "$lib/util/scroll-restore.svelte";
 	import { SelectionSet } from "$lib/util/selection.svelte";
 	import { swipeTabs } from "$lib/util/swipe-tabs";
@@ -25,9 +24,9 @@
 	import AlbumsTab from "./AlbumsTab.svelte";
 	import Conversation from "./Conversation.svelte";
 	import ConversationsFilters from "./ConversationsFilters.svelte";
+	import ConversationsPagingTail from "./ConversationsPagingTail.svelte";
 	import ConversationsSelectionBar from "./ConversationsSelectionBar.svelte";
 	import DeleteConversationsDialog from "./DeleteConversationsDialog.svelte";
-	import EmptyConversationsList from "./EmptyConversationsList.svelte";
 	import LazyConversation from "./LazyConversation.svelte";
 
 	const EAGER_COUNT = 10;
@@ -37,7 +36,7 @@
 	const visibleEntries = $derived(conversations.visibleEntries);
 
 	$effect(() => {
-		conversations.noteVisibleActivity();
+		conversations.noteListViewed();
 	});
 
 	let container: HTMLDivElement | null = $state(null);
@@ -327,33 +326,14 @@
 						{/if}
 						{#each restEntries as conversation, i (conversation.data.conversationId)}
 							{@render row(conversation, i < EAGER_COUNT)}
-						{:else}
-							{#if pinnedEntries.length === 0}
-								<EmptyConversationsList
-									filtered={conversations.filters.any}
-								/>
-							{/if}
 						{/each}
-						{#if conversations.loadingMore}
-							{#each Array(6)}
-								<ListRowSkeleton />
-							{/each}
-						{/if}
-						{#if conversations.nextPage !== null}
-							<div
-								class="h-0"
-								use:observeIntersection={{
-									handle: () => {
-										conversations
-											.loadMore()
-											.catch((error) =>
-												console.error(error),
-											);
-									},
-									rootMargin: "400px",
-								}}
-							></div>
-						{/if}
+						<ConversationsPagingTail
+							paging={conversations.paging}
+							hasMore={conversations.nextPage !== null}
+							listEmpty={restEntries.length === 0 &&
+								pinnedEntries.length === 0}
+							filtered={conversations.filters.any}
+						/>
 					</div>
 				{/if}
 			</div>

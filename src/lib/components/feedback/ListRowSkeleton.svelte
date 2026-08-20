@@ -6,6 +6,7 @@
      rows occupy the same frame as real rows: the row itself stays transparent and
      only the avatar/text placeholders are tinted. -->
 <div
+	data-slot="list-row-skeleton"
 	class="relative flex h-22 w-full shrink-0 gap-3 py-3 ps-4 pe-4 after:pointer-events-none after:absolute after:right-4 after:bottom-0 after:left-list-inset after:border-b after:border-border/60"
 	aria-hidden="true"
 >

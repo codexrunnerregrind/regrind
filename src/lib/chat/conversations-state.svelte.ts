@@ -10,6 +10,7 @@ import {
 } from "$lib/api/messaging/conversations";
 import { onProfileEdit } from "$lib/api/users/profiles";
 import { InboxViewedMarker } from "$lib/chat/inbox-last-viewed.svelte";
+import { InboxPaging } from "$lib/chat/inbox-paging.svelte";
 import { applyOptimisticBatch } from "$lib/chat/optimistic-batch";
 import { previewFromMessage } from "$lib/model/messaging/message-preview";
 import { below } from "$lib/util/breakpoints.svelte";
@@ -56,7 +57,6 @@ export type IncomingMessageHandler = (incoming: {
 class ConversationsState {
 	entries = $state<Conversation[]>([]);
 	nextPage = $state<number | null>(null);
-	loadingMore = $state(false);
 	refreshing = $state(false);
 	loading = $state(true);
 	error: Error | null = $state(null);
@@ -75,6 +75,7 @@ class ConversationsState {
 	readonly filters = new ConversationFilters();
 	readonly inboxViewed: InboxViewedMarker;
 	readonly typing = new TypingTracker();
+	readonly paging: InboxPaging;
 	#onIncomingMessage: IncomingMessageHandler;
 	#activeConversationId: string | null = null;
 	#wsPromises: Promise<() => void>[] = [];
@@ -111,6 +112,10 @@ class ConversationsState {
 		this.ourProfileId = ourProfileId;
 		this.#onIncomingMessage = onIncomingMessage;
 		this.inboxViewed = new InboxViewedMarker({ profileId: ourProfileId });
+		this.paging = new InboxPaging({
+			loadPage: (page) => this.#fetches.track(this.#load(page)),
+			cursor: () => this.nextPage,
+		});
 		void this.#hardLoad();
 
 		this.#unsubscribeReconcile = reconciler.subscribe(() =>
@@ -156,6 +161,7 @@ class ConversationsState {
 
 	async destroy(): Promise<void> {
 		this.#destroyed = true;
+		this.paging.destroy();
 		this.drafts.destroy();
 		this.typing.destroy();
 		this.#coalescedRefresh.cancel();
@@ -235,6 +241,7 @@ class ConversationsState {
 			return;
 		}
 		this.refreshing = true;
+		let reconciled = false;
 		try {
 			const fetchEpoch = await this.#claimEpochAfterInitial();
 			this.#refreshRequestedSinceFetchStart = false;
@@ -273,6 +280,9 @@ class ConversationsState {
 			for (const entry of [...this.entries]) {
 				const id = entry.data.conversationId;
 				if (fetched.has(id)) continue;
+				// A filtered refresh only asks the server for what matches, so a
+				// cached row that does not match was never a candidate to come
+				// back — keep it rather than reading its absence as a delete.
 				if (!this.filters.matches(entry)) continue;
 				if (
 					this.#pendingDeletes.blocks({
@@ -287,11 +297,13 @@ class ConversationsState {
 			}
 
 			this.#sortEntries();
+			reconciled = true;
 		} catch (error) {
 			console.error(error);
 			showErrorToast({ label: "Failed to refresh conversations", error });
 		} finally {
 			this.refreshing = false;
+			if (reconciled || this.paging.failure === null) this.paging.rearm();
 			this.#runRequestedRefresh();
 		}
 	}
@@ -317,7 +329,10 @@ class ConversationsState {
 		// Claiming would make an in-flight #load drop the nextPage it fetched.
 		const fetchEpoch = this.#fetches.current;
 		try {
-			const result = await getConversations({ page: 1 });
+			const result = await getConversations({
+				page: 1,
+				filters: inboxFilterRequest(this.filters.snapshot()),
+			});
 			if (this.#fetches.isStale(fetchEpoch)) return true;
 			for (const incoming of result.entries) {
 				const existing = this.#find(incoming.data.conversationId);
@@ -376,6 +391,7 @@ class ConversationsState {
 		if (this.#destroyed) return;
 		this.entries = [];
 		this.nextPage = null;
+		this.paging.rearm();
 		void this.#hardLoad();
 	}
 
@@ -392,22 +408,6 @@ class ConversationsState {
 				error instanceof Error ? error : new Error(String(error));
 		} finally {
 			if (!this.#fetches.isStale(fetchEpoch)) this.loading = false;
-		}
-	}
-
-	async loadMore(): Promise<void> {
-		if (this.loadingMore || this.nextPage === null) return;
-		this.loadingMore = true;
-		try {
-			await this.#fetches.track(this.#load(this.nextPage));
-		} catch (error) {
-			console.error(error);
-			showErrorToast({
-				label: "Failed to load more conversations",
-				error,
-			});
-		} finally {
-			this.loadingMore = false;
 		}
 	}
 
@@ -466,8 +466,10 @@ class ConversationsState {
 		return this.inboxViewed.hasUnreadAmong(this.entries);
 	}
 
-	noteVisibleActivity(): void {
-		this.inboxViewed.noteVisibleActivity(this.visibleEntries);
+	noteListViewed(): void {
+		// Only what the list actually shows: a filter hiding a busier thread
+		// must not mark its activity as seen.
+		this.inboxViewed.noteListViewed(this.visibleEntries);
 	}
 
 	async markRead(conversationId: string) {
