@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { page } from "$app/state";
 
-	import { swipeToNavTab } from "$lib/components/shared/nav-tabs";
+	import {
+		canSwipeToNavTab,
+		swipeToNavTab,
+	} from "$lib/components/shared/nav-tabs";
 	import NavBar from "$lib/components/shared/NavBar.svelte";
 	import { swipeTabs } from "$lib/util/swipe-tabs";
 
@@ -9,12 +12,16 @@
 </script>
 
 <!-- The tab swipe lives on the layout, not on each page, so every screen the
-     bottom bar owns gets it once. Screens with their own sub-tabs (Interest)
-     nest inside and are offered the swipe first; this only sees the ones they
-     turn down. Inbox is not under this layout — it attaches its own. -->
+     bottom bar owns gets it once, and this box is what the gesture drags: the
+     tab bar sits outside it and stays put while the content slides. Screens
+     with their own sub-tabs (Interest) nest inside and are offered the swipe
+     first; this only sees the ones they turn down. Inbox is not under this
+     layout — it attaches its own. -->
 <div
 	class="flex min-h-dvh flex-col pt-(--safe-area-top) pb-(--content-pb)"
 	use:swipeTabs={{
+		canNext: () => canSwipeToNavTab(page.route.id, 1),
+		canPrev: () => canSwipeToNavTab(page.route.id, -1),
 		onNext: () => swipeToNavTab(page.route.id, 1),
 		onPrev: () => swipeToNavTab(page.route.id, -1),
 	}}

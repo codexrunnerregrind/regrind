@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("$app/navigation", () => ({ goto: vi.fn() }));
 vi.mock("$lib/platform/haptics", () => ({ hapticSelection: vi.fn() }));
 
-import { navTabs, swipeToNavTab } from "./nav-tabs";
+import { canSwipeToNavTab, navTabs, swipeToNavTab } from "./nav-tabs";
 
 const BROWSE = "/(protected)/(navbar)/(root)";
 const RIGHT_NOW = "/(protected)/(navbar)/right-now";
@@ -16,13 +16,18 @@ beforeEach(() => {
 
 describe("swipeToNavTab", () => {
 	it("moves to the next tab", () => {
-		expect(swipeToNavTab(BROWSE, 1)).toBe(true);
+		expect(swipeToNavTab(BROWSE, 1)).not.toBe(false);
 		expect(goto).toHaveBeenCalledWith("/right-now");
 	});
 
 	it("moves to the previous tab", () => {
-		expect(swipeToNavTab(RIGHT_NOW, -1)).toBe(true);
+		expect(swipeToNavTab(RIGHT_NOW, -1)).not.toBe(false);
 		expect(goto).toHaveBeenCalledWith("/");
+	});
+
+	it("hands back the navigation, so the tab can be held off-screen", () => {
+		vi.mocked(goto).mockReturnValueOnce(Promise.resolve());
+		expect(swipeToNavTab(BROWSE, 1)).toBeInstanceOf(Promise);
 	});
 
 	it("declines at either end rather than wrapping", () => {
@@ -40,6 +45,18 @@ describe("swipeToNavTab", () => {
 		);
 		expect(
 			swipeToNavTab("/(protected)/(navbar)/profile/[profileId]", -1),
+		).toBe(false);
+		expect(goto).not.toHaveBeenCalled();
+	});
+
+	it("answers the same question ahead of the gesture", () => {
+		// What the drag asks before it decides whether to follow the finger.
+		expect(canSwipeToNavTab(BROWSE, 1)).toBe(true);
+		expect(canSwipeToNavTab(BROWSE, -1)).toBe(false);
+		expect(canSwipeToNavTab(SETTINGS, 1)).toBe(false);
+		expect(canSwipeToNavTab(SETTINGS, -1)).toBe(true);
+		expect(
+			canSwipeToNavTab("/(protected)/(navbar)/profile/[profileId]", 1),
 		).toBe(false);
 		expect(goto).not.toHaveBeenCalled();
 	});

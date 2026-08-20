@@ -65,11 +65,15 @@
 	// False past either end, handing the swipe to the tab-bar swipe around this
 	// list: a flick past Albums carries on to the You tab.
 	function cycleTab(delta: number): boolean {
-		const index = tabs.findIndex((tab) => tab.value === activeTab);
-		const next = tabs[index + delta];
+		const next = tabAt(delta);
 		if (!next) return false;
 		selectTab(next.value);
 		return true;
+	}
+
+	function tabAt(delta: number) {
+		const index = tabs.findIndex((tab) => tab.value === activeTab);
+		return tabs[index + delta];
 	}
 
 	const selection = new SelectionSet<string>();
@@ -229,6 +233,8 @@
 	class="relative flex h-full w-full min-w-list-rail flex-col"
 	use:swipeTabs={{
 		enabled: mobile.current,
+		canNext: () => tabAt(1) !== undefined,
+		canPrev: () => tabAt(-1) !== undefined,
 		onNext: () => cycleTab(1),
 		onPrev: () => cycleTab(-1),
 	}}
