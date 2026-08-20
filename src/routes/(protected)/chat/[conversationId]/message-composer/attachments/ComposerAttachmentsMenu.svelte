@@ -200,7 +200,7 @@
 			     away. -->
 			<div
 				class={[
-					"pointer-events-none absolute inset-x-0 bottom-20 z-1100 flex flex-col items-center gap-3",
+					"pointer-events-none absolute inset-x-0 bottom-19 z-1100 flex flex-col items-center gap-3",
 					// `visibility` rides along so the row is gone for good once it
 					// has flown out — opacity alone leaves the buttons standing
 					// in the page, reachable by anything that goes by role.
