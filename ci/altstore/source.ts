@@ -16,7 +16,12 @@ import { createHash } from "node:crypto";
 import { readFileSync, statSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-const REPO = "https://git.opengrind.org/open-grind/open-grind";
+// This fork publishes the iOS builds, so the manifest has to point at the
+// fork's releases and raw files — upstream ships no IPA and every URL under it
+// would 404. Override to retarget a different mirror.
+const REPO =
+	process.env.OPEN_GRIND_REPO ??
+	"https://git.opengrind.org/codexrunner/open-grind";
 const RAW = `${REPO}/raw/branch/main`;
 const METADATA = "fastlane/metadata/android/en-US";
 
@@ -63,12 +68,16 @@ const changelog = (() => {
 })();
 
 const source = {
-	name: "Open Grind",
-	identifier: "org.opengrind.source",
+	name: "Open Grind (codexrunner)",
+	// Distinct from upstream's, so adding both does not collide in a client that
+	// keys sources by identifier.
+	identifier: "org.opengrind.source.codexrunner",
+	// Lets a client refresh the manifest in place if it ever moves.
+	sourceURL: `${RAW}/ci/altstore/source.json`,
 	subtitle: read(`${METADATA}/short_description.txt`),
 	description,
 	iconURL: `${RAW}/${METADATA}/images/icon.png`,
-	website: "https://opengrind.org",
+	website: REPO,
 	tintColor: "0DB28F",
 	apps: [
 		{

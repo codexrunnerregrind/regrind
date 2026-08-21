@@ -207,8 +207,8 @@ There is no free way to put an iOS app in front of other people the way the
 Android APK does it. TestFlight, the App Store, and the EU alternative
 marketplaces (AltStore PAL, Epic, Aptoide) all require a paid Apple Developer
 Program membership plus Apple notarization. Open Grind is instead distributed
-for iOS as a plain IPA that users sideload and re-sign with **their own** free
-Apple ID, using [SideStore](https://sidestore.io).
+for iOS as an **unsigned** IPA that users sideload and re-sign with **their own**
+free Apple ID, using [SideStore](https://sidestore.io).
 
 This works because the app needs no restricted capabilities:
 [`open-grind_iOS.entitlements`](./src-tauri/gen/apple/open-grind_iOS/open-grind_iOS.entitlements)
@@ -226,29 +226,78 @@ Sideloading clients re-sign the IPA under the installing user's team and append
 that team ID to the bundle identifier, so `org.opengrind.app` does not collide
 between users.
 
+#### Why the release IPA is unsigned
+
+`tauri ios build` can only emit a signed IPA, and that signature is not inert
+metadata — it is a disclosure. `embedded.mobileprovision` holds the team ID and
+the UDID of **every device registered to that team**, and the code signature's
+entitlements blob, baked into the Mach-O itself, repeats the team ID and carries
+`get-task-allow: true`, marking the binary debuggable. Deleting
+`_CodeSignature/` clears none of that.
+
+Sideloading clients discard the signature and re-sign under the installing
+user's own team, so publishing the signed build leaks a device list to buy
+nothing. `scripts/ios-release-ipa.sh` therefore runs
+`codesign --remove-signature` over the app and every nested bundle, drops the
+profile, and asserts the result reports `not signed at all` before packing it.
+
 #### Publishing a release
 
-1. Build the IPA as above and rename it to match the Android convention:
-   `open-grind-v<version>.ipa`
-2. Attach it to the release on
-   [git.opengrind.org](https://git.opengrind.org/open-grind/open-grind/releases)
-3. Regenerate the source manifest from the artifact and commit it:
+CI cannot do this: every runner in [`.forgejo/workflows`](./.forgejo/workflows)
+is Linux, and an iOS build needs macOS with Xcode. It is a local release step.
 
-    ```bash
-    bun ci/altstore/source.ts "src-tauri/gen/apple/build/arm64/Open Grind.ipa"
-    ```
+```bash
+scripts/ios-release-ipa.sh
+```
+
+That builds, strips the signature, writes
+`src-tauri/gen/apple/build/arm64/open-grind-v<version>.ipa`, and regenerates the
+source manifest against that exact file. Then attach the IPA to the
+`v<version>` release on
+[the fork's releases](https://git.opengrind.org/codexrunner/open-grind/releases)
+and commit `ci/altstore/source.json`.
+
+Pass `--skip-build` to repack an existing build, or `--date YYYY-MM-DD` to pin
+the manifest date. The script refuses to run if
+[`ci/check-release-version.sh`](./ci/check-release-version.sh) finds the versions
+out of sync, or if the built bundle identifier does not match `identifier` in
+`tauri.conf.json`. Sideloading clients key updates off the bundle ID, so
+releasing a build whose identifier was patched locally would publish an app the
+manifest can never update.
+
+Note that the bundle ID is the app's identity on iOS: installing the release
+build next to a locally-built one with a different identifier gives two icons,
+two data containers, and — since
+[`open-grind_iOS.entitlements`](./src-tauri/gen/apple/open-grind_iOS/open-grind_iOS.entitlements)
+declares no keychain access group — two separate credential stores, so the
+second app starts logged out.
 
 [`ci/altstore/source.ts`](./ci/altstore/source.ts) reads the version and bundle
 identifier from `tauri.conf.json`, reuses the store listing in
 [`fastlane/metadata`](./fastlane/metadata) that F-Droid already uses, and hashes
 the IPA so `size` and `sha256` match the published artifact byte-for-byte. It
-writes `ci/altstore/source.json`.
+writes `ci/altstore/source.json`. The URLs point at this fork, since upstream
+publishes no IPA; override with `OPEN_GRIND_REPO` to retarget a mirror.
 
-Users add the URL of that JSON file as a source in SideStore. The same
-AltStore-format manifest is also read by AltStore, Feather, and TrollApps — so
-one file covers every sideloading client. TrollStore itself only works on
-iOS 14.0&ndash;17.0, whose CoreTrust bug Apple has since patched; treat it as a
-footnote rather than a supported channel.
+#### Installing from the source
+
+Users add the raw URL of that JSON as a source in SideStore:
+
+```
+https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/ci/altstore/source.json
+```
+
+SideStore itself needs a one-time setup: an iOS device **with a passcode set**,
+on Wi-Fi rather than cellular, plus a computer to run
+[iloader](https://docs.sidestore.io/docs/installation/prerequisites) once to
+generate the pairing file. Refreshes then happen on-device, but only while a
+loopback VPN is active — `LocalDevVPN` is the current recommendation; `StosVPN`
+still works if already installed, but Apple pulled it from the App Store.
+
+The same AltStore-format manifest is also read by AltStore, Feather, and
+TrollApps — so one file covers every sideloading client. TrollStore itself only
+works on iOS 14.0&ndash;17.0, whose CoreTrust bug Apple has since patched; treat
+it as a footnote rather than a supported channel.
 
 ## Credential storage
 
