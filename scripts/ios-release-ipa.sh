@@ -48,33 +48,45 @@ sh ci/check-release-version.sh
 VERSION="$(sed -n 's/^[[:space:]]*"version": "\([^"]*\)".*/\1/p' \
 	src-tauri/tauri.conf.json | head -1)"
 
-BUILD_DIR="src-tauri/gen/apple/build/arm64"
-SIGNED="$BUILD_DIR/Open Grind.ipa"
-UNSIGNED="$BUILD_DIR/open-grind-v$VERSION.ipa"
+BUILD_DIR="src-tauri/gen/apple/build"
+ARCHIVE="$BUILD_DIR/open-grind_iOS.xcarchive"
+ARCHIVE_APP="$ARCHIVE/Products/Applications/Open Grind.app"
+UNSIGNED="$BUILD_DIR/arm64/open-grind-v$VERSION.ipa"
 
+# The source is the xcarchive bundle, not build/arm64/*.ipa. `tauri ios build`
+# reliably dies at `exportArchive` on this setup ("No Account for Team
+# $(APPLE_DEVELOPMENT_TEAM)"), so the exported IPA often does not exist — but the
+# compile and sign phases have already run, and the archive holds a fully
+# device-signed bundle. Tolerate the export failure and judge the build by
+# whether the archive is fresh, so a genuine compile failure still stops us.
 if [ "$SKIP_BUILD" = false ]; then
 	if [ -z "${APPLE_DEVELOPMENT_TEAM:-}" ]; then
 		echo "APPLE_DEVELOPMENT_TEAM is unset; see BUILDING.md" >&2
 		exit 1
 	fi
-	bun run tauri ios build
+	STARTED="$(mktemp)"
+	bun run tauri ios build || echo "build reported failure; checking the archive"
+	if [ ! -d "$ARCHIVE_APP" ] || [ ! "$ARCHIVE_APP" -nt "$STARTED" ]; then
+		rm -f "$STARTED"
+		echo "no bundle newer than this run at $ARCHIVE_APP —" >&2
+		echo "the build failed before signing, not just at export" >&2
+		exit 1
+	fi
+	rm -f "$STARTED"
 fi
 
-if [ ! -f "$SIGNED" ]; then
-	echo "no build at $SIGNED — drop --skip-build" >&2
+if [ ! -d "$ARCHIVE_APP" ]; then
+	echo "no build at $ARCHIVE_APP — drop --skip-build" >&2
 	exit 1
 fi
 
-# Repack out of tree so a stale Payload/ can never leak into the artifact.
+# Repack out of tree so a stale Payload/ can never leak into the artifact, and
+# so stripping never touches the archive the device install uses.
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
-unzip -q "$SIGNED" -d "$WORK"
-
-APP="$(find "$WORK/Payload" -maxdepth 1 -name '*.app' | head -1)"
-if [ -z "$APP" ]; then
-	echo "no .app inside $SIGNED" >&2
-	exit 1
-fi
+mkdir "$WORK/Payload"
+cp -R "$ARCHIVE_APP" "$WORK/Payload/"
+APP="$WORK/Payload/$(basename "$ARCHIVE_APP")"
 
 # The manifest takes the bundle ID from tauri.conf.json, but the IPA carries
 # whatever it was built with — and a local device build may have patched
@@ -121,6 +133,7 @@ esac
 
 # Sorted entry order so two builds of the same tree differ only where Xcode
 # itself is non-deterministic; -X drops the local uid/gid/extra attributes.
+mkdir -p "$(dirname "$ROOT/$UNSIGNED")"
 rm -f "$ROOT/$UNSIGNED"
 (cd "$WORK" && find Payload -print | LC_ALL=C sort |
 	zip -qX "$ROOT/$UNSIGNED" -@)

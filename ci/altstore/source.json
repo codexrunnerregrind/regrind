@@ -27,12 +27,12 @@
 			],
 			"versions": [
 				{
-					"version": "0.1.0-beta.3",
-					"date": "2026-07-27",
-					"localizedDescription": "Open Grind 0.1.0-beta.3.",
-					"downloadURL": "https://git.opengrind.org/codexrunner/open-grind/releases/download/v0.1.0-beta.3/open-grind-v0.1.0-beta.3.ipa",
-					"size": 41378885,
-					"sha256": "4adbb8e098239d3be7af01c9e4c637cc0fe60dfe87d3d5f6b611479f61213653",
+					"version": "0.1.0-beta.4",
+					"date": "2026-08-21",
+					"localizedDescription": "Open Grind 0.1.0-beta.4.",
+					"downloadURL": "https://git.opengrind.org/codexrunner/open-grind/releases/download/v0.1.0-beta.4/open-grind-v0.1.0-beta.4.ipa",
+					"size": 43249022,
+					"sha256": "d0660b8ace18d80b3a8f58bb67374c7b4e7eaeed11bdce78ee4e7687b87a2ea9",
 					"minOSVersion": "14.0"
 				}
 			]
