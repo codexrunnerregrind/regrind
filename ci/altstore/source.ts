@@ -25,6 +25,7 @@ const REPO =
 const RAW = `${REPO}/raw/branch/main`;
 const METADATA = "fastlane/metadata/android/en-US";
 const SHOTS = "contrib/altstore";
+const LISTING = "ci/altstore";
 
 const root = resolve(import.meta.dir, "../..");
 const read = (p: string) => readFileSync(resolve(root, p), "utf8").trim();
@@ -61,6 +62,17 @@ const date =
 const tauri = JSON.parse(read("src-tauri/tauri.conf.json"));
 const { version, identifier } = tauri;
 
+// The release tag and asset filename come from this version, so running on a
+// -dev tree would rewrite the live manifest to point at a release that will
+// never exist. Main carries -dev between releases (see scripts/check-version.ts),
+// so this is the normal state of the tree, not an edge case.
+if (/(^|[-.])dev($|[-.])/.test(version.split("-").slice(1).join("-"))) {
+	fail(
+		`refusing to generate from development version ${version}; ` +
+			"set the release version first",
+	);
+}
+
 const ipa = readFileSync(ipaPath);
 const sha256 = createHash("sha256").update(ipa).digest("hex");
 const size = statSync(ipaPath).size;
@@ -94,13 +106,13 @@ if (bundleId !== identifier) {
 	fail(`IPA is ${bundleId} but tauri.conf.json says ${identifier}`);
 }
 
-// The Play/F-Droid description is HTML; AltStore renders plain text.
-const description = read(`${METADATA}/full_description.txt`)
-	.replace(/<\/li>/g, "\n")
-	.replace(/<li>/g, "\n• ")
-	.replace(/<\/?(ul|b)>/g, "")
-	.replace(/\n{3,}/g, "\n\n")
-	.trim();
+// This fork's own listing text, not fastlane/metadata — that describes
+// upstream's features and says nothing about the redesign or anything added
+// here. Kept as plain text, which is what AltStore renders, so unlike the
+// Play/F-Droid copy it needs no HTML stripping. fastlane/metadata stays as it
+// is for F-Droid and Play.
+const description = read(`${LISTING}/description.txt`);
+const subtitle = read(`${LISTING}/subtitle.txt`);
 
 const changelog = (() => {
 	try {
@@ -119,7 +131,7 @@ const source = {
 	identifier: "org.opengrind.source.codexrunner",
 	// Lets a client refresh the manifest in place if it ever moves.
 	sourceURL: `${RAW}/ci/altstore/source.json`,
-	subtitle: read(`${METADATA}/short_description.txt`),
+	subtitle,
 	description,
 	iconURL: `${RAW}/${METADATA}/images/icon.png`,
 	website: REPO,
@@ -129,7 +141,7 @@ const source = {
 			name: read(`${METADATA}/title.txt`),
 			bundleIdentifier: identifier,
 			developerName: "codexrunner",
-			subtitle: read(`${METADATA}/short_description.txt`),
+			subtitle,
 			localizedDescription: description,
 			iconURL: `${RAW}/${METADATA}/images/icon.png`,
 			tintColor: "0DB28F",

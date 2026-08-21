@@ -1,0 +1,48 @@
+A fork of Open Grind, the cross-platform, free, libre, ad-free, tracker-free,
+privacy-centered and community-driven unofficial client for the Grindr queer
+social network.
+
+This fork started as an iOS port — the original builds for Android and desktop
+— and grew into a redesign plus the features that were missing from daily use.
+Most of the work in it was done with AI.
+
+From Open Grind
+
+• Unlocked grid
+Unlimited profiles for free, ads removed from grid, all filters unlocked
+
+• Location spoofing
+Native geolocation change with OpenStreetMap and location search built-in
+
+• Zero ads
+No ads, first party, third party or self-promotion, no obstructive pop-ups
+
+• Privacy by default
+No analytics, zero trackers, no data is collected
+
+• Security as foundation
+Human code review, audit, supply chain security, end-to-end testing
+
+Added in this fork
+
+• Redesigned interface
+A minimalist look throughout, redesigned settings, and your own theme and
+colors
+
+• Albums
+View albums shared with you, create and edit your own, reorder photos, and
+share or unshare from the chat composer, with an expiry if you want one
+
+• Richer chat
+Video messages and locations, replies to messages, photos and locations,
+media downloads, and every photo from a conversation in one gallery
+
+• Favorites
+A favorites screen, with notes you can add to profiles and search through
+
+• Gestures and feedback
+Swipe between tabs and between profiles, haptics, and a bubble when someone
+views your profile
+
+• Blocked contacts
+Manage everyone you have blocked
