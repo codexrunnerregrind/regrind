@@ -92,7 +92,7 @@
 		class={[
 			"relative flex w-full items-stretch",
 			{
-				"nav-capsule pointer-events-auto h-14 max-w-104 rounded-full px-1.5 glass-normal":
+				"glass-capsule pointer-events-auto h-14 max-w-104 rounded-full px-1.5 glass-normal":
 					glass,
 			},
 		]}
@@ -175,36 +175,5 @@
 	   item at a 44pt hit target. */
 	.tab {
 		@apply relative z-1 flex min-h-11 flex-1 flex-col items-center justify-center gap-[5px] text-ink3 outline-none focus-visible:ring-2 focus-visible:ring-ring/50 data-[active=true]:text-primary;
-	}
-
-	/* The material carries its own edge, but not the separation from the content
-	   it floats over — that is this shadow's job. Declared through Tailwind
-	   rather than as a bare box-shadow so it composes with the ring the fallback
-	   below adds: ring-* writes the whole box-shadow property out of its own
-	   variables, and a hand-written one next to it is simply overwritten. */
-	.nav-capsule {
-		@apply shadow-[0_8px_28px_rgb(0_0_0/0.28),0_1px_2px_rgb(0_0_0/0.16)];
-	}
-
-	/* Everywhere but iOS this is the surface, not a stopgap, so it is built
-	   rather than inherited: glass-normal's fallback is a bare 6px blur, which
-	   leaves the labels sitting on whatever happens to be behind them. A wider
-	   blur, the saturation the system material adds back to what it blurs, a tint
-	   for contrast and a hairline for the edge. */
-	@supports not (-apple-visual-effect: -apple-system-glass-material) {
-		.nav-capsule {
-			@apply bg-background/72 ring-1 ring-border/60;
-			backdrop-filter: blur(20px) saturate(1.8);
-		}
-	}
-
-	/* A blur is the one part with no substitute: without it the tint alone is a
-	   flat panel, so it leans opaque instead of pretending to be glass. */
-	@supports not (
-		(backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
-	) {
-		.nav-capsule {
-			@apply bg-background/95;
-		}
 	}
 </style>

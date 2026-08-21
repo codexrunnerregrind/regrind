@@ -42,6 +42,11 @@
 
 	const isFullsizeTab = $derived(FULLSIZE_TABS.includes(selectedTab));
 
+	// Which tab the selection pill sits over, in the order the triggers are
+	// rendered below.
+	const TAB_ORDER: Tab[] = ["media", "albums", "location"];
+	const tabIndex = $derived(Math.max(TAB_ORDER.indexOf(selectedTab), 0));
+
 	let sheet = $state<HTMLDivElement | null>(null);
 	let peek = $state<HTMLDivElement | null>(null);
 	let tabs = $state<Partial<Record<Tab, SelectionTab | null>>>({});
@@ -310,7 +315,22 @@
 			<Drawer.Footer
 				class="absolute inset-x-0 bottom-0 items-center rounded-b-4xl pt-1 pb-2 select-none"
 			>
-				<Tabs.List>
+				<!-- The main tab bar's capsule, worn here too: same glass
+				     material, same shadow, same sliding pill (see NavBar.svelte
+				     and .glass-capsule in layout.css). The default tab list's
+				     opaque plate and hairline come off so the material is the
+				     surface. -->
+				<Tabs.List
+					class="glass-capsule relative bg-transparent p-1.5 ring-0 glass-normal"
+				>
+					<!-- One pill, moved, rather than a fill per tab. Width is an
+					     exact third because every trigger below is the same
+					     fixed width. -->
+					<span
+						aria-hidden="true"
+						class="pointer-events-none absolute inset-y-1.5 left-1.5 w-[calc((100%-0.75rem)/3)] rounded-full bg-primary/15 ring-1 ring-primary/25 transition-transform duration-[380ms] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none"
+						style:transform="translateX(calc({tabIndex} * 100%))"
+					></span>
 					{@render tab("media")}
 					{@render tab("albums")}
 					{@render tab("location")}
@@ -321,7 +341,10 @@
 </Drawer.Root>
 
 {#snippet tab(tab: Tab)}
-	<Tabs.Trigger value={tab} class="h-auto flex-col gap-0.5 px-4 py-1.5">
+	<Tabs.Trigger
+		value={tab}
+		class="h-auto w-24 flex-none flex-col gap-0.5 py-1.5 text-ink3 hover:bg-transparent dark:hover:bg-transparent data-active:text-primary! dark:data-active:text-primary!"
+	>
 		{#if tab === "media"}
 			<ImageIcon weight="fill" class="size-5" />
 			Media
