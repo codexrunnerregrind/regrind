@@ -4,7 +4,7 @@ A fork of [Open Grind](https://git.opengrind.org/open-grind/open-grind), an unof
 
 This fork started because I wanted to try the app on my iPhone. The original builds for Android and desktop, so I got it running on iOS, then kept going and filled in the things I missed while using it every day.
 
-I build this for myself and sideload it onto my own phone. There are no releases.
+I build this for myself and sideload it onto my own phone. If you want to try it, see [Install on iOS](#install-on-ios).
 
 **NOTE:** Most of the work here was done with AI, which is why I haven't opened any pull requests against the original project.
 
@@ -13,6 +13,19 @@ I build this for myself and sideload it onto my own phone. There are no releases
 <img src="./contrib/screenshots/inbox.webp" alt="Inbox" width="220">
 
 > Every screenshot here is from demo mode (`PUBLIC_ENABLE_DEMO=1`), so it's all mock data.
+
+## Install on iOS
+
+- **Install [SideStore](https://sidestore.io)** — follow its [setup guide](https://docs.sidestore.io/docs/installation/install).
+- **Add this source** in SideStore, under Sources → **+**:
+
+    ```
+    https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/ci/altstore/source.json
+    ```
+
+- **Install Open Grind** from the source.
+
+Needs iOS 15 or later. Apps installed this way stop working after 7 days — turn on LocalDevVPN, then open SideStore and hit refresh.
 
 ## What's different
 
