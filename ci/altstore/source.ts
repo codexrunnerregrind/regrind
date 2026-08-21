@@ -13,7 +13,7 @@
  */
 
 import { createHash } from "node:crypto";
-import { readFileSync, statSync, writeFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
 // This fork publishes the iOS builds, so the manifest has to point at the
@@ -24,12 +24,24 @@ const REPO =
 	"https://git.opengrind.org/codexrunner/open-grind";
 const RAW = `${REPO}/raw/branch/main`;
 const METADATA = "fastlane/metadata/android/en-US";
+const SHOTS = "contrib/altstore";
 
 const root = resolve(import.meta.dir, "../..");
 const read = (p: string) => readFileSync(resolve(root, p), "utf8").trim();
 const fail = (message: string): never => {
 	console.error(`error: ${message}`);
 	process.exit(1);
+};
+
+// Numeric prefix is the listing order, so adding or reordering a screenshot is a
+// file rename rather than a code change. Sorted numerically — a plain sort puts
+// 10 before 2.
+const screenshots = () => {
+	const files = readdirSync(resolve(root, SHOTS))
+		.filter((f) => f.endsWith(".jpeg"))
+		.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+	if (!files.length) fail(`no screenshots in ${SHOTS}`);
+	return files.map((f) => `${RAW}/${SHOTS}/${f}`);
 };
 
 const ipaPath = process.argv[2];
@@ -116,15 +128,19 @@ const source = {
 		{
 			name: read(`${METADATA}/title.txt`),
 			bundleIdentifier: identifier,
-			developerName: "Open Grind Governance",
+			developerName: "codexrunner",
 			subtitle: read(`${METADATA}/short_description.txt`),
 			localizedDescription: description,
 			iconURL: `${RAW}/${METADATA}/images/icon.png`,
 			tintColor: "0DB28F",
 			category: "social",
-			screenshots: [1, 2, 3, 4, 5, 6].map(
-				(n) => `${RAW}/${METADATA}/images/phoneScreenshots/${n}.jpeg`,
-			),
+			// This fork's own screenshots, not the ones under
+			// fastlane/metadata — those are upstream's Play/F-Droid listing,
+			// byte-identical to origin/main, and show the original UI rather
+			// than the redesign. Converted from contrib/screenshots (demo mode,
+			// so no real profiles) to JPEG, since the AltStore format does not
+			// document WebP support. Order is the listing order.
+			screenshots: screenshots(),
 			versions: [
 				{
 					// From the bundle, so SideStore's check passes; the release

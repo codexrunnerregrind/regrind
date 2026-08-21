@@ -11,19 +11,25 @@
 		{
 			"name": "Open Grind",
 			"bundleIdentifier": "org.opengrind.app",
-			"developerName": "Open Grind Governance",
+			"developerName": "codexrunner",
 			"subtitle": "Unofficial Grindr client. Free, libre, privacy-centered and community-driven",
 			"localizedDescription": "Open Grind is the cross-platform, free, libre, ad-free, tracker-free, privacy-centered and community-driven unofficial client for Grindr queer social network.\n\n• Unlocked grid\nUnlimited profiles for free, ads removed from grid, all filters unlocked\n\n• Location spoofing\nNative geolocation change with OpenStreetMap and location search built-in\n\n• Zero ads\nNo ads, first party, third party or self-promotion, no obstructive pop-ups\n\n• Privacy by default\nNo analytics, zero trackers, no data is collected by Open Grind developers\n\n• Security as foundation\nHuman code review, audit, supply chain security, end-to-end testing",
 			"iconURL": "https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/fastlane/metadata/android/en-US/images/icon.png",
 			"tintColor": "0DB28F",
 			"category": "social",
 			"screenshots": [
-				"https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/fastlane/metadata/android/en-US/images/phoneScreenshots/1.jpeg",
-				"https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/fastlane/metadata/android/en-US/images/phoneScreenshots/2.jpeg",
-				"https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/fastlane/metadata/android/en-US/images/phoneScreenshots/3.jpeg",
-				"https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/fastlane/metadata/android/en-US/images/phoneScreenshots/4.jpeg",
-				"https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/fastlane/metadata/android/en-US/images/phoneScreenshots/5.jpeg",
-				"https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/fastlane/metadata/android/en-US/images/phoneScreenshots/6.jpeg"
+				"https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/contrib/altstore/1-browse-grid.jpeg",
+				"https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/contrib/altstore/2-right-now.jpeg",
+				"https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/contrib/altstore/3-inbox.jpeg",
+				"https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/contrib/altstore/4-chat.jpeg",
+				"https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/contrib/altstore/5-media-viewer.jpeg",
+				"https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/contrib/altstore/6-albums-inbox.jpeg",
+				"https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/contrib/altstore/7-album-edit.jpeg",
+				"https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/contrib/altstore/8-album-share-expiry.jpeg",
+				"https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/contrib/altstore/9-favorite-notes.jpeg",
+				"https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/contrib/altstore/10-profile-activity.jpeg",
+				"https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/contrib/altstore/11-settings.jpeg",
+				"https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/contrib/altstore/12-appearance.jpeg"
 			],
 			"versions": [
 				{
