@@ -27,7 +27,8 @@
 			],
 			"versions": [
 				{
-					"version": "0.1.0-beta.4",
+					"version": "0.1.0",
+					"buildVersion": "0.1.0.4",
 					"date": "2026-08-21",
 					"localizedDescription": "Open Grind 0.1.0-beta.4.",
 					"downloadURL": "https://git.opengrind.org/codexrunner/open-grind/releases/download/v0.1.0-beta.4/open-grind-v0.1.0-beta.4.ipa",

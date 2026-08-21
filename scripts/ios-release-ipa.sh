@@ -85,7 +85,12 @@ fi
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 mkdir "$WORK/Payload"
-cp -R "$ARCHIVE_APP" "$WORK/Payload/"
+# zip records this directory's own entry, so pin its mtime to the archive's too.
+touch -r "$ARCHIVE_APP" "$WORK/Payload"
+# -p, or the copy gets fresh mtimes and every repack of an identical archive
+# produces a different zip — which silently invalidates a manifest generated
+# from an earlier run.
+cp -Rp "$ARCHIVE_APP" "$WORK/Payload/"
 APP="$WORK/Payload/$(basename "$ARCHIVE_APP")"
 
 # The manifest takes the bundle ID from tauri.conf.json, but the IPA carries
@@ -130,6 +135,12 @@ case "$VERDICT" in
 	exit 1
 	;;
 esac
+
+# Stripping rewrites files, so their mtimes become "now" and every repack of an
+# identical archive yields a different zip — which invalidates the size/sha256 in
+# a manifest generated from an earlier run. Pin them all back to the archive,
+# deepest first so touching a child does not re-dirty its parent.
+find "$WORK/Payload" -depth -exec touch -r "$ARCHIVE_APP" {} +
 
 # Sorted entry order so two builds of the same tree differ only where Xcode
 # itself is non-deterministic; -X drops the local uid/gid/extra attributes.

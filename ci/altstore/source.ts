@@ -27,6 +27,10 @@ const METADATA = "fastlane/metadata/android/en-US";
 
 const root = resolve(import.meta.dir, "../..");
 const read = (p: string) => readFileSync(resolve(root, p), "utf8").trim();
+const fail = (message: string): never => {
+	console.error(`error: ${message}`);
+	process.exit(1);
+};
 
 const ipaPath = process.argv[2];
 if (!ipaPath) {
@@ -48,6 +52,35 @@ const { version, identifier } = tauri;
 const ipa = readFileSync(ipaPath);
 const sha256 = createHash("sha256").update(ipa).digest("hex");
 const size = statSync(ipaPath).size;
+
+// The manifest's version must be what the *bundle* declares, not what
+// tauri.conf.json says. iOS requires CFBundleShortVersionString to be numeric,
+// so Tauri drops the prerelease suffix: `0.1.0-beta.4` in the config ships as
+// `0.1.0` in the IPA. Advertising the config value makes SideStore refuse the
+// install with VerificationError 4, "the downloaded version does not match the
+// version specified by the source". CFBundleVersion keeps the beta number
+// (`0.1.0.4`), so buildVersion is what distinguishes one beta from the next.
+const plist = Bun.spawnSync([
+	"unzip",
+	"-p",
+	ipaPath,
+	"Payload/*.app/Info.plist",
+]).stdout;
+const plistValue = (key: string) => {
+	const { stdout, exitCode } = Bun.spawnSync(
+		["plutil", "-extract", key, "raw", "-o", "-", "-"],
+		{ stdin: plist },
+	);
+	if (exitCode !== 0) fail(`${key} missing from the IPA's Info.plist`);
+	return stdout.toString().trim();
+};
+const shortVersion = plistValue("CFBundleShortVersionString");
+const buildVersion = plistValue("CFBundleVersion");
+
+const bundleId = plistValue("CFBundleIdentifier");
+if (bundleId !== identifier) {
+	fail(`IPA is ${bundleId} but tauri.conf.json says ${identifier}`);
+}
 
 // The Play/F-Droid description is HTML; AltStore renders plain text.
 const description = read(`${METADATA}/full_description.txt`)
@@ -94,7 +127,10 @@ const source = {
 			),
 			versions: [
 				{
-					version,
+					// From the bundle, so SideStore's check passes; the release
+					// tag and filename keep the full `version` from the config.
+					version: shortVersion,
+					buildVersion,
 					date,
 					localizedDescription: changelog,
 					downloadURL: `${REPO}/releases/download/v${version}/open-grind-v${version}.ipa`,
