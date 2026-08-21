@@ -17,6 +17,7 @@
 		"dev": "bun dev:desktop",
 		"dev:android": "bash scripts/dev-android.sh",
 		"dev:desktop": "tauri dev --features devtools",
+		"dev:ios": "tauri ios dev --features devtools",
 		"dev:web": "vite dev",
 		"docs": "bun run --cwd docs start",
 		"format": "prettier --write .",

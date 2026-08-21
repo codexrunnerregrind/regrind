@@ -197,9 +197,18 @@ Settings &rarr; General &rarr; VPN & Device Management &rarr; trust your develop
 For an iterative dev loop with hot reload instead of a standalone install:
 
 ```bash
-bun run tauri ios dev            # pick a target when prompted
-bun run tauri ios dev --open     # or drive it from Xcode
+bun dev:ios                          # pick a target when prompted
+bun run tauri ios dev --open         # or drive it from Xcode
 ```
+
+`dev:ios` mirrors `dev:desktop`, enabling the `devtools` feature so the web
+inspector is available. Frontend edits hot-reload; only Rust changes need a
+rebuild.
+
+Prefer a **simulator** target unless the thing you are testing is the hardware —
+haptics, real gestures, geolocation, camera, performance. A simulator needs no
+signing, so it sidesteps the free-tier certificate and its seven-day expiry
+entirely. Only a device target reads `APPLE_DEVELOPMENT_TEAM`.
 
 ### Distributing via SideStore
 
