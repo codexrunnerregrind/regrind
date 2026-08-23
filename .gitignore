@@ -25,3 +25,5 @@ keystore.properties
 
 # local-only environment overrides (Apple team ID, etc)
 .envrc.local
+/.updater-dev/
+/e2e/updater/.state/

@@ -59,6 +59,7 @@ const preferencesSchema = z.object({
 	// without hunting for it. `.catch` keeps a malformed entry from failing the
 	// whole parse and offering to reset every preference.
 	savedLocations: z.array(savedLocationSchema).default([]).catch([]),
+	onboardingComplete: z.boolean().default(false),
 	gridSearchFilters: gridSearchFiltersSchema.optional(),
 	notifyMessages: z.boolean().default(true),
 	notifyTaps: z.boolean().default(true),
@@ -79,6 +80,7 @@ const preferencesSchema = z.object({
 	// shape and the same behaviour, only a plainer surface. Turning this off
 	// returns the docked bar the redesign shipped with.
 	navBarGlass: z.boolean().default(true),
+	stayOnline: z.boolean().default(true),
 	units: unitSystemSchema.default("metric"),
 	rightNowFilters: rightNowFiltersSchema.optional(),
 });

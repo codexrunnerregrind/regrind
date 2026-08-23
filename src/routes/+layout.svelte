@@ -8,7 +8,11 @@
 	import { onMount } from "svelte";
 	import { toast, Toaster } from "svelte-sonner";
 
-	import { hydratePreferences } from "$lib/app-data/preferences.svelte";
+	import {
+		getPreferencesSnapshot,
+		hydratePreferences,
+		preferencesLoaded,
+	} from "$lib/app-data/preferences.svelte";
 	import { initTheme } from "$lib/app-data/theme.svelte";
 	import { takeDemoAnnouncement } from "$lib/demo/config";
 	import {
@@ -20,6 +24,8 @@
 	import { applyKeyboardInset } from "$lib/platform/keyboard-inset";
 	import { isAndroidPlatform } from "$lib/platform/os";
 	import { applySwipeBackGesture } from "$lib/platform/swipe-back-gesture";
+	import { updatesSelfManaged } from "$lib/updates/capability.svelte";
+	import { startUpdateWatch } from "$lib/updates/updates-manager";
 
 	onMount(() => {
 		if (env.PUBLIC_TEST_INSETS) {
@@ -50,7 +56,7 @@
 				console.error("Failed to register back button listener", error);
 			});
 		}
-		void hydratePreferences().catch((error) => {
+		void hydratePreferences().catch((error: unknown) => {
 			console.error("Failed to hydrate preferences", error);
 		});
 		const demoMode = takeDemoAnnouncement();
@@ -67,13 +73,24 @@
 
 	import { env } from "$env/dynamic/public";
 
-	import favicon from "$lib/assets/favicon.png";
+	import faviconPng from "$lib/assets/favicon.png";
 	import AccountStatusAlert from "$lib/components/feedback/AccountStatusAlert.svelte";
 	import CopyErrorConfirmAlert from "$lib/components/feedback/CopyErrorConfirmAlert.svelte";
 	import RequestBlockedAlert from "$lib/components/feedback/RequestBlockedAlert.svelte";
 	import SessionErrorAlert from "$lib/components/feedback/SessionErrorAlert.svelte";
+	import faviconSvg from "../../contrib/logo/open-grind.svg";
 
 	let { children }: { children?: import("svelte").Snippet } = $props();
+
+	const onboarded = $derived(
+		preferencesLoaded() && getPreferencesSnapshot().onboardingComplete,
+	);
+
+	$effect(() => {
+		if (!onboarded) return;
+		if (!updatesSelfManaged()) return;
+		void startUpdateWatch();
+	});
 
 	const hasBottomNavBar = $derived(
 		page.route.id?.startsWith("/(protected)/(navbar)") ?? false,
@@ -87,7 +104,8 @@
 </script>
 
 <svelte:head>
-	<link rel="icon" href={favicon} />
+	<link rel="icon" href={faviconPng} sizes="any" />
+	<link rel="icon" href={faviconSvg} type="image/svg+xml" />
 </svelte:head>
 <div
 	class={[

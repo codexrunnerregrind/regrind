@@ -6,9 +6,12 @@
 	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
 	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
 	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
+	import { updatesSelfManaged } from "$lib/updates/capability.svelte";
+	import AutomaticUpdatesSetting from "./AutomaticUpdatesSetting.svelte";
 	import NotificationSettings from "./NotificationSettings.svelte";
 	import RevealMessageReadSetting from "./RevealMessageReadSetting.svelte";
 	import RevealProfileViewSetting from "./RevealProfileViewSetting.svelte";
+	import StayOnlineSetting from "./StayOnlineSetting.svelte";
 	import UnitsSetting from "./UnitsSetting.svelte";
 
 	function unimplemented(feature: string, issue: number) {
@@ -30,6 +33,7 @@
 
 <SectionHeader>Privacy</SectionHeader>
 <SettingsGroup divider="full">
+	<StayOnlineSetting />
 	<RevealMessageReadSetting />
 	<RevealProfileViewSetting />
 </SettingsGroup>
@@ -55,3 +59,10 @@
 		{/snippet}
 	</SettingsRow>
 </SettingsGroup>
+
+{#if updatesSelfManaged()}
+	<SectionHeader>Updates</SectionHeader>
+	<SettingsGroup>
+		<AutomaticUpdatesSetting />
+	</SettingsGroup>
+{/if}

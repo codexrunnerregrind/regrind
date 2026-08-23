@@ -22,13 +22,16 @@ import {
 	measureVideo,
 	type MediaDimensions,
 } from "$lib/util/media-dimensions";
-import { applyPhotoSwipeVideo } from "$lib/util/photoswipe";
+import {
+	applyPhotoSwipeVideo,
+	applyPhotoSwipeViewportSync,
+} from "$lib/util/photoswipe";
 import { downloadMedia } from "./lightbox-download";
-import { myAlbum } from "./my-albums";
 import {
 	type MediaViewerActions,
 	registerMediaViewerChrome,
 } from "./media-viewer-chrome";
+import { myAlbum } from "./my-albums";
 
 // Thrown when an album has no viewable content — typically a locked or expired
 // shared album. Callers can catch this to show a friendlier message.
@@ -428,6 +431,9 @@ export async function openAlbumLightbox(
 		}
 		return { src: slide.url, ...sizer.sizeAt(index) };
 	});
+	// Re-measures once the opening animation lands, so a viewer opened while the
+	// keyboard was up centres on the screen it actually got.
+	applyPhotoSwipeViewportSync(lightbox);
 	// Video slides are handed to the custom player, which draws its own poster
 	// and controls in place of PhotoSwipe's image content.
 	applyPhotoSwipeVideo(lightbox, (index) => {

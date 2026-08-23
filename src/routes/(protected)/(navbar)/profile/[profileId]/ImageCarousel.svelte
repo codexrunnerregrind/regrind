@@ -18,6 +18,7 @@
 		applyPhotoSwipeBackGesture,
 		applyPhotoSwipeErrorUi,
 		applyPhotoSwipeThumbDimensions,
+		applyPhotoSwipeViewportSync,
 	} from "$lib/util/photoswipe";
 	import ImageCarouselItem from "./ImageCarouselItem.svelte";
 
@@ -118,6 +119,7 @@
 				});
 				applyPhotoSwipeErrorUi(lightbox);
 				applyPhotoSwipeThumbDimensions(lightbox);
+				applyPhotoSwipeViewportSync(lightbox);
 				applyPhotoSwipeBackGesture(lightbox);
 				lightbox.on("openingAnimationStart", () => {
 					gallery?.querySelectorAll(".item").forEach((item) => {

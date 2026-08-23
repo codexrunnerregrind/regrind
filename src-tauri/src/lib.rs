@@ -1,4 +1,5 @@
 pub mod api;
+mod app_settings;
 mod appearance;
 mod error;
 pub mod media;
@@ -33,6 +34,7 @@ const MIN_CHROMIUM_MAJOR: u32 = 111;
 #[cfg(target_os = "linux")]
 const MIN_WEBKITGTK: (u32, u32) = (2, 42);
 
+#[cfg(desktop)]
 const MAIN_WINDOW_LABEL: &str = "main";
 
 const OPEN_GRIND_PLATFORM: &str = if cfg!(target_os = "android") {
@@ -125,6 +127,8 @@ fn quit_when_closed(window: &tauri::WebviewWindow) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+	api::update::enforce_home();
+
 	#[cfg(feature = "devtools")]
 	let devtools = tauri_plugin_devtools::init();
 
@@ -177,6 +181,8 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(api::google_oauth::plugin())
+        .plugin(api::update::plugin())
+        .plugin(app_settings::plugin())
         .manage(AppState {
             client: OnceLock::new(),
         })
@@ -201,6 +207,19 @@ pub fn run() {
             api::client::rotate_api_params,
             api::session_recovery::set_app_active,
             api::session_recovery::session_health,
+            api::update::commands::update_capability,
+            api::update::commands::update_settings,
+            api::update::commands::update_set_auto_check,
+            api::update::commands::update_check,
+            api::update::commands::update_download,
+            api::update::commands::update_cancel_download,
+            api::update::commands::update_progress,
+            api::update::commands::update_readiness,
+            api::update::commands::update_install,
+            api::update::commands::update_take_install_outcome,
+            api::update::commands::update_open_install_permission_settings,
+            api::update::commands::update_discard,
+            app_settings::open_app_settings,
         ])
         .setup(|app| {
             let user_agent = format!(

@@ -26,6 +26,8 @@ class GridState {
 	loading = $state(false);
 	refreshing = $state(false);
 	error: Error | null = $state(null);
+	/** Whether the grid is the screen on show — the presence heartbeat asks. */
+	viewActive = false;
 
 	get errorMessage(): string | null {
 		return this.error?.message ?? null;
@@ -73,11 +75,14 @@ class GridState {
 		void this.#fetchProfiles(this.#geohash);
 	}
 
-	async refresh(): Promise<void> {
+	async refresh({ background = false } = {}): Promise<void> {
 		if (!this.#geohash || this.refreshing) return;
 		this.refreshing = true;
 		try {
-			await this.#fetchProfiles(this.#geohash, { silent: true });
+			await this.#fetchProfiles(this.#geohash, {
+				silent: true,
+				background,
+			});
 		} finally {
 			this.refreshing = false;
 		}
@@ -107,12 +112,16 @@ class GridState {
 		if (this.loadingMore || !this.nextPage || !this.currentQuery) return;
 		this.loadingMore = true;
 		const token = this.#fetchToken;
+		const query = this.currentQuery;
 		try {
 			const result = await getGrid({
-				...this.currentQuery,
+				...query,
 				pageNumber: this.nextPage,
 			});
-			if (token !== this.#fetchToken) return;
+			// The query can be swapped out while a page is in flight — appending
+			// then would staple the old location's profiles onto the new grid.
+			if (token !== this.#fetchToken || query !== this.currentQuery)
+				return;
 			this.items = [...this.items, ...result.items];
 			this.nextPage = result.nextPage;
 		} catch (error) {
@@ -158,7 +167,7 @@ class GridState {
 
 	async #fetchProfiles(
 		geohash: string,
-		opts?: { silent?: boolean },
+		opts?: { silent?: boolean; background?: boolean },
 	): Promise<void> {
 		const token = ++this.#fetchToken;
 		try {
@@ -235,6 +244,8 @@ class GridState {
 		} catch (err) {
 			if (token !== this.#fetchToken) return;
 			console.error(err);
+			this.loading = false;
+			if (opts?.background) return;
 			if (opts?.silent) {
 				showErrorToast({
 					label: "Failed to refresh profiles",
@@ -246,7 +257,6 @@ class GridState {
 						? err
 						: new Error("Failed to fetch profiles", { cause: err });
 			}
-			this.loading = false;
 		}
 	}
 }

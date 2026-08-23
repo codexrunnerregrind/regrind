@@ -3882,6 +3882,7 @@
 					}
 				},
 				"summary": "Get Cascade",
+				"description": "Fetching the cascade also marks our profile online by always instantly setting `onlineUntil` to current time + exactly 600 s.",
 				"x-query-groups": [
 					"CascadeQuery"
 				]
@@ -4459,7 +4460,8 @@
 						"description": "Empty."
 					}
 				},
-				"summary": "Update location"
+				"summary": "Update location",
+				"description": "Moves the requesting profile to `geohash`. The new position is live immediately. Does not update online status or `onlineUntil`."
 			}
 		},
 		"/v1/location/neighborhood/{geohash}": {
@@ -5132,7 +5134,8 @@
 						"description": "OK"
 					}
 				},
-				"summary": "Get viewers list"
+				"summary": "Get viewers list",
+				"description": "Returns an empty list while [account preferences](/grindr-api/settings/account#get-preferences) have `hideViewedMe` set. Views are not recorded either, so the list stays empty for the period the setting was on."
 			}
 		},
 		"/v4/views": {
@@ -13302,7 +13305,8 @@
 						"type": "boolean"
 					},
 					"hideViewedMe": {
-						"type": "boolean"
+						"type": "boolean",
+						"description": "Hides the Viewed Me list. While set, [`GET /v7/views/list`](/grindr-api/interest/views#get-viewers-list) returns nothing and no new views are recorded."
 					},
 					"approximateDistance": {
 						"type": "boolean"

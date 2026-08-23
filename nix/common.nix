@@ -51,6 +51,10 @@ rec {
     prefixMaps="-ffile-prefix-map=$CARGO_HOME=/cargo -ffile-prefix-map=$ROOT=/open-grind"
     export CFLAGS="''${CFLAGS:-} $prefixMaps"
     export CXXFLAGS="''${CXXFLAGS:-} $prefixMaps"
+
+    # [patch.crates-io] resolves before any cargo command, so the patched
+    # sources have to exist by now. Re-runs are a stamp comparison.
+    bun run --cwd "$ROOT" patch-deps
   '';
 
   # Hoisting these into reproPreamble would change an Android build that three
@@ -86,6 +90,24 @@ rec {
     type = "app";
     program = lib.getExe package;
   };
+
+  toolsShell = pkgs.mkShell (
+    baseEnv
+    // {
+      packages =
+        cargoInputs
+        ++ frontendInputs
+        ++ [
+          pkgs.shellcheck
+          pkgs.minisign
+        ];
+      shellHook = ''
+        echo "Open Grind: shared tooling shell (no platform SDK)."
+        echo "  Rust:      $(rustc --version)"
+        echo "  Platforms: nix develop .#{android,linux,macos,windows-x64,windows-arm64}"
+      '';
+    }
+  );
 
   webShell = pkgs.mkShell {
     packages = frontendInputs ++ [

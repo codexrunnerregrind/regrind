@@ -85,6 +85,13 @@
 	$effect.pre(() => {
 		gridState.load(geohash);
 	});
+
+	$effect(() => {
+		gridState.viewActive = true;
+		return () => {
+			gridState.viewActive = false;
+		};
+	});
 </script>
 
 <!-- The sentinel and the status line sit outside the grid: only cells may be

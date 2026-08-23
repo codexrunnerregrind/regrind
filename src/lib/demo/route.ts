@@ -1,3 +1,4 @@
+import { accountPreferencesUpdateSchema } from "$lib/model/settings/account";
 import { demoMeProfileId } from "./config";
 import {
 	demoAlbumContent,
@@ -54,6 +55,10 @@ import {
 import { profileSeed } from "./mock/profiles";
 import { demoGenders, demoPronouns, demoTags } from "./mock/reference";
 import { demoRightNowFeed } from "./mock/right-now";
+import {
+	demoAccountPreferences,
+	demoSetAccountPreferences,
+} from "./mock/settings";
 
 type DemoResponse = { status: number; body: unknown };
 
@@ -420,6 +425,15 @@ export function demoRoute({
 	}
 	if (method === "GET" && rawPath.startsWith("/v4/rightnow/feed")) {
 		return ok(demoRightNowFeed(params));
+	}
+	if (rawPath === "/v3/me/prefs/settings") {
+		if (method === "PUT") {
+			demoSetAccountPreferences(
+				accountPreferencesUpdateSchema.parse(body).settings,
+			);
+			return ok({});
+		}
+		return ok(demoAccountPreferences());
 	}
 
 	return ok({});
