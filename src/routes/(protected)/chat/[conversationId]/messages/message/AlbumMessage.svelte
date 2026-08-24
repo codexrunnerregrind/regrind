@@ -5,9 +5,11 @@
 		ImagesIcon,
 		VideoIcon,
 	} from "phosphor-svelte";
+	import { untrack } from "svelte";
 	import { toast } from "svelte-sonner";
 
 	import { showErrorToast } from "$lib/api/error-toast";
+	import { getAlbumShared } from "$lib/api/messaging/album-shares-state.svelte";
 	import {
 		AlbumLockedError,
 		type AlbumSharer,
@@ -59,6 +61,20 @@
 		isOut || message.ownerProfileId === conversation.ourProfileId,
 	);
 
+	// `isViewable` is a snapshot from when the message was sent, so a share
+	// granted or revoked anywhere else — the composer's albums tab, the album's
+	// own shares screen — leaves the bubble saying the opposite of the truth.
+	// The share state those surfaces write is the live answer, and it only
+	// speaks for our own albums: whether somebody else still shares theirs is
+	// not something we are told. Unknown falls back to the snapshot.
+	const sharedWithPeer = $derived.by(() => {
+		if (!isOurs) return undefined;
+		const profileId = conversation.profile?.profileId;
+		if (profileId === undefined) return undefined;
+		return getAlbumShared(message.albumId, profileId);
+	});
+	const isViewable = $derived(sharedWithPeer ?? message.isViewable);
+
 	// Someone else's album gets the viewer's reply chrome; our own share opens
 	// bare. The conversation partner is the sharer, so its profile is what the
 	// header describes.
@@ -96,7 +112,7 @@
 
 	$effect(() => {
 		// A viewable bubble's own cover is current; only a locked one needs asking.
-		if (message.isViewable) return;
+		if (isViewable) return;
 		const { albumId, ownerProfileId } = message;
 		const ours = isOurs;
 		let cancelled = false;
@@ -125,6 +141,21 @@
 	let cachedFromPaywall = false;
 	let destroyLightbox: (() => void) | null = null;
 
+	// A bubble that changes hands between locked and shared has to forget what it
+	// resolved last time: a teaser's blurred slides are not the album, and the
+	// album's own cover is not what a revoked share should show.
+	// Read once on purpose: this is the state the cache below was filled at, and
+	// the effect is what keeps it current.
+	let resolvedWhileViewable = untrack(() => isViewable);
+	$effect(() => {
+		if (isViewable === resolvedWhileViewable) return;
+		resolvedWhileViewable = isViewable;
+		cachedAlbum = null;
+		cachedFromPaywall = false;
+		freshCover = null;
+		coverBroken = false;
+	});
+
 	// The message can scroll out of the list (or the conversation can be left)
 	// while the viewer is open, so the lightbox is torn down with it.
 	$effect(() => () => {
@@ -147,7 +178,7 @@
 					// `ours` covers a locked bubble of ours, so there is no
 					// point spending a request on the viewer endpoint that
 					// would only refuse it.
-					viewable: message.isViewable,
+					viewable: isViewable,
 					ours: isOurs,
 				});
 				cachedAlbum = resolved.album;
@@ -186,7 +217,7 @@
 			"opacity-50": phase === "loading",
 		},
 	]}
-	aria-label={message.isViewable ? "Open album" : "Open locked album"}
+	aria-label={isViewable ? "Open album" : "Open locked album"}
 	onclick={() => void openAlbum()}
 	disabled={phase !== "idle"}
 	{@attach media.attach}
@@ -201,7 +232,7 @@
 				coverBroken = true;
 			}}
 		/>
-	{:else if message.isViewable}
+	{:else if isViewable}
 		<div
 			class="flex size-full items-center justify-center rounded-[inherit] bg-card-foreground/20"
 		>
@@ -229,7 +260,7 @@
 				<span class="truncate">{expiry.label}</span>
 			</div>
 		{/if}
-		{#if !message.isViewable && preview !== null}
+		{#if !isViewable && preview !== null}
 			<!-- Over a preview the lock has to be said as its own plate, the way the
 			     albums grid says it (AlbumTile.svelte): a glyph alone on top of a
 			     cover reads as part of the photo rather than as the album's state. -->
@@ -244,7 +275,7 @@
 		     misplaced badge rather than the album's own marker. Not over a bare
 		     lock plate, though — a second glyph beside that one says nothing the
 		     lock doesn't. -->
-		{#if message.isViewable || preview !== null}
+		{#if isViewable || preview !== null}
 			<div
 				class="absolute inset-0 flex items-center justify-center gap-1 px-2 py-0.5 *:aspect-square *:w-[20cqw] *:rounded-full *:bg-card *:p-2"
 			>
