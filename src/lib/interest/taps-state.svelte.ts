@@ -1,4 +1,4 @@
-import { accountScoped } from "$lib/api/account-caches";
+import { accountScoped, registerAccountCache } from "$lib/api/account-caches";
 import { markBlockedProfilesUnviewable } from "$lib/api/browse/blocks";
 import { markHiddenProfilesUnviewable } from "$lib/api/browse/hides";
 import { getReceivedTaps } from "$lib/api/interest/taps";
@@ -25,6 +25,15 @@ let cachedTaps: TapProfile[] | null = null;
 export function resetTapsCacheForTesting(): void {
 	cachedTaps = null;
 }
+
+// These are the taps one account received. The state object below is
+// account-scoped and rebuilt on a switch, but this cache is not part of it and
+// would otherwise be seeded straight into the next account's list.
+registerAccountCache({
+	reset: () => {
+		cachedTaps = null;
+	},
+});
 
 export class TapsState extends ReconcilingListState<TapProfile, TapsSnapshot> {
 	readonly ourProfileId: number;
