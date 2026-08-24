@@ -81,6 +81,19 @@ export function demoCallMethod(method: string): unknown {
 			return false;
 		case "session_health":
 			return { signedIn: true, expiresAt: null, stale: false };
+		// Demo mode is one made-up account, so the switcher shows exactly it and
+		// nothing can be added or switched to.
+		case "accounts_list":
+			return [
+				{
+					profileId: demoMeProfileId,
+					label: "demo@example.com",
+					addedAt: 0,
+					active: true,
+				},
+			];
+		case "account_add_in_progress":
+			return false;
 		default:
 			return null;
 	}

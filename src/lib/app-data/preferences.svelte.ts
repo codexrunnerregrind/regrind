@@ -87,6 +87,57 @@ const preferencesSchema = z.object({
 
 type Preferences = z.infer<typeof preferencesSchema>;
 
+/**
+ * The preferences that belong to one account rather than to the app.
+ *
+ * Location, filters and the account's own behaviour toggles follow the account:
+ * a second account signed in on the same phone is somewhere else, looking for
+ * something else, and may well not want to advertise that it is online. Look
+ * and feel is deliberately not on this list — one app should not change colour
+ * when you switch accounts.
+ */
+const accountPreferenceKeys = [
+	"geohash",
+	"currentGeohash",
+	"usingCurrentLocation",
+	"gridSearchFilters",
+	"rightNowFilters",
+	"stayOnline",
+	"notifyMessages",
+	"notifyTaps",
+	"revealMessageRead",
+	"revealProfileViews",
+] as const;
+
+const GLOBAL_PATH = "preferences.data";
+
+function accountPath(profileId: number): string {
+	return `preferences.${profileId}.data`;
+}
+
+function accountPart(values: Partial<Preferences>): Partial<Preferences> {
+	return Object.fromEntries(
+		accountPreferenceKeys
+			.filter((key) => values[key] !== undefined)
+			.map((key) => [key, values[key]]),
+	);
+}
+
+function withoutAccountPart(
+	values: Partial<Preferences>,
+): Partial<Preferences> {
+	const rest = { ...values };
+	for (const key of accountPreferenceKeys) delete rest[key];
+	return rest;
+}
+
+/**
+ * Which account the account-scoped preferences above are being read and written
+ * for. `null` before anyone is signed in, when everything lands in the global
+ * file and is adopted by the first account to sign in.
+ */
+let accountId: number | null = null;
+
 let writeQueue: Promise<unknown> = Promise.resolve();
 let snapshot = $state<Preferences>(preferencesSchema.parse({}));
 let loaded = $state(false);
@@ -109,12 +160,51 @@ function publish(preferences: Preferences): void {
 	loaded = true;
 }
 
+async function readFile(path: string): Promise<Partial<Preferences>> {
+	if (!(await existsAppDataFile(path))) return {};
+	const decoded = decode(await readAppDataFile(path));
+	// Only the shape is checked here; the merged result is what gets parsed, so
+	// a missing key in either file still falls back to its default.
+	return decoded !== null && typeof decoded === "object" ? decoded : {};
+}
+
+/**
+ * Moves an account's preferences out of the shared file the app wrote while it
+ * could only hold one account.
+ *
+ * Without this the values would not just be stale, they would be inherited: a
+ * second account signing in would open on the first account's location and
+ * filters, because that is what the shared file still said.
+ */
+async function adoptGlobalAccountValues(
+	profileId: number,
+): Promise<Partial<Preferences>> {
+	const stored = await readFile(GLOBAL_PATH);
+	const mine = accountPart(stored);
+	if (Object.keys(mine).length === 0) return {};
+	await writeAppDataFileAtomic({
+		path: accountPath(profileId),
+		content: encode(mine),
+	});
+	await writeAppDataFileAtomic({
+		path: GLOBAL_PATH,
+		content: encode(withoutAccountPart(stored)),
+	});
+	return mine;
+}
+
 async function readFromDisk(): Promise<Preferences> {
-	if (!(await existsAppDataFile("preferences.data"))) {
-		return preferencesSchema.parse({});
+	const shared = withoutAccountPart(await readFile(GLOBAL_PATH));
+	if (accountId === null) {
+		// Nothing is signed in, so the account keys have nowhere of their own to
+		// live yet and stay in the shared file until an account claims them.
+		return preferencesSchema.parse(await readFile(GLOBAL_PATH));
 	}
-	const bytes = await readAppDataFile("preferences.data");
-	return preferencesSchema.parse(decode(bytes));
+	const path = accountPath(accountId);
+	const mine = (await existsAppDataFile(path))
+		? accountPart(await readFile(path))
+		: await adoptGlobalAccountValues(accountId);
+	return preferencesSchema.parse({ ...shared, ...mine });
 }
 
 export async function getPreferences(): Promise<Preferences> {
@@ -212,6 +302,25 @@ export async function hydratePreferences(): Promise<void> {
 	await getPreferences();
 }
 
+/** Writes the snapshot out, each half to the file that owns it. */
+async function persist(preferences: Preferences): Promise<void> {
+	if (accountId === null) {
+		await writeAppDataFileAtomic({
+			path: GLOBAL_PATH,
+			content: encode(preferences),
+		});
+		return;
+	}
+	await writeAppDataFileAtomic({
+		path: GLOBAL_PATH,
+		content: encode(withoutAccountPart(preferences)),
+	});
+	await writeAppDataFileAtomic({
+		path: accountPath(accountId),
+		content: encode(accountPart(preferences)),
+	});
+}
+
 export async function setPreferences(
 	newValues: Partial<Preferences>,
 ): Promise<void> {
@@ -221,10 +330,7 @@ export async function setPreferences(
 			...oldValues,
 			...newValues,
 		});
-		await writeAppDataFileAtomic({
-			path: "preferences.data",
-			content: encode(preferences),
-		});
+		await persist(preferences);
 		publish(preferences);
 	});
 }
@@ -232,40 +338,53 @@ export async function setPreferences(
 async function resetToDefaults(): Promise<void> {
 	await enqueueWrite(async () => {
 		const preferences = preferencesSchema.parse({});
-		await writeAppDataFileAtomic({
-			path: "preferences.data",
-			content: encode(preferences),
-		});
+		await persist(preferences);
 		publish(preferences);
 	});
 	window.location.reload();
 }
 
-const accountPreferenceKeys = [
-	"geohash",
-	"currentGeohash",
-	"usingCurrentLocation",
-	"gridSearchFilters",
-] as const;
-
-function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
-	return a.length === b.length && a.every((byte, index) => byte === b[index]);
+/**
+ * Reads and writes preferences for this account from now on, re-reading what is
+ * already on disk for it.
+ *
+ * Called with the signed-in profile before a protected route renders, and again
+ * on every switch: the snapshot every screen reads is a single object, so it has
+ * to be rebuilt from the new account's file before anything looks at it.
+ */
+export async function usePreferencesForAccount(
+	profileId: number | null,
+): Promise<void> {
+	if (accountId === profileId && cache !== null) return;
+	accountId = profileId;
+	cache = null;
+	hydrating = null;
+	await getPreferences();
 }
 
-export async function clearAccountPreferences(): Promise<void> {
+export function preferencesAccount(): number | null {
+	return accountId;
+}
+
+/**
+ * Forgets one account's preferences, on its way out. Everything shared with the
+ * other accounts — the theme, the colours, the units — is left alone.
+ */
+export async function clearAccountPreferences(
+	profileId: number | null = accountId,
+): Promise<void> {
 	await enqueueWrite(async () => {
-		const kept: Partial<Preferences> = { ...(await getPreferences()) };
-		for (const key of accountPreferenceKeys) delete kept[key];
+		if (profileId !== null) await removeAppDataFile(accountPath(profileId));
+		if (profileId !== accountId) return;
+		accountId = null;
+		const kept: Partial<Preferences> = withoutAccountPart(
+			await getPreferences(),
+		);
 		const preferences = preferencesSchema.parse(kept);
+		await writeAppDataFileAtomic({
+			path: GLOBAL_PATH,
+			content: encode(preferences),
+		});
 		publish(preferences);
-		const encoded = encode(preferences);
-		if (bytesEqual(encoded, encode(preferencesSchema.parse({})))) {
-			await removeAppDataFile("preferences.data");
-		} else {
-			await writeAppDataFileAtomic({
-				path: "preferences.data",
-				content: encoded,
-			});
-		}
 	});
 }

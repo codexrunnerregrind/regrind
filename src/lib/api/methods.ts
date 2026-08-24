@@ -48,6 +48,16 @@ const loginResultSchema = z.object({
 	restriction: restrictionSchema.nullish(),
 });
 
+const profileIdSchema = z.int().nonnegative();
+
+export const accountSummarySchema = z.object({
+	profileId: profileIdSchema,
+	label: z.string(),
+	addedAt: z.number().int().nonnegative(),
+	active: z.boolean(),
+});
+export type AccountSummary = z.infer<typeof accountSummarySchema>;
+
 export const methods = {
 	login: {
 		request: z.object({ email: z.email(), password: z.string().min(1) }),
@@ -74,7 +84,24 @@ export const methods = {
 			"l-device-info": z.string(),
 		}),
 	},
-	logout: { request: z.undefined(), response: z.null() },
+	// The account that is active once this one is gone, or null when it was the
+	// last one signed in.
+	logout: { request: z.undefined(), response: profileIdSchema.nullable() },
+	accounts_list: {
+		request: z.undefined(),
+		response: z.array(accountSummarySchema),
+	},
+	account_switch: {
+		request: z.object({ profileId: profileIdSchema }),
+		response: z.null(),
+	},
+	account_add_begin: { request: z.undefined(), response: z.null() },
+	account_add_cancel: { request: z.undefined(), response: z.null() },
+	account_add_in_progress: { request: z.undefined(), response: z.boolean() },
+	account_remove: {
+		request: z.object({ profileId: profileIdSchema }),
+		response: profileIdSchema.nullable(),
+	},
 	recaptcha_first_party_enabled: {
 		request: z.undefined(),
 		response: z.boolean(),
