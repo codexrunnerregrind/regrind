@@ -72,6 +72,18 @@ in
       packages = toolchainInputs ++ [ pkgs.shellcheck ];
       buildInputs = gtkStack; # mkShell wires PKG_CONFIG_PATH and NIX_LDFLAGS
       shellHook = ''
+        # Off NixOS the nix-linked glvnd finds no EGL vendors and WebKitGTK
+        # aborts with EGL_BAD_PARAMETER; host drivers would mix host glibc in.
+        if [ ! -e /run/opengl-driver ]; then
+          export __EGL_VENDOR_LIBRARY_DIRS=${pkgs.mesa}/share/glvnd/egl_vendor.d
+          export LIBGL_DRIVERS_PATH=${pkgs.mesa}/lib/dri
+          export GBM_BACKENDS_PATH=${pkgs.mesa}/lib/gbm
+        fi
+        # GIO's TLS backend is a plugin a wrapped app gets from wrapGAppsHook;
+        # a plain shell has none, so every https in the webview fails.
+        export GIO_EXTRA_MODULES=${pkgs.glib-networking}/lib/gio/modules
+        export XDG_DATA_DIRS=${env.XDG_DATA_DIRS}:''${XDG_DATA_DIRS:-/usr/share}
+
         echo "Open Grind dev shell: Linux desktop toolchain."
         echo "  Rust:      $(rustc --version)"
         echo "  WebKitGTK: ${pkgs.webkitgtk_4_1.version}"
