@@ -7,6 +7,10 @@ import { inboxLastViewed } from "$lib/chat/inbox-last-viewed.svelte";
 import { tapsLastViewed } from "$lib/interest/taps-last-viewed";
 
 export async function signOut(): Promise<void> {
+	// Read who we are before the session goes: the markers below are keyed by
+	// profile, and once `logout` has run there is no id left to key them by.
+	const profileId = await callMethod("auth_state").catch(() => null);
+
 	try {
 		await callMethod("logout");
 	} catch (error) {
@@ -15,8 +19,9 @@ export async function signOut(): Promise<void> {
 
 	await goto("/auth/sign-in");
 
-	for (const marker of [inboxLastViewed, tapsLastViewed])
-		marker.clearStored();
+	if (profileId !== null)
+		for (const marker of [inboxLastViewed, tapsLastViewed])
+			marker.clearStored(profileId);
 	clearAccountCaches();
 
 	try {

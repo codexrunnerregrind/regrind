@@ -1,3 +1,4 @@
+import { registerAccountCache } from "$lib/api/account-caches";
 import { getMyAlbums } from "$lib/api/messaging/albums";
 import { now } from "$lib/util/clock";
 import type { MyAlbum } from "$lib/model/messaging/albums";
@@ -61,3 +62,8 @@ export function clearMyAlbumsCache(): void {
 	cached = null;
 	inFlight = null;
 }
+
+// The list is one account's own albums, so it cannot outlive the account it was
+// fetched for: switching accounts has to drop it or the next account's bubbles
+// read from the previous one's albums until the TTL runs out.
+registerAccountCache({ reset: clearMyAlbumsCache });

@@ -29,9 +29,19 @@ describe("lastViewedMarker", () => {
 		marker.save({ profileId: 1, at: 10 });
 		other.save({ profileId: 1, at: 20 });
 
-		marker.clearStored();
+		marker.clearStored(1);
 
 		expect(marker.load(1)).toBe(0);
 		expect(other.load(1)).toBe(20);
+	});
+
+	it("clears only the profile it was asked about", () => {
+		marker.save({ profileId: 1, at: 10 });
+		marker.save({ profileId: 2, at: 20 });
+
+		marker.clearStored(1);
+
+		expect(marker.load(1)).toBe(0);
+		expect(marker.load(2)).toBe(20);
 	});
 });

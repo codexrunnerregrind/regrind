@@ -20,11 +20,15 @@ export function lastViewedMarker(prefix: string) {
 			localStorage.setItem(keyFor(profileId), String(at));
 		},
 
-		clearStored(): void {
+		/**
+		 * Forget one account's marker. Scoped to a single profile because the
+		 * markers of the other signed-in accounts have to survive: signing out
+		 * of one account is not a reason to mark every other account's inbox as
+		 * never-viewed.
+		 */
+		clearStored(profileId: number): void {
 			if (typeof localStorage === "undefined") return;
-			for (const key of Object.keys(localStorage)) {
-				if (key.startsWith(prefix)) localStorage.removeItem(key);
-			}
+			localStorage.removeItem(keyFor(profileId));
 		},
 	};
 }
