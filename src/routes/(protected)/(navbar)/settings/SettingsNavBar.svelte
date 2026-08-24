@@ -19,6 +19,7 @@
 			title: "Hidden users",
 			back: "/settings/account",
 		},
+		[`${base}/accounts`]: { title: "Accounts", back: "/settings" },
 		[`${base}/app`]: { title: "App Settings", back: "/settings" },
 		[`${base}/appearance`]: { title: "Appearance", back: "/settings" },
 		[`${base}/profile`]: { title: "Edit Profile", back: "/settings" },

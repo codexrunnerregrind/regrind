@@ -1,3 +1,5 @@
+import { isTauri } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { goto, invalidateAll } from "$app/navigation";
 
 import { clearAccountCaches } from "$lib/api/account-caches";
@@ -58,6 +60,21 @@ class AccountsState {
 export const accountsState = new AccountsState();
 
 /**
+ * Keeps the list honest when the backend changes it on its own — an account
+ * whose session turned out to be unusable is dropped at launch, and the
+ * switcher must not go on offering it.
+ */
+export function watchAccounts(): () => void {
+	if (!isTauri()) return () => {};
+	const listener = listen("accounts:changed", () => {
+		void accountsState.reload();
+	});
+	return () => {
+		void listener.then((unlisten) => unlisten());
+	};
+}
+
+/**
  * Everything the app holds for the account being left, dropped in the order the
  * next account needs it: the caches first, so nothing can read another
  * account's data, then the preferences the next account replaces.
@@ -104,6 +121,19 @@ export async function cancelAddAccount(): Promise<void> {
 
 export function addAccountInProgress(): Promise<boolean> {
 	return callMethod("account_add_in_progress");
+}
+
+/**
+ * Settles the app onto an account that has just signed in.
+ *
+ * The backend has already filed the account by this point; this is the frontend
+ * half — drop whatever the previous account left in memory, and read this
+ * account's own preferences before any screen does.
+ */
+export async function accountSignedIn(profileId: number): Promise<void> {
+	clearAccountCaches();
+	await usePreferencesForAccount(profileId);
+	await accountsState.reload();
 }
 
 /**

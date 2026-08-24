@@ -7,6 +7,7 @@
 		accountStatusState,
 		showAccountRestriction,
 	} from "$lib/api/account-status-state.svelte";
+	import { accountSignedIn } from "$lib/api/accounts.svelte";
 	import { showErrorToast } from "$lib/api/error-toast";
 	import {
 		asAppError,
@@ -48,6 +49,7 @@
 			const result = await callMethod("login", { email, password });
 			if (showAccountRestriction(result.restriction)) return;
 			clearProfileCaches();
+			await accountSignedIn(result.profileId);
 			void goto("/");
 		} catch (error) {
 			console.error(error);
