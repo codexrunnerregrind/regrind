@@ -5,7 +5,11 @@ mod entries;
 ))]
 mod file_store;
 
-pub use entries::{AuthStorage, DeviceStorage, SigningKeyStorage};
+pub use entries::{
+	adopt_legacy_account, forget_account, now_unix, AccountIndex,
+	AccountRecord, AccountsStorage, AuthStorage, DeviceStorage, ProfileId,
+	SigningKeyStorage,
+};
 
 #[cfg(any(
 	target_os = "linux",
@@ -70,6 +74,9 @@ mod tests {
 
 	static DEFAULT_STORE: Mutex<()> = Mutex::new(());
 
+	const ME: ProfileId = 42;
+	const THEM: ProfileId = 77;
+
 	fn lock() -> std::sync::MutexGuard<'static, ()> {
 		DEFAULT_STORE.lock().unwrap_or_else(|e| e.into_inner())
 	}
@@ -86,15 +93,19 @@ mod tests {
 		keyring_core::Entry::new("open-grind", user).unwrap()
 	}
 
-	fn session(session_id: &str) -> grindr::Session {
+	fn session_for(profile_id: ProfileId, session_id: &str) -> grindr::Session {
 		serde_json::from_value(serde_json::json!({
 			"email": "user@example.com",
 			"expires_at": 9_999_999_999u64,
-			"profile_id": "42",
+			"profile_id": profile_id.to_string(),
 			"session_id": session_id,
 			"auth_token": "auth-token",
 		}))
 		.unwrap()
+	}
+
+	fn session(session_id: &str) -> grindr::Session {
+		session_for(ME, session_id)
 	}
 
 	fn signing_key() -> grindr::DeviceSigningKey {
@@ -105,25 +116,85 @@ mod tests {
 		.unwrap()
 	}
 
-	#[test]
-	fn the_installed_store_backs_every_keyring_entry() {
-		with_file_store(|base| {
-			DeviceStorage::save(&grindr::DeviceInfo::generate()).unwrap();
-			AuthStorage::set_session(&session("session-token")).unwrap();
-			SigningKeyStorage::save(&signing_key()).unwrap();
+	fn stored_names(base: &Path) -> Vec<String> {
+		let mut names: Vec<_> = std::fs::read_dir(base.join("credentials"))
+			.unwrap()
+			.map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+			.collect();
+		names.sort();
+		names
+	}
 
-			let mut written: Vec<_> =
-				std::fs::read_dir(base.join("credentials"))
-					.unwrap()
-					.map(|e| {
-						e.unwrap().file_name().to_string_lossy().into_owned()
-					})
-					.collect();
-			written.sort();
+	#[test]
+	fn every_secret_is_stored_under_the_account_that_owns_it() {
+		with_file_store(|base| {
+			DeviceStorage::save(ME, &grindr::DeviceInfo::generate()).unwrap();
+			AuthStorage::set_session(ME, &session("session-token")).unwrap();
+			SigningKeyStorage::save(ME, &signing_key()).unwrap();
+
+			// The file store replaces `:` in a key, so the on-disk names carry
+			// the profile after an underscore rather than a colon.
 			assert_eq!(
-				written,
-				["device-info", "device-signing-key", "session"]
+				stored_names(base),
+				["device-info_42", "device-signing-key_42", "session_42"]
 			);
+		});
+	}
+
+	#[test]
+	fn two_accounts_keep_separate_secrets() {
+		with_file_store(|_| {
+			AuthStorage::set_session(ME, &session_for(ME, "mine")).unwrap();
+			AuthStorage::set_session(THEM, &session_for(THEM, "theirs"))
+				.unwrap();
+
+			assert_eq!(
+				AuthStorage::get_session(ME).unwrap().unwrap().session_id,
+				"mine"
+			);
+			assert_eq!(
+				AuthStorage::get_session(THEM).unwrap().unwrap().session_id,
+				"theirs"
+			);
+		});
+	}
+
+	#[test]
+	fn each_account_gets_its_own_device_identity() {
+		with_file_store(|_| {
+			let mine = DeviceStorage::load_or_create(ME);
+			let theirs = DeviceStorage::load_or_create(THEM);
+
+			assert_ne!(
+				mine.device_id, theirs.device_id,
+				"a shared fingerprint would tie the two accounts together"
+			);
+			assert_eq!(
+				DeviceStorage::load_or_create(ME).device_id,
+				mine.device_id,
+				"an account's device has to be stable across launches"
+			);
+		});
+	}
+
+	#[test]
+	fn forgetting_one_account_leaves_the_other_untouched() {
+		with_file_store(|_| {
+			for id in [ME, THEM] {
+				AuthStorage::set_session(id, &session_for(id, "s")).unwrap();
+				DeviceStorage::save(id, &grindr::DeviceInfo::generate())
+					.unwrap();
+				SigningKeyStorage::save(id, &signing_key()).unwrap();
+			}
+
+			forget_account(ME);
+
+			assert!(AuthStorage::get_session(ME).unwrap().is_none());
+			assert!(DeviceStorage::load(ME).unwrap().is_none());
+			assert!(SigningKeyStorage::load(ME).unwrap().is_none());
+			assert!(AuthStorage::get_session(THEM).unwrap().is_some());
+			assert!(DeviceStorage::load(THEM).unwrap().is_some());
+			assert!(SigningKeyStorage::load(THEM).unwrap().is_some());
 		});
 	}
 
@@ -133,16 +204,20 @@ mod tests {
 			init_keyring();
 
 			assert!(keyring_core::get_default_store().is_some());
-			assert!(keyring_core::Entry::new("open-grind", "session").is_ok());
+			assert!(keyring_core::Entry::new("open-grind", "session:1").is_ok());
 		});
 	}
 
 	#[test]
 	fn nothing_is_stored_before_anything_is_saved() {
 		with_file_store(|_| {
-			assert!(DeviceStorage::load().unwrap().is_none());
-			assert!(AuthStorage::get_session().unwrap().is_none());
-			assert!(SigningKeyStorage::load().unwrap().is_none());
+			assert!(DeviceStorage::load(ME).unwrap().is_none());
+			assert!(AuthStorage::get_session(ME).unwrap().is_none());
+			assert!(SigningKeyStorage::load(ME).unwrap().is_none());
+			assert_eq!(
+				AccountsStorage::load().unwrap(),
+				AccountIndex::default()
+			);
 		});
 	}
 
@@ -151,9 +226,9 @@ mod tests {
 		with_file_store(|_| {
 			let device = grindr::DeviceInfo::generate();
 
-			DeviceStorage::save(&device).unwrap();
+			DeviceStorage::save(ME, &device).unwrap();
 
-			let loaded = DeviceStorage::load().unwrap().unwrap();
+			let loaded = DeviceStorage::load(ME).unwrap().unwrap();
 			assert_eq!(format!("{loaded:?}"), format!("{device:?}"));
 		});
 	}
@@ -190,9 +265,9 @@ mod tests {
 				accept_language: "en-US",
 			})
 			.unwrap();
-			entry("device-info").set_secret(&stored).unwrap();
+			entry("device-info:42").set_secret(&stored).unwrap();
 
-			let loaded = DeviceStorage::load().unwrap().unwrap();
+			let loaded = DeviceStorage::load(ME).unwrap().unwrap();
 
 			assert_eq!(loaded.device_id, "0123456789abcdef");
 			assert_eq!(loaded.device_model, "Pixel 8");
@@ -203,11 +278,17 @@ mod tests {
 	#[test]
 	fn every_secret_is_stored_as_a_named_map_not_a_positional_array() {
 		with_file_store(|_| {
-			DeviceStorage::save(&grindr::DeviceInfo::generate()).unwrap();
-			AuthStorage::set_session(&session("s1")).unwrap();
-			SigningKeyStorage::save(&signing_key()).unwrap();
+			DeviceStorage::save(ME, &grindr::DeviceInfo::generate()).unwrap();
+			AuthStorage::set_session(ME, &session("s1")).unwrap();
+			SigningKeyStorage::save(ME, &signing_key()).unwrap();
+			AccountsStorage::save(&AccountIndex::default()).unwrap();
 
-			for name in ["device-info", "session", "device-signing-key"] {
+			for name in [
+				"device-info:42",
+				"session:42",
+				"device-signing-key:42",
+				"accounts",
+			] {
 				let stored = entry(name).get_secret().unwrap();
 				let decoded: serde_json::Value =
 					rmp_serde::from_slice(&stored).unwrap();
@@ -223,19 +304,19 @@ mod tests {
 	#[test]
 	fn a_device_that_cannot_be_decoded_is_reported_as_an_error() {
 		with_file_store(|_| {
-			entry("device-info").set_secret(b"not msgpack").unwrap();
+			entry("device-info:42").set_secret(b"not msgpack").unwrap();
 
-			assert!(DeviceStorage::load().is_err());
+			assert!(DeviceStorage::load(ME).is_err());
 		});
 	}
 
 	#[test]
 	fn a_created_device_is_persisted_for_the_next_launch() {
 		with_file_store(|_| {
-			let created = DeviceStorage::load_or_create();
+			let created = DeviceStorage::load_or_create(ME);
 
 			assert_eq!(
-				format!("{:?}", DeviceStorage::load_or_create()),
+				format!("{:?}", DeviceStorage::load_or_create(ME)),
 				format!("{created:?}")
 			);
 		});
@@ -245,12 +326,12 @@ mod tests {
 	fn a_device_that_cannot_be_decoded_is_replaced_rather_than_regenerated_forever(
 	) {
 		with_file_store(|_| {
-			entry("device-info").set_secret(b"not msgpack").unwrap();
+			entry("device-info:42").set_secret(b"not msgpack").unwrap();
 
-			let replacement = DeviceStorage::load_or_create();
+			let replacement = DeviceStorage::load_or_create(ME);
 
 			assert_eq!(
-				format!("{:?}", DeviceStorage::load().unwrap().unwrap()),
+				format!("{:?}", DeviceStorage::load(ME).unwrap().unwrap()),
 				format!("{replacement:?}")
 			);
 		});
@@ -259,11 +340,11 @@ mod tests {
 	#[test]
 	fn deleting_the_device_clears_it() {
 		with_file_store(|_| {
-			DeviceStorage::save(&grindr::DeviceInfo::generate()).unwrap();
+			DeviceStorage::save(ME, &grindr::DeviceInfo::generate()).unwrap();
 
-			DeviceStorage::delete();
+			DeviceStorage::delete(ME);
 
-			assert!(DeviceStorage::load().unwrap().is_none());
+			assert!(DeviceStorage::load(ME).unwrap().is_none());
 		});
 	}
 
@@ -272,9 +353,9 @@ mod tests {
 		with_file_store(|_| {
 			let saved = session("session-token");
 
-			AuthStorage::set_session(&saved).unwrap();
+			AuthStorage::set_session(ME, &saved).unwrap();
 
-			let loaded = AuthStorage::get_session().unwrap().unwrap();
+			let loaded = AuthStorage::get_session(ME).unwrap().unwrap();
 			assert_eq!(loaded.session_id, saved.session_id);
 			assert_eq!(loaded.auth_token, saved.auth_token);
 			assert_eq!(loaded.email, saved.email);
@@ -286,11 +367,11 @@ mod tests {
 	#[test]
 	fn a_session_that_cannot_be_decoded_is_discarded_rather_than_kept() {
 		with_file_store(|_| {
-			entry("session").set_secret(b"not msgpack").unwrap();
+			entry("session:42").set_secret(b"not msgpack").unwrap();
 
-			assert!(AuthStorage::get_session().unwrap().is_none());
+			assert!(AuthStorage::get_session(ME).unwrap().is_none());
 			assert!(matches!(
-				entry("session").get_secret(),
+				entry("session:42").get_secret(),
 				Err(keyring_core::Error::NoEntry)
 			));
 		});
@@ -299,11 +380,11 @@ mod tests {
 	#[test]
 	fn setting_a_session_replaces_the_previous_one() {
 		with_file_store(|_| {
-			AuthStorage::set_session(&session("first")).unwrap();
-			AuthStorage::set_session(&session("second")).unwrap();
+			AuthStorage::set_session(ME, &session("first")).unwrap();
+			AuthStorage::set_session(ME, &session("second")).unwrap();
 
 			assert_eq!(
-				AuthStorage::get_session().unwrap().unwrap().session_id,
+				AuthStorage::get_session(ME).unwrap().unwrap().session_id,
 				"second"
 			);
 		});
@@ -312,11 +393,11 @@ mod tests {
 	#[test]
 	fn deleting_the_session_clears_it() {
 		with_file_store(|_| {
-			AuthStorage::set_session(&session("session-token")).unwrap();
+			AuthStorage::set_session(ME, &session("session-token")).unwrap();
 
-			AuthStorage::delete_session();
+			AuthStorage::delete_session(ME);
 
-			assert!(AuthStorage::get_session().unwrap().is_none());
+			assert!(AuthStorage::get_session(ME).unwrap().is_none());
 		});
 	}
 
@@ -325,9 +406,9 @@ mod tests {
 		with_file_store(|_| {
 			let key = signing_key();
 
-			SigningKeyStorage::save(&key).unwrap();
+			SigningKeyStorage::save(ME, &key).unwrap();
 
-			let loaded = SigningKeyStorage::load().unwrap().unwrap();
+			let loaded = SigningKeyStorage::load(ME).unwrap().unwrap();
 			assert_eq!(format!("{loaded:?}"), format!("{key:?}"));
 		});
 	}
@@ -335,18 +416,18 @@ mod tests {
 	#[test]
 	fn a_signing_key_that_cannot_be_decoded_reads_as_absent() {
 		with_file_store(|_| {
-			entry("device-signing-key")
+			entry("device-signing-key:42")
 				.set_secret(b"not msgpack")
 				.unwrap();
 
-			assert!(SigningKeyStorage::load().unwrap().is_none());
+			assert!(SigningKeyStorage::load(ME).unwrap().is_none());
 		});
 	}
 
 	#[test]
 	fn a_signing_key_the_client_refuses_is_dropped_from_storage() {
 		with_file_store(|_| {
-			SigningKeyStorage::save(&signing_key()).unwrap();
+			SigningKeyStorage::save(ME, &signing_key()).unwrap();
 			let client = grindr::GrindrClient::new(
 				grindr::DeviceInfo::generate(),
 				Some(session("session-token")),
@@ -356,20 +437,191 @@ mod tests {
 			tokio::runtime::Builder::new_current_thread()
 				.build()
 				.unwrap()
-				.block_on(SigningKeyStorage::restore(&client));
+				.block_on(SigningKeyStorage::restore(ME, &client));
 
-			assert!(SigningKeyStorage::load().unwrap().is_none());
+			assert!(SigningKeyStorage::load(ME).unwrap().is_none());
 		});
 	}
 
 	#[test]
 	fn deleting_the_signing_key_clears_it() {
 		with_file_store(|_| {
-			SigningKeyStorage::save(&signing_key()).unwrap();
+			SigningKeyStorage::save(ME, &signing_key()).unwrap();
 
-			SigningKeyStorage::delete();
+			SigningKeyStorage::delete(ME);
 
-			assert!(SigningKeyStorage::load().unwrap().is_none());
+			assert!(SigningKeyStorage::load(ME).unwrap().is_none());
+		});
+	}
+
+	fn record(profile_id: ProfileId, label: &str) -> AccountRecord {
+		AccountRecord {
+			profile_id,
+			label: label.to_owned(),
+			added_at: profile_id,
+		}
+	}
+
+	#[test]
+	fn an_added_account_becomes_the_active_one() {
+		with_file_store(|_| {
+			AccountsStorage::upsert(record(ME, "me@example.com")).unwrap();
+			let index =
+				AccountsStorage::upsert(record(THEM, "them@example.com"))
+					.unwrap();
+
+			assert_eq!(index.active, Some(THEM));
+			assert_eq!(index.accounts.len(), 2);
+		});
+	}
+
+	#[test]
+	fn signing_into_the_same_account_twice_lists_it_once() {
+		with_file_store(|_| {
+			AccountsStorage::upsert(record(ME, "old@example.com")).unwrap();
+			let index =
+				AccountsStorage::upsert(record(ME, "new@example.com")).unwrap();
+
+			assert_eq!(index.accounts.len(), 1);
+			assert_eq!(index.accounts[0].label, "new@example.com");
+		});
+	}
+
+	#[test]
+	fn removing_the_active_account_hands_over_to_another() {
+		with_file_store(|_| {
+			AccountsStorage::upsert(record(ME, "me@example.com")).unwrap();
+			AccountsStorage::upsert(record(THEM, "them@example.com")).unwrap();
+
+			let index = AccountsStorage::remove(THEM).unwrap();
+
+			assert_eq!(index.active, Some(ME));
+			assert_eq!(index.resolved_active(), Some(ME));
+		});
+	}
+
+	#[test]
+	fn removing_the_last_account_leaves_nothing_active() {
+		with_file_store(|_| {
+			AccountsStorage::upsert(record(ME, "me@example.com")).unwrap();
+
+			let index = AccountsStorage::remove(ME).unwrap();
+
+			assert!(index.accounts.is_empty());
+			assert_eq!(index.resolved_active(), None);
+		});
+	}
+
+	#[test]
+	fn an_active_pointer_at_an_account_that_is_gone_falls_back() {
+		let index = AccountIndex {
+			accounts: vec![record(ME, "me@example.com")],
+			active: Some(THEM),
+		};
+
+		assert_eq!(index.resolved_active(), Some(ME));
+	}
+
+	#[test]
+	fn an_unreadable_account_index_starts_over_rather_than_failing() {
+		with_file_store(|_| {
+			entry("accounts").set_secret(b"not msgpack").unwrap();
+
+			assert_eq!(
+				AccountsStorage::load().unwrap(),
+				AccountIndex::default()
+			);
+			assert!(matches!(
+				entry("accounts").get_secret(),
+				Err(keyring_core::Error::NoEntry)
+			));
+		});
+	}
+
+	#[test]
+	fn the_existing_single_account_install_is_adopted_under_its_profile() {
+		with_file_store(|_| {
+			let device = grindr::DeviceInfo::generate();
+			let legacy = session("legacy-token");
+			entry("session")
+				.set_secret(&rmp_serde::encode::to_vec_named(&legacy).unwrap())
+				.unwrap();
+			entry("device-info")
+				.set_secret(&rmp_serde::encode::to_vec_named(&device).unwrap())
+				.unwrap();
+			entry("device-signing-key")
+				.set_secret(
+					&rmp_serde::encode::to_vec_named(&signing_key()).unwrap(),
+				)
+				.unwrap();
+
+			adopt_legacy_account().unwrap();
+
+			let index = AccountsStorage::load().unwrap();
+			assert_eq!(index.active, Some(ME));
+			assert_eq!(index.accounts.len(), 1);
+			assert_eq!(index.accounts[0].label, "user@example.com");
+			assert_eq!(
+				AuthStorage::get_session(ME).unwrap().unwrap().session_id,
+				"legacy-token"
+			);
+			assert_eq!(
+				DeviceStorage::load(ME).unwrap().unwrap().device_id,
+				device.device_id,
+				"the account has to keep the device it was signed in with"
+			);
+			assert!(SigningKeyStorage::load(ME).unwrap().is_some());
+			for name in ["session", "device-info", "device-signing-key"] {
+				assert!(
+					matches!(
+						entry(name).get_secret(),
+						Err(keyring_core::Error::NoEntry)
+					),
+					"{name} should have been moved, not copied"
+				);
+			}
+		});
+	}
+
+	#[test]
+	fn adopting_runs_once_and_leaves_a_populated_index_alone() {
+		with_file_store(|_| {
+			AccountsStorage::upsert(record(THEM, "them@example.com")).unwrap();
+			entry("session")
+				.set_secret(
+					&rmp_serde::encode::to_vec_named(&session("legacy"))
+						.unwrap(),
+				)
+				.unwrap();
+
+			adopt_legacy_account().unwrap();
+
+			let index = AccountsStorage::load().unwrap();
+			assert_eq!(index.accounts.len(), 1);
+			assert_eq!(index.accounts[0].profile_id, THEM);
+			assert!(AuthStorage::get_session(ME).unwrap().is_none());
+		});
+	}
+
+	#[test]
+	fn a_signed_out_install_has_nothing_to_adopt_and_keeps_no_leftovers() {
+		with_file_store(|_| {
+			entry("device-info")
+				.set_secret(
+					&rmp_serde::encode::to_vec_named(
+						&grindr::DeviceInfo::generate(),
+					)
+					.unwrap(),
+				)
+				.unwrap();
+
+			adopt_legacy_account().unwrap();
+
+			assert!(AccountsStorage::load().unwrap().accounts.is_empty());
+			assert!(matches!(
+				entry("device-info").get_secret(),
+				Err(keyring_core::Error::NoEntry)
+			));
 		});
 	}
 
@@ -378,12 +630,15 @@ mod tests {
 		let _guard = lock();
 		keyring_core::unset_default_store();
 
-		assert!(DeviceStorage::load().is_err());
-		assert!(AuthStorage::get_session().is_err());
-		assert!(SigningKeyStorage::load().is_err());
-		assert!(AuthStorage::set_session(&session("session-token")).is_err());
-		DeviceStorage::delete();
-		AuthStorage::delete_session();
-		SigningKeyStorage::delete();
+		assert!(DeviceStorage::load(ME).is_err());
+		assert!(AuthStorage::get_session(ME).unwrap().is_none());
+		assert!(SigningKeyStorage::load(ME).unwrap().is_none());
+		assert!(
+			AuthStorage::set_session(ME, &session("session-token")).is_err()
+		);
+		assert!(AccountsStorage::save(&AccountIndex::default()).is_err());
+		DeviceStorage::delete(ME);
+		AuthStorage::delete_session(ME);
+		SigningKeyStorage::delete(ME);
 	}
 }

@@ -1,9 +1,9 @@
 use serde::Serialize;
 
+use crate::api::accounts::commit_signed_in;
 use crate::error::AppError;
 use crate::media::MediaProxy;
 use crate::state::AppState;
-use crate::storage::{AuthStorage, DeviceStorage, SigningKeyStorage};
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -72,11 +72,13 @@ fn region_str(region: grindr::VerificationRegion) -> &'static str {
 
 #[tauri::command]
 pub async fn login(
+	app: tauri::AppHandle,
 	state: tauri::State<'_, AppState>,
 	email: String,
 	password: String,
 ) -> Result<LoginResult, AppError> {
 	let result = state.client()?.login(&email, &password).await?;
+	commit_signed_in(&app, &result.profile_id).await?;
 	Ok(LoginResult::from(result))
 }
 
@@ -88,15 +90,18 @@ pub async fn login_with_google(
 	let access_token =
 		super::google_oauth::fetch_google_access_token(&app).await?;
 	let result = state.client()?.google_sign_in(&access_token).await?;
+	commit_signed_in(&app, &result.profile_id).await?;
 	Ok(LoginResult::from(result))
 }
 
 #[tauri::command]
 pub async fn google_sign_in(
+	app: tauri::AppHandle,
 	state: tauri::State<'_, AppState>,
 	token: String,
 ) -> Result<LoginResult, AppError> {
 	let result = state.client()?.google_sign_in(&token).await?;
+	commit_signed_in(&app, &result.profile_id).await?;
 	Ok(LoginResult::from(result))
 }
 
@@ -108,32 +113,30 @@ pub async fn refresh_token(
 	let result = client
 		.refresh_token()
 		.await
-		.map_err(|e| AppError::from_client_error(e, client))?;
+		.map_err(|e| AppError::from_client_error(e, &client))?;
 	Ok(LoginResult::from(result))
 }
 
+/// Signs the account in use out and forgets it, leaving the other signed-in
+/// accounts untouched. Answers with the account that is active afterwards, or
+/// `null` when that was the last one and the app is back at sign-in.
+///
+/// The device identity is not rotated the way it once was: each account owns
+/// its device, so the one being signed out leaves with it and there is nothing
+/// shared left to rotate.
 #[tauri::command]
 pub async fn logout(
+	app: tauri::AppHandle,
 	state: tauri::State<'_, AppState>,
 	media: tauri::State<'_, MediaProxy>,
-) -> Result<(), AppError> {
-	let client = state.client()?;
-
-	client.logout().await;
-	AuthStorage::delete_session();
-	SigningKeyStorage::delete();
-	media.forget_everything().await;
-
-	let new_device = grindr::DeviceInfo::generate();
-	if let Err(e) = DeviceStorage::save(&new_device) {
-		tracing::error!(
-			"[auth] could not persist rotated device info on sign out: {e}"
-		);
-		DeviceStorage::delete();
-	}
-	client.rotate_device(new_device).await?;
-
-	Ok(())
+) -> Result<Option<u64>, AppError> {
+	let Some(profile_id) = state.active_profile_id() else {
+		// Nothing is signed in; a sign-in in flight is simply abandoned.
+		super::accounts::account_add_cancel(state).await?;
+		return Ok(None);
+	};
+	media.forget_account(profile_id).await;
+	super::accounts::account_remove(app, state, profile_id).await
 }
 
 #[tauri::command]

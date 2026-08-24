@@ -13,7 +13,10 @@ use tauri::{
 };
 use tokio::sync::{Mutex, Semaphore};
 
-use cache::{cache_key, CachedMedia, MediaCache};
+use crate::state::AppState;
+use crate::storage::ProfileId;
+
+use cache::{cache_key, scope_of, CachedMedia, MediaCache};
 use flight::Flights;
 use range::deliver_ranged;
 use response::{deliverable_status, refused};
@@ -47,6 +50,18 @@ impl MediaProxy {
 	pub async fn forget_everything(&self) {
 		self.cache.lock().await.clear();
 		self.oversized.lock().await.clear();
+	}
+
+	/// Drops what one account had cached, on its way out. The other accounts
+	/// keep theirs: signing one account out is no reason to make the rest
+	/// refetch every photo.
+	pub async fn forget_account(&self, profile_id: ProfileId) {
+		let scope = scope_of(Some(profile_id));
+		self.cache.lock().await.clear_scope(&scope);
+		self.oversized
+			.lock()
+			.await
+			.retain(|key| !key.starts_with(&scope));
 	}
 }
 
@@ -85,7 +100,10 @@ async fn serve<R: Runtime>(
 		return refused(StatusCode::BAD_REQUEST);
 	};
 	let range = range.as_deref();
-	let key = cache_key(&url).to_owned();
+	// Scoped to the account that is asking. The cache sits in front of the
+	// server, so it is the only thing standing between one account and photos
+	// another account was entitled to.
+	let key = cache_key(app.state::<AppState>().active_profile_id(), &url);
 	let proxy = app.state::<MediaProxy>();
 
 	if let Some(hit) = proxy.cache.lock().await.get(&key) {
@@ -127,8 +145,6 @@ async fn serve<R: Runtime>(
 
 #[cfg(test)]
 mod tests {
-	use std::sync::OnceLock;
-
 	use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
 
 	use crate::state::AppState;
@@ -147,9 +163,7 @@ mod tests {
 	fn app_without_a_client() -> tauri::App<MockRuntime> {
 		mock_builder()
 			.manage(MediaProxy::default())
-			.manage(AppState {
-				client: OnceLock::new(),
-			})
+			.manage(AppState::default())
 			.build(mock_context(noop_assets()))
 			.expect("mock app")
 	}
@@ -160,7 +174,7 @@ mod tests {
 		body: &'static [u8],
 	) {
 		app.state::<MediaProxy>().cache.lock().await.put(
-			cache_key(url),
+			&cache_key(None, url),
 			CachedMedia {
 				content_type: Some("image/webp".to_owned()),
 				body: grindr::Bytes::from_static(body),
@@ -270,6 +284,53 @@ mod tests {
 		.await;
 
 		assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+	}
+
+	#[tokio::test]
+	async fn one_account_is_never_served_what_another_one_cached() {
+		let app = app_without_a_client();
+		let proxy = app.state::<MediaProxy>();
+		proxy.cache.lock().await.put(
+			&cache_key(Some(1), PHOTO),
+			CachedMedia {
+				content_type: Some("image/webp".to_owned()),
+				body: grindr::Bytes::from_static(b"theirs"),
+			},
+		);
+
+		// Asking as nobody in particular, which is what an app with no active
+		// account does: the entry above must be invisible, and with no client to
+		// fetch with the request can only be refused.
+		let response = serve(app.handle(), image(PHOTO), None, false).await;
+
+		assert_eq!(response.status(), StatusCode::SERVICE_UNAVAILABLE);
+	}
+
+	#[tokio::test]
+	async fn forgetting_one_account_leaves_the_others_cached() {
+		let app = app_without_a_client();
+		let proxy = app.state::<MediaProxy>();
+		for (profile_id, body) in [(1u64, b"ours"), (2u64, b"mine")] {
+			proxy.cache.lock().await.put(
+				&cache_key(Some(profile_id), PHOTO),
+				CachedMedia {
+					content_type: None,
+					body: grindr::Bytes::from_static(body),
+				},
+			);
+		}
+		proxy
+			.oversized
+			.lock()
+			.await
+			.insert(cache_key(Some(1), PHOTO));
+
+		proxy.forget_account(1).await;
+
+		let mut cache = proxy.cache.lock().await;
+		assert!(cache.get(&cache_key(Some(1), PHOTO)).is_none());
+		assert!(cache.get(&cache_key(Some(2), PHOTO)).is_some());
+		assert!(proxy.oversized.lock().await.is_empty());
 	}
 
 	#[tokio::test]

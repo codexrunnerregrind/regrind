@@ -19,12 +19,9 @@ compile_error!(
 	 `tauri dev` only — drop it from release builds."
 );
 
-use std::sync::OnceLock;
-
 use tauri::Manager;
 
 use crate::state::AppState;
-use crate::storage::{AuthStorage, DeviceStorage, SigningKeyStorage};
 
 // Mirrors MIN_SUPPORTED_WEBVIEW_MAJOR in gen/android/app/build.gradle.kts and the
 // CSS feature floor in src/app.html (Tailwind v4: Chromium 111 / WebKitGTK 2.42 /
@@ -183,9 +180,7 @@ pub fn run() {
         .plugin(api::google_oauth::plugin())
         .plugin(api::update::plugin())
         .plugin(app_settings::plugin())
-        .manage(AppState {
-            client: OnceLock::new(),
-        })
+        .manage(AppState::default())
         .manage(media::MediaProxy::default())
         .manage(api::session_recovery::SessionRecovery::default())
         .register_asynchronous_uri_scheme_protocol(media::SCHEME, media::handle)
@@ -198,6 +193,12 @@ pub fn run() {
             api::auth::auth_state,
             api::auth::account_restriction,
             api::auth::recaptcha_first_party_enabled,
+            api::accounts::accounts_list,
+            api::accounts::account_switch,
+            api::accounts::account_add_begin,
+            api::accounts::account_add_cancel,
+            api::accounts::account_add_in_progress,
+            api::accounts::account_remove,
             api::rest::request,
             api::media_upload::upload_chat_media,
             api::media_upload::upload_chat_audio,
@@ -263,60 +264,10 @@ pub fn run() {
 
             storage::init_keyring();
 
-            let device = DeviceStorage::load_or_create();
-
-            let session = match AuthStorage::get_session() {
-                Ok(s) => s,
-                Err(e) => {
-                    tracing::warn!("[setup] could not load session: {e}");
-                    None
-                }
-            };
-
-            let client =
-                grindr::GrindrClient::new(device, session).expect("failed to build GrindrClient");
-
-            {
-                let mut session_rx = client.session_receiver();
-                tauri::async_runtime::spawn(async move {
-                    while session_rx.changed().await.is_ok() {
-                        match session_rx.borrow().as_ref() {
-                            Some(s) => {
-                                if let Err(e) = AuthStorage::set_session(s) {
-                                    tracing::error!("[session] persist failed: {e}");
-                                }
-                            }
-                            None => AuthStorage::delete_session(),
-                        }
-                    }
-                });
-            }
-
-            {
-                let client = client.clone();
-                let mut key_rx = client.signing_key_receiver();
-                tauri::async_runtime::spawn(async move {
-                    SigningKeyStorage::restore(&client).await;
-                    while key_rx.changed().await.is_ok() {
-                        match key_rx.borrow().clone() {
-                            Some(k) => {
-                                if let Err(e) = SigningKeyStorage::save(&k) {
-                                    tracing::error!("[signing] persist failed: {e}");
-                                }
-                            }
-                            None => SigningKeyStorage::delete(),
-                        }
-                    }
-                });
-            }
-
-            app.state::<AppState>()
-                .client
-                .set(client)
-                .ok()
-                .expect("client already set");
-
-            api::ws::spawn_ws_task(app.handle().clone());
+            // Brings up a client per signed-in account, points the app at one,
+            // and starts the tasks that persist each account's secrets and carry
+            // the active one's events to the frontend.
+            api::accounts::restore_on_launch(app.handle());
 
             Ok(())
         })

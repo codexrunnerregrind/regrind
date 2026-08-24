@@ -73,7 +73,7 @@ pub async fn request(
 	let raw = client
 		.request_authenticated_raw(method, &payload.path, json_body)
 		.await
-		.map_err(|e| AppError::from_client_error(e, client))?;
+		.map_err(|e| AppError::from_client_error(e, &client))?;
 
 	encode_response(&RawResponse {
 		status: raw.status,

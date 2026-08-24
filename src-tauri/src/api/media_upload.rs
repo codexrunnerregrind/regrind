@@ -67,9 +67,9 @@ pub async fn upload_chat_media(
 
 	let client = state.client()?;
 	if taken_on_grindr {
-		upload_signed_v6(client, photo).await
+		upload_signed_v6(&client, photo).await
 	} else {
-		upload_unsigned_v5(client, photo).await
+		upload_unsigned_v5(&client, photo).await
 	}
 }
 
@@ -112,7 +112,7 @@ pub async fn upload_chat_audio(
 	let response = client
 		.upload_chat_media(bytes, &content_type, length_ms, None, true)
 		.await
-		.map_err(|e| AppError::from_client_error(e, client))?;
+		.map_err(|e| AppError::from_client_error(e, &client))?;
 
 	Ok(MediaUploadResponse {
 		media_id: response.media_id,

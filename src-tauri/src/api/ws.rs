@@ -1,3 +1,4 @@
+use tauri::async_runtime::JoinHandle;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::broadcast::error::RecvError;
 
@@ -6,20 +7,37 @@ use crate::api::session_recovery::{
 };
 use crate::error::{AppError, BanInfo};
 use crate::state::AppState;
+use crate::storage::ProfileId;
 
-pub fn spawn_ws_task(app: AppHandle) {
+/// Whether this account is the one the frontend is showing.
+///
+/// Every signed-in account keeps a client, so several of these tasks run at
+/// once. Only the active account may emit: a background account going idle
+/// drops its websocket, and an unguarded emit would tell the UI it had been
+/// disconnected while the account it is showing is connected.
+fn is_active(app: &AppHandle, profile_id: ProfileId) -> bool {
+	app.state::<AppState>().active_id() == Some(profile_id)
+}
+
+/// Starts the tasks that carry one account's realtime and auth events to the
+/// frontend. The handles are owned by the account, and aborted with it.
+pub fn spawn_ws_tasks(
+	app: &AppHandle,
+	profile_id: ProfileId,
+	client: &grindr::GrindrClient,
+) -> Vec<JoinHandle<()>> {
+	let mut tasks = Vec::new();
+
 	{
 		let app = app.clone();
-		tauri::async_runtime::spawn(async move {
-			let client = {
-				let state = app.state::<AppState>();
-				let Ok(c) = state.client() else { return };
-				c.clone()
-			};
-			let mut rx = client.ws_receiver();
+		let mut rx = client.ws_receiver();
+		tasks.push(tauri::async_runtime::spawn(async move {
 			loop {
 				match rx.recv().await {
 					Ok(event) => {
+						if !is_active(&app, profile_id) {
+							continue;
+						}
 						let safe_type = event.event_type.replace('.', "_");
 						app.emit(
 							&format!("grindr:{safe_type}"),
@@ -28,42 +46,39 @@ pub fn spawn_ws_task(app: AppHandle) {
 						.ok();
 					}
 					Err(RecvError::Lagged(skipped)) => {
-						app.emit("ws:events-dropped", skipped).ok();
+						if is_active(&app, profile_id) {
+							app.emit("ws:events-dropped", skipped).ok();
+						}
 					}
 					Err(RecvError::Closed) => break,
 				}
 			}
-		});
+		}));
 	}
 
 	{
 		let app = app.clone();
-		tauri::async_runtime::spawn(async move {
-			let client = {
-				let state = app.state::<AppState>();
-				let Ok(c) = state.client() else { return };
-				c.clone()
-			};
-			let mut rx = client.connection_state();
-			emit_ws_state(&app, &rx.borrow());
+		let mut rx = client.connection_state();
+		tasks.push(tauri::async_runtime::spawn(async move {
+			if is_active(&app, profile_id) {
+				emit_ws_state(&app, &rx.borrow().clone());
+			}
 			loop {
 				if rx.changed().await.is_err() {
 					break;
 				}
-				emit_ws_state(&app, &rx.borrow());
+				let state = rx.borrow().clone();
+				if is_active(&app, profile_id) {
+					emit_ws_state(&app, &state);
+				}
 			}
-		});
+		}));
 	}
 
 	{
 		let app = app.clone();
-		tauri::async_runtime::spawn(async move {
-			let client = {
-				let state = app.state::<AppState>();
-				let Ok(c) = state.client() else { return };
-				c.clone()
-			};
-			let mut rx = client.auth_event_receiver();
+		let mut rx = client.auth_event_receiver();
+		tasks.push(tauri::async_runtime::spawn(async move {
 			loop {
 				let event = match rx.recv().await {
 					Ok(event) => event,
@@ -72,6 +87,9 @@ pub fn spawn_ws_task(app: AppHandle) {
 					Err(RecvError::Lagged(_)) => continue,
 					Err(RecvError::Closed) => break,
 				};
+				if !is_active(&app, profile_id) {
+					continue;
+				}
 				match event {
 					grindr::AuthEvent::LoggedOut => {
 						app.emit(
@@ -104,8 +122,10 @@ pub fn spawn_ws_task(app: AppHandle) {
 					_ => {}
 				}
 			}
-		});
+		}));
 	}
+
+	tasks
 }
 
 fn emit_ws_state(app: &AppHandle, state: &grindr::WsConnectionState) {
@@ -152,8 +172,6 @@ pub async fn ws_send(
 
 #[cfg(test)]
 mod tests {
-	use std::sync::OnceLock;
-
 	use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
 
 	use super::*;
@@ -162,10 +180,9 @@ mod tests {
 		let client =
 			grindr::GrindrClient::new(grindr::DeviceInfo::generate(), None)
 				.expect("client");
-		let state = AppState {
-			client: OnceLock::new(),
-		};
-		assert!(state.client.set(client).is_ok());
+		let state = AppState::default();
+		// A client with no session, which is what a sign-in talks through.
+		state.set_pending(Some(client));
 
 		mock_builder()
 			.manage(state)

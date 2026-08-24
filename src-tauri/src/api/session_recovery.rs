@@ -66,7 +66,7 @@ pub fn report_refresh_failure(
 	message: String,
 	transient: bool,
 ) {
-	let Ok(client) = app.state::<AppState>().client().cloned() else {
+	let Ok(client) = app.state::<AppState>().client() else {
 		return;
 	};
 

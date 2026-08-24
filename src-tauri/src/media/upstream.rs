@@ -32,7 +32,7 @@ pub async fn fetch<R: Runtime>(
 	let Ok(_permit) = proxy.fetches.acquire().await else {
 		return Err(FetchError::Busy);
 	};
-	let Ok(client) = app.state::<AppState>().client().cloned() else {
+	let Ok(client) = app.state::<AppState>().client() else {
 		return Err(FetchError::Busy);
 	};
 	client
