@@ -73,6 +73,12 @@ Some of this is mine, some comes from pull requests that haven't landed in the o
 <img src="./contrib/screenshots/chat.webp" alt="Chat" width="220">
 <img src="./contrib/screenshots/media-viewer.webp" alt="Media viewer" width="220">
 
+### Accounts
+
+- Sign several accounts in and switch between them from Settings → Accounts
+- Each account keeps its own device identity, session, location, filters and online setting
+- Only the account you're using is online. The others hold their sign-in but stay disconnected, so nobody sees them online until you switch back — which also means only the account in use notifies you.
+
 ### Favorites
 
 - Favorites screen
