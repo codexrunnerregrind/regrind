@@ -194,17 +194,17 @@ async function adoptGlobalAccountValues(
 }
 
 async function readFromDisk(): Promise<Preferences> {
-	const shared = withoutAccountPart(await readFile(GLOBAL_PATH));
+	const stored = await readFile(GLOBAL_PATH);
 	if (accountId === null) {
 		// Nothing is signed in, so the account keys have nowhere of their own to
 		// live yet and stay in the shared file until an account claims them.
-		return preferencesSchema.parse(await readFile(GLOBAL_PATH));
+		return preferencesSchema.parse(stored);
 	}
 	const path = accountPath(accountId);
 	const mine = (await existsAppDataFile(path))
 		? accountPart(await readFile(path))
 		: await adoptGlobalAccountValues(accountId);
-	return preferencesSchema.parse({ ...shared, ...mine });
+	return preferencesSchema.parse({ ...withoutAccountPart(stored), ...mine });
 }
 
 export async function getPreferences(): Promise<Preferences> {

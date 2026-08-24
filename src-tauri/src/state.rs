@@ -181,3 +181,145 @@ impl AppState {
 		self.pending.write().ok()?.take()
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	fn client() -> grindr::GrindrClient {
+		grindr::GrindrClient::new(grindr::DeviceInfo::generate(), None)
+			.expect("client")
+	}
+
+	fn state_with(ids: &[ProfileId]) -> AppState {
+		let state = AppState::default();
+		for id in ids {
+			state.insert(Account::new(*id, client()));
+		}
+		state
+	}
+
+	#[test]
+	fn nothing_is_signed_in_to_begin_with() {
+		let state = AppState::default();
+
+		assert!(state.client().is_err());
+		assert_eq!(state.active_id(), None);
+		assert_eq!(state.active_profile_id(), None);
+	}
+
+	#[test]
+	fn only_the_active_account_is_left_active() {
+		let state = state_with(&[1, 2, 3]);
+
+		state.set_active(Some(2));
+
+		assert_eq!(state.active_id(), Some(2));
+		assert!(state.client_for(2).unwrap().is_active());
+		for idle in [1, 3] {
+			assert!(
+				!state.client_for(idle).unwrap().is_active(),
+				"{idle} should be idle, which is what drops its websocket"
+			);
+		}
+	}
+
+	#[test]
+	fn switching_hands_the_only_active_flag_over() {
+		let state = state_with(&[1, 2]);
+		state.set_active(Some(1));
+
+		state.set_active(Some(2));
+
+		assert!(!state.client_for(1).unwrap().is_active());
+		assert!(state.client_for(2).unwrap().is_active());
+	}
+
+	#[test]
+	fn a_sign_in_in_flight_answers_for_the_client_and_idles_the_rest() {
+		let state = state_with(&[1]);
+		state.set_active(Some(1));
+
+		state.set_pending(Some(client()));
+
+		// Nothing signed in as far as anything account-scoped is concerned, so
+		// caches keyed by account cannot be shared with the account behind it.
+		assert_eq!(state.active_profile_id(), None);
+		assert!(state.client().is_ok());
+		assert!(
+			!state.client_for(1).unwrap().is_active(),
+			"the account behind the sign-in must not keep its socket"
+		);
+	}
+
+	#[test]
+	fn abandoning_a_sign_in_gives_the_account_back() {
+		let state = state_with(&[1]);
+		state.set_active(Some(1));
+		state.set_pending(Some(client()));
+
+		assert!(state.take_pending().is_some());
+		state.set_active(Some(1));
+
+		assert_eq!(state.active_profile_id(), Some(1));
+		assert!(state.client_for(1).unwrap().is_active());
+		assert!(state.take_pending().is_none());
+	}
+
+	#[test]
+	fn removing_the_active_account_leaves_nothing_active() {
+		let state = state_with(&[1, 2]);
+		state.set_active(Some(1));
+
+		assert!(state.take(1).is_some());
+
+		assert_eq!(state.active_id(), None);
+		assert!(state.client_for(1).is_none());
+		assert!(state.client_for(2).is_some());
+		assert!(state.client().is_err());
+	}
+
+	#[test]
+	fn removing_a_background_account_leaves_the_active_one_alone() {
+		let state = state_with(&[1, 2]);
+		state.set_active(Some(1));
+
+		assert!(state.take(2).is_some());
+
+		assert_eq!(state.active_id(), Some(1));
+		assert!(state.client_for(1).unwrap().is_active());
+	}
+
+	#[test]
+	fn signing_into_an_account_twice_replaces_the_client_it_had() {
+		let state = state_with(&[1]);
+		let replacement = client();
+
+		state.insert(Account::new(1, replacement));
+		state.set_active(Some(1));
+
+		assert_eq!(state.signed_in_ids(), vec![1]);
+		assert!(state.client_for(1).unwrap().is_active());
+	}
+
+	#[test]
+	fn a_task_for_an_account_that_is_gone_is_dropped_rather_than_left_running()
+	{
+		let runtime = tokio::runtime::Builder::new_current_thread()
+			.enable_time()
+			.build()
+			.unwrap();
+		let _guard = runtime.enter();
+		let state = AppState::default();
+
+		let task = tauri::async_runtime::spawn(async {
+			// Long enough that it can only end by being aborted.
+			tokio::time::sleep(std::time::Duration::from_secs(3600)).await;
+		});
+		state.own_task(7, task);
+
+		// Nothing to assert beyond not leaking: with no account 7 the handle has
+		// no owner, so `own_task` aborts it instead of dropping it on the floor.
+		assert!(state.client_for(7).is_none());
+	}
+}
