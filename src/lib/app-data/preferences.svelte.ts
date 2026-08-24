@@ -302,43 +302,55 @@ export async function hydratePreferences(): Promise<void> {
 	await getPreferences();
 }
 
-/** Writes the snapshot out, each half to the file that owns it. */
-async function persist(preferences: Preferences): Promise<void> {
-	if (accountId === null) {
+/**
+ * Writes the snapshot out, each half to the file that owns it.
+ *
+ * `forAccount` is the account the values were read for, and the write is
+ * abandoned if the app has switched since. Otherwise a setting changed just as
+ * the switch landed would write the previous account's location and filters
+ * into the new account's file.
+ */
+async function persist(
+	preferences: Preferences,
+	forAccount: number | null,
+): Promise<boolean> {
+	if (forAccount !== accountId) return false;
+	if (forAccount === null) {
 		await writeAppDataFileAtomic({
 			path: GLOBAL_PATH,
 			content: encode(preferences),
 		});
-		return;
+		return true;
 	}
 	await writeAppDataFileAtomic({
 		path: GLOBAL_PATH,
 		content: encode(withoutAccountPart(preferences)),
 	});
 	await writeAppDataFileAtomic({
-		path: accountPath(accountId),
+		path: accountPath(forAccount),
 		content: encode(accountPart(preferences)),
 	});
+	return true;
 }
 
 export async function setPreferences(
 	newValues: Partial<Preferences>,
 ): Promise<void> {
 	await enqueueWrite(async () => {
+		const forAccount = accountId;
 		const oldValues = await getPreferences();
 		const preferences = preferencesSchema.parse({
 			...oldValues,
 			...newValues,
 		});
-		await persist(preferences);
-		publish(preferences);
+		if (await persist(preferences, forAccount)) publish(preferences);
 	});
 }
 
 async function resetToDefaults(): Promise<void> {
 	await enqueueWrite(async () => {
 		const preferences = preferencesSchema.parse({});
-		await persist(preferences);
+		await persist(preferences, accountId);
 		publish(preferences);
 	});
 	window.location.reload();
