@@ -13,6 +13,9 @@
 			"allow": [
 				{
 					"path": "$APPDATA/preferences.data"
+				},
+				{
+					"path": "$APPDATA/preferences.*.data"
 				}
 			]
 		},
@@ -21,6 +24,9 @@
 			"allow": [
 				{
 					"path": "$APPDATA/preferences.data"
+				},
+				{
+					"path": "$APPDATA/preferences.*.data"
 				}
 			],
 			"deny": [
@@ -37,6 +43,12 @@
 				},
 				{
 					"path": "$APPDATA/preferences.data.tmp"
+				},
+				{
+					"path": "$APPDATA/preferences.*.data"
+				},
+				{
+					"path": "$APPDATA/preferences.*.data.tmp"
 				}
 			]
 		},
@@ -48,6 +60,23 @@
 				},
 				{
 					"path": "$APPDATA/preferences.data.tmp"
+				},
+				{
+					"path": "$APPDATA/preferences.*.data"
+				},
+				{
+					"path": "$APPDATA/preferences.*.data.tmp"
+				}
+			]
+		},
+		{
+			"identifier": "fs:allow-remove",
+			"allow": [
+				{
+					"path": "$APPDATA/preferences.data"
+				},
+				{
+					"path": "$APPDATA/preferences.*.data"
 				}
 			]
 		},

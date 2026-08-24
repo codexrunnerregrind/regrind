@@ -1,6 +1,7 @@
 pub mod api;
 mod app_settings;
 mod appearance;
+mod capabilities;
 mod error;
 pub mod media;
 mod photo;
