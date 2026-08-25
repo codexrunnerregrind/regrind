@@ -7,6 +7,7 @@
 		pickMultipleMedia,
 		readMediaBytes,
 	} from "$lib/platform/media-picker";
+	import { dragReorder } from "$lib/util/drag-reorder";
 	import ProfilePictureSlot from "./ProfilePictureSlot.svelte";
 
 	const MAX_PHOTOS = 6;
@@ -25,6 +26,20 @@
 
 	function removePhoto(mediaHash: string) {
 		medias = medias.filter((media) => media.mediaHash !== mediaHash);
+	}
+
+	/**
+	 * Reordering is what picks the profile picture: the photo held first is the
+	 * one everyone else sees. The new order is saved with the rest of the form,
+	 * so nothing here talks to the API.
+	 */
+	function movePhoto(from: number, to: number) {
+		if (to < 0 || to >= medias.length || to === from) return;
+		const next = [...medias];
+		const [moved] = next.splice(from, 1);
+		if (moved === undefined) return;
+		next.splice(to, 0, moved);
+		medias = next;
 	}
 
 	/**
@@ -60,13 +75,21 @@
 	}
 </script>
 
-<div class="grid grid-cols-3 gap-2">
+<div
+	class="reorder-grid grid grid-cols-3 gap-2"
+	use:dragReorder={{
+		enabled: medias.length > 1 && uploading === 0,
+		onReorder: movePhoto,
+	}}
+>
 	{#each medias as media, i (media.mediaHash + i)}
-		<ProfilePictureSlot
-			mediaHash={media.mediaHash}
-			position={i + 1}
-			onDelete={() => removePhoto(media.mediaHash)}
-		/>
+		<div data-reorder-item>
+			<ProfilePictureSlot
+				mediaHash={media.mediaHash}
+				position={i + 1}
+				onDelete={() => removePhoto(media.mediaHash)}
+			/>
+		</div>
 	{/each}
 	{#each emptySlots as slot (slot)}
 		{#if slot === 0}
@@ -93,7 +116,9 @@
 </div>
 {#if medias.length > 0}
 	<p class="mt-2 text-2xs text-ink3">
-		The first photo is your profile picture. Photos are uploaded straight
-		away and go on your profile when you save.
+		The first photo is your profile picture{medias.length > 1
+			? " — hold a photo to move it"
+			: ""}. Photos are uploaded straight away and go on your profile when
+		you save.
 	</p>
 {/if}
