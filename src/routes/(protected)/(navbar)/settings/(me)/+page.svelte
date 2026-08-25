@@ -4,7 +4,6 @@
 		IdentificationCardIcon,
 		PaletteIcon,
 		UserCircleIcon,
-		UsersIcon,
 	} from "phosphor-svelte";
 
 	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
@@ -52,11 +51,6 @@
 					<SettingsRow title="Appearance" href="/settings/appearance">
 						{#snippet icon()}
 							<PaletteIcon weight="fill" />
-						{/snippet}
-					</SettingsRow>
-					<SettingsRow title="Accounts" href="/settings/accounts">
-						{#snippet icon()}
-							<UsersIcon weight="fill" />
 						{/snippet}
 					</SettingsRow>
 				</SettingsGroup>
