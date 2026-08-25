@@ -196,7 +196,9 @@
 		{/if}
 	</div>
 	<div role="status" class="sr-only">
-		{gridState.loadingMore ? "Loading more profiles" : ""}
+		{#if gridState.loadingMore}
+			Loading more profiles
+		{/if}
 	</div>
 	{#if !search.active && gridState.nextPage !== 0 && gridState.nextPage !== null}
 		<div

@@ -163,32 +163,33 @@ const getProfilesResponseSchema = z.object({
 });
 
 /**
- * The API rejects a larger batch with `400 Max profile is 150`, so longer
- * lists are split across requests rather than failing.
+ * The hard ceiling is 150 — a longer batch is rejected with `400 Max profile is
+ * 150` — but the official client asks for 30 at a time, and this asks for the
+ * same, so a request of ours does not stand out by its size.
  */
-export const MAX_PROFILES_PER_REQUEST = 150;
+export const MAX_PROFILES_PER_REQUEST = 30;
+
+async function fetchProfilesBatch(
+	targetProfileIds: number[],
+): Promise<z.infer<typeof getProfilesResponseSchema>["profiles"]> {
+	return await fetchRest("/v3/profiles", {
+		method: "POST",
+		body: { targetProfileIds },
+	}).then((res) => res.jsonParsed(getProfilesResponseSchema).profiles);
+}
 
 export async function getProfiles(
 	profileIds: number[],
 ): Promise<z.infer<typeof getProfilesResponseSchema>["profiles"]> {
 	if (profileIds.length === 0) return [];
 
-	const profiles: z.infer<typeof getProfilesResponseSchema>["profiles"] = [];
-	for (let i = 0; i < profileIds.length; i += MAX_PROFILES_PER_REQUEST) {
-		// Sequential on purpose: a long list would otherwise fire a burst of
-		// requests at once and risk being rate limited.
-		const batch = await fetchRest("/v3/profiles", {
-			method: "POST",
-			body: {
-				targetProfileIds: profileIds.slice(
-					i,
-					i + MAX_PROFILES_PER_REQUEST,
-				),
-			},
-		}).then((res) => res.jsonParsed(getProfilesResponseSchema).profiles);
-		profiles.push(...batch);
-	}
-	return profiles;
+	// In flight together, and flattened in the order they were asked for: at 30
+	// ids a batch, a list of any length would otherwise be a long chain of round
+	// trips with the screen waiting on the last one.
+	const batches: number[][] = [];
+	for (let i = 0; i < profileIds.length; i += MAX_PROFILES_PER_REQUEST)
+		batches.push(profileIds.slice(i, i + MAX_PROFILES_PER_REQUEST));
+	return (await Promise.all(batches.map(fetchProfilesBatch))).flat();
 }
 
 export function clearProfileCaches() {

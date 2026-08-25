@@ -93,8 +93,26 @@ mod tests {
 		keyring_core::Entry::new("open-grind", user).unwrap()
 	}
 
-	fn session_for(profile_id: ProfileId, session_id: &str) -> grindr::Session {
+	fn credentials_for(
+		profile_id: ProfileId,
+		auth_token: &str,
+	) -> grindr::Credentials {
 		serde_json::from_value(serde_json::json!({
+			"email": "user@example.com",
+			"profile_id": profile_id.to_string(),
+			"auth_token": auth_token,
+		}))
+		.unwrap()
+	}
+
+	fn credentials(auth_token: &str) -> grindr::Credentials {
+		credentials_for(ME, auth_token)
+	}
+
+	/// A session as an older build wrote it: the durable fields with the
+	/// short-lived ones alongside, all in one flat map.
+	fn legacy_session_blob(profile_id: ProfileId, session_id: &str) -> Vec<u8> {
+		rmp_serde::encode::to_vec_named(&serde_json::json!({
 			"email": "user@example.com",
 			"expires_at": 9_999_999_999u64,
 			"profile_id": profile_id.to_string(),
@@ -104,8 +122,11 @@ mod tests {
 		.unwrap()
 	}
 
-	fn session(session_id: &str) -> grindr::Session {
-		session_for(ME, session_id)
+	fn session(auth_token: &str) -> grindr::Session {
+		grindr::Session {
+			credentials: credentials(auth_token),
+			token: None,
+		}
 	}
 
 	fn signing_key() -> grindr::DeviceSigningKey {
@@ -129,7 +150,8 @@ mod tests {
 	fn every_secret_is_stored_under_the_account_that_owns_it() {
 		with_file_store(|base| {
 			DeviceStorage::save(ME, &grindr::DeviceInfo::generate()).unwrap();
-			AuthStorage::set_session(ME, &session("session-token")).unwrap();
+			AuthStorage::set_credentials(ME, &credentials("auth-token"))
+				.unwrap();
 			SigningKeyStorage::save(ME, &signing_key()).unwrap();
 
 			// The file store replaces `:` in a key, so the on-disk names carry
@@ -144,16 +166,26 @@ mod tests {
 	#[test]
 	fn two_accounts_keep_separate_secrets() {
 		with_file_store(|_| {
-			AuthStorage::set_session(ME, &session_for(ME, "mine")).unwrap();
-			AuthStorage::set_session(THEM, &session_for(THEM, "theirs"))
+			AuthStorage::set_credentials(ME, &credentials_for(ME, "mine"))
 				.unwrap();
+			AuthStorage::set_credentials(
+				THEM,
+				&credentials_for(THEM, "theirs"),
+			)
+			.unwrap();
 
 			assert_eq!(
-				AuthStorage::get_session(ME).unwrap().unwrap().session_id,
+				AuthStorage::get_credentials(ME)
+					.unwrap()
+					.unwrap()
+					.auth_token,
 				"mine"
 			);
 			assert_eq!(
-				AuthStorage::get_session(THEM).unwrap().unwrap().session_id,
+				AuthStorage::get_credentials(THEM)
+					.unwrap()
+					.unwrap()
+					.auth_token,
 				"theirs"
 			);
 		});
@@ -181,7 +213,8 @@ mod tests {
 	fn forgetting_one_account_leaves_the_other_untouched() {
 		with_file_store(|_| {
 			for id in [ME, THEM] {
-				AuthStorage::set_session(id, &session_for(id, "s")).unwrap();
+				AuthStorage::set_credentials(id, &credentials_for(id, "s"))
+					.unwrap();
 				DeviceStorage::save(id, &grindr::DeviceInfo::generate())
 					.unwrap();
 				SigningKeyStorage::save(id, &signing_key()).unwrap();
@@ -279,7 +312,7 @@ mod tests {
 	fn every_secret_is_stored_as_a_named_map_not_a_positional_array() {
 		with_file_store(|_| {
 			DeviceStorage::save(ME, &grindr::DeviceInfo::generate()).unwrap();
-			AuthStorage::set_session(ME, &session("s1")).unwrap();
+			AuthStorage::set_credentials(ME, &credentials("s1")).unwrap();
 			SigningKeyStorage::save(ME, &signing_key()).unwrap();
 			AccountsStorage::save(&AccountIndex::default()).unwrap();
 
@@ -349,18 +382,47 @@ mod tests {
 	}
 
 	#[test]
-	fn a_session_survives_a_save_and_load() {
+	fn credentials_survive_a_save_and_load() {
 		with_file_store(|_| {
-			let saved = session("session-token");
+			let saved = credentials("auth-token");
 
-			AuthStorage::set_session(ME, &saved).unwrap();
+			AuthStorage::set_credentials(ME, &saved).unwrap();
 
-			let loaded = AuthStorage::get_session(ME).unwrap().unwrap();
-			assert_eq!(loaded.session_id, saved.session_id);
+			let loaded = AuthStorage::get_credentials(ME).unwrap().unwrap();
 			assert_eq!(loaded.auth_token, saved.auth_token);
 			assert_eq!(loaded.email, saved.email);
 			assert_eq!(loaded.profile_id, saved.profile_id);
-			assert_eq!(loaded.expires_at, saved.expires_at);
+		});
+	}
+
+	#[test]
+	fn a_resumed_session_carries_no_token() {
+		with_file_store(|_| {
+			AuthStorage::set_credentials(ME, &credentials("auth-token"))
+				.unwrap();
+
+			let session = AuthStorage::get_session(ME).unwrap().unwrap();
+
+			assert_eq!(session.credentials.auth_token, "auth-token");
+			assert!(
+				session.token.is_none(),
+				"the minted session id dies within the hour and is never stored"
+			);
+		});
+	}
+
+	#[test]
+	fn a_session_written_by_an_older_build_still_reads_back() {
+		with_file_store(|_| {
+			entry("session:42")
+				.set_secret(&legacy_session_blob(ME, "old-session"))
+				.unwrap();
+
+			let loaded = AuthStorage::get_credentials(ME).unwrap().unwrap();
+
+			assert_eq!(loaded.auth_token, "auth-token");
+			assert_eq!(loaded.email, "user@example.com");
+			assert_eq!(loaded.profile_id.as_deref(), Some("42"));
 		});
 	}
 
@@ -380,11 +442,14 @@ mod tests {
 	#[test]
 	fn setting_a_session_replaces_the_previous_one() {
 		with_file_store(|_| {
-			AuthStorage::set_session(ME, &session("first")).unwrap();
-			AuthStorage::set_session(ME, &session("second")).unwrap();
+			AuthStorage::set_credentials(ME, &credentials("first")).unwrap();
+			AuthStorage::set_credentials(ME, &credentials("second")).unwrap();
 
 			assert_eq!(
-				AuthStorage::get_session(ME).unwrap().unwrap().session_id,
+				AuthStorage::get_credentials(ME)
+					.unwrap()
+					.unwrap()
+					.auth_token,
 				"second"
 			);
 		});
@@ -393,7 +458,8 @@ mod tests {
 	#[test]
 	fn deleting_the_session_clears_it() {
 		with_file_store(|_| {
-			AuthStorage::set_session(ME, &session("session-token")).unwrap();
+			AuthStorage::set_credentials(ME, &credentials("auth-token"))
+				.unwrap();
 
 			AuthStorage::delete_session(ME);
 
@@ -542,9 +608,8 @@ mod tests {
 	fn the_existing_single_account_install_is_adopted_under_its_profile() {
 		with_file_store(|_| {
 			let device = grindr::DeviceInfo::generate();
-			let legacy = session("legacy-token");
 			entry("session")
-				.set_secret(&rmp_serde::encode::to_vec_named(&legacy).unwrap())
+				.set_secret(&legacy_session_blob(ME, "legacy-token"))
 				.unwrap();
 			entry("device-info")
 				.set_secret(&rmp_serde::encode::to_vec_named(&device).unwrap())
@@ -562,8 +627,11 @@ mod tests {
 			assert_eq!(index.accounts.len(), 1);
 			assert_eq!(index.accounts[0].label, "user@example.com");
 			assert_eq!(
-				AuthStorage::get_session(ME).unwrap().unwrap().session_id,
-				"legacy-token"
+				AuthStorage::get_credentials(ME)
+					.unwrap()
+					.unwrap()
+					.auth_token,
+				"auth-token"
 			);
 			assert_eq!(
 				DeviceStorage::load(ME).unwrap().unwrap().device_id,
@@ -588,10 +656,7 @@ mod tests {
 		with_file_store(|_| {
 			AccountsStorage::upsert(record(THEM, "them@example.com")).unwrap();
 			entry("session")
-				.set_secret(
-					&rmp_serde::encode::to_vec_named(&session("legacy"))
-						.unwrap(),
-				)
+				.set_secret(&legacy_session_blob(ME, "legacy"))
 				.unwrap();
 
 			adopt_legacy_account().unwrap();
@@ -633,9 +698,8 @@ mod tests {
 		assert!(DeviceStorage::load(ME).is_err());
 		assert!(AuthStorage::get_session(ME).unwrap().is_none());
 		assert!(SigningKeyStorage::load(ME).unwrap().is_none());
-		assert!(
-			AuthStorage::set_session(ME, &session("session-token")).is_err()
-		);
+		assert!(AuthStorage::set_credentials(ME, &credentials("auth-token"))
+			.is_err());
 		assert!(AccountsStorage::save(&AccountIndex::default()).is_err());
 		DeviceStorage::delete(ME);
 		AuthStorage::delete_session(ME);

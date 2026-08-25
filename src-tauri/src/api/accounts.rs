@@ -37,8 +37,10 @@ fn attach(
 			while session_rx.changed().await.is_ok() {
 				match session_rx.borrow().as_ref() {
 					Some(s) => {
-						if let Err(e) = AuthStorage::set_session(profile_id, s)
-						{
+						if let Err(e) = AuthStorage::set_credentials(
+							profile_id,
+							&s.credentials,
+						) {
 							tracing::error!("[session] persist failed: {e}");
 						}
 					}
@@ -177,11 +179,11 @@ pub async fn commit_signed_in(
 	let session = client.session_receiver().borrow().clone();
 	let label = session
 		.as_ref()
-		.map(|s| s.email.clone())
+		.map(|s| s.credentials.email.clone())
 		.unwrap_or_else(|| profile_id.to_string());
 
 	if let Some(session) = session.as_ref() {
-		AuthStorage::set_session(profile_id, session)?;
+		AuthStorage::set_credentials(profile_id, &session.credentials)?;
 	}
 	DeviceStorage::save(profile_id, &client.current_device().await)?;
 	AccountsStorage::upsert(AccountRecord {

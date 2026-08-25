@@ -196,14 +196,19 @@ impl DeviceStorage {
 pub struct AuthStorage;
 
 impl AuthStorage {
-	pub fn get_session(
+	/// Only the durable half of a session is kept. The minted `session_id` dies
+	/// within the hour, so storing it buys nothing on the next launch and puts
+	/// a live bearer token in the keyring for as long as it lasts. What was
+	/// written by an earlier version still reads back: the fields it carried on
+	/// top of these are simply ignored.
+	pub fn get_credentials(
 		profile_id: ProfileId,
-	) -> Result<Option<grindr::Session>, AppError> {
+	) -> Result<Option<grindr::Credentials>, AppError> {
 		let key = keyed(SESSION, profile_id);
-		match read::<grindr::Session>(&key) {
-			Ok(session) => Ok(session),
-			// A session we cannot read is a session we cannot use, and keeping
-			// it only means failing the same way on every launch.
+		match read::<grindr::Credentials>(&key) {
+			Ok(credentials) => Ok(credentials),
+			// Credentials we cannot read are credentials we cannot use, and
+			// keeping them only means failing the same way on every launch.
 			Err(_) => {
 				erase(&key);
 				Ok(None)
@@ -211,11 +216,24 @@ impl AuthStorage {
 		}
 	}
 
-	pub fn set_session(
+	/// The session the account resumes with: what was stored, and no token
+	/// until one is minted.
+	pub fn get_session(
 		profile_id: ProfileId,
-		session: &grindr::Session,
+	) -> Result<Option<grindr::Session>, AppError> {
+		Ok(Self::get_credentials(profile_id)?.map(|credentials| {
+			grindr::Session {
+				credentials,
+				token: None,
+			}
+		}))
+	}
+
+	pub fn set_credentials(
+		profile_id: ProfileId,
+		credentials: &grindr::Credentials,
 	) -> Result<(), AppError> {
-		write(&keyed(SESSION, profile_id), session)
+		write(&keyed(SESSION, profile_id), credentials)
 	}
 
 	pub fn delete_session(profile_id: ProfileId) {
@@ -275,19 +293,20 @@ pub fn adopt_legacy_account() -> Result<(), AppError> {
 		return Ok(());
 	}
 
-	let legacy = read::<grindr::Session>(SESSION).unwrap_or(None);
+	let legacy = read::<grindr::Credentials>(SESSION).unwrap_or(None);
 	let Some(profile_id) = legacy
 		.as_ref()
-		.and_then(|s| s.profile_id.parse::<ProfileId>().ok())
+		.and_then(|c| c.profile_id.as_deref())
+		.and_then(|id| id.parse::<ProfileId>().ok())
 	else {
 		for key in [SESSION, DEVICE, SIGNING_KEY] {
 			erase(key);
 		}
 		return Ok(());
 	};
-	let session = legacy.expect("parsed a profile id out of it");
+	let credentials = legacy.expect("parsed a profile id out of it");
 
-	AuthStorage::set_session(profile_id, &session)?;
+	AuthStorage::set_credentials(profile_id, &credentials)?;
 	if let Ok(Some(device)) = read::<grindr::DeviceInfo>(DEVICE) {
 		DeviceStorage::save(profile_id, &device)?;
 	}
@@ -301,7 +320,7 @@ pub fn adopt_legacy_account() -> Result<(), AppError> {
 	AccountsStorage::save(&AccountIndex {
 		accounts: vec![AccountRecord {
 			profile_id,
-			label: session.email.clone(),
+			label: credentials.email.clone(),
 			added_at: now_unix(),
 		}],
 		active: Some(profile_id),

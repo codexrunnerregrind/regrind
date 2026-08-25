@@ -161,7 +161,8 @@ pub async fn auth_state(
 		.session_receiver()
 		.borrow()
 		.as_ref()
-		.and_then(|s| s.profile_id.parse::<u64>().ok()))
+		.and_then(|s| s.credentials.profile_id.as_deref())
+		.and_then(|id| id.parse::<u64>().ok()))
 }
 
 #[tauri::command]
@@ -175,7 +176,8 @@ pub async fn account_restriction(
 		.session_receiver()
 		.borrow()
 		.as_ref()
-		.and_then(|s| s.restriction.clone())
+		.and_then(|s| s.token.as_ref())
+		.and_then(|token| token.restriction.clone())
 		.map(Restriction::from))
 }
 

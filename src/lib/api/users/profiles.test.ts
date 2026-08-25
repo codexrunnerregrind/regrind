@@ -210,6 +210,37 @@ describe("cache TTL", () => {
 	});
 });
 
+describe("getProfiles", () => {
+	beforeEach(() => {
+		fetchRestMock.mockImplementation(() =>
+			Promise.resolve(okValidated({ profiles: [] })),
+		);
+	});
+
+	it("splits ids into parallel 30-id requests like the official client", async () => {
+		await getProfiles(Array.from({ length: 65 }, (_, index) => index + 1));
+
+		expect(fetchRestMock).toHaveBeenCalledTimes(3);
+		const bodies = fetchRestMock.mock.calls.map(
+			(call) =>
+				(call[1] as { body: { targetProfileIds: number[] } }).body
+					.targetProfileIds.length,
+		);
+		expect(bodies).toEqual([30, 30, 5]);
+	});
+
+	it("sends a single request for 30 ids or fewer", async () => {
+		await getProfiles(Array.from({ length: 30 }, (_, index) => index + 1));
+
+		expect(fetchRestMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("skips the network entirely for an empty id list", async () => {
+		await expect(getProfiles([])).resolves.toEqual([]);
+		expect(fetchRestMock).not.toHaveBeenCalled();
+	});
+});
+
 describe("getProfile", () => {
 	function respondWith(profile: unknown) {
 		fetchRestMock.mockImplementationOnce(() =>
@@ -526,8 +557,8 @@ describe("getProfiles", () => {
 		});
 	});
 
-	it("splits a longer list rather than failing with 'Max profile is 150'", async () => {
-		const ids = Array.from({ length: 361 }, (_, i) => i);
+	it("splits a longer list, keeping every id and their order", async () => {
+		const ids = Array.from({ length: 65 }, (_, i) => i);
 		fetchRestMock.mockResolvedValue(ok({ profiles: [] }));
 
 		await getProfiles(ids);
@@ -538,13 +569,13 @@ describe("getProfiles", () => {
 				(call[1] as { body: { targetProfileIds: number[] } }).body
 					.targetProfileIds,
 		);
-		expect(sent.map((batch) => batch.length)).toEqual([150, 150, 61]);
+		expect(sent.map((batch) => batch.length)).toEqual([30, 30, 5]);
 		// Every id sent exactly once, order preserved.
 		expect(sent.flat()).toEqual(ids);
 	});
 
 	it("concatenates results across batches", async () => {
-		const ids = Array.from({ length: 200 }, (_, i) => i);
+		const ids = Array.from({ length: 60 }, (_, i) => i);
 		fetchRestMock
 			.mockResolvedValueOnce(
 				ok({ profiles: [{ ...fullProfile(), profileId: 1 }] }),
