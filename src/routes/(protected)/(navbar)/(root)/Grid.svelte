@@ -6,6 +6,7 @@
 	import { getProfileGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import { gridState } from "$lib/grid/grid-state.svelte";
+	import { usernameMatches } from "$lib/model/browse/grid/filters";
 	import { armProfileDeck } from "$lib/profile/profile-deck";
 	import { observeIntersection } from "$lib/util/observe-intersection";
 	import { virtualGrid } from "$lib/util/virtual-grid.svelte";
@@ -38,7 +39,22 @@
 		return [...byId.values()];
 	}
 
-	const gridProfiles = $derived(dedupe(gridState.items));
+	// The cascade has no server-side name search, so the username filter is
+	// applied to what has been loaded. Unresolved cells are kept — their name is
+	// not known yet, and dropping them would stop them ever resolving; each one
+	// drops out on its own once it resolves to a name that does not match.
+	function matchUsername(items: GridProfile[]): GridProfile[] {
+		const filters = gridState.filters.value;
+		if (!filters?.usernameEnabled || filters.username.trim() === "")
+			return items;
+		return items.filter(
+			(item) =>
+				item.type === "lazy" ||
+				usernameMatches(item.displayName, filters.username),
+		);
+	}
+
+	const gridProfiles = $derived(matchUsername(dedupe(gridState.items)));
 
 	// Opening a profile hands it the rest of the cascade, so the profile screen
 	// can swipe between them in the order they are shown here. Armed per tap
@@ -48,7 +64,9 @@
 			ids: gridProfiles.map((item) => item.id),
 			extend: async () => {
 				await gridState.loadMore();
-				return dedupe(gridState.items).map((item) => item.id);
+				return matchUsername(dedupe(gridState.items)).map(
+					(item) => item.id,
+				);
 			},
 		});
 	}

@@ -13,6 +13,7 @@ import {
 	filterPositionSchema,
 	filterWeightSchema,
 	gridSearchFiltersSchema,
+	usernameMatches,
 } from "$lib/model/browse/grid/filters";
 
 describe("grid search filter schemas", () => {
@@ -48,5 +49,24 @@ describe("grid search filter schemas", () => {
 	it("accepts not-specified (-1) alongside gender ids", () => {
 		expect(filterGendersSchema.parse([-1, 42])).toEqual([-1, 42]);
 		expect(filterGendersSchema.safeParse([-2]).success).toBe(false);
+	});
+});
+
+describe("usernameMatches", () => {
+	it("matches any profile while the query is blank", () => {
+		expect(usernameMatches("Alex", "")).toBe(true);
+		expect(usernameMatches(null, "   ")).toBe(true);
+	});
+
+	it("matches part of a display name, ignoring case", () => {
+		expect(usernameMatches("Alex", "ale")).toBe(true);
+		expect(usernameMatches("alex", "LE")).toBe(true);
+		expect(usernameMatches("Alex", " alex ")).toBe(true);
+		expect(usernameMatches("Alex", "sam")).toBe(false);
+	});
+
+	it("never matches a profile without a display name", () => {
+		expect(usernameMatches(null, "alex")).toBe(false);
+		expect(usernameMatches(undefined, "alex")).toBe(false);
 	});
 });

@@ -32,6 +32,24 @@ export const filterGendersSchema = z.array(
 	z.int().nonnegative().or(z.literal(-1)),
 );
 
+export const filterUsernameEnabledSchema = z.boolean();
+export const filterUsernameSchema = z.string();
+
+/**
+ * Whether a profile's display name matches what was typed. Matching is a
+ * case-insensitive substring so a partial name — all anyone tends to remember —
+ * still finds its profile; an empty query matches everything, which is what
+ * keeps the filter inert until something is typed into it.
+ */
+export function usernameMatches(
+	displayName: string | null | undefined,
+	query: string,
+): boolean {
+	const needle = query.trim().toLowerCase();
+	if (needle === "") return true;
+	return (displayName ?? "").toLowerCase().includes(needle);
+}
+
 export const filterTagsEnabledSchema = z.boolean();
 export const filterTagsSchema = z.array(z.string());
 
@@ -126,6 +144,9 @@ export const gridSearchFiltersSchema = z.object({
 
 	genderEnabled: filterGendersEnabledSchema.default(false),
 	genders: filterGendersSchema.default([]),
+
+	usernameEnabled: filterUsernameEnabledSchema.default(false),
+	username: filterUsernameSchema.default(""),
 
 	tagsEnabled: filterTagsEnabledSchema.default(false),
 	tags: filterTagsSchema.default([]),

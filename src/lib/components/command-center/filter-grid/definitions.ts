@@ -331,6 +331,22 @@ export const filters: Filter[] = [
 		],
 	},
 	{
+		label: "username",
+		render: (f) => f.username,
+		params: [
+			{
+				keys: ["username", "name", "displayName"],
+				apply: (raw, draft) => {
+					const value = raw.trim();
+					if (value === "") return err("No value");
+					draft.usernameEnabled = true;
+					draft.username = value;
+					return ok;
+				},
+			},
+		],
+	},
+	{
 		label: "tags",
 		render: (f) => f.tags.join(", "),
 		params: [

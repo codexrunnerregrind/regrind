@@ -10,6 +10,7 @@
 	import PhotosFilter from "$lib/components/filters/PhotosFilter.svelte";
 	import PositionFilter from "$lib/components/filters/position/PositionFilterField.svelte";
 	import TagsFilter from "$lib/components/filters/TagsFilter.svelte";
+	import UsernameFilter from "$lib/components/filters/UsernameFilter.svelte";
 	import WeightFilter from "$lib/components/filters/WeightFilter.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import * as Sheet from "$lib/components/ui/sheet";
@@ -62,6 +63,10 @@
 		bind:value={filters.photos}
 	/>
 	<TagsFilter bind:checked={filters.tagsEnabled} bind:value={filters.tags} />
+	<UsernameFilter
+		bind:checked={filters.usernameEnabled}
+		bind:value={filters.username}
+	/>
 {/snippet}
 {#snippet col3()}
 	<OptionFilter
