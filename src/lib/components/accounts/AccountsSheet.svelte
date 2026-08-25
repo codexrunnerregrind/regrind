@@ -122,7 +122,10 @@
 			{/if}
 		</Drawer.Header>
 
-		<div class="flex flex-col gap-2 px-4 pb-2">
+		<!-- Only the list scrolls: with several accounts signed in the helper text
+		     and Add another account must stay reachable rather than being pushed
+		     past the bottom of the sheet. -->
+		<Drawer.Body class="flex flex-col gap-2 px-4 pb-2">
 			{#each accounts as account (account.profileId)}
 				{@const expanded = account.active && (alone || managing)}
 				{@const switchable = !account.active && !managing}
@@ -249,7 +252,7 @@
 					{/if}
 				</div>
 			{/each}
-		</div>
+		</Drawer.Body>
 
 		<p class="px-4 pb-3 text-caption leading-snug text-muted-foreground">
 			{#if alone}

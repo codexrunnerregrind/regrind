@@ -234,7 +234,10 @@ pub async fn accounts_list(
 			active: Some(record.profile_id) == active,
 		})
 		.collect();
-	accounts.sort_by_key(|a| a.added_at);
+	// The account in use first, then oldest to newest: the one you are using is
+	// what the sheet is about, and a stable order after it keeps rows from moving
+	// around under your thumb as you switch.
+	accounts.sort_by_key(|a| (!a.active, a.added_at));
 	Ok(accounts)
 }
 
