@@ -121,10 +121,22 @@ fi
 #
 # Safe only because the release IPA is unsigned: editing Info.plist would break
 # a signature, and the strip below removes it anyway.
+#
+# `plutil -replace`, not PlistBuddy: PlistBuddy writes the file back as XML,
+# and Xcode ships Info.plist as a binary plist. plutil edits in place and keeps
+# the format, so the only difference from what the build produced is the one
+# value. Assert that, since a format flip is silent otherwise.
 SHORT_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' \
 	"$APP/Info.plist")"
-/usr/libexec/PlistBuddy -c \
-	"Set :CFBundleShortVersionString $SHORT_VERSION" "$APP/Info.plist"
+plutil -replace CFBundleShortVersionString -string "$SHORT_VERSION" \
+	"$APP/Info.plist"
+case "$(file -b "$APP/Info.plist")" in
+*'binary property list'*) ;;
+*)
+	echo "Info.plist is no longer a binary plist after the version rewrite" >&2
+	exit 1
+	;;
+esac
 
 # Deleting _CodeSignature/ and the profile is not enough: the signature and its
 # entitlements blob — which carry the team ID and get-task-allow — live inside
