@@ -10,11 +10,18 @@ use crate::storage::{
 };
 
 /// One account as the switcher draws it.
+///
+/// `name` and `avatar` come from the account's own profile and are only known
+/// once it has been active; `email` is `None` for a third-party sign-in, whose
+/// login field holds an opaque vendor id rather than an address.
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AccountSummary {
 	pub profile_id: ProfileId,
-	pub label: String,
+	pub name: Option<String>,
+	pub email: Option<String>,
+	pub avatar: Option<String>,
+	pub google: bool,
 	pub added_at: u64,
 	pub active: bool,
 }
@@ -177,18 +184,25 @@ pub async fn commit_signed_in(
 	};
 
 	let session = client.session_receiver().borrow().clone();
-	let label = session
-		.as_ref()
-		.map(|s| s.credentials.email.clone())
+	let credentials = session.as_ref().map(|s| &s.credentials);
+	let label = credentials
+		.map(|c| c.email.clone())
 		.unwrap_or_else(|| profile_id.to_string());
+	let google = credentials
+		.is_some_and(|c| matches!(c.kind, grindr::SessionKind::Google));
 
-	if let Some(session) = session.as_ref() {
-		AuthStorage::set_credentials(profile_id, &session.credentials)?;
+	if let Some(credentials) = credentials {
+		AuthStorage::set_credentials(profile_id, credentials)?;
 	}
 	DeviceStorage::save(profile_id, &client.current_device().await)?;
+	// The name and the face are not known yet: they come from the account's own
+	// profile, which the frontend loads once this account is the active one.
 	AccountsStorage::upsert(AccountRecord {
 		profile_id,
 		label,
+		name: None,
+		avatar: None,
+		google,
 		added_at: crate::storage::now_unix(),
 	})?;
 
@@ -212,13 +226,38 @@ pub async fn accounts_list(
 		.iter()
 		.map(|record| AccountSummary {
 			profile_id: record.profile_id,
-			label: record.label.clone(),
+			name: record.name.clone(),
+			email: record.email().map(str::to_owned),
+			avatar: record.avatar.clone(),
+			google: record.google,
 			added_at: record.added_at,
 			active: Some(record.profile_id) == active,
 		})
 		.collect();
 	accounts.sort_by_key(|a| a.added_at);
 	Ok(accounts)
+}
+
+/// Records what the active account's own profile says about it, so the switcher
+/// can show a name and a face rather than a login id.
+///
+/// Only ever called for the account in use: its profile is loaded as part of
+/// using it, and asking on a background account's behalf is the traffic that
+/// would stop it looking offline.
+#[tauri::command]
+pub async fn account_set_profile(
+	app: AppHandle,
+	state: tauri::State<'_, AppState>,
+	profile_id: ProfileId,
+	name: Option<String>,
+	avatar: Option<String>,
+) -> Result<(), AppError> {
+	if state.active_profile_id() != Some(profile_id) {
+		return Ok(());
+	}
+	AccountsStorage::set_profile(profile_id, name, avatar)?;
+	app.emit("accounts:changed", ()).ok();
+	Ok(())
 }
 
 /// Switches to a signed-in account. The account left behind goes idle, which

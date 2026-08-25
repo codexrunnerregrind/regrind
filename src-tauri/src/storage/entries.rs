@@ -61,15 +61,43 @@ fn erase(key: &str) {
 
 /// One signed-in account, as the switcher sees it.
 ///
-/// The label is copied out of the session at sign-in rather than read back from
-/// it: listing accounts must not have to open every account's session, both
+/// Everything here is copied out of the session at sign-in rather than read back
+/// from it: listing accounts must not have to open every account's session, both
 /// because the iOS store guards secrets and because the list is drawn far more
-/// often than it changes.
+/// often than it changes. Reaching out on a background account's behalf is also
+/// exactly the traffic that would stop it looking offline.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AccountRecord {
 	pub profile_id: ProfileId,
+	/// How the account identifies itself to the API: the email for a password
+	/// login, an opaque vendor id for a third-party one. Never shown raw — see
+	/// [`Self::email`].
 	pub label: String,
+	/// The account's own profile name, filled in once it is active and its
+	/// profile has been loaded. `None` until then, and for an account that has
+	/// not been switched to since it was added.
+	#[serde(default)]
+	pub name: Option<String>,
+	/// The media hash of the account's first profile photo, for the switcher's
+	/// avatar. Stored rather than fetched per row: the bytes come through the
+	/// media proxy on the *active* account's session, so drawing another
+	/// account's face costs that account nothing and leaves it offline.
+	#[serde(default)]
+	pub avatar: Option<String>,
+	/// Whether this was a third-party sign-in, in which case `label` is an
+	/// opaque id and there is no email to show.
+	#[serde(default)]
+	pub google: bool,
 	pub added_at: u64,
+}
+
+impl AccountRecord {
+	/// The label only when it really is an email. A third-party sign-in puts a
+	/// vendor id in the same field — `Q60CB36Z47` and the like — which says
+	/// nothing to the person reading it, least of all in a sign-out row.
+	pub fn email(&self) -> Option<&str> {
+		(!self.google && self.label.contains('@')).then_some(&*self.label)
+	}
 }
 
 /// Every account the app has a session for, and which one is in use.
@@ -118,8 +146,9 @@ impl AccountsStorage {
 		write(ACCOUNTS, index)
 	}
 
-	/// Adds an account, or refreshes the label of one already listed, and makes
-	/// it the active one. Signing into an account twice must not list it twice.
+	/// Adds an account, or refreshes what is known about one already listed, and
+	/// makes it the active one. Signing into an account twice must not list it
+	/// twice, and must not forget the name already learned for it.
 	pub fn upsert(record: AccountRecord) -> Result<AccountIndex, AppError> {
 		let mut index = Self::load()?;
 		match index
@@ -127,12 +156,41 @@ impl AccountsStorage {
 			.iter_mut()
 			.find(|a| a.profile_id == record.profile_id)
 		{
-			Some(existing) => existing.label = record.label,
+			Some(existing) => {
+				existing.label = record.label;
+				existing.google = record.google;
+				existing.name = record.name.or_else(|| existing.name.clone());
+				existing.avatar =
+					record.avatar.or_else(|| existing.avatar.clone());
+			}
 			None => index.accounts.push(record.clone()),
 		}
 		index.active = Some(record.profile_id);
 		Self::save(&index)?;
 		Ok(index)
+	}
+
+	/// Records what the account's own profile says about it. Called once that
+	/// profile has been loaded, which only happens while it is the active one.
+	pub fn set_profile(
+		profile_id: ProfileId,
+		name: Option<String>,
+		avatar: Option<String>,
+	) -> Result<(), AppError> {
+		let mut index = Self::load()?;
+		let Some(account) = index
+			.accounts
+			.iter_mut()
+			.find(|a| a.profile_id == profile_id)
+		else {
+			return Ok(());
+		};
+		if account.name == name && account.avatar == avatar {
+			return Ok(());
+		}
+		account.name = name;
+		account.avatar = avatar;
+		Self::save(&index)
 	}
 
 	pub fn remove(profile_id: ProfileId) -> Result<AccountIndex, AppError> {
@@ -321,6 +379,9 @@ pub fn adopt_legacy_account() -> Result<(), AppError> {
 		accounts: vec![AccountRecord {
 			profile_id,
 			label: credentials.email.clone(),
+			name: None,
+			avatar: None,
+			google: matches!(credentials.kind, grindr::SessionKind::Google),
 			added_at: now_unix(),
 		}],
 		active: Some(profile_id),

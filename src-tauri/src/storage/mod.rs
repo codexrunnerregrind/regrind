@@ -524,8 +524,116 @@ mod tests {
 		AccountRecord {
 			profile_id,
 			label: label.to_owned(),
+			name: None,
+			avatar: None,
+			google: false,
 			added_at: profile_id,
 		}
+	}
+
+	fn google_record(profile_id: ProfileId, shown: &str) -> AccountRecord {
+		AccountRecord {
+			google: true,
+			..record(profile_id, shown)
+		}
+	}
+
+	#[test]
+	fn an_email_login_shows_its_email() {
+		assert_eq!(
+			record(ME, "me@example.com").email(),
+			Some("me@example.com")
+		);
+	}
+
+	#[test]
+	fn a_third_party_login_has_no_email_to_show() {
+		// What Grindr hands back for a Google sign-in: an opaque display id in
+		// the same field an email would be in. Showing it raw is what put
+		// `Q60CB36Z47` in front of the user.
+		assert_eq!(google_record(ME, "Q60CB36Z47").email(), None);
+		// Even when the vendor id happens to look like an address, it is not the
+		// account's email and must not be presented as one.
+		assert_eq!(google_record(ME, "not-really@vendor").email(), None);
+	}
+
+	#[test]
+	fn a_label_that_is_not_an_address_is_not_offered_as_one() {
+		assert_eq!(record(ME, "162863583").email(), None);
+	}
+
+	#[test]
+	fn the_profile_learned_while_active_is_remembered() {
+		with_file_store(|_| {
+			AccountsStorage::upsert(record(ME, "me@example.com")).unwrap();
+
+			AccountsStorage::set_profile(
+				ME,
+				Some("Tiago".to_owned()),
+				Some("abc123".to_owned()),
+			)
+			.unwrap();
+
+			let stored = AccountsStorage::load().unwrap();
+			assert_eq!(stored.accounts[0].name.as_deref(), Some("Tiago"));
+			assert_eq!(stored.accounts[0].avatar.as_deref(), Some("abc123"));
+		});
+	}
+
+	#[test]
+	fn signing_in_again_keeps_the_name_already_learned() {
+		with_file_store(|_| {
+			AccountsStorage::upsert(record(ME, "me@example.com")).unwrap();
+			AccountsStorage::set_profile(
+				ME,
+				Some("Tiago".to_owned()),
+				Some("abc123".to_owned()),
+			)
+			.unwrap();
+
+			// Re-authenticating carries no profile with it, and must not wipe
+			// the row back to a bare login id.
+			AccountsStorage::upsert(record(ME, "me@example.com")).unwrap();
+
+			let stored = AccountsStorage::load().unwrap();
+			assert_eq!(stored.accounts[0].name.as_deref(), Some("Tiago"));
+			assert_eq!(stored.accounts[0].avatar.as_deref(), Some("abc123"));
+		});
+	}
+
+	#[test]
+	fn naming_an_account_that_is_gone_is_ignored() {
+		with_file_store(|_| {
+			AccountsStorage::set_profile(THEM, Some("Nobody".to_owned()), None)
+				.unwrap();
+
+			assert!(AccountsStorage::load().unwrap().accounts.is_empty());
+		});
+	}
+
+	#[test]
+	fn an_index_written_before_names_existed_still_loads() {
+		with_file_store(|_| {
+			// The shape shipped by the first multi-account build: no name, no
+			// avatar, no login kind. It must not strand the accounts in it.
+			let legacy = serde_json::json!({
+				"accounts": [
+					{ "profile_id": ME, "label": "me@example.com", "added_at": 1 }
+				],
+				"active": ME,
+			});
+			entry("accounts")
+				.set_secret(&rmp_serde::encode::to_vec_named(&legacy).unwrap())
+				.unwrap();
+
+			let index = AccountsStorage::load().unwrap();
+
+			assert_eq!(index.accounts.len(), 1);
+			assert_eq!(index.accounts[0].label, "me@example.com");
+			assert_eq!(index.accounts[0].name, None);
+			assert!(!index.accounts[0].google);
+			assert_eq!(index.resolved_active(), Some(ME));
+		});
 	}
 
 	#[test]

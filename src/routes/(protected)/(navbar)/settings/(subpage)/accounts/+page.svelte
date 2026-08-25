@@ -1,10 +1,5 @@
 <script lang="ts">
-	import {
-		CheckCircleIcon,
-		PlusCircleIcon,
-		SignOutIcon,
-		UserCircleIcon,
-	} from "phosphor-svelte";
+	import { PlusCircleIcon, SignOutIcon } from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
 	import {
@@ -20,6 +15,7 @@
 	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
 	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
 	import * as AlertDialog from "$lib/components/ui/alert-dialog";
+	import AccountRow from "./AccountRow.svelte";
 
 	// The list is loaded rather than awaited: the rows are the point of the
 	// screen and there is nothing else to show while it arrives.
@@ -28,6 +24,37 @@
 
 	let busy = $state(false);
 	let signingOut = $state<AccountSummary | null>(null);
+
+	/**
+	 * What to call an account. The name once its profile has been read, else how
+	 * it signs in — never the raw login field, which for a third-party sign-in is
+	 * an opaque vendor id that means nothing to the person reading it.
+	 */
+	function title(account: AccountSummary): string {
+		return (
+			account.name ??
+			account.email ??
+			(account.google ? "Google account" : `Account ${account.profileId}`)
+		);
+	}
+
+	/** How it signs in, dropped when the title is already saying it. */
+	function login(account: AccountSummary): string | null {
+		const shown =
+			account.email ?? (account.google ? "Google account" : null);
+		return shown === null || shown === title(account) ? null : shown;
+	}
+
+	function status(account: AccountSummary): string {
+		return account.active ? "in use" : "offline until you switch";
+	}
+
+	function detail(account: AccountSummary): string {
+		const parts = [login(account), status(account)].filter(
+			(part) => part !== null,
+		);
+		return parts.join(" · ");
+	}
 
 	async function run(work: () => Promise<void>) {
 		if (busy) return;
@@ -46,25 +73,15 @@
 <SectionHeader>Signed in</SectionHeader>
 <SettingsGroup divider="full">
 	{#each accountsState.accounts as account (account.profileId)}
-		<SettingsRow
-			title={account.label}
-			description={account.active
-				? "In use"
-				: "Signed in, offline until you switch"}
-			chevron={false}
+		<AccountRow
+			{account}
+			title={title(account)}
+			detail={detail(account)}
 			disabled={busy}
 			onclick={account.active
 				? undefined
 				: () => void run(() => switchAccount(account.profileId))}
-		>
-			{#snippet icon()}
-				{#if account.active}
-					<CheckCircleIcon weight="fill" />
-				{:else}
-					<UserCircleIcon weight="fill" />
-				{/if}
-			{/snippet}
-		</SettingsRow>
+		/>
 	{/each}
 </SettingsGroup>
 <SectionFooter>
@@ -91,7 +108,7 @@
 		<SettingsGroup divider="full">
 			{#each accountsState.accounts as account (account.profileId)}
 				<SettingsRow
-					title="Sign out of {account.label}"
+					title="Sign out of {title(account)}"
 					destructive
 					chevron={false}
 					disabled={busy}
@@ -116,8 +133,8 @@
 		<AlertDialog.Header>
 			<AlertDialog.Title>Sign out?</AlertDialog.Title>
 			<AlertDialog.Description>
-				{signingOut?.label} will be signed out and forgotten on this device.
-				Your other accounts stay signed in.
+				{signingOut === null ? "" : title(signingOut)} will be signed out
+				and forgotten on this device. Your other accounts stay signed in.
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>

@@ -52,7 +52,12 @@ const profileIdSchema = z.int().nonnegative();
 
 export const accountSummarySchema = z.object({
 	profileId: profileIdSchema,
-	label: z.string(),
+	/** The account's own profile name, once it has been active. */
+	name: z.string().nullish(),
+	/** Absent for a third-party sign-in, which has no address to show. */
+	email: z.string().nullish(),
+	avatar: z.string().nullish(),
+	google: z.boolean(),
 	addedAt: z.number().int().nonnegative(),
 	active: z.boolean(),
 });
@@ -101,6 +106,14 @@ export const methods = {
 	account_remove: {
 		request: z.object({ profileId: profileIdSchema }),
 		response: profileIdSchema.nullable(),
+	},
+	account_set_profile: {
+		request: z.object({
+			profileId: profileIdSchema,
+			name: z.string().nullable(),
+			avatar: z.string().nullable(),
+		}),
+		response: z.null(),
 	},
 	recaptcha_first_party_enabled: {
 		request: z.undefined(),

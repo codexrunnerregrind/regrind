@@ -200,6 +200,7 @@ pub fn run() {
             api::accounts::account_add_cancel,
             api::accounts::account_add_in_progress,
             api::accounts::account_remove,
+            api::accounts::account_set_profile,
             api::rest::request,
             api::media_upload::upload_chat_media,
             api::media_upload::upload_chat_audio,

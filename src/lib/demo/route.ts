@@ -87,7 +87,10 @@ export function demoCallMethod(method: string): unknown {
 			return [
 				{
 					profileId: demoMeProfileId,
-					label: "demo@example.com",
+					name: "Demo",
+					email: "demo@example.com",
+					avatar: null,
+					google: false,
 					addedAt: 0,
 					active: true,
 				},

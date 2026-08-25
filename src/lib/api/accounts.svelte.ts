@@ -8,6 +8,7 @@ import {
 	accountSummarySchema,
 	callMethod,
 } from "$lib/api/methods";
+import { getProfile } from "$lib/api/users/profiles";
 import {
 	clearAccountPreferences,
 	usePreferencesForAccount,
@@ -83,6 +84,7 @@ async function adoptAccount(profileId: number | null): Promise<void> {
 	clearAccountCaches();
 	await usePreferencesForAccount(profileId);
 	await invalidateAll();
+	if (profileId !== null) void reportAccountProfile(profileId);
 }
 
 /**
@@ -124,6 +126,28 @@ export function addAccountInProgress(): Promise<boolean> {
 }
 
 /**
+ * Teaches the switcher what the active account looks like.
+ *
+ * The name and face come from the account's own profile, which is only loaded
+ * for the account in use — so a newly added account gets them at once, and one
+ * restored from an earlier launch fills them in the first time it is switched
+ * to. Best-effort: a failure here costs a nicer label, nothing more.
+ */
+export async function reportAccountProfile(profileId: number): Promise<void> {
+	try {
+		const profile = await getProfile(profileId);
+		await callMethod("account_set_profile", {
+			profileId,
+			name: profile.displayName ?? null,
+			avatar: profile.medias[0]?.mediaHash ?? null,
+		});
+		await accountsState.reload();
+	} catch (error) {
+		console.error("[accounts] could not read the account's profile", error);
+	}
+}
+
+/**
  * Settles the app onto an account that has just signed in.
  *
  * The backend has already filed the account by this point; this is the frontend
@@ -134,6 +158,7 @@ export async function accountSignedIn(profileId: number): Promise<void> {
 	clearAccountCaches();
 	await usePreferencesForAccount(profileId);
 	await accountsState.reload();
+	void reportAccountProfile(profileId);
 }
 
 /**
