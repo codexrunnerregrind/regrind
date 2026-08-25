@@ -35,6 +35,7 @@ import {
 	patchOwnProfile,
 	ProfileUnavailableError,
 	type ProfileUpdate,
+	setProfilePhotos,
 	updateOwnProfile,
 } from "$lib/api/users/profiles";
 import { resetNowForTesting, setNowForTesting } from "$lib/util/clock";
@@ -207,6 +208,53 @@ describe("cache TTL", () => {
 		clock += 1;
 		await getProfile(PROFILE_ID);
 		expect(countRequests("/v7/profiles/")).toBe(2);
+	});
+});
+
+describe("setProfilePhotos", () => {
+	it("sends the first hash as the primary and the rest as secondaries", async () => {
+		await getProfile(PROFILE_ID);
+		fetchRestMock.mockResolvedValue(ok({}));
+
+		await setProfilePhotos({
+			cacheProfileId: PROFILE_ID,
+			mediaHashes: ["b", "a", "c"],
+		});
+
+		expect(fetchRestMock).toHaveBeenCalledWith("/v3/me/profile/images", {
+			method: "PUT",
+			body: { primaryImageHash: "b", secondaryImageHashes: ["a", "c"] },
+		});
+	});
+
+	it("puts the new order, and the new photo, on the cached profile", async () => {
+		await getProfile(PROFILE_ID);
+		fetchRestMock.mockResolvedValue(ok({}));
+
+		await setProfilePhotos({
+			cacheProfileId: PROFILE_ID,
+			mediaHashes: ["b", "a", "c"],
+		});
+
+		const cached = await getProfile(PROFILE_ID);
+		expect(cached.medias.map((media) => media.mediaHash)).toEqual([
+			"b",
+			"a",
+			"c",
+		]);
+		expect(cached.profileImageMediaHash).toBe("b");
+	});
+
+	it("empties the profile with a null primary and an empty list", async () => {
+		await getProfile(PROFILE_ID);
+		fetchRestMock.mockResolvedValue(ok({}));
+
+		await setProfilePhotos({ cacheProfileId: PROFILE_ID, mediaHashes: [] });
+
+		expect(fetchRestMock).toHaveBeenCalledWith("/v3/me/profile/images", {
+			method: "PUT",
+			body: { primaryImageHash: null, secondaryImageHashes: [] },
+		});
 	});
 });
 

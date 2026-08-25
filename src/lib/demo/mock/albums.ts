@@ -217,6 +217,38 @@ export function demoReorderAlbumContent(albumId: number, body: unknown) {
 		.filter((item) => item !== undefined);
 }
 
+let demoNextContentId = 970_000;
+
+/**
+ * The real upload is multipart over a Tauri command rather than a REST route,
+ * so this stands in for the command, not for {@link demoRoute}.
+ */
+export function demoUploadAlbumContent({
+	albumId,
+	bytes,
+	contentType,
+}: {
+	albumId: number;
+	bytes: Uint8Array<ArrayBuffer>;
+	contentType: string;
+}) {
+	const url = URL.createObjectURL(new Blob([bytes], { type: contentType }));
+	const item = {
+		contentId: demoNextContentId++,
+		contentType,
+		coverUrl: url,
+		statusId: 1,
+		thumbUrl: url,
+		url,
+		processing: false,
+		rejectionId: null,
+	};
+	demoAlbumStore()
+		.find((album) => album.albumId === albumId)
+		?.content.push(item);
+	return { contentId: item.contentId, contentUrl: url };
+}
+
 export function demoDeleteAlbumContent(albumId: number, contentId: number) {
 	const album = demoAlbumStore().find((item) => item.albumId === albumId);
 	if (!album) return;

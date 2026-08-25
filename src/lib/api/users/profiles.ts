@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import z from "zod";
 
 import { ApiError } from "$lib/api/api-error";
@@ -13,6 +14,7 @@ import {
 	markProfileUnviewable,
 	onProfileViewabilityChange,
 } from "$lib/api/users/profile-viewability";
+import { demoEnabled, demoUploadProfileImage } from "$lib/demo";
 import { mediaHashPublicSchema } from "$lib/model/media";
 import { rightNowAttributionStatusSchema } from "$lib/model/right-now";
 import {
@@ -21,6 +23,7 @@ import {
 	profileSchema,
 	profileShortSchema,
 } from "$lib/model/users/profiles";
+import { toBase64 } from "$lib/util/base64";
 
 function isProbablyUnavailable(profile: Profile) {
 	const nullFields = [
@@ -366,4 +369,77 @@ export async function getProfileUploadedPhotos() {
 			}),
 		),
 	);
+}
+
+const profileImageUploadSchema = z.object({ mediaHash: mediaHashPublicSchema });
+
+/**
+ * Uploads a photo and returns the media hash to put on the profile with
+ * {@link setProfilePhotos}. The upload alone changes nothing about the profile.
+ *
+ * The bytes go through a Tauri command rather than {@link fetchRest}: the
+ * endpoint takes the raw file as its body, and the REST bridge speaks only
+ * JSON. The command also picks the square thumbnail crop the API insists on —
+ * a photo uploaded without one is accepted and then silently ignored by the
+ * call that would put it on the profile.
+ */
+export async function uploadProfilePhoto({
+	bytes,
+	contentType,
+}: {
+	bytes: Uint8Array<ArrayBuffer>;
+	contentType: string;
+}): Promise<{ mediaHash: string }> {
+	if (demoEnabled) return demoUploadProfileImage({ bytes, contentType });
+	const response = await invoke("upload_profile_image", {
+		contentType,
+		data: toBase64(bytes),
+	});
+	return profileImageUploadSchema.parse(response);
+}
+
+/**
+ * Replaces the profile's photos, in order: the first hash becomes the profile
+ * picture and the rest its gallery. This is the only call that puts an uploaded
+ * photo on the profile — `PUT /v3.1/me/profile` carries no photos at all.
+ *
+ * `secondaryImageHashes` goes out as `[]` rather than `null` when there is only
+ * a primary: the API answers a primary alongside a null secondary list with a
+ * 400.
+ */
+export async function setProfilePhotos({
+	cacheProfileId,
+	mediaHashes,
+}: {
+	cacheProfileId: number;
+	mediaHashes: string[];
+}) {
+	const [primaryImageHash = null, ...secondaryImageHashes] = mediaHashes;
+	const res = await fetchRest("/v3/me/profile/images", {
+		method: "PUT",
+		body: { primaryImageHash, secondaryImageHashes },
+	});
+	res.assertOk();
+	const cached = profiles.get(cacheProfileId);
+	if (!cached) return;
+	const byHash = new Map(cached.medias.map((m) => [m.mediaHash, m]));
+	mergeProfileEditIntoCaches({
+		cacheProfileId,
+		patch: {
+			profileImageMediaHash: primaryImageHash,
+			medias: mediaHashes.map(
+				(mediaHash) =>
+					byHash.get(mediaHash) ?? {
+						mediaHash,
+						// A photo the moderators have not looked at yet: the states
+						// come back on the next fetch of the profile.
+						type: 1,
+						state: 0,
+						reason: null,
+						takenOnGrindr: false,
+						createdAt: null,
+					},
+			),
+		},
+	});
 }

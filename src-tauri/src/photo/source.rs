@@ -90,7 +90,7 @@ pub fn decode(format: Format, bytes: &[u8]) -> Option<Source> {
 }
 
 impl Format {
-	fn decoded_by_image(self) -> Option<ImageFormat> {
+	pub fn decoded_by_image(self) -> Option<ImageFormat> {
 		match self {
 			Format::Jpeg => Some(ImageFormat::Jpeg),
 			Format::Png => Some(ImageFormat::Png),

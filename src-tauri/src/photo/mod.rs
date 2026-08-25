@@ -49,6 +49,14 @@ pub async fn normalize<R: Runtime>(
 	})
 }
 
+/// Pixel size of an encoded still, read from its header alone.
+pub fn dimensions(bytes: &[u8]) -> Option<(u32, u32)> {
+	let format = source::sniff(bytes)?.decoded_by_image()?;
+	image::ImageReader::with_format(std::io::Cursor::new(bytes), format)
+		.into_dimensions()
+		.ok()
+}
+
 async fn off_thread<T: Send + 'static>(
 	work: impl FnOnce() -> T + Send + 'static,
 ) -> Result<T, AppError> {

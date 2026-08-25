@@ -1,6 +1,8 @@
+import { invoke } from "@tauri-apps/api/core";
 import z from "zod";
 
 import { fetchRest } from "$lib/api/transport";
+import { demoEnabled, demoUploadAlbumContent } from "$lib/demo";
 import {
 	albumContentSchema,
 	albumDetailsSchema,
@@ -13,6 +15,7 @@ import {
 	pressieAlbumsPaywallResponseSchema,
 	sharedAlbumSchema,
 } from "$lib/model/messaging/albums";
+import { toBase64 } from "$lib/util/base64";
 
 const albumResponseSchema = z.object({
 	...albumMinSchema.shape,
@@ -102,6 +105,40 @@ export async function deleteAlbumContent({
 	return await fetchRest(`/v1/albums/${albumId}/content/${contentId}`, {
 		method: "DELETE",
 	}).then((res) => res.assertOk());
+}
+
+const albumContentUploadSchema = z.object({
+	contentId: z.int(),
+	contentUrl: z.string().nullable(),
+});
+
+/**
+ * Adds one photo to an album.
+ *
+ * This is the only upload in the API that takes `multipart/form-data`, which
+ * the REST bridge has no way to send, so it goes through its own Tauri command
+ * with the bytes rather than through {@link fetchRest}. The API answers a
+ * re-upload of the same bytes with the first upload's content id instead of a
+ * second copy.
+ */
+export async function uploadAlbumContent({
+	albumId,
+	bytes,
+	contentType,
+}: {
+	albumId: number;
+	bytes: Uint8Array<ArrayBuffer>;
+	contentType: string;
+}) {
+	if (demoEnabled) {
+		return demoUploadAlbumContent({ albumId, bytes, contentType });
+	}
+	const response = await invoke("upload_album_content", {
+		albumId,
+		contentType,
+		data: toBase64(bytes),
+	});
+	return albumContentUploadSchema.parse(response);
 }
 
 /** The profiles an album is currently shared with. */

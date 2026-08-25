@@ -14,6 +14,7 @@
 	import {
 		deleteProfilePhotos,
 		type ProfileUpdate,
+		setProfilePhotos,
 		updateOwnProfile,
 	} from "$lib/api/users/profiles";
 	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
@@ -173,23 +174,32 @@
 			showDistance: initial.showDistance,
 			profileTags: sent.profileTags,
 		} satisfies ProfileUpdate;
-		const currentHashes = new Set(
-			sent.medias.map((media) => media.mediaHash),
+		const currentHashes = sent.medias.map((media) => media.mediaHash);
+		const savedHashes = savedForm.medias.map((media) => media.mediaHash);
+		const removedHashes = savedHashes.filter(
+			(hash) => !currentHashes.includes(hash),
 		);
-		const removedHashes = savedForm.medias
-			.map((media) => media.mediaHash)
-			.filter((hash) => !currentHashes.has(hash));
+		const photosChanged =
+			currentHashes.length !== savedHashes.length ||
+			currentHashes.some((hash, index) => hash !== savedHashes[index]);
 		try {
-			await Promise.all([
-				updateOwnProfile({
+			await updateOwnProfile({
+				cacheProfileId: ourProfileId,
+				profile: body,
+			});
+			// The photo list is its own endpoint — the profile update carries no
+			// photos at all — and the removals go last so a hash is never deleted
+			// off the CDN while the profile still points at it.
+			if (photosChanged) {
+				await setProfilePhotos({
 					cacheProfileId: ourProfileId,
-					profile: body,
-				}),
-				deleteProfilePhotos({
-					cacheProfileId: ourProfileId,
-					mediaHashes: removedHashes,
-				}),
-			]);
+					mediaHashes: currentHashes,
+				});
+			}
+			await deleteProfilePhotos({
+				cacheProfileId: ourProfileId,
+				mediaHashes: removedHashes,
+			});
 			savedForm = sent;
 			toast.success("Profile updated");
 		} catch (error) {

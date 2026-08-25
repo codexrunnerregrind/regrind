@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { fetchRestMock } = vi.hoisted(() => ({ fetchRestMock: vi.fn() }));
+const { fetchRestMock, invokeMock } = vi.hoisted(() => ({
+	fetchRestMock: vi.fn(),
+	invokeMock: vi.fn(),
+}));
+
+vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeMock }));
 
 vi.mock("$lib/api/transport", async (importOriginal) => ({
 	...(await importOriginal<typeof import("$lib/api/transport")>()),
@@ -20,6 +25,7 @@ import {
 	reorderAlbumContent,
 	shareAlbum,
 	unshareAlbum,
+	uploadAlbumContent,
 } from "$lib/api/messaging/albums";
 
 function albumContent(contentId = 1) {
@@ -65,6 +71,7 @@ function response(data?: unknown, status = 200) {
 
 beforeEach(() => {
 	fetchRestMock.mockReset();
+	invokeMock.mockReset();
 });
 
 describe("getMyAlbums", () => {
@@ -318,5 +325,44 @@ describe("getAlbumsPaywallContent", () => {
 			"/v3/pressie-albums/feed/paywall/",
 			{ method: "POST", body: { counterpartyId: null } },
 		);
+	});
+});
+
+describe("uploadAlbumContent", () => {
+	it("hands the bytes to the upload command, base64 encoded", async () => {
+		invokeMock.mockResolvedValue({
+			contentId: 7,
+			contentUrl: "https://example.com/7.jpg",
+		});
+
+		await expect(
+			uploadAlbumContent({
+				albumId: 3,
+				bytes: new Uint8Array([1, 2, 3]),
+				contentType: "image/png",
+			}),
+		).resolves.toEqual({
+			contentId: 7,
+			contentUrl: "https://example.com/7.jpg",
+		});
+		expect(invokeMock).toHaveBeenCalledWith("upload_album_content", {
+			albumId: 3,
+			contentType: "image/png",
+			data: "AQID",
+		});
+		// Multipart never goes near the JSON bridge.
+		expect(fetchRestMock).not.toHaveBeenCalled();
+	});
+
+	it("accepts an upload the API answered without a URL", async () => {
+		invokeMock.mockResolvedValue({ contentId: 7, contentUrl: null });
+
+		await expect(
+			uploadAlbumContent({
+				albumId: 3,
+				bytes: new Uint8Array([1]),
+				contentType: "image/jpeg",
+			}),
+		).resolves.toEqual({ contentId: 7, contentUrl: null });
 	});
 });

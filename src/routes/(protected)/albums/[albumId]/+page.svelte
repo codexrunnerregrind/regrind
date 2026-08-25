@@ -4,6 +4,7 @@
 		ArrowLeftIcon,
 		ImageIcon,
 		PencilSimpleIcon,
+		PlusIcon,
 		TrashIcon,
 		UsersIcon,
 	} from "phosphor-svelte";
@@ -17,6 +18,7 @@
 		getAlbumContent,
 		renameAlbum,
 		reorderAlbumContent,
+		uploadAlbumContent,
 	} from "$lib/api/messaging/albums";
 	import { getAlbumGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
 	import {
@@ -24,20 +26,24 @@
 		openAlbumLightbox,
 		resolveAlbumForViewing,
 	} from "$lib/chat/album-viewer";
+	import { clearMyAlbumsCache } from "$lib/chat/my-albums";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
 	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
 	import * as AlertDialog from "$lib/components/ui/alert-dialog";
 	import { Button } from "$lib/components/ui/button";
-	import * as Dialog from "$lib/components/ui/dialog";
-	import { Input } from "$lib/components/ui/input";
 	import { Skeleton } from "$lib/components/ui/skeleton";
 	import {
 		ALBUM_NAME_MAX_BYTES,
 		albumNameByteLength,
 	} from "$lib/model/messaging/albums";
 	import { hapticImpact } from "$lib/platform/haptics";
+	import {
+		pickMultipleMedia,
+		readMediaBytes,
+	} from "$lib/platform/media-picker";
 	import { dragReorder } from "$lib/util/drag-reorder";
+	import AlbumRenameDialog from "./AlbumRenameDialog.svelte";
 	import AlbumShares from "./AlbumShares.svelte";
 
 	let { data }: import("./$types").PageProps = $props();
@@ -66,6 +72,8 @@
 	);
 
 	let deleteAlbumOpen = $state(false);
+
+	let adding = $state(false);
 
 	async function load(id: number) {
 		album = null;
@@ -203,6 +211,42 @@
 		} finally {
 			busy = false;
 		}
+	}
+
+	async function addPhotos() {
+		if (album === null || adding || busy) return;
+		const picked = await pickMultipleMedia("image");
+		if (picked.length === 0) return;
+
+		adding = true;
+		let added = 0;
+		try {
+			for (const media of picked) {
+				// One request per photo — the endpoint takes a single part, and
+				// uploading in turn keeps the album's order the order they were
+				// picked in.
+				await uploadAlbumContent({
+					albumId,
+					bytes: await readMediaBytes(media),
+					contentType: media.mimeType ?? "image/jpeg",
+				});
+				added += 1;
+			}
+		} catch (err) {
+			console.error(err);
+			showErrorToast({ label: "Failed to add photos", error: err });
+		} finally {
+			adding = false;
+		}
+
+		if (added === 0) return;
+		// The upload answers with the new content id alone, not with the
+		// thumbnail the grid draws, so the album is re-read rather than patched.
+		// The bubbles that shared it read their cover from our own album list,
+		// which is now a photo behind.
+		clearMyAlbumsCache();
+		await load(albumId);
+		toast.success(added === 1 ? "Photo added" : `${added} photos added`);
 	}
 
 	function scrollToShares() {
@@ -343,10 +387,27 @@
 					<div class="flex flex-col gap-2.5">
 						<div class="flex items-center justify-between gap-2">
 							<span class="section-label">Photos</span>
-							{#if isMine && album.content.length > 1}
-								<span class="text-2xs text-ink3"
-									>Hold a photo to reorder</span
-								>
+							{#if isMine}
+								<div class="flex items-center gap-3">
+									{#if album.content.length > 1}
+										<span class="text-2xs text-ink3"
+											>Hold a photo to reorder</span
+										>
+									{/if}
+									<Button
+										variant="secondary"
+										size="sm"
+										class="w-fit gap-2 rounded-full"
+										disabled={adding || busy}
+										onclick={() => void addPhotos()}
+									>
+										<PlusIcon
+											weight="bold"
+											class="size-4"
+										/>
+										{adding ? "Adding…" : "Add photos"}
+									</Button>
+								</div>
 							{/if}
 						</div>
 						{#if album.content.length > 0}
@@ -406,11 +467,16 @@
 								{/each}
 							</div>
 						{:else}
-							<div
-								class="rounded-xl border border-dashed border-border py-10 text-center text-sm text-muted-foreground"
+							<button
+								type="button"
+								class="w-full rounded-xl border border-dashed border-border py-10 text-center text-sm text-muted-foreground disabled:opacity-50"
+								disabled={!isMine || adding || busy}
+								onclick={() => void addPhotos()}
 							>
-								This album has no media yet.
-							</div>
+								{isMine
+									? "No photos yet — add some"
+									: "No media yet"}
+							</button>
 						{/if}
 					</div>
 
@@ -440,37 +506,12 @@
 	</div>
 </main>
 
-<Dialog.Root bind:open={renameOpen}>
-	<Dialog.Content>
-		<Dialog.Header>
-			<Dialog.Title>Rename album</Dialog.Title>
-		</Dialog.Header>
-		<Input bind:value={renameValue} placeholder="Album name" />
-		{#if renameTooLong}
-			<p class="text-sm text-destructive">
-				Name is too long ({albumNameByteLength(
-					renameValue,
-				)}/{ALBUM_NAME_MAX_BYTES}
-				bytes).
-			</p>
-		{/if}
-		<Dialog.Footer>
-			<Button
-				variant="outline"
-				onclick={() => (renameOpen = false)}
-				disabled={busy}
-			>
-				Cancel
-			</Button>
-			<Button
-				onclick={() => void submitRename()}
-				disabled={busy || renameTooLong}
-			>
-				Save
-			</Button>
-		</Dialog.Footer>
-	</Dialog.Content>
-</Dialog.Root>
+<AlbumRenameDialog
+	bind:open={renameOpen}
+	bind:value={renameValue}
+	{busy}
+	onSubmit={() => void submitRename()}
+/>
 
 <AlertDialog.Root bind:open={deleteAlbumOpen}>
 	<AlertDialog.Content>

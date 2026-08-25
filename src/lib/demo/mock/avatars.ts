@@ -14,6 +14,26 @@ const demoGradients = [
 
 const demoMediaSeeds = new Map<string, string>();
 
+/**
+ * Media the demo itself produced — a photo picked in the file dialog — keyed by
+ * the hash handed back for it. A generated avatar is no substitute here: the
+ * whole point of picking a photo is seeing that photo come back.
+ */
+const demoUploadedMedia = new Map<string, string>();
+
+export function registerUploadedMedia({
+	bytes,
+	contentType,
+}: {
+	bytes: Uint8Array<ArrayBuffer>;
+	contentType: string;
+}): { mediaHash: string; url: string } {
+	const url = URL.createObjectURL(new Blob([bytes], { type: contentType }));
+	const mediaHash = hashFromSeed(`uploaded-${demoUploadedMedia.size}-${url}`);
+	demoUploadedMedia.set(mediaHash, url);
+	return { mediaHash, url };
+}
+
 export function picsum({
 	seed,
 	width = 600,
@@ -51,6 +71,8 @@ export function demoMediaUrl(
 	mediaHash: string | null | undefined,
 ): string | null {
 	if (!mediaHash) return null;
+	const uploaded = demoUploadedMedia.get(mediaHash);
+	if (uploaded !== undefined) return uploaded;
 	const seed = demoMediaSeeds.get(mediaHash) ?? mediaHash;
 	const profileId = Number.parseInt(seed, 10) || 0;
 	const [from, to] =
