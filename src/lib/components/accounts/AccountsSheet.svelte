@@ -125,6 +125,7 @@
 		<div class="flex flex-col gap-2 px-4 pb-2">
 			{#each accounts as account (account.profileId)}
 				{@const expanded = account.active && (alone || managing)}
+				{@const switchable = !account.active && !managing}
 				<div
 					class={[
 						"rounded-xl border bg-card transition-colors",
@@ -134,7 +135,7 @@
 						},
 					]}
 				>
-					<div class="flex items-center gap-3.5 px-3.5 py-3">
+					{#snippet identity(account: AccountSummary)}
 						<span
 							class="size-10 shrink-0 overflow-hidden rounded-full bg-media-placeholder"
 						>
@@ -171,8 +172,29 @@
 								<span class="truncate">{detail(account)}</span>
 							</span>
 						</span>
-						{#if account.active}
-							{#if !alone && !managing}
+					{/snippet}
+
+					{#if switchable}
+						<!-- The whole row switches, so Use is a label on the
+						     target rather than a button inside it: one tap
+						     target, and nothing to miss by a few points. -->
+						<button
+							type="button"
+							disabled={busy}
+							onclick={() => use(account)}
+							class="flex w-full items-center gap-3.5 px-3.5 py-3 text-start transition-colors active:bg-muted disabled:opacity-55 can-hover:hover:bg-muted"
+						>
+							{@render identity(account)}
+							<span
+								class="shrink-0 rounded-md bg-primary px-2.5 py-1 text-caption font-medium text-primary-foreground"
+							>
+								Use
+							</span>
+						</button>
+					{:else}
+						<div class="flex items-center gap-3.5 px-3.5 py-3">
+							{@render identity(account)}
+							{#if account.active && !alone && !managing}
 								<span
 									class="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground"
 									aria-label="In use"
@@ -190,28 +212,20 @@
 										<path d="M3.5 8.5l3 3 6-6" />
 									</svg>
 								</span>
+							{:else if !account.active && managing}
+								<Button
+									variant="ghost"
+									size="sm"
+									class="shrink-0 text-destructive"
+									disabled={busy}
+									onclick={() =>
+										(confirmingSignOut = account)}
+								>
+									Sign out
+								</Button>
 							{/if}
-						{:else if managing}
-							<Button
-								variant="ghost"
-								size="sm"
-								class="shrink-0 text-destructive"
-								disabled={busy}
-								onclick={() => (confirmingSignOut = account)}
-							>
-								Sign out
-							</Button>
-						{:else}
-							<Button
-								size="sm"
-								class="shrink-0"
-								disabled={busy}
-								onclick={() => use(account)}
-							>
-								Use
-							</Button>
-						{/if}
-					</div>
+						</div>
+					{/if}
 
 					{#if expanded}
 						<div class="flex gap-2 px-3.5 pb-3.5">

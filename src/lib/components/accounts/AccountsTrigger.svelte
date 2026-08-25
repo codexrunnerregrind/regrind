@@ -44,7 +44,7 @@
 			{/each}
 		{/if}
 	</span>
-	<span class="text-caption leading-none font-medium text-primary">
+	<span class="text-meta leading-none font-medium text-primary">
 		{alone ? "Add" : "Switch"}
 	</span>
 </button>
