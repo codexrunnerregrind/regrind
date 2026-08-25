@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
 	clearAlbumShareState,
+	forgetAlbumShared,
 	setAlbumShared,
 } from "$lib/api/messaging/album-shares-state.svelte";
 import type { AlbumMessage as AlbumMessageType } from "$lib/model/messaging/messages";
@@ -107,6 +108,23 @@ describe("AlbumMessage", () => {
 
 		expect(label()).toBe("Open album");
 		expect(locked()).toBe(false);
+	});
+
+	it("locks on an optimistic revoke, before any request has answered", async () => {
+		// What the transcript's own unshare does: record the intent, then send.
+		setAlbumShared(ALBUM_ID, PEER_ID, true);
+		const { label } = bubble(true);
+
+		setAlbumShared(ALBUM_ID, PEER_ID, false);
+		await Promise.resolve();
+
+		expect(label()).toBe("Open locked album");
+
+		// ...and what it does when the request comes back a failure.
+		forgetAlbumShared(ALBUM_ID, PEER_ID);
+		await Promise.resolve();
+
+		expect(label()).toBe("Open album");
 	});
 
 	it("leaves a share recorded for someone else alone", async () => {

@@ -28,6 +28,14 @@ export function setAlbumShared(
 	shareState.set(key(albumId, profileId), shared);
 }
 
+/**
+ * Puts an entry back to "unknown". What an optimistic write reverts to when its
+ * request fails: restoring `true` would claim a share we only ever guessed at.
+ */
+export function forgetAlbumShared(albumId: number, profileId: number): void {
+	shareState.delete(key(albumId, profileId));
+}
+
 /** `true` / `false` when known, `undefined` when we have never checked. */
 export function getAlbumShared(
 	albumId: number,

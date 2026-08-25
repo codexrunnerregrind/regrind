@@ -8,6 +8,7 @@
 	import { showErrorToast } from "$lib/api/error-toast";
 	import {
 		ensureAlbumSharesSwept,
+		forgetAlbumShared,
 		getAlbumShared,
 		setAlbumShared,
 	} from "$lib/api/messaging/album-shares-state.svelte";
@@ -182,23 +183,31 @@
 	async function stopSharing(albumIds: number[], profileId: number) {
 		sharing = true;
 		// Optimistically lock the shared-album bubbles in the chat so they show as
-		// no longer viewable straight away; revert them if the request fails.
-		const reverts = albumIds.map(
-			(albumId) => conversationState.lockSharedAlbum(albumId).revert,
-		);
+		// no longer viewable straight away; revert them if the request fails. The
+		// share state is part of that: a bubble reads it over its own body, so a
+		// stale "shared" here would hold the lock off until the request returned.
+		const wasShared = albumIds.map((albumId) => ({
+			albumId,
+			shared: getAlbumShared(albumId, profileId),
+			revert: conversationState.lockSharedAlbum(albumId).revert,
+		}));
+		for (const albumId of albumIds)
+			setAlbumShared(albumId, profileId, false);
 		try {
 			await Promise.all(
 				albumIds.map((albumId) =>
 					unshareAlbum({ albumId, profileIds: [profileId] }),
 				),
 			);
-			for (const albumId of albumIds)
-				setAlbumShared(albumId, profileId, false);
 			toast.success(
 				albumIds.length === 1 ? "Album unshared" : "Albums unshared",
 			);
 		} catch (err) {
-			for (const revert of reverts) revert();
+			for (const { albumId, shared, revert } of wasShared) {
+				revert();
+				if (shared === undefined) forgetAlbumShared(albumId, profileId);
+				else setAlbumShared(albumId, profileId, shared);
+			}
 			console.error(err);
 			showErrorToast({ label: "Failed to unshare album", error: err });
 		} finally {

@@ -12,6 +12,7 @@ vi.mock("$lib/api/messaging/albums", async (importOriginal) => ({
 import {
 	clearAlbumShareState,
 	ensureAlbumSharesSwept,
+	forgetAlbumShared,
 	getAlbumShared,
 	setAlbumShared,
 } from "$lib/api/messaging/album-shares-state.svelte";
@@ -38,6 +39,21 @@ describe("album share state", () => {
 
 		expect(getAlbumShared(1, 42)).toBe(false);
 		expect(getAlbumShared(2, 42)).toBeUndefined();
+	});
+
+	it("forgets an entry back to unknown rather than to a guess", () => {
+		setAlbumShared(1, 42, false);
+		forgetAlbumShared(1, 42);
+
+		expect(getAlbumShared(1, 42)).toBeUndefined();
+	});
+
+	it("forgets only the entry it names", () => {
+		setAlbumShared(1, 42, true);
+		setAlbumShared(1, 43, true);
+		forgetAlbumShared(1, 42);
+
+		expect(getAlbumShared(1, 43)).toBe(true);
 	});
 
 	it("keys on the profile as well as the album", () => {

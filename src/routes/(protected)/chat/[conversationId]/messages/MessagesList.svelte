@@ -4,6 +4,7 @@
 	import { promptCopyError } from "$lib/api/error-copy";
 	import { showErrorToast } from "$lib/api/error-toast";
 	import {
+		forgetAlbumShared,
 		getAlbumShared,
 		setAlbumShared,
 	} from "$lib/api/messaging/album-shares-state.svelte";
@@ -135,15 +136,19 @@
 					const profileId = conversationState.profile?.profileId;
 					if (albumId === null || profileId === undefined) return;
 					// Optimistically lock the album bubble(s) so they show as no
-					// longer viewable straight away; revert if the request fails.
+					// longer viewable straight away; revert if the request
+					// fails. The share state goes with them: a bubble reads it
+					// over its own body, so leaving it saying "shared" would
+					// keep the lock off until the request came back.
+					const wasShared = getAlbumShared(albumId, profileId);
 					const { revert } =
 						conversationState.lockSharedAlbum(albumId);
+					setAlbumShared(albumId, profileId, false);
 					try {
 						await unshareAlbum({
 							albumId,
 							profileIds: [profileId],
 						});
-						setAlbumShared(albumId, profileId, false);
 						toast.success("Album unshared");
 					} catch (error) {
 						console.error(error);
@@ -152,6 +157,9 @@
 							error,
 						});
 						revert();
+						if (wasShared === undefined)
+							forgetAlbumShared(albumId, profileId);
+						else setAlbumShared(albumId, profileId, wasShared);
 					}
 				}
 			: undefined}

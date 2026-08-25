@@ -5,7 +5,6 @@
 		ImagesIcon,
 		VideoIcon,
 	} from "phosphor-svelte";
-	import { untrack } from "svelte";
 	import { toast } from "svelte-sonner";
 
 	import { showErrorToast } from "$lib/api/error-toast";
@@ -134,27 +133,16 @@
 	});
 
 	let phase = $state<"idle" | "loading" | "open">("idle");
-	// Reopening the same album shouldn't refetch it.
+	// Reopening the same album shouldn't refetch it. A share flipping does not
+	// stale it either: only our own albums can flip here, and those resolve to
+	// the same full album whether the share is on or off — it is a stranger's
+	// bubble that would come from the teaser, and we are never told when one of
+	// those changes.
 	let cachedAlbum: LoadedAlbum | null = null;
 	// Set once the album came from the paywall teaser rather than the album
 	// itself: those slides have no ids to reply or react to.
 	let cachedFromPaywall = false;
 	let destroyLightbox: (() => void) | null = null;
-
-	// A bubble that changes hands between locked and shared has to forget what it
-	// resolved last time: a teaser's blurred slides are not the album, and the
-	// album's own cover is not what a revoked share should show.
-	// Read once on purpose: this is the state the cache below was filled at, and
-	// the effect is what keeps it current.
-	let resolvedWhileViewable = untrack(() => isViewable);
-	$effect(() => {
-		if (isViewable === resolvedWhileViewable) return;
-		resolvedWhileViewable = isViewable;
-		cachedAlbum = null;
-		cachedFromPaywall = false;
-		freshCover = null;
-		coverBroken = false;
-	});
 
 	// The message can scroll out of the list (or the conversation can be left)
 	// while the viewer is open, so the lightbox is torn down with it.
