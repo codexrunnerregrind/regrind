@@ -79,11 +79,13 @@ const size = statSync(ipaPath).size;
 
 // The manifest's version must be what the *bundle* declares, not what
 // tauri.conf.json says. iOS requires CFBundleShortVersionString to be numeric,
-// so Tauri drops the prerelease suffix: `0.1.0-beta.4` in the config ships as
+// so Tauri drops the prerelease suffix: `0.1.0-beta.5` in the config ships as
 // `0.1.0` in the IPA. Advertising the config value makes SideStore refuse the
 // install with VerificationError 4, "the downloaded version does not match the
-// version specified by the source". CFBundleVersion keeps the beta number
-// (`0.1.0.4`), so buildVersion is what distinguishes one beta from the next.
+// version specified by the source". So read both strings out of the IPA itself.
+// scripts/ios-release-ipa.sh copies CFBundleVersion (`0.1.0.5`) over the short
+// version before packing, precisely so this reads a string that differs between
+// betas — SideStore compares `version` and nothing else unless that parse fails.
 const plist = Bun.spawnSync([
 	"unzip",
 	"-p",

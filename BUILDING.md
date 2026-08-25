@@ -403,6 +403,24 @@ the IPA so `size` and `sha256` match the published artifact byte-for-byte. It
 writes `ci/altstore/source.json`. The URLs point at this fork, since upstream
 publishes no IPA; override with `OPEN_GRIND_REPO` to retarget a mirror.
 
+#### Why the release IPA advertises `0.1.0.5`
+
+`version` in the manifest has to equal the bundle's
+`CFBundleShortVersionString`, or SideStore refuses the install with
+VerificationError 4. Tauri drops the prerelease suffix when it derives that
+string, so every beta of `0.1.0` would ship as plain `0.1.0` — and SideStore's
+`InstalledApp.hasUpdate` compares `version` alone, parsed as semver, reading
+`buildVersion` only when that parse fails. Two betas that both say `0.1.0` are
+therefore indistinguishable and no update is ever offered.
+
+So `scripts/ios-release-ipa.sh` copies `CFBundleVersion` over the short version
+in the unsigned payload before packing: the release IPA declares `0.1.0.5`, four
+components, which cannot parse as semver — so SideStore falls back to comparing
+`version` _and_ `buildVersion`, the rule AltStore's own documentation states.
+Editing `Info.plist` would invalidate a signature; it is safe here only because
+the same script strips the signature immediately afterwards. Nothing else reads
+the rewritten value: device builds keep whatever Tauri generated.
+
 #### Installing from the source
 
 Users add the raw URL of that JSON as a source in SideStore:

@@ -107,6 +107,25 @@ if [ "$BUNDLE_ID" != "$IDENTIFIER" ]; then
 	exit 1
 fi
 
+# Advertise the beta number in the short version, because that string is the
+# only thing SideStore compares. `InstalledApp.hasUpdate` parses `version` from
+# the manifest as semver and compares it to what is installed; buildVersion is
+# read only when that parse *fails*. Tauri drops the prerelease suffix, so every
+# beta ships CFBundleShortVersionString `0.1.0` and each release looks identical
+# to the one before it — no update is ever offered. Copying CFBundleVersion
+# (`0.1.0.5`) over it gives each beta a distinct string that, having four
+# components, cannot parse as semver, so SideStore falls back to comparing
+# version *and* buildVersion — AltStore's documented rule. The manifest reads
+# this same plist, so the two cannot drift, and the value keeps working when a
+# plain `0.1.0` eventually ships.
+#
+# Safe only because the release IPA is unsigned: editing Info.plist would break
+# a signature, and the strip below removes it anyway.
+SHORT_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' \
+	"$APP/Info.plist")"
+/usr/libexec/PlistBuddy -c \
+	"Set :CFBundleShortVersionString $SHORT_VERSION" "$APP/Info.plist"
+
 # Deleting _CodeSignature/ and the profile is not enough: the signature and its
 # entitlements blob — which carry the team ID and get-task-allow — live inside
 # the Mach-O itself. Clear those first, deepest bundle outwards, then remove the
