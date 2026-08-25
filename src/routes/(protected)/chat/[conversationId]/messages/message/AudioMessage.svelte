@@ -238,15 +238,11 @@
 		type="button"
 		class={[
 			"flex size-11 shrink-0 items-center justify-center rounded-full",
-			"transition-opacity",
-			// On our own bubble the accent is the bubble, so the button lifts out of
-			// it instead of competing with it.
-			{
-				"bg-primary text-primary-foreground": !media.isOut,
-				"bg-current/20": media.isOut,
-				"cursor-pointer": !loading,
-				"opacity-50": loading,
-			},
+			"bg-current/20 transition-opacity",
+			// Tinted from the bubble's own ink, like the track and the quote block:
+			// bubble colors are picked per side in settings, so the accent has no
+			// relation to whatever surface this button lands on.
+			{ "cursor-pointer": !loading, "opacity-50": loading },
 		]}
 		aria-label={paused ? "Play voice message" : "Pause voice message"}
 		disabled={loading}
