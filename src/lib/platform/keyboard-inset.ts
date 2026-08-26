@@ -25,6 +25,13 @@ function isEditable(element: Element | null): boolean {
  * of 100dvh. offsetTop is WebKit scrolling the caret into view; the layout no
  * longer needs that reveal, so it is scrolled back rather than compensated for.
  *
+ * A fixed element pinned to the bottom is pinned to the *layout* viewport,
+ * which the tap path leaves at full height — so a bottom sheet stays under the
+ * keys however short the app is sized. --keyboard-height is what the keyboard
+ * covers of that layout viewport, for those elements to sit on. On the path
+ * where the frame is resized instead there is nothing left to clear and it
+ * stays 0.
+ *
  * env(safe-area-inset-bottom) is derived from the window rather than the frame,
  * so the home-indicator inset keeps being reported with the keyboard up and
  * would float a dead band above the keys. Zero it while they are showing.
@@ -46,6 +53,7 @@ export function applyKeyboardInset(): () => void {
 	let resting = viewport.height;
 	let open = false;
 	let height = 0;
+	let keyboard = 0;
 
 	const update = () => {
 		// With nothing focused the viewport is at rest, so re-baseline. This is
@@ -66,6 +74,21 @@ export function applyKeyboardInset(): () => void {
 				open ? "0px" : baseInset,
 			);
 		}
+
+		const nextKeyboard = open
+			? Math.max(
+					0,
+					Math.round(
+						window.innerHeight -
+							viewport.height -
+							viewport.offsetTop,
+					),
+				)
+			: 0;
+		if (nextKeyboard !== keyboard) {
+			keyboard = nextKeyboard;
+			root.style.setProperty("--keyboard-height", `${keyboard}px`);
+		}
 		// The app is sized to the visible part now, so WebKit's caret reveal has
 		// nothing left to reveal and only shifts the app off its own top.
 		if (open && viewport.offsetTop !== 0) window.scrollTo(0, 0);
@@ -84,5 +107,6 @@ export function applyKeyboardInset(): () => void {
 		document.removeEventListener("focusout", update);
 		root.style.setProperty("--safe-area-bottom", baseInset);
 		root.style.removeProperty("--viewport-height");
+		root.style.removeProperty("--keyboard-height");
 	};
 }

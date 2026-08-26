@@ -369,6 +369,10 @@
    over a real keyboard. */
 :root {
 	--viewport-height: 100dvh;
+	/* What the software keyboard covers of the layout viewport, for elements
+	   fixed to its bottom edge — 0 until applyKeyboardInset says otherwise, and
+	   on every platform whose webview is resized around the keys instead. */
+	--keyboard-height: 0px;
 }
 
 :root,
