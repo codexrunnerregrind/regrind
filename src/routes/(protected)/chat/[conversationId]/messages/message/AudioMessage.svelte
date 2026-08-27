@@ -207,8 +207,8 @@
 	class={[
 		// `relative` is what the reaction pill anchors to: without it the pill
 		// escapes to whatever ancestor is positioned and floats off on its own.
-		"relative flex items-center gap-3 rounded-bubble px-3 py-2.5",
-		"w-3/4 max-w-72 min-w-56",
+		"relative flex items-center gap-2 rounded-bubble px-2.5 py-1.5",
+		"w-3/4 max-w-52 min-w-40",
 		{
 			"bg-message-bubble-in text-message-bubble-foreground": !media.isOut,
 			"rounded-es-bubble-tail": media.lastInStack && !media.isOut,
@@ -237,7 +237,7 @@
 	<button
 		type="button"
 		class={[
-			"flex size-11 shrink-0 items-center justify-center rounded-full",
+			"flex size-8 shrink-0 items-center justify-center rounded-full",
 			"bg-current/20 transition-opacity",
 			// Tinted from the bubble's own ink, like the track and the quote block:
 			// bubble colors are picked per side in settings, so the accent has no
@@ -251,9 +251,9 @@
 		onkeydown={keepToSelf}
 	>
 		{#if paused}
-			<PlayIcon size={20} weight="fill" />
+			<PlayIcon size={14} weight="fill" />
 		{:else}
-			<PauseIcon size={20} weight="fill" />
+			<PauseIcon size={14} weight="fill" />
 		{/if}
 	</button>
 
@@ -267,7 +267,7 @@
 		aria-valuenow={currentTime}
 		aria-valuetext={formatMediaDuration(currentTime)}
 		data-slot="audio-track"
-		class="relative flex h-4 min-w-0 grow cursor-pointer touch-none items-center outline-hidden"
+		class="relative flex h-3 min-w-0 grow cursor-pointer touch-none items-center outline-hidden"
 		onpointerdown={(event) => {
 			keepToSelf(event);
 			grab(event);
@@ -301,7 +301,7 @@
 		></div>
 	</div>
 
-	<span class="shrink-0 text-body leading-none tabular-nums">
+	<span class="shrink-0 text-meta leading-none tabular-nums">
 		{formatMediaDuration(readout)}
 	</span>
 	{@render media.adornments?.()}
@@ -311,6 +311,6 @@
 	/* One place for the thumb's size: the playhead offsets by half of it at both
 	   ends so the thumb never overhangs the track it rides on. */
 	[data-slot="audio-track"] {
-		--thumb-size: 0.75rem;
+		--thumb-size: 0.5rem;
 	}
 </style>
