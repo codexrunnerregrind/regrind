@@ -42,6 +42,11 @@ export type MediaViewerActions = {
 	 * the reply bar, beside zoom and close, and so does not imply a bar.
 	 */
 	onSave?: (index: number) => void | Promise<void>;
+	/**
+	 * Save every slide at once. No control of its own — it is what holding the
+	 * save glyph does. Leave it out where the slides aren't one set.
+	 */
+	onSaveAll?: () => void | Promise<void>;
 };
 
 export function chromeHasBar(actions: MediaViewerActions): boolean {

@@ -19,6 +19,7 @@
 		type MediaViewerHeader,
 	} from "$lib/chat/media-viewer-chrome";
 	import { hapticImpact, hapticNotification } from "$lib/platform/haptics";
+	import { HoldGesture } from "$lib/util/hold-gesture.svelte";
 	import { profileMediaUrl } from "$lib/util/media";
 	import { formatDistance } from "$lib/util/units";
 
@@ -48,6 +49,7 @@
 	// toast lands right on top of the reply bar it is confirming.
 	let sentLabel = $state<string | null>(null);
 	let sentTimer: ReturnType<typeof setTimeout> | undefined;
+	let savingAll = $state(false);
 
 	const hasBar = $derived(chromeHasBar(actions));
 	// Once there is something to send, the bar becomes the chat composer's: the
@@ -218,9 +220,28 @@
 		pswp.toggleZoom();
 	}
 
+	// Hold saves the album, tap saves the photo.
+	const hold = new HoldGesture({
+		run: () => void saveAll(),
+		enabled: () => actions.onSaveAll !== undefined && !savingAll,
+	});
+	$effect(() => () => hold.dispose());
+
 	function save() {
+		if (hold.claimedClick()) return;
 		hapticImpact("light");
 		void actions.onSave?.(index);
+	}
+
+	async function saveAll() {
+		const saveEverything = actions.onSaveAll;
+		if (savingAll || saveEverything === undefined) return;
+		savingAll = true;
+		try {
+			await saveEverything();
+		} finally {
+			savingAll = false;
+		}
 	}
 
 	function close() {
@@ -375,9 +396,22 @@
 					<button
 						type="button"
 						onclick={save}
-						onpointerdown={stopPointer}
-						aria-label="Save to your device"
-						class="pointer-events-auto flex size-11 items-center justify-center transition-opacity active:opacity-60"
+						onpointerdown={(event) => {
+							stopPointer(event);
+							hold.start();
+						}}
+						onpointerup={() => hold.end()}
+						onpointercancel={() => hold.cancel()}
+						onpointerleave={() => hold.cancel()}
+						oncontextmenu={(event) => event.preventDefault()}
+						aria-busy={savingAll}
+						aria-label={actions.onSaveAll === undefined
+							? "Save to your device"
+							: "Save to your device — hold to save all"}
+						class={[
+							"pointer-events-auto flex size-11 touch-none items-center justify-center transition-[opacity,transform] select-none active:opacity-60 aria-busy:opacity-60",
+							{ "scale-125": hold.holding },
+						]}
 					>
 						<DownloadSimpleIcon class="size-5" />
 					</button>

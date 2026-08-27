@@ -1,7 +1,7 @@
 import { convertFileSrc, isTauri } from "@tauri-apps/api/core";
 
 import { demoEnabled, demoMediaUrl } from "$lib/demo";
-import { toBase64Url } from "$lib/util/base64";
+import { fromBase64Url, toBase64Url } from "$lib/util/base64";
 
 const MEDIA_SCHEME = "ogmedia";
 
@@ -28,6 +28,28 @@ export function proxyMediaUrl(
 	if (!url.startsWith("https://")) return url;
 	const payload = toBase64Url(new TextEncoder().encode(url));
 	return convertFileSrc(`${FETCHER_TAG[as]}${payload}`, MEDIA_SCHEME);
+}
+
+/**
+ * The inverse of {@link proxyMediaUrl}, for anything that takes a url outside
+ * the webview: the proxy scheme means nothing to an HTTP client.
+ */
+export function unproxyMediaUrl(url: string): string {
+	// `convertFileSrc` spells the proxy as a scheme, or a subdomain on windows.
+	const prefix = [
+		`${MEDIA_SCHEME}://localhost/`,
+		`http://${MEDIA_SCHEME}.localhost/`,
+	].find((candidate) => url.startsWith(candidate));
+	if (prefix === undefined) return url;
+	// A one-character fetcher tag, then the url.
+	const encoded = decodeURIComponent(url.slice(prefix.length)).slice(1);
+	try {
+		const decoded = new TextDecoder().decode(fromBase64Url(encoded));
+		// Only https ever went in, so anything else was not ours.
+		return decoded.startsWith("https://") ? decoded : url;
+	} catch {
+		return url;
+	}
 }
 
 export function profileMediaUrl({

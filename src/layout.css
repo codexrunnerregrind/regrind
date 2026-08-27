@@ -465,6 +465,12 @@ a {
 	display: none;
 }
 
+/* Below the modal layer (dialogs are z-50), above the page's bars (~z-20).
+   PhotoSwipe's own 100000 buried any dialog opened from inside the viewer. */
+.pswp {
+	--pswp-root-z-index: 40;
+}
+
 /* The photo fills the screen, so the backdrop shows only where its aspect ratio
    leaves room. `--pswp-bg` is PhotoSwipe's own hook for it, so this survives the
    opacity animation. Doubled class: PhotoSwipe's own stylesheet arrives with the

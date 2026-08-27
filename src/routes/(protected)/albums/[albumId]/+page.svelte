@@ -2,6 +2,7 @@
 	import { page } from "$app/state";
 	import {
 		ArrowLeftIcon,
+		DownloadSimpleIcon,
 		ImageIcon,
 		PencilSimpleIcon,
 		PlusIcon,
@@ -26,11 +27,11 @@
 		openAlbumLightbox,
 		resolveAlbumForViewing,
 	} from "$lib/chat/album-viewer";
+	import { downloadAllMedia } from "$lib/chat/lightbox-download";
 	import { clearMyAlbumsCache } from "$lib/chat/my-albums";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
 	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
-	import * as AlertDialog from "$lib/components/ui/alert-dialog";
 	import { Button } from "$lib/components/ui/button";
 	import { Skeleton } from "$lib/components/ui/skeleton";
 	import {
@@ -43,6 +44,7 @@
 		readMediaBytes,
 	} from "$lib/platform/media-picker";
 	import { dragReorder } from "$lib/util/drag-reorder";
+	import AlbumDeleteDialog from "./AlbumDeleteDialog.svelte";
 	import AlbumRenameDialog from "./AlbumRenameDialog.svelte";
 	import AlbumShares from "./AlbumShares.svelte";
 
@@ -74,6 +76,7 @@
 	let deleteAlbumOpen = $state(false);
 
 	let adding = $state(false);
+	let savingAll = $state(false);
 
 	async function load(id: number) {
 		album = null;
@@ -167,6 +170,22 @@
 			}
 		} finally {
 			opening = false;
+		}
+	}
+
+	async function saveAll() {
+		if (album === null || savingAll || album.content.length === 0) return;
+		savingAll = true;
+		hapticImpact("light");
+		try {
+			await downloadAllMedia(
+				album.content.map((item) => ({
+					url: item.url,
+					mimeType: item.contentType,
+				})),
+			);
+		} finally {
+			savingAll = false;
 		}
 	}
 
@@ -369,17 +388,37 @@
 									/>
 								{/if}
 							</span>
-							{#if isMine}
-								<Button
-									variant="secondary"
-									size="sm"
-									class="mt-0.5 w-fit gap-2 rounded-full"
-									onclick={scrollToShares}
-								>
-									<UsersIcon weight="fill" class="size-4" />
-									Shared with ({album.sharedCount})
-								</Button>
-							{/if}
+							<!-- Wraps: the column beside the cover is narrow on a phone. -->
+							<div
+								class="mt-0.5 flex flex-wrap items-center gap-2"
+							>
+								{#if isMine}
+									<Button
+										variant="secondary"
+										size="sm"
+										class="w-fit gap-2 rounded-full"
+										onclick={scrollToShares}
+									>
+										<UsersIcon
+											weight="fill"
+											class="size-4"
+										/>
+										Shared with ({album.sharedCount})
+									</Button>
+								{/if}
+								{#if album.content.length > 0}
+									<Button
+										variant="secondary"
+										size="sm"
+										class="w-fit gap-2 rounded-full"
+										disabled={savingAll}
+										onclick={() => void saveAll()}
+									>
+										<DownloadSimpleIcon class="size-4" />
+										{savingAll ? "Saving…" : "Save all"}
+									</Button>
+								{/if}
+							</div>
 						</div>
 					</div>
 
@@ -513,23 +552,8 @@
 	onSubmit={() => void submitRename()}
 />
 
-<AlertDialog.Root bind:open={deleteAlbumOpen}>
-	<AlertDialog.Content>
-		<AlertDialog.Header>
-			<AlertDialog.Title>Delete this album?</AlertDialog.Title>
-			<AlertDialog.Description>
-				The album and everyone's access to it will be removed. This
-				cannot be undone.
-			</AlertDialog.Description>
-		</AlertDialog.Header>
-		<AlertDialog.Footer>
-			<AlertDialog.Cancel disabled={busy}>Cancel</AlertDialog.Cancel>
-			<AlertDialog.Action
-				disabled={busy}
-				onclick={() => void confirmDeleteAlbum()}
-			>
-				Delete
-			</AlertDialog.Action>
-		</AlertDialog.Footer>
-	</AlertDialog.Content>
-</AlertDialog.Root>
+<AlbumDeleteDialog
+	bind:open={deleteAlbumOpen}
+	{busy}
+	onConfirm={() => void confirmDeleteAlbum()}
+/>

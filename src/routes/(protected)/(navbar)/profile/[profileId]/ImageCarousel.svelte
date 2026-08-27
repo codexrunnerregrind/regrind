@@ -7,7 +7,10 @@
 
 	import { sendTap } from "$lib/api/interest/taps";
 	import { sendMessage } from "$lib/api/messaging/messages";
-	import { downloadMedia } from "$lib/chat/lightbox-download";
+	import {
+		downloadAllMedia,
+		downloadMedia,
+	} from "$lib/chat/lightbox-download";
 	import {
 		type MediaViewerActions,
 		registerMediaViewerChrome,
@@ -82,6 +85,9 @@
 
 	let lightboxRef: PhotoSwipeLightbox | undefined = $state();
 
+	const fullUrl = (mediaHash: string) =>
+		profileMediaUrl({ mediaHash, size: "full" });
+
 	let gallery: HTMLDivElement | null = $state(null);
 
 	$effect(() => {
@@ -94,13 +100,19 @@
 			onSave: (index) => {
 				const media = medias[index];
 				if (!media) return;
-				downloadMedia({
-					url: profileMediaUrl({
-						mediaHash: media.mediaHash,
-						size: "full",
-					}),
-				});
+				downloadMedia({ url: fullUrl(media.mediaHash) });
 			},
+			// Holding saves every photo on the profile.
+			...(medias.length > 1
+				? {
+						onSaveAll: () =>
+							downloadAllMedia(
+								medias.map((media) => ({
+									url: fullUrl(media.mediaHash),
+								})),
+							),
+					}
+				: {}),
 		};
 		let lightbox: PhotoSwipeLightbox | undefined;
 		import("photoswipe/lightbox")

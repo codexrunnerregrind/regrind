@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
-import { save } from "@tauri-apps/plugin-dialog";
+import { join } from "@tauri-apps/api/path";
+import { open, save } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
 import { platform } from "@tauri-apps/plugin-os";
 import { AndroidFs } from "tauri-plugin-android-fs-api";
@@ -7,6 +8,7 @@ import z from "zod";
 
 import { demoEnabled } from "$lib/demo";
 import { fromBase64 } from "$lib/util/base64";
+import { unproxyMediaUrl } from "$lib/util/media";
 
 const downloadedMediaSchema = z.object({
 	contentType: z.string().nullable(),
@@ -33,9 +35,11 @@ type Fetched = {
 // Downloads the media bytes through Rust (so the request isn't blocked by the
 // webview's CORS policy), falling back to a plain fetch in the demo/web build.
 async function fetchMedia(
-	url: string,
+	rawUrl: string,
 	hintMimeType?: string,
 ): Promise<Fetched> {
+	// An `ogmedia://` url means nothing to an HTTP client.
+	const url = unproxyMediaUrl(rawUrl);
 	let bytes: Uint8Array;
 	let contentType: string | null;
 	if (demoEnabled) {
@@ -76,56 +80,47 @@ function extensionFromUrl(url: string): string | null {
 	}
 }
 
-function buildFilename(extension: string): string {
-	const stamp = new Date()
-		.toISOString()
-		.replace(/[-:T]/g, "")
-		.replace(/\..+$/, "");
-	return `opengrind_${stamp}.${extension}`;
+function timestamp(): string {
+	return new Date().toISOString().replace(/[-:T]/g, "").replace(/\..+$/, "");
+}
+
+// One batch shares a stamp and numbers by `index`, so its files sort together
+// in the album's order.
+function buildFilename(
+	extension: string,
+	{ stamp = timestamp(), index }: { stamp?: string; index?: number } = {},
+): string {
+	const suffix =
+		index === undefined ? "" : `_${String(index + 1).padStart(3, "0")}`;
+	return `opengrind_${stamp}${suffix}.${extension}`;
 }
 
 // Saves a chat image or video to the device's gallery (Android) or a
 // user-chosen location (desktop), or triggers a browser download in the
 // demo/web build. `mimeType` is an optional hint used when the server response
 // carries no usable `Content-Type`.
-// Returns `true` when the media was saved, `false` when the user cancelled the
-// (desktop) save dialog.
 export async function saveMediaToDevice(
 	url: string,
 	mimeType?: string,
-): Promise<boolean> {
+): Promise<SaveResult> {
 	const media = await fetchMedia(url, mimeType);
 	const filename = buildFilename(media.extension);
 
 	if (demoEnabled) {
-		saveViaBrowser(media.bytes, media.mimeType, filename);
-		return true;
+		saveViaBrowser(toFile(media, filename), filename);
+		return { saved: 1, failed: 0, cancelled: false };
 	}
 
 	if (platform() === "android") {
-		const uri = media.isVideo
-			? await AndroidFs.createNewPublicVideoFile(
-					"Movies",
-					filename,
-					media.mimeType,
-					{ requestPermission: true },
-				)
-			: await AndroidFs.createNewPublicImageFile(
-					"Pictures",
-					filename,
-					media.mimeType,
-					{ requestPermission: true },
-				);
-		await AndroidFs.writeFile(uri, media.bytes);
-		await AndroidFs.scanPublicFile(uri);
-		return true;
+		await saveToAndroidGallery(media, filename);
+		return { saved: 1, failed: 0, cancelled: false };
 	}
 
 	// iOS has no direct "save to Photos" API here, but WKWebView supports the
 	// Web Share sheet for files (triggered by the button tap), from which the
 	// user can pick "Save Image" / "Save Video".
 	if (platform() === "ios") {
-		return shareFile(media.bytes, media.mimeType, filename);
+		return shareOrAskForATap([toFile(media, filename)], 0);
 	}
 
 	const path = await save({
@@ -137,39 +132,165 @@ export async function saveMediaToDevice(
 			},
 		],
 	});
-	if (path === null) return false; // user cancelled
+	if (path === null) return { saved: 0, failed: 0, cancelled: true };
 	await writeFile(path, media.bytes);
-	return true;
+	return { saved: 1, failed: 0, cancelled: false };
 }
 
-// Presents the native share sheet with the file. Returns `false` if the user
-// dismisses it. Falls back to a browser download when Web Share is unavailable.
-async function shareFile(
-	bytes: Uint8Array,
-	mimeType: string,
-	filename: string,
-): Promise<boolean> {
-	const file = new File([new Uint8Array(bytes)], filename, {
-		type: mimeType,
-	});
-	if (navigator.canShare?.({ files: [file] })) {
+/** One piece of media to save. `mimeType` is the same optional hint. */
+export type MediaToSave = { url: string; mimeType?: string };
+
+/** How a save ended. `cancelled` means the user backed out of a picker. */
+export type SaveResult = {
+	saved: number;
+	failed: number;
+	cancelled: boolean;
+	/** Set when iOS needs a fresh tap; call it from one. See {@link shareOrAskForATap}. */
+	shareFromGesture?: () => Promise<SaveResult>;
+};
+
+/**
+ * Saves a set to the device, asking where only once: one folder on desktop, one
+ * share sheet on iOS. Media that fails to download is counted in `failed`
+ * rather than taking the rest with it.
+ */
+export async function saveAllMediaToDevice(
+	targets: MediaToSave[],
+	onProgress?: (done: number, total: number) => void,
+): Promise<SaveResult> {
+	const total = targets.length;
+	if (total === 0) return { saved: 0, failed: 0, cancelled: false };
+
+	const stamp = timestamp();
+	// Before downloading, so backing out costs no traffic.
+	const directory = await pickSaveDirectory();
+	if (directory === CANCELLED)
+		return { saved: 0, failed: 0, cancelled: true };
+
+	const onIos = !demoEnabled && platform() === "ios";
+	// iOS shares the set once at the end; elsewhere each is written as it lands.
+	const collected: File[] = [];
+	let saved = 0;
+	let failed = 0;
+	for (const [index, target] of targets.entries()) {
 		try {
-			await navigator.share({ files: [file] });
-			return true;
+			const media = await fetchMedia(target.url, target.mimeType);
+			const filename = buildFilename(media.extension, { stamp, index });
+			if (onIos) {
+				collected.push(toFile(media, filename));
+			} else if (demoEnabled) {
+				saveViaBrowser(toFile(media, filename), filename);
+			} else if (platform() === "android") {
+				await saveToAndroidGallery(media, filename);
+			} else {
+				await writeFile(await join(directory, filename), media.bytes);
+			}
+			saved += 1;
 		} catch (error) {
-			// The user dismissing the share sheet is a cancel, not a failure.
-			if (error instanceof DOMException && error.name === "AbortError") {
-				return false;
+			console.error(error);
+			failed += 1;
+		}
+		onProgress?.(index + 1, total);
+	}
+
+	if (onIos) {
+		if (collected.length === 0)
+			return { saved: 0, failed, cancelled: false };
+		return shareOrAskForATap(collected, failed);
+	}
+	return { saved, failed, cancelled: false };
+}
+
+/**
+ * WebKit only opens the share sheet while the tap behind it is still active, a
+ * window the download can outlast. On that refusal the files are kept and
+ * `shareFromGesture` re-shares them from a fresh tap, with no second download.
+ */
+async function shareOrAskForATap(
+	files: File[],
+	failed: number,
+): Promise<SaveResult> {
+	const outcome = await shareFiles(files);
+	if (outcome === "stale") {
+		return {
+			saved: 0,
+			failed,
+			cancelled: false,
+			shareFromGesture: () => shareOrAskForATap(files, failed),
+		};
+	}
+	// Dismissing the sheet loses every file in it.
+	return outcome === "shared"
+		? { saved: files.length, failed, cancelled: false }
+		: { saved: 0, failed, cancelled: true };
+}
+
+const CANCELLED = Symbol("cancelled");
+
+async function pickSaveDirectory(): Promise<string | typeof CANCELLED> {
+	if (demoEnabled) return "";
+	const os = platform();
+	if (os === "android" || os === "ios") return "";
+	const directory = await open({
+		directory: true,
+		multiple: false,
+		title: "Choose where to save",
+	});
+	return directory === null ? CANCELLED : directory;
+}
+
+async function saveToAndroidGallery(
+	media: Fetched,
+	filename: string,
+): Promise<void> {
+	const uri = media.isVideo
+		? await AndroidFs.createNewPublicVideoFile(
+				"Movies",
+				filename,
+				media.mimeType,
+				{ requestPermission: true },
+			)
+		: await AndroidFs.createNewPublicImageFile(
+				"Pictures",
+				filename,
+				media.mimeType,
+				{ requestPermission: true },
+			);
+	await AndroidFs.writeFile(uri, media.bytes);
+	await AndroidFs.scanPublicFile(uri);
+}
+
+/** `stale` is the expired-tap refusal, which is recoverable. */
+type ShareOutcome = "shared" | "cancelled" | "stale";
+
+// One sheet for the whole set: iOS offers "Save N Images" from it.
+async function shareFiles(files: File[]): Promise<ShareOutcome> {
+	if (files.length === 0) return "cancelled";
+	if (navigator.canShare?.({ files })) {
+		try {
+			await navigator.share({ files });
+			return "shared";
+		} catch (error) {
+			if (error instanceof DOMException) {
+				if (error.name === "AbortError") return "cancelled";
+				if (error.name === "NotAllowedError") return "stale";
 			}
 			throw error;
 		}
 	}
-	saveViaBrowser(bytes, mimeType, filename);
-	return true;
+	for (const file of files) {
+		saveViaBrowser(file, file.name);
+	}
+	return "shared";
 }
 
-function saveViaBrowser(bytes: Uint8Array, mimeType: string, filename: string) {
-	const blob = new Blob([new Uint8Array(bytes)], { type: mimeType });
+function toFile(media: Fetched, filename: string): File {
+	return new File([new Uint8Array(media.bytes)], filename, {
+		type: media.mimeType,
+	});
+}
+
+function saveViaBrowser(blob: Blob, filename: string) {
 	const objectUrl = URL.createObjectURL(blob);
 	const anchor = document.createElement("a");
 	anchor.href = objectUrl;

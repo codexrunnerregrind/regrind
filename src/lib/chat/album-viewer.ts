@@ -26,7 +26,7 @@ import {
 	applyPhotoSwipeVideo,
 	applyPhotoSwipeViewportSync,
 } from "$lib/util/photoswipe";
-import { downloadMedia } from "./lightbox-download";
+import { downloadAllMedia, downloadMedia } from "./lightbox-download";
 import {
 	type MediaViewerActions,
 	registerMediaViewerChrome,
@@ -355,6 +355,18 @@ export async function openAlbumLightbox(
 			if (!slide) return;
 			downloadMedia({ url: slide.url, mimeType: slide.contentType });
 		},
+		// Only where there is more than one to save.
+		...(album.content.length > 1
+			? {
+					onSaveAll: () =>
+						downloadAllMedia(
+							album.content.map((slide) => ({
+								url: slide.url,
+								mimeType: slide.contentType,
+							})),
+						),
+				}
+			: {}),
 		// A teaser's slides are synthesised — placeholder ids standing in for
 		// content we were never handed — so there is nothing on them to reply to
 		// or react to. The field stays on screen saying as much, since a bar that

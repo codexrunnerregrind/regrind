@@ -23,3 +23,9 @@ export function toBase64Url(bytes: Uint8Array): string {
 		.replaceAll("/", "_")
 		.replaceAll("=", "");
 }
+
+export function fromBase64Url(b64url: string): Uint8Array {
+	const b64 = b64url.replaceAll("-", "+").replaceAll("_", "/");
+	// `toBase64Url` strips the padding the decoders want back.
+	return fromBase64(b64.padEnd(Math.ceil(b64.length / 4) * 4, "="));
+}

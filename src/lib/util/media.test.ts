@@ -1,7 +1,11 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import { fromBase64 } from "$lib/util/base64";
-import { profileMediaUrl, proxyMediaUrl } from "$lib/util/media";
+import {
+	profileMediaUrl,
+	proxyMediaUrl,
+	unproxyMediaUrl,
+} from "$lib/util/media";
 
 const PHOTO = "https://cdns.grindr.com/images/thumb/320x320/deadbeef";
 const SIGNED =
@@ -105,5 +109,48 @@ describe("profileMediaUrl", () => {
 				profileMediaUrl({ mediaHash: "deadbeef", size: "full" }),
 			),
 		).toBe("https://cdns.grindr.com/images/profile/1024x1024/deadbeef");
+	});
+});
+
+describe("unproxyMediaUrl", () => {
+	it("round-trips a proxied url back to the one behind it", () => {
+		for (const os of ["macos", "android"]) {
+			runningOn(os);
+
+			expect(unproxyMediaUrl(proxyMediaUrl(SIGNED))).toBe(SIGNED);
+			expect(unproxyMediaUrl(proxyMediaUrl(PHOTO))).toBe(PHOTO);
+		}
+	});
+
+	it("recovers the url a video slide was proxied under too", () => {
+		runningOn("macos");
+
+		expect(unproxyMediaUrl(proxyMediaUrl(SIGNED, { as: "video" }))).toBe(
+			SIGNED,
+		);
+	});
+
+	it("passes through anything that was never proxied", () => {
+		expect(unproxyMediaUrl(SIGNED)).toBe(SIGNED);
+		expect(unproxyMediaUrl("blob:tauri://localhost/abc")).toBe(
+			"blob:tauri://localhost/abc",
+		);
+		expect(unproxyMediaUrl("")).toBe("");
+	});
+
+	it("hands back a proxied url whose payload is not decodable", () => {
+		const broken = "ogmedia://localhost/i!!!not-base64!!!";
+
+		expect(unproxyMediaUrl(broken)).toBe(broken);
+	});
+
+	it("refuses a payload that decodes to a non-https url", () => {
+		runningOn("macos");
+		const smuggled = proxyMediaUrl(PHOTO).replace(
+			/\/i.+$/,
+			`/i${btoa("file:///etc/passwd").replaceAll("=", "")}`,
+		);
+
+		expect(unproxyMediaUrl(smuggled)).toBe(smuggled);
 	});
 });

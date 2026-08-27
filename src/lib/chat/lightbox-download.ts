@@ -1,7 +1,12 @@
 import { toast } from "svelte-sonner";
 import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
-import { saveMediaToDevice } from "$lib/platform/save-media";
+import { showErrorToast } from "$lib/api/error-toast";
+import {
+	saveAllMediaToDevice,
+	saveMediaToDevice,
+	type SaveResult,
+} from "$lib/platform/save-media";
 
 // A download-to-tray glyph. Explicit white fill (CSS var() isn't resolved inside
 // SVG presentation attributes) so it matches the built-in close/zoom buttons
@@ -13,6 +18,56 @@ const DOWNLOAD_ICON = `
 
 export type DownloadTarget = { url: string; mimeType?: string };
 
+// `shareFromGesture` is not a failure: the media is downloaded and only needs a
+// fresh tap, so it is offered as a button rather than reported as an error.
+function reportSave(result: SaveResult, toastId: string | number): void {
+	const shareAgain = result.shareFromGesture;
+	if (shareAgain !== undefined) {
+		toast.info("Ready to save", {
+			id: toastId,
+			description: "Tap to choose where it goes.",
+			// Waits for the tap rather than expiring with the media unsaved.
+			duration: Infinity,
+			action: {
+				label: "Save",
+				onClick: () => {
+					const next = toast.loading("Saving…");
+					shareAgain()
+						.then((again) => reportSave(again, next))
+						.catch((error: unknown) =>
+							reportSaveError(error, next),
+						);
+				},
+			},
+		});
+		return;
+	}
+	if (result.cancelled) {
+		toast.dismiss(toastId);
+		return;
+	}
+	if (result.saved === 0) {
+		toast.error("Failed to save media", { id: toastId });
+		return;
+	}
+	const label =
+		result.saved === 1
+			? "Saved to your device"
+			: `Saved ${result.saved} items to your device`;
+	if (result.failed > 0) {
+		toast.warning(`${label} — ${result.failed} failed`, { id: toastId });
+	} else {
+		toast.success(label, { id: toastId });
+	}
+}
+
+// Via showErrorToast so the real reason is available as "Copy details".
+function reportSaveError(error: unknown, toastId: string | number): void {
+	console.error(error);
+	toast.dismiss(toastId);
+	showErrorToast({ label: "Failed to save media", error });
+}
+
 /**
  * Saves media to the device, reporting progress in one toast. Shared by the
  * built-in toolbar button below and the media viewer's own save control, so a
@@ -21,17 +76,28 @@ export type DownloadTarget = { url: string; mimeType?: string };
 export function downloadMedia(target: DownloadTarget): void {
 	const toastId = toast.loading("Downloading…");
 	saveMediaToDevice(target.url, target.mimeType)
-		.then((saved) => {
-			if (saved) {
-				toast.success("Saved to your device", { id: toastId });
-			} else {
-				toast.dismiss(toastId);
+		.then((result) => reportSave(result, toastId))
+		.catch((error: unknown) => reportSaveError(error, toastId));
+}
+
+/** Saves a whole set, reporting progress in one toast. */
+export async function downloadAllMedia(
+	targets: DownloadTarget[],
+): Promise<void> {
+	if (targets.length === 0) return;
+	const total = targets.length;
+	const toastId = toast.loading(`Saving 0 of ${total}…`);
+	try {
+		const result = await saveAllMediaToDevice(targets, (done) => {
+			// The last is followed by the sheet or the summary.
+			if (done < total) {
+				toast.loading(`Saving ${done} of ${total}…`, { id: toastId });
 			}
-		})
-		.catch((error) => {
-			console.error(error);
-			toast.error("Failed to save media", { id: toastId });
 		});
+		reportSave(result, toastId);
+	} catch (error) {
+		reportSaveError(error, toastId);
+	}
 }
 
 // Adds a "Download" button to a PhotoSwipe lightbox's top toolbar. `resolve`
