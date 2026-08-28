@@ -105,8 +105,15 @@
 	let freshCover = $state<string | null>(null);
 	let coverBroken = $state(false);
 
+	// Somebody else's locked album is the case where the sent-with signature has
+	// almost always lapsed, and the browser takes seconds to give up on the dead
+	// url — long enough to show a cover-and-corner-badge bubble that then turns
+	// into a lock plate. Its stale url is skipped, so the lock stands from the
+	// first frame and the teaser's cover replaces it once it lands.
+	const staleCover = $derived(!isViewable && !isOurs);
+
 	const preview = $derived(
-		freshCover ?? (coverBroken ? null : message.coverUrl),
+		freshCover ?? (coverBroken || staleCover ? null : message.coverUrl),
 	);
 
 	$effect(() => {
@@ -214,7 +221,7 @@
 		<img
 			src={preview}
 			alt=""
-			class="absolute top-0 left-0 h-full w-full rounded-[inherit] bg-card-foreground/10 object-cover"
+			class="chat-media-tint absolute top-0 left-0 h-full w-full rounded-[inherit] object-cover"
 			draggable="false"
 			onerror={() => {
 				coverBroken = true;
@@ -222,7 +229,7 @@
 		/>
 	{:else if isViewable}
 		<div
-			class="flex size-full items-center justify-center rounded-[inherit] bg-card-foreground/20"
+			class="chat-media-tint-strong flex size-full items-center justify-center rounded-[inherit]"
 		>
 			<ImageBrokenIcon
 				weight="fill"

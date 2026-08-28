@@ -15,12 +15,15 @@ const OUR_ID = 1;
 const PEER_ID = 2;
 const ALBUM_ID = 900;
 
+// Mutable so one test can look at a bubble that came in rather than went out.
+const context = vi.hoisted(() => ({ isOut: true }));
+
 vi.mock("./context", () => ({
 	getMessageContext: () => () => ({
 		firstInStack: true,
 		lastInStack: true,
 		indexInStack: 0,
-		isOut: true,
+		isOut: context.isOut,
 		timestamp: 0,
 	}),
 	getMessageMetaContext: () => () => ({ clone: false, setRef: () => {} }),
@@ -51,12 +54,14 @@ vi.mock("$lib/chat/paywall-covers", () => ({
 
 function albumBody({
 	isViewable,
+	ownerProfileId = OUR_ID,
 }: {
 	isViewable: boolean;
+	ownerProfileId?: number;
 }): AlbumMessageType["body"] {
 	return {
 		albumId: ALBUM_ID,
-		ownerProfileId: OUR_ID,
+		ownerProfileId,
 		coverUrl: "https://cdns.grindr.com/albums/cover.jpg",
 		isViewable,
 		hasPhoto: true,
@@ -65,20 +70,23 @@ function albumBody({
 	} as AlbumMessageType["body"];
 }
 
-function bubble(isViewable: boolean) {
+function bubble(isViewable: boolean, ownerProfileId = OUR_ID) {
 	const { container } = render(AlbumMessage, {
-		props: { message: albumBody({ isViewable }) },
+		props: { message: albumBody({ isViewable, ownerProfileId }) },
 	});
 	return {
 		label: () =>
 			container.querySelector("button")?.getAttribute("aria-label"),
 		locked: () => container.querySelector('[aria-label="Locked"]') !== null,
+		cover: () =>
+			container.querySelector("img")?.getAttribute("src") ?? null,
 	};
 }
 
 describe("AlbumMessage", () => {
 	beforeEach(() => {
 		clearAlbumShareState();
+		context.isOut = true;
 	});
 	afterEach(cleanup);
 
@@ -125,6 +133,19 @@ describe("AlbumMessage", () => {
 		await Promise.resolve();
 
 		expect(label()).toBe("Open album");
+	});
+
+	it("shows no cover for a locked album of theirs, stale url and all", () => {
+		// The url on the message is signed at send time and lasts about half an
+		// hour, so trying it costs seconds of a broken image before the lock plate
+		// it always ends on.
+		context.isOut = false;
+		expect(bubble(false, PEER_ID).cover()).toBe(null);
+	});
+
+	it("still shows the cover on a locked album of ours", () => {
+		// Ours is only locked for them: the cover is still current for us.
+		expect(bubble(false).cover()).not.toBe(null);
 	});
 
 	it("leaves a share recorded for someone else alone", async () => {
