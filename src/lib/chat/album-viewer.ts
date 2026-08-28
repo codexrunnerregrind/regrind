@@ -93,9 +93,15 @@ function createSlideSizer(content: LoadedAlbum["content"]): SlideSizer {
 		const slide = content[index];
 		if (slide === undefined) return;
 		try {
-			sizes[index] = slide.contentType.startsWith("video/")
-				? await measureVideo(slide.url)
-				: await measureImage(slide.url);
+			// A video's cover is the cheaper measurement and has the same
+			// frame; only a video without one has to be loaded to be measured.
+			const cover = slide.contentType.startsWith("video/")
+				? slide.coverUrl
+				: slide.url;
+			sizes[index] =
+				cover === null
+					? await measureVideo(slide.url)
+					: await measureImage(cover);
 		} catch (error) {
 			// A slide we cannot measure keeps the placeholder — and counts as
 			// measured, so it is not asked for again on every re-render.

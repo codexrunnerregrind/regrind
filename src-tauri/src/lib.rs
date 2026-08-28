@@ -201,6 +201,7 @@ pub fn run() {
             api::accounts::account_add_in_progress,
             api::accounts::account_remove,
             api::accounts::account_set_profile,
+            storage::storage_backend,
             api::rest::request,
             api::media_upload::upload_chat_media,
             api::media_upload::upload_chat_audio,
@@ -264,9 +265,9 @@ pub fn run() {
                 target_os = "linux",
                 all(target_os = "macos", not(feature = "keychain"))
             ))]
-            storage::init_file_store(app.path().app_data_dir()?);
+            storage::init_file_store(app.path().app_local_data_dir()?);
 
-            storage::init_keyring();
+            app.manage(storage::init_keyring());
 
             // Brings up a client per signed-in account, points the app at one,
             // and starts the tasks that persist each account's secrets and carry

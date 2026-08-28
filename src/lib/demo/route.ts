@@ -97,6 +97,8 @@ export function demoCallMethod(method: string): unknown {
 			];
 		case "account_add_in_progress":
 			return false;
+		case "storage_backend":
+			return "keyring";
 		default:
 			return null;
 	}

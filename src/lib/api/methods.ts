@@ -14,6 +14,9 @@ const maxPrettyMessageChars = 200;
 
 const unknownErrorMessage = "An unknown error occurred";
 
+const connectionFailedMessage =
+	"Couldn't connect to Grindr. Check your internet connection and try again.";
+
 const messagelessMessages: Partial<Record<ApiErrorKind, string>> = {
 	RequestBlocked: "Grindr is blocking your requests",
 	NetworkBlocked: "Something blocked the request before it reached Grindr",
@@ -80,6 +83,10 @@ export const methods = {
 	account_restriction: {
 		request: z.undefined(),
 		response: restrictionSchema.nullish(),
+	},
+	storage_backend: {
+		request: z.undefined(),
+		response: z.enum(["keyring", "file", "unavailable"]),
 	},
 	refresh_token: { request: z.undefined(), response: loginResultSchema },
 	rotate_api_params: {
@@ -194,7 +201,9 @@ export function asAppError(error: unknown) {
 		.safeParse(error);
 	if (success) {
 		let prettyMessage: string;
-		if (typeof data.message === "string") {
+		if (data.kind === "Connect") {
+			prettyMessage = connectionFailedMessage;
+		} else if (typeof data.message === "string") {
 			prettyMessage = summarizeServerMessage(data.message);
 		} else if (data.message) {
 			const { code, message } = data.message;

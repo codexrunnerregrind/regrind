@@ -55,7 +55,7 @@ mod tests {
 
 	/// `preferences.{profileId}.data`, as written by `$lib/app-data`.
 	fn account_file(profile_id: u64) -> String {
-		format!("$APPDATA/preferences.{profile_id}.data")
+		format!("$APPLOCALDATA/preferences.{profile_id}.data")
 	}
 
 	#[test]
@@ -100,7 +100,7 @@ mod tests {
 			"fs:allow-remove",
 		] {
 			assert!(
-				is_allowed(permission, "$APPDATA/preferences.data"),
+				is_allowed(permission, "$APPLOCALDATA/preferences.data"),
 				"{permission} no longer allows the shared file"
 			);
 		}
@@ -109,8 +109,8 @@ mod tests {
 	#[test]
 	fn the_credential_store_is_not_dragged_in_by_the_wildcard() {
 		for path in [
-			"$APPDATA/credentials/session_42",
-			"$APPDATA/credentials/device-signing-key_42",
+			"$APPLOCALDATA/credentials/session_42",
+			"$APPLOCALDATA/credentials/device-signing-key_42",
 		] {
 			assert!(
 				!is_allowed("fs:allow-read-file", path),
