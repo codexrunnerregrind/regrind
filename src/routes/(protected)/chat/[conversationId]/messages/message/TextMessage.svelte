@@ -3,6 +3,7 @@
 		type QuotedMessage,
 		type TextMessage,
 	} from "$lib/model/messaging/messages";
+	import { fitToLines } from "$lib/util/fit-to-lines";
 	import { getMessageContext, getMessageMetaContext } from "./context";
 	import MessageReplyQuote from "./MessageReplyQuote.svelte";
 
@@ -16,8 +17,15 @@
 	const { clone, setRef, adornments } = $derived(getMessageMetaContext()());
 
 	let el: HTMLDivElement | null = $state(null);
+	let textEl: HTMLSpanElement | null = $state(null);
 	$effect(() => {
 		setRef(el ?? null);
+	});
+	$effect(() => {
+		// Read the text so an edited message is measured again.
+		void message.text;
+		if (el === null || textEl === null) return;
+		return fitToLines({ box: el, text: textEl });
 	});
 </script>
 
@@ -43,7 +51,11 @@
 		{/if}
 		<!-- `wrap-anywhere` so a pasted link with no spaces in it breaks mid-word
 	     instead of setting the bubble's minimum width to the whole URL. -->
-		<span class="wrap-anywhere whitespace-pre-wrap">{message.text}</span>
+		<span
+			class="wrap-anywhere whitespace-pre-wrap"
+			bind:this={textEl}
+			data-slot="bubble-text">{message.text}</span
+		>
 		{@render adornments?.()}
 	</div>
 </div>
