@@ -4,6 +4,7 @@
 		CheckIcon,
 		DesktopIcon,
 		GridFourIcon,
+		ImageIcon,
 		MoonIcon,
 		PaperPlaneRightIcon,
 		SunIcon,
@@ -22,6 +23,7 @@
 	import {
 		getAccentColorSnapshot,
 		getAlbumGridColumnsSnapshot,
+		getChatWallpaperSnapshot,
 		getIncomingBubbleColorSnapshot,
 		getNavBarGlassSnapshot,
 		getOutgoingBubbleColorSnapshot,
@@ -45,6 +47,7 @@
 	let outgoing = $state<BubbleColor>(getOutgoingBubbleColorSnapshot());
 	let incoming = $state<BubbleColor>(getIncomingBubbleColorSnapshot());
 	let navGlass = $state(getNavBarGlassSnapshot());
+	let wallpaper = $state(getChatWallpaperSnapshot());
 
 	onMount(() => {
 		void getPreferences()
@@ -54,6 +57,7 @@
 				outgoing = preferences.outgoingBubbleColor;
 				incoming = preferences.incomingBubbleColor;
 				navGlass = preferences.navBarGlass;
+				wallpaper = preferences.chatWallpaper;
 			})
 			.catch((error) => {
 				console.error("Failed to load preferences", error);
@@ -122,19 +126,22 @@
 <!-- Preview first, and it covers all three colors at once: an incoming bubble,
      an outgoing bubble, and the accent on the send button. -->
 <div
-	class="flex flex-col gap-2.5 rounded-xl border border-border bg-chat-background p-3"
+	class={[
+		"relative flex flex-col gap-2.5 overflow-hidden rounded-xl border border-border bg-chat-background p-3",
+		{ "chat-wallpaper": wallpaper },
+	]}
 >
 	<div
-		class="max-w-[80%] self-start rounded-xl rounded-bl-sm bg-message-bubble-in px-3 py-2 text-caption text-message-bubble-foreground"
+		class="relative max-w-[80%] self-start rounded-xl rounded-bl-sm bg-message-bubble-in px-3 py-2 text-caption text-message-bubble-foreground"
 	>
 		How does this look?
 	</div>
 	<div
-		class="max-w-[80%] self-end rounded-xl rounded-br-sm bg-message-bubble-out px-3 py-2 text-caption text-message-bubble-out-foreground"
+		class="relative max-w-[80%] self-end rounded-xl rounded-br-sm bg-message-bubble-out px-3 py-2 text-caption text-message-bubble-out-foreground"
 	>
 		Just right.
 	</div>
-	<div class="mt-1 flex items-center gap-2">
+	<div class="relative mt-1 flex items-center gap-2">
 		<div
 			class="flex-1 rounded-full bg-card px-3 py-2 text-caption text-muted-foreground"
 		>
@@ -207,6 +214,30 @@
 </SettingsGroup>
 <SectionFooter>
 	{bubbleLabel(selected)} — {footnotes[target]}
+</SectionFooter>
+
+<SectionHeader>Chat</SectionHeader>
+<SettingsGroup divider="none">
+	<SettingsSwitchRow
+		title="Wallpaper"
+		description="A doodle pattern behind your conversations."
+		disabled={!preferencesLoaded()}
+		bind:checked={
+			() => wallpaper,
+			(next: boolean) => {
+				hapticSelection();
+				wallpaper = next;
+				persist({ chatWallpaper: next });
+			}
+		}
+	>
+		{#snippet icon()}
+			<ImageIcon weight="fill" />
+		{/snippet}
+	</SettingsSwitchRow>
+</SettingsGroup>
+<SectionFooter>
+	Off leaves the plain chat background. The preview above shows both.
 </SectionFooter>
 
 <SectionHeader>Navigation bar</SectionHeader>

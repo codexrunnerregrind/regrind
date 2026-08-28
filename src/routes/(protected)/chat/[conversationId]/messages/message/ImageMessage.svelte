@@ -171,7 +171,7 @@
 		<MediaImage
 			src={message.url}
 			class={["w-full rounded-lg", media.cornerClass]}
-			imgClass="bg-card-foreground/10"
+			imgClass="chat-media-tint"
 			{aspectRatio}
 			onload={(image) => {
 				if (image.naturalHeight > 0) {

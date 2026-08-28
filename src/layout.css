@@ -485,6 +485,43 @@ a {
 		scrollbar-width: thin;
 	}
 
+	/* The doodle wallpaper behind a transcript. One asset for both themes: the
+	   art is a mask, so the ink is --foreground at a weight that stays under the
+	   bubbles. Positioned children paint over it, so the scroller on top of it
+	   needs to be one. */
+	.chat-wallpaper::before {
+		content: "";
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background-color: var(--foreground);
+		opacity: 0.055;
+		-webkit-mask-image: url("./lib/assets/chat-wallpaper.svg");
+		mask-image: url("./lib/assets/chat-wallpaper.svg");
+		-webkit-mask-size: 300px 300px;
+		mask-size: 300px 300px;
+		mask-repeat: repeat;
+	}
+
+	/* A media placeholder inside a transcript. The usual translucent tint would
+	   let the wallpaper's doodles show through the tile, so the same tint is
+	   mixed over the chat background instead. */
+	.chat-media-tint {
+		background-color: color-mix(
+			in oklab,
+			var(--card-foreground) 10%,
+			var(--chat-background)
+		);
+	}
+
+	.chat-media-tint-strong {
+		background-color: color-mix(
+			in oklab,
+			var(--card-foreground) 20%,
+			var(--chat-background)
+		);
+	}
+
 	/* Group heading above a list or card section — PINNED, ACCOUNT, ABOUT. */
 	.section-label {
 		@apply text-section leading-none font-semibold tracking-[0.16em] text-ink3 uppercase;

@@ -14,7 +14,7 @@
 
 <div
 	class={[
-		"flex size-full items-center justify-center rounded-xl bg-card-foreground/10",
+		"chat-media-tint flex size-full items-center justify-center rounded-xl",
 		className,
 	]}
 >

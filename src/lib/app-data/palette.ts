@@ -8,7 +8,8 @@
  * the settings swatches can never drift out of sync with what the app renders.
  *
  * Entries are stored as oklch components rather than finished color strings so
- * a swatch and its contrast text are derived from one place.
+ * a swatch and its contrast text are derived from one place. A `hex` overrides
+ * the rendered color where a color has to match an exact sRGB value.
  *
  * The count is deliberate: thirteen colors plus `neutral` fills exactly two
  * rows of swatches on a phone. Adding a fourteenth spills onto a third row with
@@ -22,6 +23,8 @@ interface Swatch {
 	h: number;
 	/** Light enough that white text on it is illegible. */
 	darkText?: boolean;
+	/** Rendered instead of the oklch above; `h` still tints the contrast text. */
+	hex?: string;
 }
 
 export const accentColors = [
@@ -52,13 +55,21 @@ export type BubbleColor = (typeof bubbleColors)[number];
 
 // Ordered as a hue wheel starting at green, with the dark/muted options last.
 export const palette: Record<AccentColor, Swatch> = {
-	// `forest` and `mint` are WhatsApp's outgoing bubble greens — the deep
-	// #005c4b it uses in dark mode and the pale #d9fdd3 it uses in light. They're
-	// ordinary palette entries, so either can be picked for any of the three
-	// color slots in whichever theme you like.
-	forest: { label: "Forest", l: 0.45, c: 0.08, h: 165 },
+	// `forest` and `mint` are WhatsApp's outgoing bubble greens, given as the
+	// exact hexes rather than an oklch approximation of them: the deep #005c4b it
+	// uses in dark mode and the pale #d9fdd3 it uses in light. They're ordinary
+	// palette entries, so either can be picked for any of the three color slots
+	// in whichever theme you like.
+	forest: { label: "Forest", l: 0.45, c: 0.08, h: 165, hex: "#005c4b" },
 	green: { label: "Green", l: 0.62, c: 0.13, h: 168 },
-	mint: { label: "Mint", l: 0.94, c: 0.06, h: 145, darkText: true },
+	mint: {
+		label: "Mint",
+		l: 0.94,
+		c: 0.06,
+		h: 145,
+		darkText: true,
+		hex: "#d9fdd3",
+	},
 	teal: { label: "Teal", l: 0.6, c: 0.1, h: 195 },
 	// `sky` and `yellow` are the official app's bubble colors, converted from
 	// #45b2ef and #ffce00. Both are light, so their text flips to near-black —
@@ -81,9 +92,9 @@ export interface Surface {
 
 /** A color and the text color that sits legibly on top of it. */
 export function surface(color: AccentColor): Surface {
-	const { l, c, h, darkText } = palette[color];
+	const { l, c, h, darkText, hex } = palette[color];
 	return {
-		value: `oklch(${l} ${c} ${h})`,
+		value: hex ?? `oklch(${l} ${c} ${h})`,
 		contrast: darkText ? `oklch(0.22 0.02 ${h})` : "oklch(1 0 0)",
 	};
 }

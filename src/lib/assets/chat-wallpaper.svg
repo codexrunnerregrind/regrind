@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+	<defs>
+		<g id="d-heart">
+			<path d="M0 8C-10-2-6-11 0-6c6-5 10 4 0 14Z" />
+		</g>
+		<g id="d-chat-bubble">
+			<path d="M-12-8h24a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H-2l-7 6v-6h-3a4 4 0 0 1-4-4V-4a4 4 0 0 1 4-4Z" />
+		</g>
+		<g id="d-sun">
+			<circle r="7" />
+			<path d="M0-12v-4M0 12v4M-12 0h-4M12 0h4M-8.5-8.5-11-11M8.5 8.5 11 11M8.5-8.5 11-11M-8.5 8.5-11 11" />
+		</g>
+		<g id="d-paper-plane">
+			<path d="M-13-7 13 0-13 7l4-7Z" />
+			<path d="M-9 0h9" />
+		</g>
+		<g id="d-music-note">
+			<path d="M-2 8V-9l12-3v5l-12 3" />
+			<circle cx="-6" cy="9" r="4" />
+		</g>
+		<g id="d-camera">
+			<path d="M-14-6h6l3-4h10l3 4h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-28a2 2 0 0 1-2-2V-4a2 2 0 0 1 2-2Z" />
+			<circle cx="0" cy="3" r="5" />
+		</g>
+		<g id="d-cup">
+			<path d="M-9 0h16v8a5 5 0 0 1-5 5h-6a5 5 0 0 1-5-5Z" />
+			<path d="M7 2h3a3 3 0 0 1 0 7H7" />
+			<path d="M-4-10v5M1-12v7" />
+		</g>
+		<g id="d-moon">
+			<path d="M6-9A11 11 0 1 0 8 9 9 9 0 0 1 6-9Z" />
+		</g>
+		<g id="d-flower">
+			<circle r="3" />
+			<path d="M0-4c5-8 10-2 4 2 8 0 8 7 0 4 4 7-3 8-4 1-1 7-8 6-4-1-8 3-8-4 0-4-6-4-1-10 4-2" />
+		</g>
+		<g id="d-lightning">
+			<path d="M2-12-8 2h7l-3 11L8-2H1Z" />
+		</g>
+		<g id="d-umbrella">
+			<path d="M-13 0a13 13 0 0 1 26 0Z" />
+			<path d="M0 0v10a4 4 0 0 1-8 0" />
+		</g>
+		<g id="d-star">
+			<path d="M0-11 3.4-3.4 11-2.6 5.2 3l1.6 8L0 7.2-6.8 11l1.6-8L-11-2.6l7.6-.8Z" />
+		</g>
+		<g id="d-smiley">
+			<circle r="11" />
+			<path d="M-4-3v2M4-3v2M-5 4a6 6 0 0 0 10 0" />
+		</g>
+		<g id="d-cloud">
+			<path d="M-12 6a5 5 0 0 1 1-10 8 8 0 0 1 15-2 5 5 0 0 1 4 12Z" />
+		</g>
+		<g id="d-leaf">
+			<path d="M-9 9C-9-4 0-10 10-10 10 1 3 10-9 9Z" />
+			<path d="M-4 6 6-5" />
+		</g>
+		<g id="d-balloon">
+			<path d="M0-12a8 9 0 0 1 0 18 8 9 0 0 1 0-18Z" />
+			<path d="M0 6v4M0 10c3 2-3 4 0 6" />
+		</g>
+	</defs>
+	<g fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+		<use href="#d-heart" transform="translate(20 28) rotate(-14) scale(.85)" />
+		<use href="#d-camera" transform="translate(79 21) rotate(9) scale(.85)" />
+		<use href="#d-umbrella" transform="translate(125 31) rotate(22) scale(.85)" />
+		<use href="#d-balloon" transform="translate(172 26) rotate(-7) scale(.85)" />
+		<use href="#d-music-note" transform="translate(231 20) rotate(16) scale(.85)" />
+		<use href="#d-lightning" transform="translate(269 27) rotate(-20) scale(.85)" />
+		<use href="#d-leaf" transform="translate(52 73) rotate(5) scale(.85)" />
+		<use href="#d-paper-plane" transform="translate(105 80) rotate(-11) scale(.85)" />
+		<use href="#d-flower" transform="translate(146 69) rotate(27) scale(.85)" />
+		<use href="#d-cloud" transform="translate(203 75) rotate(-25) scale(.85)" />
+		<use href="#d-sun" transform="translate(248 79) rotate(12) scale(.85)" />
+		<use href="#d-moon" transform="translate(6 72) rotate(0) scale(.85)" />
+		<use href="#d-moon" transform="translate(-294 72) rotate(0) scale(.85)" />
+		<use href="#d-smiley" transform="translate(26 131) rotate(-18) scale(.85)" />
+		<use href="#d-chat-bubble" transform="translate(69 127) rotate(7) scale(.85)" />
+		<use href="#d-cup" transform="translate(129 120) rotate(20) scale(.85)" />
+		<use href="#d-star" transform="translate(174 128) rotate(-9) scale(.85)" />
+		<use href="#d-heart" transform="translate(230 124) rotate(-14) scale(.85)" />
+		<use href="#d-camera" transform="translate(272 129) rotate(9) scale(.85)" />
+		<use href="#d-umbrella" transform="translate(45 178) rotate(22) scale(.85)" />
+		<use href="#d-balloon" transform="translate(104 171) rotate(-7) scale(.85)" />
+		<use href="#d-music-note" transform="translate(150 181) rotate(16) scale(.85)" />
+		<use href="#d-lightning" transform="translate(197 176) rotate(-20) scale(.85)" />
+		<use href="#d-leaf" transform="translate(256 170) rotate(5) scale(.85)" />
+		<use href="#d-paper-plane" transform="translate(294 177) rotate(-11) scale(.85)" />
+		<use href="#d-paper-plane" transform="translate(594 177) rotate(-11) scale(.85)" />
+		<use href="#d-flower" transform="translate(27 223) rotate(27) scale(.85)" />
+		<use href="#d-cloud" transform="translate(80 230) rotate(-25) scale(.85)" />
+		<use href="#d-sun" transform="translate(121 219) rotate(12) scale(.85)" />
+		<use href="#d-moon" transform="translate(178 225) rotate(0) scale(.85)" />
+		<use href="#d-smiley" transform="translate(223 229) rotate(-18) scale(.85)" />
+		<use href="#d-chat-bubble" transform="translate(281 222) rotate(7) scale(.85)" />
+		<use href="#d-cup" transform="translate(51 281) rotate(20) scale(.85)" />
+		<use href="#d-star" transform="translate(94 277) rotate(-9) scale(.85)" />
+		<use href="#d-heart" transform="translate(154 270) rotate(-14) scale(.85)" />
+		<use href="#d-camera" transform="translate(199 278) rotate(9) scale(.85)" />
+		<use href="#d-umbrella" transform="translate(255 274) rotate(22) scale(.85)" />
+		<use href="#d-balloon" transform="translate(297 279) rotate(-7) scale(.85)" />
+		<use href="#d-balloon" transform="translate(597 279) rotate(-7) scale(.85)" />
+	</g>
+</svg>

@@ -80,6 +80,9 @@ const preferencesSchema = z.object({
 	// shape and the same behaviour, only a plainer surface. Turning this off
 	// returns the docked bar the redesign shipped with.
 	navBarGlass: z.boolean().default(true),
+	// The doodle wallpaper behind the transcript, on by default the way the
+	// official app has one. Off leaves the plain chat background.
+	chatWallpaper: z.boolean().default(true),
 	stayOnline: z.boolean().default(true),
 	units: unitSystemSchema.default("metric"),
 	rightNowFilters: rightNowFiltersSchema.optional(),
@@ -284,6 +287,10 @@ export function getAlbumGridColumnsSnapshot(): GridColumns {
 
 export function getNavBarGlassSnapshot(): boolean {
 	return snapshot.navBarGlass;
+}
+
+export function getChatWallpaperSnapshot(): boolean {
+	return snapshot.chatWallpaper;
 }
 
 export function getAccentColorSnapshot(): AccentColor {

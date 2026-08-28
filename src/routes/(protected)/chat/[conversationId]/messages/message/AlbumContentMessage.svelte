@@ -124,7 +124,7 @@
 			class={[
 				// rounded-xl to match LockedMedia, which this swaps with, and the
 				// album cover in AlbumMessage.
-				"size-full rounded-xl bg-card-foreground/10 object-cover",
+				"chat-media-tint size-full rounded-xl object-cover",
 				media.cornerClass,
 			]}
 			draggable="false"

@@ -2,6 +2,7 @@
 	import { tick, untrack } from "svelte";
 	import { SvelteSet } from "svelte/reactivity";
 
+	import { getChatWallpaperSnapshot } from "$lib/app-data/preferences.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import { Spinner } from "$lib/components/ui/spinner";
 	import { hapticImpact } from "$lib/platform/haptics";
@@ -173,11 +174,15 @@
 </script>
 
 <div
-	class="relative flex min-h-0 max-w-full flex-1 flex-col bg-chat-background"
+	class={[
+		"relative flex min-h-0 max-w-full flex-1 flex-col bg-chat-background",
+		{ "chat-wallpaper": getChatWallpaperSnapshot() },
+	]}
 >
+	<!-- `relative` keeps the transcript above the wallpaper's ::before. -->
 	<div
 		data-slot="messages-scroller"
-		class="flex min-h-0 max-w-full flex-1 flex-col gap-1 overflow-auto overscroll-contain px-4.5 pt-20 pb-1.5 *:first:mt-auto"
+		class="relative flex min-h-0 max-w-full flex-1 flex-col gap-1 overflow-auto overscroll-contain px-4.5 pt-20 pb-1.5 *:first:mt-auto"
 		bind:this={container}
 		style:overflow-anchor="none"
 		onscroll={onContainerScroll}
