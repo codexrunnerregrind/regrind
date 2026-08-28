@@ -26,16 +26,22 @@ Human code review, audit, supply chain security, end-to-end testing
 Added in this fork
 
 • Redesigned interface
-A minimalist look throughout, redesigned settings, and your own theme and
-colors
+A minimalist look throughout, redesigned settings, and your own theme, colors
+and chat wallpaper
 
 • Albums
-View albums shared with you, create and edit your own, reorder photos, and
-share or unshare from the chat composer, with an expiry if you want one
+View albums shared with you, create and edit your own, add photos and reorder
+them, and share or unshare from the chat composer, with an expiry if you want
+one
 
 • Richer chat
-Video messages and locations, replies to messages, photos and locations,
-media downloads, and every photo from a conversation in one gallery
+Voice messages you record and play, video messages and locations, replies to
+messages, photos and locations, media downloads a whole set at a time, and
+every photo from a conversation in one gallery
+
+• Several accounts
+Sign in to more than one and switch between them, each with its own session,
+location and filters
 
 • Favorites
 A favorites screen, with notes you can add to profiles and search through

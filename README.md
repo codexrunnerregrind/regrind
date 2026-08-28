@@ -38,6 +38,8 @@ Some of this is mine, some comes from pull requests that haven't landed in the o
 - Appearance of the app: pick your own theme, colors, etc
 - Manage blocked contacts
 - Set your current location, or pick one on the map
+- Save the places you teleport to and jump straight back to them
+- Filter the grid by username
 - Swipe between tabs
 - Swipe between profiles
 - Haptics feedback
@@ -54,7 +56,8 @@ Some of this is mine, some comes from pull requests that haven't landed in the o
 
 - View albums shared with you
 - Create and edit your own albums
-- Reorder the photos in an album
+- Add photos from your library to an album, or to your profile
+- Reorder the photos in an album, and your profile photos the same way
 - Share or unshare an album from the chat composer
 - Share with an expiry, or unshare later
 
@@ -64,20 +67,25 @@ Some of this is mine, some comes from pull requests that haven't landed in the o
 
 ### Chat
 
+- Voice messages: record and send them, play the ones you get
 - Support for video messages and locations
 - Reply to messages, photos, locations
 - Share your location or pick a location
-- Download media (photos / videos)
+- Download media (photos / videos), or hold the download button to save a whole set at once
+- A doodle chat wallpaper, and bubble colors you pick yourself
 - Received photos gallery. All the photos from a conversation in one place, reachable from the chat top bar.
 
 <img src="./contrib/screenshots/chat.webp" alt="Chat" width="220">
+<img src="./contrib/screenshots/chat-theme.webp" alt="Chat with custom colors" width="220">
 <img src="./contrib/screenshots/media-viewer.webp" alt="Media viewer" width="220">
 
 ### Accounts
 
-- Sign several accounts in and switch between them from Settings → Accounts
+- Sign several accounts in and switch between them from the account card at the top of Settings
 - Each account keeps its own device identity, session, location, filters and online setting
 - Only the account you're using is online. The others hold their sign-in but stay disconnected, so nobody sees them online until you switch back — which also means only the account in use notifies you.
+
+<img src="./contrib/screenshots/accounts.webp" alt="Account switcher" width="220">
 
 ### Favorites
 
