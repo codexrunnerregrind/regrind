@@ -24,6 +24,7 @@
 		onclick = undefined,
 		class: className,
 		rightNow = null,
+		meta,
 		overlay,
 	}: {
 		mediaHash?: string | null;
@@ -42,6 +43,8 @@
 		onclick?: import("svelte/elements").MouseEventHandler<HTMLAnchorElement>;
 		class?: import("svelte/elements").ClassValue;
 		rightNow?: RightNowStatus | null;
+		/** A trailing label line — what this tile says beyond who it is. */
+		meta?: Snippet;
 		overlay?: Snippet;
 	} = $props();
 
@@ -65,6 +68,13 @@
 	// aria-label exactly when it would otherwise announce nothing.
 	const hasVisibleText = $derived(
 		displayName !== null || age !== null || distance !== null,
+	);
+
+	// The band grows a taller gradient ramp once it carries more than one line.
+	const bandLines = $derived(
+		(hasIdentity ? 1 : 0) +
+			(noteText !== "" ? 1 : 0) +
+			(meta !== undefined ? 1 : 0),
 	);
 </script>
 
@@ -100,14 +110,14 @@
 			{/if}
 		</div>
 	{/if}
-	<!-- One label band per tile rather than scattered overlays: who this is on
-	     the first line, the private note on the second. Either line may be
-	     absent, and a tile with neither renders no band at all. -->
-	{#if noteText !== "" || hasIdentity}
+	<!-- One label band per tile rather than scattered overlays: who this is
+	     first, then the private note, then whatever the screen adds. Any line
+	     may be absent, and a tile with none renders no band at all. -->
+	{#if bandLines > 0}
 		<div
 			class={[
 				"tile-scrim z-1 flex min-w-0 items-end gap-1",
-				{ "tile-scrim-tall": noteText !== "" && hasIdentity },
+				{ "tile-scrim-tall": bandLines > 1 },
 			]}
 		>
 			<div class="flex min-w-0 flex-1 flex-col">
@@ -159,6 +169,16 @@
 						<span class="truncate text-3xs/[1.1] text-plate-muted">
 							{noteText}
 						</span>
+					</div>
+				{/if}
+				{#if meta !== undefined}
+					<div
+						class={[
+							"flex min-w-0 items-center gap-1.5 text-2xs/[1.1] font-medium text-plate-muted",
+							{ "mt-0.5": bandLines > 1 },
+						]}
+					>
+						{@render meta()}
 					</div>
 				{/if}
 			</div>

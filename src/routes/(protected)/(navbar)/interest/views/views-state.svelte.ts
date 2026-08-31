@@ -126,6 +126,11 @@ export class ViewsState extends ReconcilingListState<
 		return entries.slice(0, this.visibleCount);
 	}
 
+	/** Everyone who viewed us, the anonymous previews included. */
+	get total(): number {
+		return this.#profiles.length + this.#previews.length;
+	}
+
 	protected get length(): number {
 		return this.#profiles.length + this.#previews.length;
 	}

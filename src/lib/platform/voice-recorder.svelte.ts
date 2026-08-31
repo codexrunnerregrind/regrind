@@ -99,6 +99,16 @@ export class VoiceRecorder {
 	}
 
 	/**
+	 * How much audio there is, to the millisecond — unlike {@link elapsedMs},
+	 * which a 100ms ticker keeps and so lags behind. Zero while the microphone is
+	 * still opening: the clip starts when the recorder does, not when the press
+	 * that asked for it did, and the two can be a long way apart.
+	 */
+	get recordedMs(): number {
+		return this.recording ? Date.now() - this.#startedAt : 0;
+	}
+
+	/**
 	 * Opens the microphone and starts recording. Throws
 	 * {@link MicrophoneDeniedError} when the permission is refused, so the caller
 	 * can say so rather than reporting a bare DOMException.

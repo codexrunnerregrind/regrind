@@ -3,12 +3,29 @@
 	import { page } from "$app/state";
 
 	import UnderlineTabs from "$lib/components/shared/UnderlineTabs.svelte";
+	import { getSentTapsState } from "$lib/interest/sent-taps-state.svelte";
+	import { getTapsState } from "$lib/interest/taps-state.svelte";
 	import { getViewActivityState } from "$lib/interest/view-activity.svelte";
 	import { hapticSelection } from "$lib/platform/haptics";
 	import { swipeTabs } from "$lib/util/swipe-tabs";
 	import { interestTabs, rememberInterestTab } from "./interest-tab";
+	import { getViewsState } from "./views/views-state.svelte";
 
-	let { children }: { children?: import("svelte").Snippet } = $props();
+	let {
+		children,
+		data,
+	}: {
+		children?: import("svelte").Snippet;
+		data: import("./$types").LayoutData;
+	} = $props();
+
+	// All three lists are held here rather than by their pages, so every tab can
+	// carry its count before you have been there. It costs one load per list on
+	// entering Interest, which is also what makes a tab switch instant — the
+	// states are account-scoped, so the pages find them already filled in.
+	const views = $derived(getViewsState(data.ourProfileId));
+	const taps = $derived(getTapsState(data.ourProfileId));
+	const sentTaps = $derived(getSentTapsState(data.ourProfileId));
 
 	// The header is fixed, so the pages under it have to reserve its height
 	// themselves. Measured rather than hard-coded: the title and tabs change size
@@ -18,10 +35,25 @@
 	// includes it, but the pages already sit inside it.
 	let headerHeight = $state(91);
 
-	const tabs = [
-		{ value: interestTabs[0], label: "Views" },
-		{ value: interestTabs[1], label: "Taps" },
-	];
+	// No count while a list is still loading: a 0 that turns into 34 reads as an
+	// empty tab for as long as the request takes.
+	const tabs = $derived([
+		{
+			value: interestTabs[0],
+			label: "Views",
+			count: views.loading ? null : views.total,
+		},
+		{
+			value: interestTabs[1],
+			label: "Taps",
+			count: taps.loading ? null : taps.total,
+		},
+		{
+			value: interestTabs[2],
+			label: "Sent",
+			count: sentTaps.loading ? null : sentTaps.total,
+		},
+	]);
 
 	// So the tab bar's /interest link comes back here rather than resetting.
 	$effect(() => {
@@ -51,7 +83,7 @@
 	}
 
 	// False when the swipe runs off either end, which hands it to the tab-bar
-	// swipe wrapping this layout: a flick past Taps carries on to Inbox.
+	// swipe wrapping this layout: a flick past Sent carries on to Inbox.
 	function selectIndex(index: number): boolean {
 		const tab = tabs[index];
 		if (!tab) return false;

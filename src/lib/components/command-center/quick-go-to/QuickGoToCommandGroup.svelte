@@ -8,5 +8,6 @@
 	<QuickGoToCommandItem link="/chat" value="chat" />
 	<QuickGoToCommandItem link="/interest/taps" value="taps" />
 	<QuickGoToCommandItem link="/interest/views" value="views" />
+	<QuickGoToCommandItem link="/interest/sent" value="sent-taps" />
 	<QuickGoToCommandItem link="/right-now" value="right-now" />
 </Command.Group>

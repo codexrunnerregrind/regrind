@@ -18,7 +18,9 @@
 	import MessageTextInput from "./MessageTextInput.svelte";
 	import ComposerVoiceMessage from "./voice-message/ComposerVoiceMessage.svelte";
 	import ComposerVoiceRecording from "./voice-message/ComposerVoiceRecording.svelte";
+	import ComposerVoiceReview from "./voice-message/ComposerVoiceReview.svelte";
 	import ComposerVoiceSendButton from "./voice-message/ComposerVoiceSendButton.svelte";
+	import ComposerVoiceStopButton from "./voice-message/ComposerVoiceStopButton.svelte";
 	import { VoiceMessageComposer } from "./voice-message/voice-message-composer.svelte";
 
 	let {
@@ -174,6 +176,8 @@
 		     bar as the drag goes, and sliding underneath it looked like a fault. -->
 		<div class="relative z-20 size-10 shrink-0">
 			{#if voice.locked}
+				<ComposerVoiceStopButton />
+			{:else if voice.reviewing}
 				<ComposerVoiceSendButton />
 			{:else if textContent === "" || voice.active}
 				<ComposerVoiceMessage />
@@ -181,7 +185,9 @@
 				<ComposerSubmitButton />
 			{/if}
 		</div>
-		{#if voice.active}
+		{#if voice.reviewing}
+			<ComposerVoiceReview />
+		{:else if voice.active}
 			<ComposerVoiceRecording />
 		{/if}
 	</div>

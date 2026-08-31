@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 
 import { render } from "@testing-library/svelte";
+import { createRawSnippet } from "svelte";
 import { describe, expect, it } from "vitest";
 
 import ProfileMiniCard from "./ProfileMiniCard.svelte";
@@ -83,6 +84,23 @@ describe("ProfileMiniCard", () => {
 		});
 
 		expect(container.querySelector(".tile-scrim")).toBeNull();
+	});
+
+	// A screen's own label line — the Views grid's "when they looked" — joins the
+	// same band instead of a second overlay of its own.
+	it("carries a meta line on the label band", () => {
+		const meta = createRawSnippet(() => ({
+			render: () => "<span>2 h ago</span>",
+		}));
+		const { container } = render(ProfileMiniCard, {
+			props: { displayName: "Henry", meta },
+		});
+
+		const label = container.querySelector(".tile-scrim");
+		expect(container.querySelectorAll(".tile-scrim")).toHaveLength(1);
+		expect(label?.firstElementChild?.children).toHaveLength(2);
+		expect(label?.textContent).toContain("Henry");
+		expect(label?.textContent).toContain("2 h ago");
 	});
 
 	it("treats a blank note as none, rather than an empty badge", () => {

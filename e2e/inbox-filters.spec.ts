@@ -50,7 +50,10 @@ test("the unread filter narrows the list to unread conversations and back", asyn
 	await openInbox(page);
 
 	const unfiltered = await listedConversations(page);
-	const unreadPill = page.getByRole("button", { name: "Unread", exact: true });
+	const unreadPill = page.getByRole("button", {
+		name: "Unread",
+		exact: true,
+	});
 	await unreadPill.click();
 
 	await expect

@@ -4,7 +4,7 @@ import type {
 	RightNowPostMediaItem,
 	RightNowV3Post,
 } from "$lib/model/right-now/feed/response/v4";
-import { NOW } from "../config";
+import { demoMeProfileId, NOW } from "../config";
 import {
 	distanceForId,
 	onlineUntilOf,
@@ -132,6 +132,98 @@ export function textOf(profileId: number): string | undefined {
 		out.push(WORDS[Math.floor(rand() * WORDS.length)] ?? "lorem");
 	}
 	return out.join(" ");
+}
+
+/** Our own post in the demo, once one has been made in this session. */
+let ownPost: {
+	id: number;
+	profileId: number;
+	activeText: string | null;
+	hosting: boolean;
+	posted: number;
+	shareLocation: string;
+} | null = null;
+
+let ownPostMediaId = 990_001;
+
+export function demoOwnRightNowPost() {
+	return { post: ownPost };
+}
+
+export function demoCreateOwnRightNowPost(body: unknown) {
+	const post = body as {
+		text?: string | null;
+		hosting?: boolean;
+		shareLocation?: string;
+	} | null;
+	ownPost = {
+		id: 970_001,
+		profileId: demoMeProfileId,
+		activeText: post?.text ?? null,
+		hosting: post?.hosting ?? false,
+		posted: NOW,
+		shareLocation: post?.shareLocation ?? "NONE",
+	};
+	return { post: ownPost };
+}
+
+export function demoUpdateOwnRightNowPost(body: unknown) {
+	const patch = body as {
+		text?: string | null;
+		hosting?: boolean | null;
+		hidden?: boolean | null;
+		shareLocation?: string | null;
+	} | null;
+	if (ownPost === null) return;
+	if (patch?.hidden === true) {
+		ownPost = null;
+		return;
+	}
+	ownPost = {
+		...ownPost,
+		activeText: patch?.text ?? ownPost.activeText,
+		hosting: patch?.hosting ?? ownPost.hosting,
+		shareLocation: patch?.shareLocation ?? ownPost.shareLocation,
+	};
+}
+
+/** Stands in for the Right Now media upload, which has its own response shape. */
+export function demoUploadRightNowMedia({
+	bytes,
+	contentType,
+}: {
+	bytes: Uint8Array<ArrayBuffer>;
+	contentType: string;
+}) {
+	const url = URL.createObjectURL(new Blob([bytes], { type: contentType }));
+	return { mediaId: ownPostMediaId++, url, thumbnailUrl: url };
+}
+
+/**
+ * The right-now status the feed implies for a profile, so a profile screen and
+ * the feed agree about who is up for something. Only the profiles the feed posts
+ * as `right_now_post_v3` are active — the rest are locked posts or not posting.
+ */
+export function demoRightNowOf(profileId: number): {
+	rightNow: "NOT_ACTIVE" | "HOSTING" | "NOT_HOSTING";
+	rightNowText: string | null;
+	rightNowPosted: number | null;
+} {
+	const inFeed =
+		profileId >= STARTING_PROFILE_ID &&
+		profileId < STARTING_PROFILE_ID + NUMBER_OF_POSTS;
+	if (!inFeed || typeOf(profileId).type !== "right_now_post_v3") {
+		return {
+			rightNow: "NOT_ACTIVE",
+			rightNowText: null,
+			rightNowPosted: null,
+		};
+	}
+	return {
+		rightNow: hosting(profileId) ? "HOSTING" : "NOT_HOSTING",
+		rightNowText: textOf(profileId) ?? null,
+		rightNowPosted: postedOf(profileId),
+	};
 }
 
 function createPost(profileId: number) {

@@ -8,6 +8,7 @@ import {
 	demoDeleteAlbum,
 	demoDeleteAlbumContent,
 	demoMyAlbums,
+	demoRemoveAlbumShare,
 	demoRenameAlbum,
 	demoReorderAlbumContent,
 	demoShareAlbum,
@@ -46,7 +47,7 @@ import {
 	demoProfileHidden,
 	demoSetHidden,
 } from "./mock/hides";
-import { demoReceivedTaps, demoViews } from "./mock/interest";
+import { demoReceivedTaps, demoSentTaps, demoViews } from "./mock/interest";
 import {
 	demoCreateSavedPhrase,
 	demoDeleteSavedPhrase,
@@ -54,7 +55,12 @@ import {
 } from "./mock/phrases";
 import { profileSeed } from "./mock/profiles";
 import { demoGenders, demoPronouns, demoTags } from "./mock/reference";
-import { demoRightNowFeed } from "./mock/right-now";
+import {
+	demoCreateOwnRightNowPost,
+	demoOwnRightNowPost,
+	demoRightNowFeed,
+	demoUpdateOwnRightNowPost,
+} from "./mock/right-now";
 import {
 	demoAccountPreferences,
 	demoSetAccountPreferences,
@@ -150,6 +156,8 @@ export function demoRoute({
 	if (rawPath === "/v2/taps/received")
 		return ok({ profiles: demoReceivedTaps() });
 	if (rawPath === "/v2/taps/add") return ok({ isMutual: false });
+	if (rawPath === "/v1/interactions/taps/sent")
+		return ok(demoSentTaps(demoMeProfileId));
 	if (rawPath === "/v7/views/list") return ok(demoViews());
 	if (rawPath === "/v1/chat/phrases") {
 		if (method === "GET") return ok({ phrases: demoSavedPhrases() });
@@ -354,6 +362,17 @@ export function demoRoute({
 		method === "PUT" &&
 		segments[0] === "v1" &&
 		segments[1] === "albums" &&
+		segments[3] === "shares" &&
+		segments[4] === "remove" &&
+		segments.length === 5
+	) {
+		demoRemoveAlbumShare(Number(segments[2]));
+		return ok({});
+	}
+	if (
+		method === "PUT" &&
+		segments[0] === "v1" &&
+		segments[1] === "albums" &&
 		segments[3] === "unshares" &&
 		segments.length === 4
 	) {
@@ -443,6 +462,23 @@ export function demoRoute({
 	}
 	if (method === "GET" && rawPath.startsWith("/v4/rightnow/feed")) {
 		return ok(demoRightNowFeed(params));
+	}
+	if (rawPath === "/v1/entitlements") return ok({ rightNow: 1 });
+	if (method === "GET" && rawPath === "/v3/rightnow/active-post") {
+		return ok(demoOwnRightNowPost());
+	}
+	if (method === "POST" && rawPath === "/v3/rightnow/posts") {
+		return ok(demoCreateOwnRightNowPost(body));
+	}
+	if (
+		method === "PATCH" &&
+		segments[0] === "v3" &&
+		segments[1] === "rightnow" &&
+		segments[2] === "posts" &&
+		segments.length === 4
+	) {
+		demoUpdateOwnRightNowPost(body);
+		return ok({});
 	}
 	if (rawPath === "/v3/me/prefs/settings") {
 		if (method === "PUT") {

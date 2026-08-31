@@ -257,9 +257,17 @@ export function demoDeleteAlbumContent(albumId: number, contentId: number) {
 	);
 }
 
+/** Shares given up in this session, so a refetch does not bring them back. */
+const demoRemovedShares = new Set<number>();
+
+export function demoRemoveAlbumShare(albumId: number) {
+	demoRemovedShares.add(albumId);
+}
+
 export function demoSharedAlbumsFeed() {
-	const sharedAlbums = sharedAlbumSeeds.map(
-		({ albumId, ownerProfileId, name }, i) => {
+	const sharedAlbums = sharedAlbumSeeds
+		.filter(({ albumId }) => !demoRemovedShares.has(albumId))
+		.map(({ albumId, ownerProfileId, name }, i) => {
 			const owner = profileSeed(ownerProfileId);
 			return {
 				albumId,
@@ -294,8 +302,7 @@ export function demoSharedAlbumsFeed() {
 							: owner.distanceM / 1000,
 				},
 			};
-		},
-	);
+		});
 	return {
 		profileFeeds: [],
 		sharedAlbums,

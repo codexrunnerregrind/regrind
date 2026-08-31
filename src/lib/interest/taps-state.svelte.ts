@@ -72,6 +72,11 @@ export class TapsState extends ReconcilingListState<TapProfile, TapsSnapshot> {
 		return this.#all.slice(0, this.visibleCount);
 	}
 
+	/** How many taps we have received, whatever is on screen so far. */
+	get total(): number {
+		return this.#all.length;
+	}
+
 	get hasUnseen(): boolean {
 		return (
 			this.#tappedSinceViewed || this.#newestTapAt > this.#lastViewedAt

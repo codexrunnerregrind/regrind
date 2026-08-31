@@ -205,6 +205,8 @@ pub fn run() {
             api::rest::request,
             api::media_upload::upload_chat_media,
             api::media_upload::upload_chat_audio,
+            api::media_upload::upload_chat_video,
+            api::media_upload::upload_right_now_media,
             api::media_upload::upload_album_content,
             api::media_upload::upload_profile_image,
             api::media_download::download_media,

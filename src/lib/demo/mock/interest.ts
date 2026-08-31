@@ -35,6 +35,26 @@ export function demoReceivedTaps() {
 	});
 }
 
+const sentTapTargetIds = [
+	100002, 100005, 100009, 100011, 100333, 100512, 100777, 101234,
+];
+
+/**
+ * The sent list as the API answers it: ids and timestamps only, with the
+ * recipients left to `/v3/profiles`.
+ */
+export function demoSentTaps(ourProfileId: number) {
+	return sentTapTargetIds.map((id, i) => ({
+		senderId: ourProfileId,
+		receiverId: id,
+		tapType: TAP_TYPES[i % TAP_TYPES.length],
+		sentOn: NOW - (i + 1) * 37 * MINUTE,
+		readOn: i % 3 === 0 ? NOW - (i + 1) * 30 * MINUTE : null,
+		// One taken back, so the list has something to filter.
+		deleted: i === 4,
+	}));
+}
+
 export function demoViews() {
 	const profiles = viewSourceIds.map((id, i) => {
 		const seed = profileSeed(id);

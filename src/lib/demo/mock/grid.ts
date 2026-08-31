@@ -31,6 +31,7 @@ import {
 	profileSeed,
 	socialNetworksOf,
 } from "./profiles";
+import { demoRightNowOf } from "./right-now";
 
 export function num(value: string | null): number | undefined {
 	if (value === null) return undefined;
@@ -52,7 +53,7 @@ export function buildShortProfile(seed: DemoSeed): DemoShortProfile {
 		isFavorite: demoFavoriteOf({ profileId: seed.id, seed: seed.favorite }),
 		lastViewed: null,
 		seen: lastOnlineOf(seed),
-		rightNow: "NOT_ACTIVE",
+		...demoRightNowOf(seed.id),
 		sexualPosition: seed.position,
 		age: seed.age,
 		showAge: seed.showAge,
@@ -62,8 +63,6 @@ export function buildShortProfile(seed: DemoSeed): DemoShortProfile {
 		isNew: seed.id % 5 === 0,
 		lastUpdatedTime: NOW - ((seed.id % 6) + 1) * DAY,
 		medias: mediasOf(seed),
-		rightNowText: null,
-		rightNowPosted: null,
 		rightNowDistance: null,
 		rightNowThumbnailUrl: null,
 		rightNowFullImageUrl: null,

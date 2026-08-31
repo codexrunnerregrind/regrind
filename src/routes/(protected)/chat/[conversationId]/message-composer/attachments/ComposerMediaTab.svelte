@@ -3,9 +3,13 @@
 	import ImageIcon from "phosphor-svelte/lib/ImageIcon";
 	import PlusIcon from "phosphor-svelte/lib/PlusIcon";
 	import TrashIcon from "phosphor-svelte/lib/TrashIcon";
+	import VideoCameraIcon from "phosphor-svelte/lib/VideoCameraIcon";
 	import { toast } from "svelte-sonner";
 
-	import { addMediaToDrawer } from "$lib/api/messaging/chat-media";
+	import {
+		addMediaToDrawer,
+		uploadChatVideo,
+	} from "$lib/api/messaging/chat-media";
 	import {
 		deleteMediaFromDrawer,
 		type DrawerMedia,
@@ -20,7 +24,12 @@
 	import * as ContextMenu from "$lib/components/ui/context-menu";
 	import * as Empty from "$lib/components/ui/empty";
 	import { Skeleton } from "$lib/components/ui/skeleton";
-	import { pickMultipleMedia } from "$lib/platform/media-picker";
+	import {
+		pickMedia,
+		pickMultipleMedia,
+		readMediaBytes,
+	} from "$lib/platform/media-picker";
+	import { videoDurationSeconds } from "$lib/platform/video-metadata";
 	import { SelectionSet } from "$lib/util/selection.svelte";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
 
@@ -93,6 +102,81 @@
 			} finally {
 				uploadingCount--;
 			}
+		}
+	}
+
+	/**
+	 * How many times the recipient may open a video. Two is what the API's own
+	 * clips come with; more than that is a different message type entirely
+	 * (`NonExpiringVideo`), which is not on offer here.
+	 */
+	const VIDEO_MAX_VIEWS = 2;
+
+	/**
+	 * A video goes straight out rather than into the grid: the drawer the tiles
+	 * come from holds photos, so there is nowhere to keep one — picking it in the
+	 * OS picker is the choice, and this sends it.
+	 */
+	async function addVideo() {
+		let picked;
+		try {
+			picked = await pickMedia("video");
+		} catch (err) {
+			console.error(err);
+			toast.error("Couldn't open the video picker");
+			return;
+		}
+		if (picked === null) return;
+
+		onClose();
+		const pending = toast.loading("Sending video…");
+		try {
+			const bytes = await readMediaBytes(picked);
+			const contentType = picked.mimeType ?? "video/mp4";
+			const durationSeconds = await videoDurationSeconds({
+				bytes,
+				contentType,
+			});
+			const uploaded = await uploadChatVideo({
+				bytes,
+				contentType,
+				durationSeconds,
+			});
+			await composer().sendMessages([
+				{
+					outbound: {
+						type: "Video",
+						body: {
+							mediaId: uploaded.mediaId,
+							looping: false,
+							maxViews: VIDEO_MAX_VIEWS,
+						},
+					},
+					optimistic: {
+						type: "Video",
+						body: {
+							mediaId: uploaded.mediaId,
+							url: uploaded.url,
+							contentType,
+							length: durationSeconds ?? 0,
+							maxViews: VIDEO_MAX_VIEWS,
+							looping: false,
+							viewsRemaining: VIDEO_MAX_VIEWS,
+						},
+					},
+				},
+			]);
+			toast.dismiss(pending);
+		} catch (err) {
+			console.error(err);
+			toast.dismiss(pending);
+			const rejected = asAppError(err);
+			toast.error(
+				rejected?.kind === "Media" &&
+					typeof rejected.message === "string"
+					? rejected.message
+					: "Couldn't send video",
+			);
 		}
 	}
 
@@ -199,6 +283,10 @@
 					<PlusIcon weight="bold" />
 					Add photo
 				</Button>
+				<Button variant="outline" onclick={() => void addVideo()}>
+					<VideoCameraIcon weight="fill" />
+					Send video
+				</Button>
 			</Empty.Content>
 		</Empty.Root>
 	{:else}
@@ -214,6 +302,17 @@
 			>
 				<PlusIcon weight="bold" class="size-6" />
 				<span class="text-xs font-medium">Add photo</span>
+			</button>
+			<!-- Not a selectable tile: there is nothing to keep it in, so this
+			     picks a video and sends it. -->
+			<button
+				type="button"
+				class="flex aspect-(--photo-grid-aspect) cursor-pointer flex-col items-center justify-center gap-1 bg-card-foreground/5 text-muted-foreground transition-colors hover:bg-card-foreground/10 hover:text-foreground"
+				aria-label="Send video"
+				onclick={() => void addVideo()}
+			>
+				<VideoCameraIcon weight="fill" class="size-6" />
+				<span class="text-xs font-medium">Send video</span>
 			</button>
 			{#each Array(uploadingCount)}
 				<Skeleton class="aspect-(--photo-grid-aspect) rounded-none" />

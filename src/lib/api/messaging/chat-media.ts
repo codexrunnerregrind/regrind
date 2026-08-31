@@ -54,6 +54,33 @@ export async function uploadChatAudio({
 	return mediaUploadResponseSchema.parse(response);
 }
 
+/**
+ * Uploads a video for a chat message. It never enters the drawer — that holds
+ * photos — so this hands back the media the message body needs and nothing else.
+ */
+export async function uploadChatVideo({
+	bytes,
+	contentType,
+	durationSeconds,
+	looping = false,
+}: {
+	bytes: Uint8Array<ArrayBuffer>;
+	contentType: string;
+	durationSeconds: number | null;
+	looping?: boolean;
+}): Promise<MediaUploadResponse> {
+	if (demoEnabled) {
+		return demoUploadChatMedia({ bytes, contentType });
+	}
+	const response = await invoke("upload_chat_video", {
+		contentType,
+		lengthSeconds: durationSeconds,
+		looping,
+		data: toBase64(bytes),
+	});
+	return mediaUploadResponseSchema.parse(response);
+}
+
 export async function addMediaToDrawer(
 	media: PickedMedia,
 ): Promise<DrawerMedia> {

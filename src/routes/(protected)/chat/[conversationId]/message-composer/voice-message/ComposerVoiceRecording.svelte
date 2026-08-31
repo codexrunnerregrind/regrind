@@ -76,7 +76,7 @@
 			{:else if voice.cancelArmed}
 				Release to cancel
 			{:else if voice.locked}
-				Tap to send
+				Tap to stop
 			{:else}
 				‹ Slide to cancel
 			{/if}

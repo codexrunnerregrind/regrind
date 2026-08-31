@@ -1,6 +1,7 @@
 <script lang="ts">
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
+	import MyPostButton from "./MyPostButton.svelte";
 	import RightNowFeed from "./RightNowFeed.svelte";
 	import TopBar from "./top-bar/TopBar.svelte";
 
@@ -41,6 +42,7 @@
 			</div>
 		</div>
 	</div>
+	<MyPostButton />
 	{#if !rightNowState.loading && !rightNowState.error}
 		<DataRefreshControl
 			container={feedContainer}

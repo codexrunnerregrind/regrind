@@ -1,12 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getSharedAlbumsFeedMock } = vi.hoisted(() => ({
+const { getSharedAlbumsFeedMock, removeAlbumShareMock } = vi.hoisted(() => ({
 	getSharedAlbumsFeedMock: vi.fn(),
+	removeAlbumShareMock: vi.fn(),
 }));
 
 vi.mock("$lib/api/messaging/albums", async (importOriginal) => ({
 	...(await importOriginal<typeof import("$lib/api/messaging/albums")>()),
 	getSharedAlbumsFeed: getSharedAlbumsFeedMock,
+	removeAlbumShare: removeAlbumShareMock,
 }));
 
 import { SharedAlbumsState } from "$lib/components/albums/shared-albums-state.svelte";
@@ -28,6 +30,8 @@ beforeEach(() => {
 	clock = 1_000;
 	setNowForTesting(() => clock);
 	getSharedAlbumsFeedMock.mockReset();
+	removeAlbumShareMock.mockReset();
+	removeAlbumShareMock.mockResolvedValue(undefined);
 	vi.spyOn(console, "error").mockImplementation(() => {});
 });
 
@@ -121,5 +125,30 @@ describe("shared albums state", () => {
 
 		expect(state.albums?.[0]?.hasUnseenContent).toBe(false);
 		expect(state.albums?.[1]?.hasUnseenContent).toBe(true);
+	});
+
+	it("drops a removed share from the list", async () => {
+		getSharedAlbumsFeedMock.mockResolvedValue(feed([1, 2]));
+		const state = new SharedAlbumsState();
+
+		state.ensureLoaded();
+		await vi.waitFor(() => expect(state.albums).toHaveLength(2));
+
+		await state.remove(1);
+
+		expect(removeAlbumShareMock).toHaveBeenCalledWith({ albumId: 1 });
+		expect(state.albums?.map((album) => album.albumId)).toEqual([2]);
+	});
+
+	it("puts the album back when removing it fails", async () => {
+		getSharedAlbumsFeedMock.mockResolvedValue(feed([1, 2]));
+		removeAlbumShareMock.mockRejectedValue(new Error("nope"));
+		const state = new SharedAlbumsState();
+
+		state.ensureLoaded();
+		await vi.waitFor(() => expect(state.albums).toHaveLength(2));
+
+		await expect(state.remove(1)).rejects.toThrow("nope");
+		expect(state.albums?.map((album) => album.albumId)).toEqual([1, 2]);
 	});
 });

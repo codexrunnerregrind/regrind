@@ -487,6 +487,27 @@ export function demoSentMessage(body: unknown): ApiResponseMessage {
 			...overlay,
 		});
 	}
+	if (sent.type === "Video" && sent.body && typeof sent.body === "object") {
+		const { mediaId, looping, maxViews } = sent.body as {
+			mediaId: number;
+			looping: boolean;
+			maxViews: number;
+		};
+		const item = demoDrawerMedia().find((media) => media.id === mediaId);
+		return remember({
+			type: "Video",
+			body: {
+				mediaId,
+				url: item?.url ?? DEMO_IMAGE_URL,
+				contentType: item?.contentType ?? "video/mp4",
+				length: 0,
+				looping,
+				maxViews,
+				viewsRemaining: maxViews,
+			},
+			...overlay,
+		});
+	}
 	if (
 		(sent.type === "AlbumContentReply" ||
 			sent.type === "AlbumContentReaction") &&

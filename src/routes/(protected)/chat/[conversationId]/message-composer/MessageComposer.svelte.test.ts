@@ -322,6 +322,8 @@ class FakeMediaRecorder {
 }
 
 let stoppedTracks = 0;
+/** Set by a test to hold the microphone shut until it says otherwise. */
+let micOpen: { promise: Promise<void>; resolve: () => void } | null = null;
 
 describe("MessageComposer voice messages", () => {
 	beforeEach(() => {
@@ -339,10 +341,15 @@ describe("MessageComposer voice messages", () => {
 		// need their own timers left alone.
 		vi.useFakeTimers({ toFake: ["setInterval", "clearInterval", "Date"] });
 		stoppedTracks = 0;
+		micOpen = null;
 		Object.defineProperty(navigator, "mediaDevices", {
 			value: {
-				getUserMedia: () =>
-					Promise.resolve({
+				getUserMedia: async () => {
+					// The microphone does not always open at once, and how long it
+					// takes is what tells a tap from a hold apart wrongly — see the
+					// tests that set `micOpen`.
+					if (micOpen !== null) await micOpen.promise;
+					return {
 						getTracks: () => [
 							{
 								stop: () => {
@@ -350,7 +357,8 @@ describe("MessageComposer voice messages", () => {
 								},
 							},
 						],
-					}),
+					};
+				},
 			},
 			configurable: true,
 		});
@@ -376,6 +384,15 @@ describe("MessageComposer voice messages", () => {
 		});
 		Object.defineProperty(event, "pointerId", { value: 1 });
 		return fireEvent(target, event);
+	}
+
+	/** Lets a test hold the microphone shut until it chooses to open it. */
+	function deferredVoid() {
+		let resolve!: () => void;
+		const promise = new Promise<void>((r) => {
+			resolve = () => r();
+		});
+		return { promise, resolve };
 	}
 
 	/**
@@ -477,11 +494,84 @@ describe("MessageComposer voice messages", () => {
 		await tick();
 
 		expect(onSend).not.toHaveBeenCalled();
-		expect(getByText("Tap to send")).toBeTruthy();
+		expect(getByText("Tap to stop")).toBeTruthy();
 
 		vi.advanceTimersByTime(3_000);
+		await fireEvent.click(getByLabelText("Stop recording"));
+		// Stopping only ends the take: it is on screen to be listened to, and
+		// nothing has been uploaded yet.
+		await vi.waitFor(() =>
+			expect(getByLabelText("Play recording")).toBeTruthy(),
+		);
+		expect(onSend).not.toHaveBeenCalled();
+		expect(uploadChatAudio).not.toHaveBeenCalled();
+
 		await fireEvent.click(getByLabelText("Send voice message"));
 		await vi.waitFor(() => expect(onSend).toHaveBeenCalled());
+	});
+
+	it("throws a reviewed take away without sending it", async () => {
+		const { mic, getByLabelText, container, onSend } = await hold();
+
+		vi.advanceTimersByTime(200);
+		await pointer(mic, "pointerup", { x: 300 });
+		await tick();
+		vi.advanceTimersByTime(3_000);
+		await fireEvent.click(getByLabelText("Stop recording"));
+		await vi.waitFor(() =>
+			expect(getByLabelText("Play recording")).toBeTruthy(),
+		);
+
+		await fireEvent.click(getByLabelText("Discard recording"));
+		await tick();
+
+		expect(onSend).not.toHaveBeenCalled();
+		expect(uploadChatAudio).not.toHaveBeenCalled();
+		expect(container.querySelector("textarea")).toBeTruthy();
+		expect(getByLabelText("Record voice message")).toBeTruthy();
+	});
+
+	it("locks a tap the microphone was slow to answer, rather than sending nothing", async () => {
+		// The reported bug: the press is measured from the finger going down, the
+		// clip from the microphone opening. A slow mic made a tap look like a hold,
+		// and sending ~0ms of audio reported "hold on a moment longer".
+		micOpen = deferredVoid();
+		const view = renderComposer({ onSend: vi.fn() });
+		const mic = view.getByLabelText("Record voice message");
+		await pointer(mic, "pointerdown", { x: 300 });
+
+		// Held for longer than the tap threshold, but the microphone only opens at
+		// the end of it, so there is almost no audio.
+		vi.advanceTimersByTime(600);
+		micOpen.resolve();
+		await vi.waitFor(() =>
+			expect(view.getByText("‹ Slide to cancel")).toBeTruthy(),
+		);
+		await pointer(mic, "pointerup", { x: 300 });
+		await tick();
+
+		expect(
+			view.queryByText("Hold on a moment longer to record"),
+		).toBeNull();
+		expect(uploadChatAudio).not.toHaveBeenCalled();
+		expect(view.getByText("Tap to stop")).toBeTruthy();
+	});
+
+	it("locks a release that lands before the microphone opens", async () => {
+		micOpen = deferredVoid();
+		const view = renderComposer({ onSend: vi.fn() });
+		const mic = view.getByLabelText("Record voice message");
+		await pointer(mic, "pointerdown", { x: 300 });
+
+		// Up again before there is any recording at all.
+		await pointer(mic, "pointerup", { x: 300 });
+		micOpen.resolve();
+
+		// The mic must not be left open with only the bin to close it.
+		await vi.waitFor(() =>
+			expect(view.getByText("Tap to stop")).toBeTruthy(),
+		);
+		expect(uploadChatAudio).not.toHaveBeenCalled();
 	});
 
 	it("keeps the bin for a locked recording", async () => {
@@ -498,13 +588,29 @@ describe("MessageComposer voice messages", () => {
 		expect(getByLabelText("Record voice message")).toBeTruthy();
 	});
 
-	it("sends a recording that runs to the time limit rather than losing it", async () => {
-		const { mic, onSend } = await hold();
+	it("keeps a locked recording that runs to the time limit rather than losing it", async () => {
+		const { mic, getByLabelText, onSend } = await hold();
 
 		vi.advanceTimersByTime(200);
 		await pointer(mic, "pointerup", { x: 300 });
 		await tick();
-		// Locked and left running: five minutes later it goes out on its own.
+		// Locked and left running: five minutes later the recorder stops itself,
+		// and the take is waiting to be sent rather than gone.
+		vi.advanceTimersByTime(MAX_DURATION_MS);
+		await vi.waitFor(() =>
+			expect(getByLabelText("Play recording")).toBeTruthy(),
+		);
+
+		expect(onSend).not.toHaveBeenCalled();
+		await fireEvent.click(getByLabelText("Send voice message"));
+		await vi.waitFor(() => expect(onSend).toHaveBeenCalled());
+	});
+
+	it("sends a held recording that runs to the time limit rather than losing it", async () => {
+		const { onSend } = await hold();
+
+		// Still held down when the limit lands: there is no review step in the
+		// gesture's way, so it goes out as it would have on release.
 		vi.advanceTimersByTime(MAX_DURATION_MS);
 		await vi.waitFor(() => expect(onSend).toHaveBeenCalled());
 

@@ -5,6 +5,7 @@
 		GlobeStandIcon,
 		HeartbeatIcon,
 		HouseIcon,
+		SparkleIcon,
 		UsersIcon,
 		UsersThreeIcon,
 	} from "phosphor-svelte";
@@ -46,7 +47,9 @@
 	import { ProfileState } from "./profile-state.svelte";
 	import ProfileAlbums from "./ProfileAlbums.svelte";
 	import ProfileNote from "./ProfileNote.svelte";
+	import ProfileRightNow from "./ProfileRightNow.svelte";
 	import ProfileTags from "./ProfileTags.svelte";
+	import RightNowStatus from "./RightNowStatus.svelte";
 	import SexualPosition from "./SexualPosition.svelte";
 	import SpecSeparator from "./SpecSeparator.svelte";
 	import CloseProfileButton from "./top-nav/CloseProfileButton.svelte";
@@ -213,6 +216,9 @@
 						sexualHealth: sexualHealthValue,
 						socialNetworks,
 						medias,
+						isNew,
+						rightNow,
+						rightNowText,
 					} = profile}
 					<div class="relative">
 						<ImageCarousel
@@ -260,7 +266,7 @@
 							{/if}
 						</h1>
 						<div
-							class="mt-2.5 flex items-center gap-3.5 text-caption"
+							class="mt-2.5 flex flex-wrap items-center gap-x-3.5 gap-y-1.5 text-caption"
 						>
 							<OnlineStatus
 								onlineUntil={onlineUntil ?? null}
@@ -268,7 +274,20 @@
 								self={ourProfile}
 							/>
 							<Distance {distance} />
+							<RightNowStatus {rightNow} />
+							{#if isNew}
+								<span
+									class="flex shrink-0 items-center gap-1 font-semibold text-primary"
+								>
+									<SparkleIcon
+										weight="fill"
+										class="size-3.5"
+									/>
+									Recently joined
+								</span>
+							{/if}
 						</div>
+						<ProfileRightNow text={rightNowText} />
 						{#if sexualPosition !== null || height !== null || weight !== null || bodyType !== null}
 							<div
 								class="mt-3 flex flex-wrap items-center gap-2 text-caption font-medium"

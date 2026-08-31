@@ -176,6 +176,21 @@ export async function unshareAlbum({
 	}).then((res) => res.assertOk());
 }
 
+/**
+ * Drops our own access to an album someone shared with us — the recipient's side
+ * of a share, the counterpart to the owner's {@link unshareAlbum}.
+ *
+ * A share that is already gone answers 403 rather than 404, so that status is
+ * treated as success: the album is not there either way, and reporting a failure
+ * over one would leave a tile nothing can remove.
+ */
+export async function removeAlbumShare({ albumId }: { albumId: number }) {
+	const res = await fetchRest(`/v1/albums/${albumId}/shares/remove`, {
+		method: "PUT",
+	});
+	if (res.status !== 403) res.assertOk();
+}
+
 const sharedAlbumsResponseSchema = z.object({
 	albums: z.array(sharedAlbumSchema),
 });

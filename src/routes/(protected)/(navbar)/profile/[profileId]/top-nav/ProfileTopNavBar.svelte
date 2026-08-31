@@ -35,6 +35,7 @@
 		<ProfileActionsMenu
 			{profileId}
 			name={profile.displayName}
+			distance={profile.showDistance ? profile.distance : null}
 			{onBlocked}
 			{onHidden}
 		/>

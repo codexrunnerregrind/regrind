@@ -20,3 +20,5 @@ export const rightNowShareLocationSchema = z.enum([
 	"DISTANCE_ONLY",
 	"NONE",
 ]);
+
+export type RightNowShareLocation = z.infer<typeof rightNowShareLocationSchema>;

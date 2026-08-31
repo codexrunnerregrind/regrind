@@ -4,11 +4,13 @@
 	import { onMount } from "svelte";
 	import { toast } from "svelte-sonner";
 
+	import { showErrorToast } from "$lib/api/error-toast";
 	import { getAlbumGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import ToastUnimplemented from "$lib/components/feedback/ToastUnimplemented.svelte";
+	import * as AlertDialog from "$lib/components/ui/alert-dialog";
 	import * as Empty from "$lib/components/ui/empty";
 	import { Skeleton } from "$lib/components/ui/skeleton";
+	import type { PressieSharedAlbum } from "$lib/model/messaging/albums";
 	import { AlbumOpener } from "./album-open.svelte";
 	import AlbumTile from "./AlbumTile.svelte";
 	import { sharedAlbums } from "./shared-albums-state.svelte";
@@ -25,13 +27,24 @@
 	const error = $derived(sharedAlbums.error);
 	const opener = new AlbumOpener();
 
-	// `/v3/pressie-albums/feed` has no companion endpoint for dismissing a share —
-	// the only album deletion the API offers is the owner's — so the action is
-	// offered but cannot do anything yet.
-	function remove() {
-		toast(ToastUnimplemented, {
-			componentProps: { feature: "Removing a shared album", issue: 33 },
-		});
+	let pendingRemove = $state<PressieSharedAlbum | null>(null);
+	let removing = $state(false);
+
+	// Giving up access, not deleting anything: the album stays where it is, and
+	// the owner can share it again.
+	async function confirmRemove(album: PressieSharedAlbum) {
+		if (removing) return;
+		removing = true;
+		try {
+			await sharedAlbums.remove(album.albumId);
+			pendingRemove = null;
+			toast.success("Album removed");
+		} catch (error) {
+			console.error(error);
+			showErrorToast({ label: "Failed to remove album", error });
+		} finally {
+			removing = false;
+		}
 	}
 
 	// After mount, so a revalidate never writes state mid-render.
@@ -128,9 +141,38 @@
 							},
 						);
 					}}
-					onRemove={remove}
+					onRemove={() => (pendingRemove = album)}
 				/>
 			{/each}
 		</div>
 	{/if}
 </div>
+
+<AlertDialog.Root
+	open={pendingRemove !== null}
+	onOpenChange={(open) => {
+		if (!open && !removing) pendingRemove = null;
+	}}
+>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>Remove this album?</AlertDialog.Title>
+			<AlertDialog.Description>
+				It leaves your shared albums and you lose access to it. The
+				owner can share it with you again.
+			</AlertDialog.Description>
+		</AlertDialog.Header>
+		<AlertDialog.Footer>
+			<AlertDialog.Cancel disabled={removing}>Cancel</AlertDialog.Cancel>
+			<AlertDialog.Action
+				disabled={removing}
+				onclick={() => {
+					const album = pendingRemove;
+					if (album !== null) void confirmRemove(album);
+				}}
+			>
+				Remove
+			</AlertDialog.Action>
+		</AlertDialog.Footer>
+	</AlertDialog.Content>
+</AlertDialog.Root>

@@ -1,4 +1,7 @@
-import { getSharedAlbumsFeed } from "$lib/api/messaging/albums";
+import {
+	getSharedAlbumsFeed,
+	removeAlbumShare,
+} from "$lib/api/messaging/albums";
 import { now } from "$lib/util/clock";
 import type { PressieSharedAlbum } from "$lib/model/messaging/albums";
 
@@ -54,6 +57,22 @@ export class SharedAlbumsState {
 	markSeen(albumId: number): void {
 		const album = this.albums?.find((it) => it.albumId === albumId);
 		if (album?.hasUnseenContent) album.hasUnseenContent = false;
+	}
+
+	/**
+	 * Gives up our access to a share. The tile goes first and comes back if the
+	 * call fails: the feed is cached, so waiting on the request would leave the
+	 * album sitting there through the round trip.
+	 */
+	async remove(albumId: number): Promise<void> {
+		const previous = this.albums;
+		this.albums = previous?.filter((it) => it.albumId !== albumId) ?? null;
+		try {
+			await removeAlbumShare({ albumId });
+		} catch (error) {
+			this.albums = previous;
+			throw error;
+		}
 	}
 
 	#fetch(): Promise<void> {

@@ -1,5 +1,10 @@
 <script lang="ts" module>
-	export type UnderlineTab = { value: string; label: string };
+	export type UnderlineTab = {
+		value: string;
+		label: string;
+		/** Shown after the label, dimmed. Omitted while the list is still loading. */
+		count?: number | null;
+	};
 </script>
 
 <script lang="ts">
@@ -38,7 +43,14 @@
 				},
 			]}
 		>
-			{tab.label}
+			<!-- Out of the accessible name: the tab is "Taps", and reading it as
+			     "Taps 34" would put a number that changes on its own into the
+			     handle every test and every screen reader uses to find it. -->
+			{tab.label}{#if tab.count !== null && tab.count !== undefined}<span
+					aria-hidden="true"
+					class="ms-1 font-medium text-ink3 tabular-nums"
+					>{tab.count}</span
+				>{/if}
 			{#if active}
 				<span
 					class="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary"

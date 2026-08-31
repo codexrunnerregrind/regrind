@@ -1,24 +1,30 @@
 <script lang="ts">
-	import EyeIcon from "phosphor-svelte/lib/EyeIcon";
 	import HeartIcon from "phosphor-svelte/lib/HeartIcon";
 
 	import ProfileMiniCard from "$lib/components/profile/ProfileMiniCard.svelte";
 	import LockIcon from "$lib/components/shared/LockIcon.svelte";
-	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
 	import type { ViewPreview } from "$lib/model/interest/views";
+	import ViewedMeta from "./ViewedMeta.svelte";
 
 	let { preview }: { preview: ViewPreview } = $props();
 
-	const { totalCount, maxDisplayCount } = $derived(preview.viewedCount);
-	const viewedCountLabel = $derived(
-		totalCount > maxDisplayCount ? `${maxDisplayCount}+` : `${totalCount}`,
+	const hasMeta = $derived(
+		preview.lastViewed !== null || preview.viewedCount.totalCount > 1,
 	);
 </script>
+
+{#snippet meta()}
+	<ViewedMeta
+		lastViewed={preview.lastViewed}
+		viewedCount={preview.viewedCount}
+	/>
+{/snippet}
 
 <ProfileMiniCard
 	mediaHash={preview.profileImageMediaHash}
 	distance={preview.distance}
 	isFavorite={preview.isFavorite}
+	meta={hasMeta ? meta : undefined}
 >
 	{#snippet overlay()}
 		<!-- Centered, because it stands for the whole tile: this viewer's photo is
@@ -36,27 +42,5 @@
 				{/if}
 			</div>
 		</div>
-		<!-- The same label band the people grids use, carrying when rather than
-		     who — how long ago they looked, and how often. -->
-		{#if preview.lastViewed !== null || totalCount > 1}
-			<div
-				class="tile-scrim z-1 flex items-center justify-between gap-1.5 text-2xs/[1.1] font-medium text-plate-muted"
-			>
-				<span class="truncate">
-					{#if preview.lastViewed !== null}
-						<RelativeTimeDynamic date={preview.lastViewed} />
-					{/if}
-				</span>
-				{#if totalCount > 1}
-					<span
-						class="flex shrink-0 items-center gap-1"
-						title="{totalCount} views"
-					>
-						<EyeIcon class="size-3" />
-						{viewedCountLabel}<span class="sr-only">views</span>
-					</span>
-				{/if}
-			</div>
-		{/if}
 	{/snippet}
 </ProfileMiniCard>
