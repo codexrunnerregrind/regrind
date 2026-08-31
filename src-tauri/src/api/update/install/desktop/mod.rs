@@ -167,10 +167,10 @@ mod tests {
 	#[test]
 	fn an_executable_inside_a_bundle_reports_the_bundle_root() {
 		let exe =
-			Path::new("/Applications/Open Grind.app/Contents/MacOS/open-grind");
+			Path::new("/Applications/ReGrind.app/Contents/MacOS/open-grind");
 		assert_eq!(
 			enclosing_bundle(exe).unwrap(),
-			Path::new("/Applications/Open Grind.app")
+			Path::new("/Applications/ReGrind.app")
 		);
 		assert!(enclosing_bundle(Path::new("/usr/local/bin/og")).is_none());
 	}

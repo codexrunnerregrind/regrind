@@ -1,6 +1,6 @@
 /**
  * Generates the AltStore-format source manifest used by SideStore, AltStore and
- * TrollApps to install and update Open Grind on iOS.
+ * TrollApps to install and update ReGrind on iOS.
  *
  * The manifest is a static JSON file served over HTTPS; users add its URL as a
  * "source" in their sideloading client and get install + update notifications.
@@ -122,12 +122,12 @@ const changelog = (() => {
 			`${METADATA}/changelogs/${tauri.bundle.android.versionCode}.txt`,
 		);
 	} catch {
-		return `Open Grind ${version}.`;
+		return `ReGrind ${version}.`;
 	}
 })();
 
 const source = {
-	name: "Open Grind (codexrunner)",
+	name: "ReGrind (codexrunner)",
 	// Distinct from upstream's, so adding both does not collide in a client that
 	// keys sources by identifier.
 	identifier: "org.opengrind.source.codexrunner",

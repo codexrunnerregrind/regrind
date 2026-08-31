@@ -3,8 +3,8 @@ import { asUpdateError, type Unsupported, type UpdateError } from "./types";
 const unsupportedCopy: Record<Unsupported["reason"], string> = {
 	externallyManaged:
 		"Updates are managed by the store that installed the app",
-	foreignSigner: "This build was not signed by Open Grind",
-	undetermined: "Open Grind can't tell whether it may update itself",
+	foreignSigner: "This build was not signed by ReGrind",
+	undetermined: "ReGrind can't tell whether it may update itself",
 	noReleaseArtifacts: "No release is published for this platform",
 	sandboxed: "The sandbox this app runs in manages its own updates",
 };
@@ -22,8 +22,8 @@ const copy: Record<Exclude<UpdateError["kind"], "unsupported">, string> = {
 	assetReplaced: "The release changed, downloading it again",
 	canceled: "Update canceled",
 	nothingStaged: "No update is ready to install",
-	needsUnknownSources: "Open Grind needs permission to install updates",
-	needsManualInstall: "Quit Open Grind, then drag it onto Applications",
+	needsUnknownSources: "ReGrind needs permission to install updates",
+	needsManualInstall: "Quit ReGrind, then drag it onto Applications",
 	install: "Couldn't install the update",
 	checkTooSoon: "Already checked for updates recently",
 	autoChecksDisabled: "Automatic update checks are turned off",

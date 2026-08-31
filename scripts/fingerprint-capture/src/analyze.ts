@@ -78,7 +78,7 @@ export function summarize(
 	const gap = [...byHost.keys()].filter((h) => !h.includes("grindr"));
 	if (gap.length)
 		out.push(
-			`# behavioral gap (hosts Open Grind should mirror): ${gap.join(", ")}`,
+			`# behavioral gap (hosts ReGrind should mirror): ${gap.join(", ")}`,
 		);
 	return out.join("\n");
 }

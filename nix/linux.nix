@@ -91,7 +91,7 @@ in
         export GIO_EXTRA_MODULES=${pkgs.glib-networking}/lib/gio/modules
         export XDG_DATA_DIRS=${env.XDG_DATA_DIRS}:''${XDG_DATA_DIRS:-/usr/share}
 
-        echo "Open Grind dev shell: Linux desktop toolchain."
+        echo "ReGrind dev shell: Linux desktop toolchain."
         echo "  Rust:      $(rustc --version)"
         echo "  WebKitGTK: ${pkgs.webkitgtk_4_1.version}"
       '';

@@ -50,7 +50,7 @@ VERSION="$(sed -n 's/^[[:space:]]*"version": "\([^"]*\)".*/\1/p' \
 
 BUILD_DIR="src-tauri/gen/apple/build"
 ARCHIVE="$BUILD_DIR/open-grind_iOS.xcarchive"
-ARCHIVE_APP="$ARCHIVE/Products/Applications/Open Grind.app"
+ARCHIVE_APP="$ARCHIVE/Products/Applications/ReGrind.app"
 UNSIGNED="$BUILD_DIR/arm64/open-grind-v$VERSION.ipa"
 
 # The source is the xcarchive bundle, not build/arm64/*.ipa. `tauri ios build`

@@ -37,7 +37,7 @@ body:
   - type: input
     id: version
     attributes:
-      label: Version of Open Grind
+      label: Version of ReGrind
       description: You can find this in the app's settings. Put "N/A" only if version is not applicable.
       placeholder: e.g. v0.1.0-beta.3
   - type: checkboxes

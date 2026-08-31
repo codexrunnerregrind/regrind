@@ -184,7 +184,7 @@ in
         # androidenv exposes only adb/sdkmanager; add build-tools + cmake.
         export PATH="${buildToolsBin}:${cmakeBin}:$PATH"
 
-        echo "Open Grind dev shell: Android toolchain pinned via Nix."
+        echo "ReGrind dev shell: Android toolchain pinned via Nix."
         echo "  Rust:      $(rustc --version)"
         echo "  JDK:       $JAVA_HOME"
         echo "  SDK:       $ANDROID_HOME"

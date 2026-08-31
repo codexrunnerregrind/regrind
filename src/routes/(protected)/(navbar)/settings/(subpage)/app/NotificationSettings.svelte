@@ -37,7 +37,7 @@
 			if (next && !(await notifications.ensurePermission())) {
 				revert();
 				toast.error(
-					"Notifications are blocked. Enable them for Open Grind in your system settings.",
+					"Notifications are blocked. Enable them for ReGrind in your system settings.",
 				);
 				return;
 			}

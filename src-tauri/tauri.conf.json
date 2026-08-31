@@ -1,6 +1,6 @@
 {
 	"$schema": "https://schema.tauri.app/config/2",
-	"productName": "Open Grind",
+	"productName": "ReGrind",
 	"version": "0.1.0-beta.7-dev",
 	"identifier": "org.opengrind.app",
 	"build": {
@@ -13,7 +13,7 @@
 		"windows": [
 			{
 				"label": "main",
-				"title": "Open Grind",
+				"title": "ReGrind",
 				"width": 1000,
 				"height": 800,
 				"minWidth": 320,

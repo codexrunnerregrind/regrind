@@ -1,5 +1,5 @@
 {
-	"name": "Open Grind (codexrunner)",
+	"name": "ReGrind (codexrunner)",
 	"identifier": "org.opengrind.source.codexrunner",
 	"sourceURL": "https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/ci/altstore/source.json",
 	"subtitle": "Unofficial Grindr client, redesigned. Free, libre and ad-free",
@@ -9,7 +9,7 @@
 	"tintColor": "0DB28F",
 	"apps": [
 		{
-			"name": "Open Grind",
+			"name": "ReGrind",
 			"bundleIdentifier": "org.opengrind.app",
 			"developerName": "codexrunner",
 			"subtitle": "Unofficial Grindr client, redesigned. Free, libre and ad-free",
@@ -38,7 +38,7 @@
 					"version": "0.1.0.6",
 					"buildVersion": "0.1.0.6",
 					"date": "2026-08-28",
-					"localizedDescription": "Open Grind 0.1.0-beta.6.",
+					"localizedDescription": "ReGrind 0.1.0-beta.6.",
 					"downloadURL": "https://git.opengrind.org/codexrunner/open-grind/releases/download/v0.1.0-beta.6/open-grind-v0.1.0-beta.6.ipa",
 					"size": 44043449,
 					"sha256": "c7a9f4b7c9ddc1ffb0f2f28f7220d2d05c553ccd63d9325d57301e13ceb621cc",

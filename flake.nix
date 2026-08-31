@@ -1,5 +1,5 @@
 {
-  description = "Open Grind — declarative build toolchain";
+  description = "ReGrind — declarative build toolchain";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";

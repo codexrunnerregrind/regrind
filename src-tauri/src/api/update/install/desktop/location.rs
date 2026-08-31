@@ -18,8 +18,10 @@ pub fn enforce() {
 
 	rfd::MessageDialog::new()
 		.set_level(rfd::MessageLevel::Error)
-		.set_title("Move Open Grind to Applications")
-		.set_description(format!("Open Grind updates itself in place, so it has to run from {SHARED}."))
+		.set_title("Move ReGrind to Applications")
+		.set_description(format!(
+			"ReGrind updates itself in place, so it has to run from {SHARED}."
+		))
 		.set_buttons(rfd::MessageButtons::OkCustom("Quit".to_owned()))
 		.show();
 	std::process::exit(1);
@@ -43,12 +45,10 @@ mod tests {
 
 	#[test]
 	fn only_an_applications_folder_counts_as_installed() {
-		assert!(installed(Path::new("/Applications/Open Grind.app")));
-		assert!(!installed(Path::new("/Volumes/Open Grind/Open Grind.app")));
-		assert!(!installed(Path::new("/Users/x/Downloads/Open Grind.app")));
-		assert!(!installed(Path::new(
-			"/Applications/Utilities/Open Grind.app"
-		)));
+		assert!(installed(Path::new("/Applications/ReGrind.app")));
+		assert!(!installed(Path::new("/Volumes/ReGrind/ReGrind.app")));
+		assert!(!installed(Path::new("/Users/x/Downloads/ReGrind.app")));
+		assert!(!installed(Path::new("/Applications/Utilities/ReGrind.app")));
 	}
 
 	#[test]
@@ -56,6 +56,6 @@ mod tests {
 		let Some(personal) = personal() else {
 			return;
 		};
-		assert!(installed(&personal.join("Open Grind.app")));
+		assert!(installed(&personal.join("ReGrind.app")));
 	}
 }

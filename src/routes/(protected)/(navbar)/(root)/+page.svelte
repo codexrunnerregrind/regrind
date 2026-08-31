@@ -91,7 +91,7 @@
 </script>
 
 <svelte:head>
-	<title>Open Grind</title>
+	<title>ReGrind</title>
 </svelte:head>
 {#await preferencesHydrated then}
 	{#if geohash === null}

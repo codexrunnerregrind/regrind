@@ -13,7 +13,7 @@ SourceCode: https://git.opengrind.org/open-grind/open-grind
 IssueTracker: https://git.opengrind.org/open-grind/open-grind/issues
 Changelog: https://git.opengrind.org/open-grind/open-grind/releases
 
-AutoName: Open Grind
+AutoName: ReGrind
 
 RepoType: git
 Repo: https://git.opengrind.org/open-grind/open-grind.git

@@ -116,7 +116,7 @@ mod tests {
 	#[test]
 	fn a_bundle_is_swapped_in_one_step_even_while_it_is_in_use() {
 		let dir = scratch("swap");
-		let current = dir.join("Open Grind.app");
+		let current = dir.join("ReGrind.app");
 		let fresh = dir.join("fresh.app");
 		fs::create_dir_all(current.join("Contents")).unwrap();
 		fs::create_dir_all(fresh.join("Contents")).unwrap();

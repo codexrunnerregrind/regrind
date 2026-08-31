@@ -42,7 +42,7 @@
 <SettingsGroup>
 	<SettingsRow
 		title="Discreet app icon"
-		description="Disguise Open Grind on your home screen."
+		description="Disguise ReGrind on your home screen."
 		onclick={unimplemented("Discreet app icon", 97)}
 	>
 		{#snippet icon()}

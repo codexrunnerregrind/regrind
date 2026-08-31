@@ -27,7 +27,7 @@ in
     // {
       packages = toolchainInputs ++ [ pkgs.shellcheck ];
       shellHook = ''
-        echo "Open Grind dev shell: macOS desktop toolchain."
+        echo "ReGrind dev shell: macOS desktop toolchain."
         echo "  Rust:      $(rustc --version)"
       '';
     }

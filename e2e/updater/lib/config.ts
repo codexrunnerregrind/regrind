@@ -18,7 +18,7 @@ export const cache = `${state}/cache`;
 export const serverHome = `${state}/server`;
 export const requestLog = `${state}/requests.jsonl`;
 export const appLog = `${state}/app.log`;
-export const bundleName = "Open Grind.app";
+export const bundleName = "ReGrind.app";
 export const runningApp = `${state}/run/${bundleName}`;
 
 export const appSupport = `${home}/Library/Application Support/${identifier}`;

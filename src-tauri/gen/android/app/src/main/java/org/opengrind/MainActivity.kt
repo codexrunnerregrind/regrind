@@ -155,7 +155,7 @@ class MainActivity : TauriActivity() {
 	private fun buildWebViewWarningMessage(status: WebViewSupport.Status): String {
 		val provider = status.packageName ?: "Unknown provider"
 		val version = status.versionName ?: "Unknown version"
-		return "Open Grind may not display correctly on older Android System WebView " +
+		return "ReGrind may not display correctly on older Android System WebView " +
 			"versions. This build expects WebView ${status.minSupportedMajor} or newer.\n\n" +
 			"Detected provider: $provider ($version)"
 	}

@@ -99,7 +99,7 @@ in
     // {
       packages = toolchainInputs ++ [ pkgs.shellcheck ];
       shellHook = ''
-        echo "Open Grind dev shell: Windows ${label} cross toolchain (EXPERIMENTAL)."
+        echo "ReGrind dev shell: Windows ${label} cross toolchain (EXPERIMENTAL)."
         echo "  Rust:      $(rustc --version)"
         echo "  Target:    ${triple}"
       '';

@@ -10,7 +10,7 @@ configs:
 settingGroups:
   app:
     base:
-      PRODUCT_NAME: Open Grind
+      PRODUCT_NAME: ReGrind
       PRODUCT_BUNDLE_IDENTIFIER: org.opengrind.app
 targetTemplates:
   app:
@@ -44,8 +44,8 @@ targets:
       path: open-grind_iOS/Info.plist
       properties:
         LSRequiresIPhoneOS: true
-        NSLocationWhenInUseUsageDescription: Open Grind uses your location to show where you are on the map and to share your location in chats.
-        NSPhotoLibraryAddUsageDescription: Open Grind saves photos and videos you download from chats to your Photos library.
+        NSLocationWhenInUseUsageDescription: ReGrind uses your location to show where you are on the map and to share your location in chats.
+        NSPhotoLibraryAddUsageDescription: ReGrind saves photos and videos you download from chats to your Photos library.
         UILaunchStoryboardName: LaunchScreen
         UIRequiredDeviceCapabilities: [arm64, metal]
         UISupportedInterfaceOrientations:

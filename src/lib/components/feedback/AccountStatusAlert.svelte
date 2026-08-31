@@ -32,7 +32,7 @@
 				return {
 					title: "Age verification required",
 					description:
-						"Grindr requires you to verify your age before continuing. Complete it in the official Grindr app, then sign in again. Open Grind does not bypass age verification.",
+						"Grindr requires you to verify your age before continuing. Complete it in the official Grindr app, then sign in again. ReGrind does not bypass age verification.",
 				};
 			}
 			return {

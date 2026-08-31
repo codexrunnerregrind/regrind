@@ -80,7 +80,7 @@ fn outdated_webview_notice() -> Option<String> {
 		if version.split('.').next()?.parse::<u32>().ok()? < MIN_CHROMIUM_MAJOR
 		{
 			return Some(format!(
-                "Open Grind needs Microsoft Edge WebView2 {MIN_CHROMIUM_MAJOR} or newer to \
+                "ReGrind needs Microsoft Edge WebView2 {MIN_CHROMIUM_MAJOR} or newer to \
                  display correctly (found {version}).\n\nUpdate the WebView2 Runtime, then \
                  restart the app."
             ));
@@ -99,7 +99,7 @@ fn outdated_webview_notice() -> Option<String> {
 		if (major, minor) < MIN_WEBKITGTK {
 			let (min_major, min_minor) = MIN_WEBKITGTK;
 			return Some(format!(
-                "Open Grind needs WebKitGTK {min_major}.{min_minor} or newer to display \
+                "ReGrind needs WebKitGTK {min_major}.{min_minor} or newer to display \
                  correctly (found {version}).\n\nUpdate webkit2gtk / your distribution, \
                  then restart the app."
             ));

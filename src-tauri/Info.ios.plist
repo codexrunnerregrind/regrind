@@ -3,8 +3,8 @@
 <plist version="1.0">
 <dict>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Open Grind uses your microphone to record the voice messages you send in chats.</string>
+	<string>ReGrind uses your microphone to record the voice messages you send in chats.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Open Grind uses your location to show where you are on the map and to share your location in chats.</string>
+	<string>ReGrind uses your location to show where you are on the map and to share your location in chats.</string>
 </dict>
 </plist>

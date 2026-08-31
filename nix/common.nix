@@ -102,7 +102,7 @@ rec {
           pkgs.minisign
         ];
       shellHook = ''
-        echo "Open Grind: shared tooling shell (no platform SDK)."
+        echo "ReGrind: shared tooling shell (no platform SDK)."
         echo "  Rust:      $(rustc --version)"
         echo "  Platforms: nix develop .#{android,linux,macos,windows-x64,windows-arm64}"
       '';
@@ -115,7 +115,7 @@ rec {
       pkgs.shellcheck
     ];
     shellHook = ''
-      echo "Open Grind: frontend-only shell (bun $(bun --version), node $(node --version))"
+      echo "ReGrind: frontend-only shell (bun $(bun --version), node $(node --version))"
     '';
   };
 }

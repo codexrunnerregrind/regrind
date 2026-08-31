@@ -1,11 +1,11 @@
-# Building Open Grind
+# Building ReGrind
 
 Pick your platform, then a method within it. Everything below the platform sections applies to both.
 
 > [!NOTE]
 > Android, macOS, Linux, Windows release builds are supported as of August 2026.
 
-- [Building Open Grind](#building-open-grind)
+- [Building ReGrind](#building-open-grind)
     - [Android](#android)
         - [Build with Docker (easiest)](#build-with-docker-easiest)
             - [Clean-up Docker](#clean-up-docker)
@@ -68,7 +68,7 @@ docker image rm open-grind-build   # removes the thin image
 
 ### Build with Nix (builds everywhere)
 
-Open Grind ships a [Nix flake](./flake.nix) that pins the entire Android toolchain — Rust, the JDK, the Android SDK, the NDK, Gradle, Bun, and Node.js — so any contributor on Linux or macOS can produce an identical build in an identical environment.
+ReGrind ships a [Nix flake](./flake.nix) that pins the entire Android toolchain — Rust, the JDK, the Android SDK, the NDK, Gradle, Bun, and Node.js — so any contributor on Linux or macOS can produce an identical build in an identical environment.
 
 - [Nix](https://nixos.org/download) >= 2.18
 - ~30 GB of disk space
@@ -78,7 +78,7 @@ Open Grind ships a [Nix flake](./flake.nix) that pins the entire Android toolcha
 3. Retrieve the apk: `src-tauri/gen/android/app/build/outputs/apk/universal/release/open-grind-v<version>-android-unsigned.apk` on your host system
 
 > [!NOTE]
-> First time you run `nix develop` or `nix run` in Open Grind's repository, Nix will download and setup about 3 GB environment, which might take some time, depending on your internet connection speed.
+> First time you run `nix develop` or `nix run` in ReGrind's repository, Nix will download and setup about 3 GB environment, which might take some time, depending on your internet connection speed.
 
 > [!NOTE]
 > If you use [direnv](https://direnv.net/), the bundled [.envrc](./.envrc) activates the dev shell automatically when you `cd` into the repository.
@@ -283,7 +283,7 @@ This runs the frontend build (`bun run build`) and produces a development-signed
 IPA at:
 
 ```
-src-tauri/gen/apple/build/arm64/Open Grind.ipa
+src-tauri/gen/apple/build/arm64/ReGrind.ipa
 ```
 
 Add `--debug` for a debug build, or `--open` to open the project in Xcode instead
@@ -301,7 +301,7 @@ xcrun devicectl list devices
 # Install the IPA (grab the identifier from the command above)
 xcrun devicectl device install app \
   --device <DEVICE_IDENTIFIER> \
-  "src-tauri/gen/apple/build/arm64/Open Grind.ipa"
+  "src-tauri/gen/apple/build/arm64/ReGrind.ipa"
 ```
 
 The app then launches from the Home Screen. The first launch of a build signed
@@ -331,7 +331,7 @@ entirely. Only a device target reads `APPLE_DEVELOPMENT_TEAM`.
 There is no free way to put an iOS app in front of other people the way the
 Android APK does it. TestFlight, the App Store, and the EU alternative
 marketplaces (AltStore PAL, Epic, Aptoide) all require a paid Apple Developer
-Program membership plus Apple notarization. Open Grind is instead distributed
+Program membership plus Apple notarization. ReGrind is instead distributed
 for iOS as an **unsigned** IPA that users sideload and re-sign with **their own**
 free Apple ID, using [SideStore](https://sidestore.io).
 
@@ -574,7 +574,7 @@ Windows builds ship unsigned with a detached `.minisig`.
 
 ## Credential storage
 
-Open Grind keeps the session, device identity, and media signing key in the platform's own credential store: Keychain on iOS, Keystore on Android, Credential Manager on Windows, and the Secret Service (GNOME Keyring, KWallet, etc) over D-Bus on Linux.
+ReGrind keeps the session, device identity, and media signing key in the platform's own credential store: Keychain on iOS, Keystore on Android, Credential Manager on Windows, and the Secret Service (GNOME Keyring, KWallet, etc) over D-Bus on Linux.
 
 Two targets fall back to a file store: `credentials/` in the app data directory, each file `0600` inside a `0700` directory.
 

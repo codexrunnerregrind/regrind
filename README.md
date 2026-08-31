@@ -1,4 +1,4 @@
-# Open Grind
+# ReGrind
 
 A fork of [Open Grind](https://git.opengrind.org/open-grind/open-grind), an unofficial, free and ad-free Grindr client.
 
@@ -23,7 +23,7 @@ I build this for myself and sideload it onto my own phone. If you want to try it
     https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/ci/altstore/source.json
     ```
 
-- **Install Open Grind** from the source.
+- **Install ReGrind** from the source.
 
 Needs iOS 15 or later. Apps installed this way stop working after 7 days — turn on LocalDevVPN, then open SideStore and hit refresh.
 
