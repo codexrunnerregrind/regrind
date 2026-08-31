@@ -62,6 +62,11 @@ class MyRightNowPostState {
 		return this.post !== null;
 	}
 
+	/** Whether the allowance on screen is the API's answer or the initial zero. */
+	get loaded(): boolean {
+		return this.#loaded;
+	}
+
 	/** Whether the post we were holding has run out. */
 	get lapsed(): boolean {
 		return this.#post !== null && this.post === null;

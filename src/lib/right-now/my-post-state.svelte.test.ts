@@ -248,6 +248,18 @@ describe("my right now post", () => {
 		expect(myRightNowPost.busy).toBe(false);
 	});
 
+	it("knows the allowance is not its own zero until the API answers", async () => {
+		getEntitlementsMock.mockResolvedValue({ rightNow: 2 });
+		expect(myRightNowPost.loaded).toBe(false);
+		expect(myRightNowPost.remaining).toBe(0);
+
+		await loaded();
+
+		// The button shows the count only once it means something.
+		expect(myRightNowPost.loaded).toBe(true);
+		expect(myRightNowPost.remaining).toBe(2);
+	});
+
 	it("keeps a post that still has its hour to run", async () => {
 		getActiveRightNowPostMock.mockResolvedValue(RUNNING);
 

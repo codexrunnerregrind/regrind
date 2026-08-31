@@ -149,9 +149,7 @@
 					<span
 						class="shrink-0 rounded-full bg-muted px-3 py-1.5 text-caption font-semibold text-muted-foreground tabular-nums"
 					>
-						{myRightNowPost.remaining === 1
-							? "1 left"
-							: `${myRightNowPost.remaining} left`}
+						{myRightNowPost.remaining} left
 					</span>
 				{/if}
 			</div>

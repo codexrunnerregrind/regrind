@@ -75,12 +75,24 @@
 					</span>
 				{/if}
 			</span>
-		{:else if locked}
-			<LockSimpleIcon weight="fill" class="size-4.5" />
-			Post
 		{:else}
-			<PlusIcon weight="bold" class="size-4.5" />
-			Post
+			{#if locked}
+				<LockSimpleIcon weight="fill" class="size-4.5" />
+			{:else}
+				<PlusIcon weight="bold" class="size-4.5" />
+			{/if}
+			<!-- The allowance in the same place the countdown goes, so the button
+			     answers "can I?" as well as "what does it do?". Held back until it
+			     is the API's answer rather than the zero it starts on, which would
+			     read as a spent allowance for as long as the fetch takes. -->
+			<span class="flex flex-col items-start leading-tight">
+				Post
+				{#if myRightNowPost.loaded}
+					<span class="text-xs font-medium opacity-75">
+						{myRightNowPost.remaining} left
+					</span>
+				{/if}
+			</span>
 		{/if}
 	</Button>
 </div>
