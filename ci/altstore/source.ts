@@ -25,6 +25,8 @@ const REPO =
 const RAW = `${REPO}/raw/branch/main`;
 const METADATA = "fastlane/metadata/android/en-US";
 const SHOTS = "contrib/altstore";
+// The fork's own artwork; fastlane/metadata still carries upstream's mask icon.
+const ICON = "contrib/logo/regrind-512px.png";
 const LISTING = "ci/altstore";
 
 const root = resolve(import.meta.dir, "../..");
@@ -135,7 +137,7 @@ const source = {
 	sourceURL: `${RAW}/ci/altstore/source.json`,
 	subtitle,
 	description,
-	iconURL: `${RAW}/${METADATA}/images/icon.png`,
+	iconURL: `${RAW}/${ICON}`,
 	website: REPO,
 	tintColor: "0DB28F",
 	apps: [
@@ -145,7 +147,7 @@ const source = {
 			developerName: "codexrunner",
 			subtitle,
 			localizedDescription: description,
-			iconURL: `${RAW}/${METADATA}/images/icon.png`,
+			iconURL: `${RAW}/${ICON}`,
 			tintColor: "0DB28F",
 			category: "social",
 			// This fork's own screenshots, not the ones under
