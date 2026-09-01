@@ -52,6 +52,15 @@
 			map.on("style.load", () => {
 				if (map) decorateStyle(map, isDarkTheme());
 			});
+			// A compact attribution unfolds itself every time its text changes
+			// — on the first style load, and again on each theme swap — and
+			// only folds away once the map is moved, covering the controls
+			// until then. Fold it back; its ⓘ button still opens it.
+			map.on("styledata", () => {
+				map?.getContainer()
+					.querySelector(".maplibregl-ctrl-attrib")
+					?.classList.remove("maplibregl-compact-show");
+			});
 			library = maplibre;
 			instance = map;
 		});

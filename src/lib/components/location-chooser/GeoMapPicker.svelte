@@ -407,7 +407,8 @@
 			</div>
 		</div>
 	{/if}
-	<div class="absolute right-2 bottom-6 z-1010 flex flex-col gap-2">
+	<!-- Clear of the attribution badge, which sits in the bottom-right corner. -->
+	<div class="absolute right-2 bottom-10 z-1010 flex flex-col gap-2">
 		{#if pinPos}
 			<Button
 				size="icon-lg"
