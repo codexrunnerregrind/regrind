@@ -215,7 +215,7 @@ export OPEN_GRIND_UPDATE_ORIGIN=http://127.0.0.1:8787/
 export OPEN_GRIND_UPDATE_KEY=<printed key>
 ```
 
-Both variables are read only under `debug_assertions` ([dev.rs](./src-tauri/src/api/update/dev.rs)). Run `adb reverse tcp:8787 tcp:8787` to tunnel to an Android device. On Android the debug build instead reads the same two assignments from `/data/local/tmp/open-grind-update.env` on the device — `e2e/updater/run.ts android` pushes it automatically, or `adb push` it when testing by hand. `cargo test --lib -- --ignored live_` runs the end-to-end check, download and signature tests against it.
+Both variables are read only under `debug_assertions` ([dev.rs](./src-tauri/src/api/update/dev.rs)). Run `adb reverse tcp:8787 tcp:8787` to tunnel to an Android device. On Android the debug build instead reads the same two assignments from `/data/local/tmp/regrind-update.env` on the device — `e2e/updater/run.ts android` pushes it automatically, or `adb push` it when testing by hand. `cargo test --lib -- --ignored live_` runs the end-to-end check, download and signature tests against it.
 
 `bun ci` also installs a pre-commit hook ([lefthook](https://lefthook.dev/), configured in [lefthook.yml](./lefthook.yml)) that runs over staged files only:
 

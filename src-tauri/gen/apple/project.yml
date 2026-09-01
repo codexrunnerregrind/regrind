@@ -1,6 +1,6 @@
-name: open-grind
+name: regrind
 options:
-  bundleIdPrefix: org.opengrind.app
+  bundleIdPrefix: org.regrind.app
   deploymentTarget:
     iOS: 14.0
 fileGroups: [../../src]
@@ -11,7 +11,7 @@ settingGroups:
   app:
     base:
       PRODUCT_NAME: ReGrind
-      PRODUCT_BUNDLE_IDENTIFIER: org.opengrind.app
+      PRODUCT_BUNDLE_IDENTIFIER: org.regrind.app
 targetTemplates:
   app:
     type: application
@@ -24,7 +24,7 @@ targetTemplates:
     settings:
       groups: [app]
 targets:
-  open-grind_iOS:
+  regrind_iOS:
     type: application
     platform: iOS
     sources:
@@ -35,13 +35,13 @@ targets:
       - path: Externals
         excludes:
           - "*/debug"
-      - path: open-grind_iOS
+      - path: regrind_iOS
       - path: assets
         buildPhase: resources
         type: folder
       - path: LaunchScreen.storyboard
     info:
-      path: open-grind_iOS/Info.plist
+      path: regrind_iOS/Info.plist
       properties:
         LSRequiresIPhoneOS: true
         NSLocationWhenInUseUsageDescription: ReGrind uses your location to show where you are on the map and to share your location in chats.
@@ -60,7 +60,7 @@ targets:
         CFBundleShortVersionString: 0.1.0
         CFBundleVersion: "0.1.0.3"
     entitlements:
-      path: open-grind_iOS/open-grind_iOS.entitlements
+      path: regrind_iOS/regrind_iOS.entitlements
     scheme:
       environmentVariables:
         RUST_BACKTRACE: full

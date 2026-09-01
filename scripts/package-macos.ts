@@ -38,8 +38,8 @@ const stamp = new Date(Number(epoch) * 1000)
 
 const { version } = await Bun.file(`${root}/src-tauri/tauri.conf.json`).json();
 const zip = appStore
-	? `${out}/open-grind-v${version}-macos-appstore.zip`
-	: `${out}/open-grind-v${version}${hostAssetSuffix()}`;
+	? `${out}/regrind-v${version}-macos-appstore.zip`
+	: `${out}/regrind-v${version}${hostAssetSuffix()}`;
 
 const SYSTEM_DYLIBS = ["libiconv.2.dylib"];
 
@@ -67,7 +67,7 @@ await $`rm -rf ${out}`;
 await $`mkdir -p ${out}`;
 
 const app = await only("*.app", bundles);
-await useSystemDylibs(`${app}/Contents/MacOS/open-grind`);
+await useSystemDylibs(`${app}/Contents/MacOS/regrind`);
 
 const timestamped = adHoc ? [] : ["--timestamp"];
 const entitled = (await Bun.file(entitlements).exists())

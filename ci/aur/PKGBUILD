@@ -1,7 +1,7 @@
 # Maintainer: Open Grind Governance <https://opengrind.org/governance>
 
-pkgname=open-grind-bin
-_pkgname=open-grind
+pkgname=regrind-bin
+_pkgname=regrind
 _ver=0.1.0-beta.4
 # pacman reads '-' as the pkgver/pkgrel separator, so it cannot stay.
 # Dropping it sorts 0.1.0beta.4 below 0.1.0. An underscore sorts it

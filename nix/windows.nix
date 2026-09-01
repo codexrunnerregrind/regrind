@@ -77,7 +77,7 @@ let
 in
 {
   package = common.mkDesktopScript {
-    name = "open-grind-build-windows-${label}";
+    name = "regrind-build-windows-${label}";
     runtimeInputs = toolchainInputs;
     inherit env;
     text = ''

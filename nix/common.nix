@@ -44,11 +44,11 @@ rec {
     # instead. Lives here, not in build.yml, which F-Droid never reads.
     CARGO_HOME="''${CARGO_HOME:-$HOME/.cargo}"
     export CARGO_HOME
-    export RUSTFLAGS="''${RUSTFLAGS:-} --remap-path-prefix=$CARGO_HOME=/cargo --remap-path-prefix=$ROOT=/open-grind"
+    export RUSTFLAGS="''${RUSTFLAGS:-} --remap-path-prefix=$CARGO_HOME=/cargo --remap-path-prefix=$ROOT=/regrind"
     # rustc's remap misses C: BoringSSL bakes __FILE__ from boring-sys2's
     # OUT_DIR. cc forwards these into the cmake crate's CMAKE_C_FLAGS, and
     # neither var feeds cargo's unit hash, so boring-sys2-<hash> stays stable.
-    prefixMaps="-ffile-prefix-map=$CARGO_HOME=/cargo -ffile-prefix-map=$ROOT=/open-grind"
+    prefixMaps="-ffile-prefix-map=$CARGO_HOME=/cargo -ffile-prefix-map=$ROOT=/regrind"
     export CFLAGS="''${CFLAGS:-} $prefixMaps"
     export CXXFLAGS="''${CXXFLAGS:-} $prefixMaps"
 

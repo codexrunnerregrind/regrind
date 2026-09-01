@@ -4,7 +4,7 @@ const ORIGIN_VAR: &str = "OPEN_GRIND_UPDATE_ORIGIN";
 const KEY_VAR: &str = "OPEN_GRIND_UPDATE_KEY";
 
 #[cfg(debug_assertions)]
-const ANDROID_OVERRIDE_FILE: &str = "/data/local/tmp/open-grind-update.env";
+const ANDROID_OVERRIDE_FILE: &str = "/data/local/tmp/regrind-update.env";
 
 #[cfg(debug_assertions)]
 fn assigned(contents: &str, name: &str) -> Option<String> {

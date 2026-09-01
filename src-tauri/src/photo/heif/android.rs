@@ -28,10 +28,8 @@ struct DecodeResponse {
 pub fn plugin<R: Runtime>() -> TauriPlugin<R> {
 	Builder::new("photo")
 		.setup(|app, api| {
-			let handle = api.register_android_plugin(
-				"org.opengrind.photo",
-				"PhotoPlugin",
-			)?;
+			let handle = api
+				.register_android_plugin("org.regrind.photo", "PhotoPlugin")?;
 			app.manage(Decoder { handle });
 			Ok(())
 		})

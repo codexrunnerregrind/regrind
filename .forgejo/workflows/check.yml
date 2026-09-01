@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened]
 
 concurrency:
-  group: open-grind-check-${{ forgejo.event.pull_request.number }}
+  group: regrind-check-${{ forgejo.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
@@ -24,10 +24,10 @@ jobs:
     env:
       PR_NUMBER: ${{ forgejo.event.pull_request.number }}
       EXPECTED_SHA: ${{ forgejo.event.pull_request.head.sha }}
-      CI_WORKSPACE: /opt/open-grind-ci
-      CHECKS_CACHE_DIR: /opt/open-grind-cache
-      CARGO_HOME: /opt/open-grind-cache/cargo
-      CARGO_TARGET_DIR: /opt/open-grind-cache/target
+      CI_WORKSPACE: /opt/regrind-ci
+      CHECKS_CACHE_DIR: /opt/regrind-cache
+      CARGO_HOME: /opt/regrind-cache/cargo
+      CARGO_TARGET_DIR: /opt/regrind-cache/target
       RUSTUP_HOME: /opt/rust/rustup
       PLAYWRIGHT_BROWSERS_PATH: /opt/playwright
       CARGO_TERM_PROGRESS_WHEN: never

@@ -115,9 +115,9 @@ describe("scrubText", () => {
 	it("masks home directories", () => {
 		expect(
 			scrubText(
-				"    at send (/Users/someone/dev/open-grind/src/app.ts:12:3)",
+				"    at send (/Users/someone/dev/regrind/src/app.ts:12:3)",
 			),
-		).toBe("    at send (/Users/<user>/dev/open-grind/src/app.ts:12:3)");
+		).toBe("    at send (/Users/<user>/dev/regrind/src/app.ts:12:3)");
 		expect(scrubText("at send (C:\\Users\\someone\\app.ts:12:3)")).toBe(
 			"at send (C:\\Users\\<user>\\app.ts:12:3)",
 		);
@@ -149,10 +149,10 @@ describe("redactStack", () => {
 	it("keeps frames intact when the engine emits no header", () => {
 		const stack =
 			"load@http://tauri.localhost/assets/index-a1b2.js:1:2345\n" +
-			"run@/Users/someone/dev/open-grind/src/lib/api/error.ts:24:5";
+			"run@/Users/someone/dev/regrind/src/lib/api/error.ts:24:5";
 		expect(redactStack({ stack, message: "boom" })).toBe(
 			"load@http://tauri.localhost/assets/index-a1b2.js:1:2345\n" +
-				"run@/Users/<user>/dev/open-grind/src/lib/api/error.ts:24:5",
+				"run@/Users/<user>/dev/regrind/src/lib/api/error.ts:24:5",
 		);
 	});
 

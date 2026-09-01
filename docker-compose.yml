@@ -4,23 +4,23 @@ services:
     platform: linux/amd64
     build:
       context: .
-    image: open-grind-build
+    image: regrind-build
     init: true
     working_dir: /work
     volumes:
       - .:/work
-      - open-grind-nix:/nix
-      - open-grind-cargo-target:/work/src-tauri/target # Rust build artifacts
-      - open-grind-node-modules:/work/node_modules # bun dependencies
-      - open-grind-cargo-home:/root/.cargo # crate registry, git deps
-      - open-grind-gradle:/root/.gradle-opengrind # Gradle dist, caches (build-android's GRADLE_USER_HOME)
-      - open-grind-bun:/root/.bun # bun download cache
+      - regrind-nix:/nix
+      - regrind-cargo-target:/work/src-tauri/target # Rust build artifacts
+      - regrind-node-modules:/work/node_modules # bun dependencies
+      - regrind-cargo-home:/root/.cargo # crate registry, git deps
+      - regrind-gradle:/root/.gradle-opengrind # Gradle dist, caches (build-android's GRADLE_USER_HOME)
+      - regrind-bun:/root/.bun # bun download cache
     command: ["nix", "run", ".#build-android"]
 
 volumes:
-  open-grind-nix:
-  open-grind-cargo-target:
-  open-grind-node-modules:
-  open-grind-cargo-home:
-  open-grind-gradle:
-  open-grind-bun:
+  regrind-nix:
+  regrind-cargo-target:
+  regrind-node-modules:
+  regrind-cargo-home:
+  regrind-gradle:
+  regrind-bun:

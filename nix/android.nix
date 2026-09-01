@@ -104,7 +104,7 @@ let
   envExports = common.exportEnv buildEnv;
 
   buildAndroidScript = pkgs.writeShellApplication {
-    name = "open-grind-build-android";
+    name = "regrind-build-android";
     runtimeInputs = toolchainInputs;
     text = ''
       set -euo pipefail
@@ -123,7 +123,7 @@ let
       # GRADLE_USER_HOME gradle.properties overrides the project one and accepts
       # the dotted key that -D/ORG_GRADLE_PROJECT_ env vars cannot express
       # (-D also does not reach the Gradle daemon, nixpkgs#402297). Docker caches
-      # this dir via the open-grind-gradle volume (see docker-compose.yml).
+      # this dir via the regrind-gradle volume (see docker-compose.yml).
       export GRADLE_USER_HOME="''${OPEN_GRIND_GRADLE_USER_HOME:-$HOME/.gradle-opengrind}"
       mkdir -p "$GRADLE_USER_HOME"
       printf 'android.aapt2FromMavenOverride=%s/aapt2\n' "${buildToolsBin}" > "$GRADLE_USER_HOME/gradle.properties"
@@ -159,7 +159,7 @@ let
         src="$reldir/app-universal-release$sfx.apk"
         version="$(sed -n 's/^tauri\.android\.versionName=//p' \
           "$ROOT/src-tauri/gen/android/app/tauri.properties")"
-        apk="$reldir/open-grind-v$version-android$sfx.apk"
+        apk="$reldir/regrind-v$version-android$sfx.apk"
         if [ -f "$src" ]; then
           mv -f "$src" "$apk"
           printf 'Produced: %s (%s)\n' "$apk" "$(du -h "$apk" | cut -f1)"

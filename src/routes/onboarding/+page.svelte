@@ -8,7 +8,7 @@
 	import { Label } from "$lib/components/ui/label";
 	import { setAutomaticUpdateChecks } from "$lib/updates";
 	import { updatesSelfManaged } from "$lib/updates/capability.svelte";
-	import icon from "../../../contrib/logo/open-grind.svg";
+	import icon from "../../../contrib/logo/regrind.svg";
 
 	let checkAutomatically = $state(true);
 	let starting = $state(false);

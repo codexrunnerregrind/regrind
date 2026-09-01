@@ -33,13 +33,13 @@ const release = {
 	notes: "# notes",
 	publishedAt: "2026-07-19T19:05:36+02:00",
 	payload: {
-		name: "open-grind-0.1.0-beta.4.apk",
+		name: "regrind-0.1.0-beta.4.apk",
 		url: "https://git.opengrind.org/open-grind/open-grind/releases/download/v0.1.0-beta.4/open-grind-0.1.0-beta.4.apk",
 		uuid: "bb49c042-1273-4561-8ede-b42f947e4fda",
 		size: 72294080,
 	},
 	signature: {
-		name: "open-grind-0.1.0-beta.4.apk.minisig",
+		name: "regrind-0.1.0-beta.4.apk.minisig",
 		url: "https://git.opengrind.org/open-grind/open-grind/releases/download/v0.1.0-beta.4/open-grind-0.1.0-beta.4.apk.minisig",
 		uuid: "c45b10ab-8fb5-4607-8fa9-bfb03843468d",
 		size: 228,

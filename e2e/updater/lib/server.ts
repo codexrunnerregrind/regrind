@@ -165,7 +165,7 @@ export async function startServer({
 }: ServerOptions): Promise<Harness> {
 	const etag = `"${uuid}"`;
 	const publicKey = await releaseKey(home);
-	const asset = `open-grind-${tag}${suffix}`;
+	const asset = `regrind-${tag}${suffix}`;
 	const { body, signature } = await signedPayload({
 		source: payload,
 		name: asset,

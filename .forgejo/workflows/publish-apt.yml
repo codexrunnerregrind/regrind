@@ -11,7 +11,7 @@ on:
         required: true
 
 concurrency:
-  group: open-grind-publish-apt
+  group: regrind-publish-apt
   cancel-in-progress: false
 
 jobs:

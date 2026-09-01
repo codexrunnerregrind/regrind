@@ -166,8 +166,7 @@ mod tests {
 
 	#[test]
 	fn an_executable_inside_a_bundle_reports_the_bundle_root() {
-		let exe =
-			Path::new("/Applications/ReGrind.app/Contents/MacOS/open-grind");
+		let exe = Path::new("/Applications/ReGrind.app/Contents/MacOS/regrind");
 		assert_eq!(
 			enclosing_bundle(exe).unwrap(),
 			Path::new("/Applications/ReGrind.app")

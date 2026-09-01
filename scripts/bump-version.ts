@@ -52,7 +52,7 @@ function versionOccurrences({
 		},
 		{
 			file: "src-tauri/Cargo.lock",
-			literal: `name = "open-grind"\nversion = "${version}"`,
+			literal: `name = "regrind"\nversion = "${version}"`,
 		},
 	];
 }

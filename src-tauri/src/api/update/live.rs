@@ -43,7 +43,7 @@ async fn live_published_release_downloads_and_verifies() {
             "the download ETag is the asset uuid, which is what change detection relies on"
         );
 
-	let path = std::env::temp_dir().join("open-grind-live-payload");
+	let path = std::env::temp_dir().join("regrind-live-payload");
 	let mut file = std::fs::File::create(&path).unwrap();
 	let mut written = 0u64;
 	while let Some(chunk) = response.chunk().await.unwrap() {

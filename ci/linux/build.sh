@@ -9,8 +9,8 @@ export TZ=UTC LC_ALL=C LANG=C
 SOURCE_DATE_EPOCH=$(git -C /work log -1 --pretty=%ct)
 export SOURCE_DATE_EPOCH
 export CARGO_HOME="${CARGO_HOME:-/root/.cargo}"
-export RUSTFLAGS="${RUSTFLAGS:-} --remap-path-prefix=$CARGO_HOME=/cargo --remap-path-prefix=/work=/open-grind"
-prefixMaps="-ffile-prefix-map=$CARGO_HOME=/cargo -ffile-prefix-map=/work=/open-grind"
+export RUSTFLAGS="${RUSTFLAGS:-} --remap-path-prefix=$CARGO_HOME=/cargo --remap-path-prefix=/work=/regrind"
+prefixMaps="-ffile-prefix-map=$CARGO_HOME=/cargo -ffile-prefix-map=/work=/regrind"
 export CFLAGS="${CFLAGS:-} $prefixMaps"
 export CXXFLAGS="${CXXFLAGS:-} $prefixMaps"
 export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=4096}"
@@ -23,7 +23,7 @@ bun install --frozen-lockfile --backend copyfile
 bun run tauri build --bundles deb
 
 out="/work/src-tauri/target/release"
-bin="$out/open-grind"
+bin="$out/regrind"
 
 # tauri-bundler walks directories unsorted and stamps wall-clock mtimes into
 # both tars and the ar header, so the .deb never reproduces as built:
@@ -43,7 +43,7 @@ dirs=$(cd "$work/root" && find . -path ./DEBIAN -prune -o -type d -print | wc -l
 sed -i "s/^Installed-Size: .*/Installed-Size: $((files_kib + dirs))/" "$work/root/DEBIAN/control"
 version=$(sed -n 's/^[[:space:]]*"version": "\([^"]*\)".*/\1/p' src-tauri/tauri.conf.json | head -1)
 case "$(uname -m)" in aarch64) arch=arm64 ;; *) arch=$(uname -m) ;; esac
-deb="$out/bundle/deb/open-grind-v$version-linux-$arch.deb"
+deb="$out/bundle/deb/regrind-v$version-linux-$arch.deb"
 dpkg-deb --root-owner-group -Zgzip -z9 --uniform-compression -b "$work/root" "$deb"
 rm -rf "$work" "$bundled"
 

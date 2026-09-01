@@ -11,7 +11,7 @@
 #
 #   scripts/ios-release-ipa.sh [--skip-build] [--date YYYY-MM-DD]
 #
-# Writes src-tauri/gen/apple/build/arm64/open-grind-v<version>.ipa and updates
+# Writes src-tauri/gen/apple/build/arm64/regrind-v<version>.ipa and updates
 # ci/altstore/source.json to match it byte-for-byte.
 
 set -euo pipefail
@@ -49,9 +49,9 @@ VERSION="$(sed -n 's/^[[:space:]]*"version": "\([^"]*\)".*/\1/p' \
 	src-tauri/tauri.conf.json | head -1)"
 
 BUILD_DIR="src-tauri/gen/apple/build"
-ARCHIVE="$BUILD_DIR/open-grind_iOS.xcarchive"
+ARCHIVE="$BUILD_DIR/regrind_iOS.xcarchive"
 ARCHIVE_APP="$ARCHIVE/Products/Applications/ReGrind.app"
-UNSIGNED="$BUILD_DIR/arm64/open-grind-v$VERSION.ipa"
+UNSIGNED="$BUILD_DIR/arm64/regrind-v$VERSION.ipa"
 
 # The source is the xcarchive bundle, not build/arm64/*.ipa. `tauri ios build`
 # reliably dies at `exportArchive` on this setup ("No Account for Team

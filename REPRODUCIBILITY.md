@@ -4,7 +4,7 @@ Reproducibility verifies that a released artifact was built from a given source 
 
 The Linux, Windows and macOS recipes need a checkout with submodules — `git clone --recurse-submodules https://git.opengrind.org/open-grind/open-grind.git`, or `git submodule update --init` after switching tags. `src-tauri/vendor/grindr-google-oauth-webextension` is compiled into the desktop binaries; without it the build fails in `include_str!`.
 
-- [Open Grind Reproducibility](#open-grind-reproducibility)
+- [Open Grind Reproducibility](#regrind-reproducibility)
     - [Trusting the build environment](#trusting-the-build-environment)
         - [Verifying Nix and flake.lock](#verifying-nix-and-flakelock)
         - [Verifying the Gradle wrapper jar](#verifying-the-gradle-wrapper-jar)
@@ -87,10 +87,10 @@ v1 (JAR) signatures (`META-INF/*.SF`, `*.{RSA,EC,DSA}`, `MANIFEST.MF`) and v2/v3
 # 1. Reproduce the unsigned APK locally
 git checkout v<tag>
 nix run .#build-android
-LOCAL=src-tauri/gen/android/app/build/outputs/apk/universal/release/open-grind-v<tag>-android-unsigned.apk
+LOCAL=src-tauri/gen/android/app/build/outputs/apk/universal/release/regrind-v<tag>-android-unsigned.apk
 
 # 2. Fetch from https://git.opengrind.org/open-grind/open-grind/releases
-PUBLISHED=/path/to/open-grind-v<tag>-android.apk
+PUBLISHED=/path/to/regrind-v<tag>-android.apk
 
 # 3. Confirm the content reproduces
 apk_content_hash() {
@@ -140,12 +140,12 @@ The container builds for the host architecture, so verify the `x86_64` `.deb` on
 ```bash
 # 1. Reproduce the app locally
 git checkout v<tag>
-podman build -t open-grind-linux ci/linux
-podman run --rm -v "$PWD:/work" open-grind-linux sh ci/linux/build.sh
+podman build -t regrind-linux ci/linux
+podman run --rm -v "$PWD:/work" regrind-linux sh ci/linux/build.sh
 LOCAL="$(find src-tauri/target/release/bundle/deb -name '*.deb')"
 
 # 2. Fetch from https://git.opengrind.org/open-grind/open-grind/releases
-PUBLISHED=/path/to/open-grind-v<tag>-linux-<arch>.deb
+PUBLISHED=/path/to/regrind-v<tag>-linux-<arch>.deb
 
 # 3. Confirm the content reproduces
 sha256sum "$LOCAL" "$PUBLISHED"
@@ -203,7 +203,7 @@ nix run .#build-windows-arm64
 LOCAL="$(find src-tauri/target/aarch64-pc-windows-msvc/release/bundle/nsis -name '*.exe')"
 
 # 2. Fetch from https://git.opengrind.org/open-grind/open-grind/releases
-PUBLISHED=/path/to/open-grind-v<tag>-windows-<arch>.exe
+PUBLISHED=/path/to/regrind-v<tag>-windows-<arch>.exe
 
 # 3. Confirm the content reproduces
 sha256sum "$LOCAL" "$PUBLISHED"
@@ -232,12 +232,12 @@ fi
 
 - Pinned inputs:
 
-    | Component                         | Where it's pinned                                          |
-    | --------------------------------- | ---------------------------------------------------------- |
-    | macOS C toolchain (clang, cc, ld) | `flake.lock` (nixpkgs clang wrapper)                       |
-    | macOS SDK                         | `flake.lock` (nixpkgs `apple-sdk`, exported as `SDKROOT`)  |
-    | `plutil` (Info.plist)             | `flake.lock` (nixpkgs `xcbuild`)                           |
-    | Checkout path and `CARGO_HOME`    | remapped to `/open-grind` and `/cargo` by `nix/common.nix` |
+    | Component                         | Where it's pinned                                         |
+    | --------------------------------- | --------------------------------------------------------- |
+    | macOS C toolchain (clang, cc, ld) | `flake.lock` (nixpkgs clang wrapper)                      |
+    | macOS SDK                         | `flake.lock` (nixpkgs `apple-sdk`, exported as `SDKROOT`) |
+    | `plutil` (Info.plist)             | `flake.lock` (nixpkgs `xcbuild`)                          |
+    | Checkout path and `CARGO_HOME`    | remapped to `/regrind` and `/cargo` by `nix/common.nix`   |
 
 `codesign` and `ditto` come from macOS itself and cannot be pinned by Nix. Neither affects the compiled code: `ditto` only packs the archive, and the signature is removed from both sides before comparing.
 
@@ -250,7 +250,7 @@ nix run .#build-macos
 LOCAL="src-tauri/target/universal-apple-darwin/release/bundle/macos/Open Grind.app"
 
 # 2. Fetch from https://git.opengrind.org/open-grind/open-grind/releases
-PUBLISHED=/path/to/open-grind-v<tag>-macos.zip
+PUBLISHED=/path/to/regrind-v<tag>-macos.zip
 WORK=$(mktemp -d)
 ditto -x -k "$PUBLISHED" "$WORK/published"
 APP="$(find "$WORK/published" -maxdepth 1 -name '*.app')"

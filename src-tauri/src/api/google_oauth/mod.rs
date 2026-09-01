@@ -66,7 +66,7 @@ pub fn plugin() -> tauri::plugin::TauriPlugin<tauri::Wry> {
 			#[cfg(target_os = "android")]
 			{
 				let handle = _api.register_android_plugin(
-					"org.opengrind.googleoauth",
+					"org.regrind.googleoauth",
 					"GoogleOauthPlugin",
 				)?;
 				_app.manage(android::AndroidGoogleOauth { handle });

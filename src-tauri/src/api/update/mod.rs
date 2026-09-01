@@ -30,12 +30,12 @@ pub struct UpdateState {
 }
 
 pub fn plugin() -> tauri::plugin::TauriPlugin<Wry> {
-	tauri::plugin::Builder::new("open-grind-update")
+	tauri::plugin::Builder::new("regrind-update")
 		.setup(|app, _api| {
 			#[cfg(target_os = "android")]
 			{
 				let handle = _api.register_android_plugin(
-					"org.opengrind.update",
+					"org.regrind.update",
 					"UpdatePlugin",
 				)?;
 				app.manage(install::AndroidUpdater { handle });

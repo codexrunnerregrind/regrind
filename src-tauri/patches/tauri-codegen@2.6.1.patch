@@ -4,7 +4,7 @@
  
  impl ToTokens for EmbeddedAssets {
    fn to_tokens(&self, tokens: &mut TokenStream) {
-+    // PATCH(open-grind): sorted iteration for reproducible builds (readdir/HashMap order)
++    // PATCH(regrind): sorted iteration for reproducible builds (readdir/HashMap order)
      let mut assets = TokenStream::new();
 -    for (key, (input, output)) in &self.assets {
 +    let mut sorted_assets: Vec<_> = self.assets.iter().collect();

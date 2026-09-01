@@ -50,9 +50,9 @@ const OPEN_GRIND_PLATFORM: &str = if cfg!(target_os = "android") {
 	"unknown"
 };
 
-fn open_grind_platform_plugin<R: tauri::Runtime>(
-) -> tauri::plugin::TauriPlugin<R> {
-	tauri::plugin::Builder::<R, ()>::new("open-grind-platform")
+fn regrind_platform_plugin<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R>
+{
+	tauri::plugin::Builder::<R, ()>::new("regrind-platform")
 		.js_init_script(format!(
 			r#"window.__OPEN_GRIND_PLATFORM = "{OPEN_GRIND_PLATFORM}";"#
 		))
@@ -171,7 +171,7 @@ pub fn run() {
 		.on_page_load(|_webview, _payload| webview_recovery::on_page_load());
 
 	builder
-        .plugin(open_grind_platform_plugin())
+        .plugin(regrind_platform_plugin())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_os::init())

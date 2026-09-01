@@ -1,4 +1,4 @@
-const PREFIX = "open-grind:app-data:";
+const PREFIX = "regrind:app-data:";
 
 function key(path: string): string {
 	return `${PREFIX}${path}`;

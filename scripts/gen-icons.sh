@@ -62,7 +62,7 @@ cp contrib/logo/icon.icns src-tauri/icons/icon.icns
 bun tauri icon ./contrib/logo/app-icon.svg --ios-color='#0A0A0A' -o "$TMP/app" >/dev/null
 cp "$TMP/app/ios/AppIcon-512@2x.png" contrib/logo/app-icon.png
 
-bun tauri icon ./contrib/logo/open-grind.svg -o "$TMP/mark" >/dev/null
-cp "$TMP/mark/icon.png" contrib/logo/open-grind-512px.png
+bun tauri icon ./contrib/logo/regrind.svg -o "$TMP/mark" >/dev/null
+cp "$TMP/mark/icon.png" contrib/logo/regrind-512px.png
 cp "$TMP/mark/128x128.png" src/lib/assets/favicon.png
-sips -Z 180 "$TMP/mark/icon.png" --out contrib/logo/open-grind-180px.png >/dev/null
+sips -Z 180 "$TMP/mark/icon.png" --out contrib/logo/regrind-180px.png >/dev/null

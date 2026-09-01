@@ -52,14 +52,14 @@ Prerequisites:
 1. Install Docker on your host system
 2. Build the thin image: `docker compose build`
 3. Build the apk: `docker compose run --rm build`
-4. Retrieve the apk from `src-tauri/gen/android/app/build/outputs/apk/universal/release/open-grind-v<version>-android-unsigned.apk` on your host system
+4. Retrieve the apk from `src-tauri/gen/android/app/build/outputs/apk/universal/release/regrind-v<version>-android-unsigned.apk` on your host system
 5. Follow [Sign Android build](#sign-android-build) steps to make the build installable on your Android device
 
 To clean-up Docker after that:
 
 ```bash
 docker compose down -v   # removes the toolchain + all cache volumes (~25 GB)
-docker image rm open-grind-build   # removes the thin image
+docker image rm regrind-build   # removes the thin image
 ```
 
 ### Build apk with Nix only (faster)
@@ -71,7 +71,7 @@ Open Grind ships a [Nix flake](./flake.nix) that pins the entire Android toolcha
 
 1. Install and configure Nix on your host system
 2. Run `nix run .#build-android`
-3. Retrieve the apk: `src-tauri/gen/android/app/build/outputs/apk/universal/release/open-grind-v<version>-android-unsigned.apk` on your host system
+3. Retrieve the apk: `src-tauri/gen/android/app/build/outputs/apk/universal/release/regrind-v<version>-android-unsigned.apk` on your host system
 
 > [!NOTE]
 > First time you run `nix develop` or `nix run` in Open Grind's repository, Nix will download and setup about 3 GB environment, which might take some time, depending on your internet connection speed.
@@ -116,8 +116,8 @@ You need to follow these instructions in order to install the APK on an Android 
 
 ```bash
 keytool -genkey -v \
-  -keystore ~/.config/open-grind/release.jks \
-  -alias open-grind \
+  -keystore ~/.config/regrind/release.jks \
+  -alias regrind \
   -keyalg EC \
   -groupname secp256r1 \
   -sigalg SHA256withECDSA \
@@ -127,15 +127,15 @@ keytool -genkey -v \
 2. Create keystore.properties:
 
 ```bash
-cp /path/to/open-grind/contrib/keystore.properties.example ~/.config/open-grind/keystore.properties
-# Edit ~/.config/open-grind/keystore.properties, note the password
+cp /path/to/regrind/contrib/keystore.properties.example ~/.config/regrind/keystore.properties
+# Edit ~/.config/regrind/keystore.properties, note the password
 ```
 
 3. Sign the apk:
 
 ```bash
-OPEN_GRIND_KEYSTORE_PROPERTIES=~/.config/open-grind/keystore.properties
-bun /path/to/open-grind/ci/sign.ts /path/to/open-grind.apk /out/path/to/open-grind-signed.apk
+OPEN_GRIND_KEYSTORE_PROPERTIES=~/.config/regrind/keystore.properties
+bun /path/to/regrind/ci/sign.ts /path/to/regrind.apk /out/path/to/regrind-signed.apk
 ```
 
 ### Verify Android release
@@ -168,7 +168,7 @@ Everything needed to reproduce an iOS build is committed:
 | Setting                   | Value                      | Where it's pinned                                                             |
 | ------------------------- | -------------------------- | ----------------------------------------------------------------------------- |
 | Apple development team    | `APPLE_DEVELOPMENT_TEAM`   | your environment, see below (config holds a placeholder)                      |
-| Bundle identifier         | `org.opengrind.app`        | `src-tauri/tauri.conf.json` &rarr; `identifier` (and `gen/apple/project.yml`) |
+| Bundle identifier         | `org.regrind.app`          | `src-tauri/tauri.conf.json` &rarr; `identifier` (and `gen/apple/project.yml`) |
 | Marketing / build version | from `version`             | `src-tauri/tauri.conf.json` &rarr; `version`                                  |
 | iOS usage descriptions    | location permission string | `src-tauri/Info.ios.plist`                                                    |
 | Export method             | `debugging`                | `src-tauri/gen/apple/ExportOptions.plist`                                     |
@@ -259,7 +259,7 @@ for iOS as an **unsigned** IPA that users sideload and re-sign with **their own*
 free Apple ID, using [SideStore](https://sidestore.io).
 
 This works because the app needs no restricted capabilities:
-[`open-grind_iOS.entitlements`](./src-tauri/gen/apple/open-grind_iOS/open-grind_iOS.entitlements)
+[`regrind_iOS.entitlements`](./src-tauri/gen/apple/regrind_iOS/regrind_iOS.entitlements)
 is empty, and location and photo-library access are Info.plist usage strings
 rather than entitlements. `tauri-plugin-notification` uses local notifications
 only, so no `aps-environment` entitlement is required — a free personal team
@@ -271,7 +271,7 @@ refreshes on-device so the seven-day cycle is invisible after setup; AltStore
 needs a computer on the same network to refresh.
 
 Sideloading clients re-sign the IPA under the installing user's team and append
-that team ID to the bundle identifier, so `org.opengrind.app` does not collide
+that team ID to the bundle identifier, so `org.regrind.app` does not collide
 between users.
 
 #### Why the release IPA is unsigned
@@ -299,7 +299,7 @@ scripts/ios-release-ipa.sh
 ```
 
 That builds, strips the signature, writes
-`src-tauri/gen/apple/build/arm64/open-grind-v<version>.ipa`, and regenerates the
+`src-tauri/gen/apple/build/arm64/regrind-v<version>.ipa`, and regenerates the
 source manifest against that exact file. Then attach the IPA to the
 `v<version>` release on
 [the fork's releases](https://git.opengrind.org/codexrunner/open-grind/releases)
@@ -316,7 +316,7 @@ manifest can never update.
 Note that the bundle ID is the app's identity on iOS: installing the release
 build next to a locally-built one with a different identifier gives two icons,
 two data containers, and — since
-[`open-grind_iOS.entitlements`](./src-tauri/gen/apple/open-grind_iOS/open-grind_iOS.entitlements)
+[`regrind_iOS.entitlements`](./src-tauri/gen/apple/regrind_iOS/regrind_iOS.entitlements)
 declares no keychain access group — two separate credential stores, so the
 second app starts logged out.
 
@@ -380,11 +380,11 @@ Other Linux formats:
 Needs Podman or Docker.
 
 ```bash
-podman build -t open-grind-linux ci/linux
-podman run --rm -v "$PWD:/work" open-grind-linux sh ci/linux/build.sh
+podman build -t regrind-linux ci/linux
+podman run --rm -v "$PWD:/work" regrind-linux sh ci/linux/build.sh
 ```
 
-The result is `src-tauri/target/release/bundle/deb/open-grind-v<version>-linux-<arch>.deb`. The script repacks what `tauri build` produced with `dpkg-deb` under `SOURCE_DATE_EPOCH`, because tauri-bundler writes wall-clock mtimes and unsorted entries ([tauri#13612](https://github.com/tauri-apps/tauri/issues/13612)).
+The result is `src-tauri/target/release/bundle/deb/regrind-v<version>-linux-<arch>.deb`. The script repacks what `tauri build` produced with `dpkg-deb` under `SOURCE_DATE_EPOCH`, because tauri-bundler writes wall-clock mtimes and unsorted entries ([tauri#13612](https://github.com/tauri-apps/tauri/issues/13612)).
 
 Runtime notes:
 
@@ -460,11 +460,11 @@ The default build uses two private macOS APIs: WebKit's `_setUseSystemAppearance
 For distribution, store the notary credentials once, then build:
 
 ```bash
-xcrun notarytool store-credentials open-grind \
+xcrun notarytool store-credentials regrind \
   --apple-id you@example.com --team-id TEAMID --password app-specific-password
 
 MACOS_SIGN_IDENTITY="Developer ID Application: Name (TEAMID)" \
-MACOS_NOTARY_PROFILE=open-grind \
+MACOS_NOTARY_PROFILE=regrind \
   nix run .#build-macos
 ```
 

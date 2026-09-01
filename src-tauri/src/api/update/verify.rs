@@ -207,7 +207,7 @@ mod tests {
 
 	fn payload(bytes: &[u8]) -> std::path::PathBuf {
 		let path = std::env::temp_dir().join(format!(
-			"open-grind-verify-{}-{:?}",
+			"regrind-verify-{}-{:?}",
 			std::process::id(),
 			std::thread::current().id()
 		));
@@ -317,7 +317,7 @@ mod tests {
 			&FIXTURE_KEY,
 			FIXTURE_SIG,
 			&prehash(&payload(FIXTURE_PAYLOAD)).unwrap(),
-			"open-grind-v9.9.9-android.apk",
+			"regrind-v9.9.9-android.apk",
 		)
 		.unwrap_err();
 		match error {

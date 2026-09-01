@@ -22,6 +22,6 @@ if [ "$#" -ne 1 ]; then
 	echo "FATAL: expected one $label installer, found $#" >&2
 	exit 1
 fi
-asset="$nsis/open-grind-v$version-windows-$arch.exe"
+asset="$nsis/regrind-v$version-windows-$arch.exe"
 mv "$1" "$asset"
 sha256sum "$asset"

@@ -206,7 +206,7 @@ mod tests {
 
 	fn temp_root() -> PathBuf {
 		let base = std::env::temp_dir().join(format!(
-			"open-grind-update-test-{}-{:?}",
+			"regrind-update-test-{}-{:?}",
 			std::process::id(),
 			std::thread::current().id()
 		));

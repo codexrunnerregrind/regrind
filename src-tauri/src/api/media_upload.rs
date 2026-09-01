@@ -213,7 +213,7 @@ fn multipart_body(
 fn new_boundary() -> String {
 	let mut bytes = [0u8; 16];
 	getrandom::fill(&mut bytes).expect("system randomness unavailable");
-	let mut boundary = String::from("----open-grind");
+	let mut boundary = String::from("----regrind");
 	for byte in bytes {
 		boundary.push_str(&format!("{byte:02x}"));
 	}

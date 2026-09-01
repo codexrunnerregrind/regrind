@@ -88,7 +88,7 @@ pub use platform::{
 mod pins {
 	const KEYS: &str = include_str!("../../../../../KEYS.md");
 	const GATE: &str = include_str!(
-		"../../../../android-logic/src/main/kotlin/org/opengrind/update/InstallGate.kt"
+		"../../../../android-logic/src/main/kotlin/org/regrind/update/InstallGate.kt"
 	);
 	const MANIFEST: &str = include_str!(
 		"../../../../gen/android/app/src/main/AndroidManifest.xml"

@@ -5,7 +5,7 @@ import android.content.Context
 class Keyring {
     companion object {
         init {
-            System.loadLibrary("open_grind_lib")
+            System.loadLibrary("regrind_lib")
         }
 
         external fun initializeNdkContext(context: Context)

@@ -47,7 +47,7 @@ pub fn relaunch_after_exit() {
 	let _ = Command::new("/bin/sh")
 		.arg("-c")
 		.arg("while kill -0 \"$1\" 2>/dev/null; do sleep 0.1; done; exec /usr/bin/open -n \"$2\"")
-		.arg("open-grind-relaunch")
+		.arg("regrind-relaunch")
 		.arg(std::process::id().to_string())
 		.arg(bundle)
 		.spawn();

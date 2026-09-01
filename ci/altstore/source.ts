@@ -163,7 +163,7 @@ const source = {
 					buildVersion,
 					date,
 					localizedDescription: changelog,
-					downloadURL: `${REPO}/releases/download/v${version}/open-grind-v${version}.ipa`,
+					downloadURL: `${REPO}/releases/download/v${version}/regrind-v${version}.ipa`,
 					size,
 					sha256,
 					minOSVersion: "14.0",

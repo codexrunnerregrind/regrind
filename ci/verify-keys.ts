@@ -18,7 +18,7 @@ const fail = (message: string): never => {
 const sha = process.env.FORGEJO_SHA;
 if (!sha) fail("FORGEJO_SHA is not set");
 
-const home = mkdtempSync(join(tmpdir(), "open-grind-keys-"));
+const home = mkdtempSync(join(tmpdir(), "regrind-keys-"));
 
 async function gpg(args: string[], stdin?: Uint8Array) {
 	const proc = Bun.spawn(["gpg", "--batch", ...args], {

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-# export CI_SSH_KEY=~/.ssh/open-grind-ci
+# export CI_SSH_KEY=~/.ssh/regrind-ci
 # export IP=<box ip>
 # scp -o IdentitiesOnly=yes -i "$CI_SSH_KEY" ci/check-image.sh ci/snapshot-clean.sh "root@$IP:/tmp/"
 # ssh -o IdentitiesOnly=yes -i "$CI_SSH_KEY" "root@$IP"

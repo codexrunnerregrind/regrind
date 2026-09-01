@@ -78,7 +78,7 @@
 	import CopyErrorConfirmAlert from "$lib/components/feedback/CopyErrorConfirmAlert.svelte";
 	import RequestBlockedAlert from "$lib/components/feedback/RequestBlockedAlert.svelte";
 	import SessionErrorAlert from "$lib/components/feedback/SessionErrorAlert.svelte";
-	import faviconSvg from "../../contrib/logo/open-grind.svg";
+	import faviconSvg from "../../contrib/logo/regrind.svg";
 
 	let { children }: { children?: import("svelte").Snippet } = $props();
 

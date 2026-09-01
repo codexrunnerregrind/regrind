@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: open-grind-warm
+  group: regrind-warm
   cancel-in-progress: false
 
 jobs:
@@ -20,8 +20,8 @@ jobs:
     steps:
       - name: Build the dependency graph from trusted code and publish the cache
         env:
-          CI_WORKSPACE: /opt/open-grind-ci
-          CHECKS_CACHE_DIR: /opt/open-grind-cache
+          CI_WORKSPACE: /opt/regrind-ci
+          CHECKS_CACHE_DIR: /opt/regrind-cache
           RUSTUP_HOME: /opt/rust/rustup
           CARGO_TERM_PROGRESS_WHEN: never
           CHECKS_CACHE_S3_ENDPOINT: ${{ vars.CHECKS_CACHE_S3_ENDPOINT }}

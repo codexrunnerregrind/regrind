@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: open-grind-audit-${{ forgejo.event.pull_request.number || forgejo.ref }}
+  group: regrind-audit-${{ forgejo.event.pull_request.number || forgejo.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
           GITHUB_TOKEN: ""
           FORGEJO_TOKEN: ""
           ACTIONS_RUNTIME_TOKEN: ""
-          CI_WORKSPACE: /opt/open-grind-audit
+          CI_WORKSPACE: /opt/regrind-audit
           RUSTUP_HOME: /opt/rust/rustup
           CARGO_TERM_PROGRESS_WHEN: never
           PR_NUMBER: ${{ forgejo.event.pull_request.number }}

@@ -4,7 +4,7 @@ import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-const APPID = "org.opengrind";
+const APPID = "org.regrind";
 const IMAGE = "registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie";
 const root = path.join(import.meta.dir, "../..");
 
@@ -14,7 +14,7 @@ const versionName = conf.version;
 const versionCode = conf.bundle.android.versionCode;
 
 const recipeTemplate = await Bun.file(
-	path.join(root, "ci/fdroid/org.opengrind.yml"),
+	path.join(root, "ci/fdroid/org.regrind.yml"),
 ).text();
 
 const repoUrl = recipeTemplate.match(/^Repo:\s*(\S+)/m)?.[1];

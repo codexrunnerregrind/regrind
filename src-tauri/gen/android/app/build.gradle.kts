@@ -33,10 +33,10 @@ android {
     compileSdk = prop("opengrind.android.compileSdk").toInt()
     buildToolsVersion = prop("opengrind.android.buildTools")
     ndkVersion = prop("opengrind.android.ndk")
-    namespace = "org.opengrind"
+    namespace = "org.regrind"
     defaultConfig {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
-        applicationId = "org.opengrind"
+        applicationId = "org.regrind"
         minSdk = prop("opengrind.android.minSdk").toInt()
         targetSdk = prop("opengrind.android.targetSdk").toInt()
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()

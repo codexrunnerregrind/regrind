@@ -51,7 +51,7 @@ let
 in
 {
   package = common.mkDesktopScript {
-    name = "open-grind-build-linux";
+    name = "regrind-build-linux";
     runtimeInputs = toolchainInputs;
     inherit env;
     text = ''
@@ -64,8 +64,8 @@ in
 
       out="$ROOT/src-tauri/target/${triple}/release"
       echo
-      echo "glibc floor: $(objdump -T "$out/open-grind" | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -1)"
-      if readelf -ld "$out/open-grind" | grep -q "/nix/store"; then
+      echo "glibc floor: $(objdump -T "$out/regrind" | grep -o 'GLIBC_[0-9.]*' | sort -Vu | tail -1)"
+      if readelf -ld "$out/regrind" | grep -q "/nix/store"; then
         echo "WARNING: NOT SHIPPABLE - the ELF interpreter or RUNPATH points into" >&2
         echo "/nix/store, so this binary only starts where a Nix store exists." >&2
       fi

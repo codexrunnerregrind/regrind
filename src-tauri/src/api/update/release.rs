@@ -10,7 +10,7 @@ const INDEX_MAX_BYTES: usize = 256 * 1024;
 const MAX_PAYLOAD_BYTES: u64 = 512 * 1024 * 1024;
 
 pub fn payload_name(tag: &str, suffix: &str) -> String {
-	format!("open-grind-{tag}{suffix}")
+	format!("regrind-{tag}{suffix}")
 }
 
 #[derive(Debug, Deserialize)]
@@ -183,10 +183,10 @@ mod tests {
 		format!(
 			r#"{{"tag_name":"{tag}","draft":false,"prerelease":{prerelease},"body":"notes",
             "published_at":"2026-07-19T19:05:36+02:00","assets":[
-              {{"name":"open-grind-{tag}.apk","size":72294080,"uuid":"bb49c042",
-               "browser_download_url":"{origin}download/open-grind-{tag}.apk"}},
-              {{"name":"open-grind-{tag}.apk.minisig","size":228,"uuid":"c45b10ab",
-               "browser_download_url":"{origin}download/open-grind-{tag}.apk.minisig"}}]}}"#
+              {{"name":"regrind-{tag}.apk","size":72294080,"uuid":"bb49c042",
+               "browser_download_url":"{origin}download/regrind-{tag}.apk"}},
+              {{"name":"regrind-{tag}.apk.minisig","size":228,"uuid":"c45b10ab",
+               "browser_download_url":"{origin}download/regrind-{tag}.apk.minisig"}}]}}"#
 		)
 	}
 
@@ -205,7 +205,7 @@ mod tests {
 		.unwrap();
 		assert_eq!(found.version, "0.1.0-beta.4");
 		assert_eq!(found.payload.size, 72294080);
-		assert_eq!(found.signature.name, "open-grind-0.1.0-beta.4.apk.minisig");
+		assert_eq!(found.signature.name, "regrind-0.1.0-beta.4.apk.minisig");
 	}
 
 	#[test]
@@ -256,7 +256,7 @@ mod tests {
 	fn unsigned() -> String {
 		format!(
 			r#"{{"tag_name":"v0.2.0","draft":false,"prerelease":false,"assets":[
-            {{"name":"open-grind-v0.2.0.apk","size":1,"uuid":"a",
+            {{"name":"regrind-v0.2.0.apk","size":1,"uuid":"a",
              "browser_download_url":"{}x.apk"}}]}}"#,
 			client::origin()
 		)
@@ -276,16 +276,16 @@ mod tests {
 	#[test]
 	fn only_the_exact_conventional_name_is_offered() {
 		let two = r#"{"tag_name":"v0.2.0","draft":false,"prerelease":false,"assets":[
-            {"name":"open-grind-v0.2.0-arm64.apk","size":1,"uuid":"a",
+            {"name":"regrind-v0.2.0-arm64.apk","size":1,"uuid":"a",
              "browser_download_url":"https://git.opengrind.org/a.apk"},
-            {"name":"open-grind-v0.2.0.apk","size":1,"uuid":"b",
+            {"name":"regrind-v0.2.0.apk","size":1,"uuid":"b",
              "browser_download_url":"https://git.opengrind.org/b.apk"},
-            {"name":"open-grind-v0.2.0.apk.minisig","size":228,"uuid":"c",
+            {"name":"regrind-v0.2.0.apk.minisig","size":228,"uuid":"c",
              "browser_download_url":"https://git.opengrind.org/b.apk.minisig"}]}"#;
 		let found = newest_upgrade(&index(&[two]), &current("0.1.0"), ".apk")
 			.unwrap()
 			.unwrap();
-		assert_eq!(found.payload.name, "open-grind-v0.2.0.apk");
+		assert_eq!(found.payload.name, "regrind-v0.2.0.apk");
 	}
 
 	#[test]
@@ -304,9 +304,9 @@ mod tests {
 		for size in ["0", "549755813889"] {
 			let bloated = format!(
 				r#"{{"tag_name":"v0.2.0","draft":false,"prerelease":false,"assets":[
-                {{"name":"open-grind-v0.2.0.apk","size":{size},"uuid":"a",
+                {{"name":"regrind-v0.2.0.apk","size":{size},"uuid":"a",
                  "browser_download_url":"https://git.opengrind.org/a.apk"}},
-                {{"name":"open-grind-v0.2.0.apk.minisig","size":228,"uuid":"b",
+                {{"name":"regrind-v0.2.0.apk.minisig","size":228,"uuid":"b",
                  "browser_download_url":"https://git.opengrind.org/a.apk.minisig"}}]}}"#
 			);
 			let error =
@@ -348,10 +348,10 @@ mod tests {
 	#[test]
 	fn refuses_artifacts_hosted_elsewhere() {
 		let offsite = r#"{"tag_name":"v0.2.0","draft":false,"prerelease":false,"assets":[
-            {"name":"open-grind-v0.2.0.apk","size":1,"uuid":"a",
-             "browser_download_url":"https://evil.example/open-grind-0.2.0.apk"},
-            {"name":"open-grind-v0.2.0.apk.minisig","size":228,"uuid":"b",
-             "browser_download_url":"https://evil.example/open-grind-0.2.0.apk.minisig"}]}"#;
+            {"name":"regrind-v0.2.0.apk","size":1,"uuid":"a",
+             "browser_download_url":"https://evil.example/regrind-0.2.0.apk"},
+            {"name":"regrind-v0.2.0.apk.minisig","size":228,"uuid":"b",
+             "browser_download_url":"https://evil.example/regrind-0.2.0.apk.minisig"}]}"#;
 		let error =
 			newest_upgrade(&index(&[offsite]), &current("0.1.0"), ".apk")
 				.unwrap_err();

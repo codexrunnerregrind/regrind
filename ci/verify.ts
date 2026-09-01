@@ -6,11 +6,11 @@ const [downloads, out] = process.argv.slice(2);
 // Longest prefix first: an arm64 upload directory also starts with the generic one.
 const FLEETS = [
 	{
-		prefix: "open-grind-unsigned-linux-arm64-",
+		prefix: "regrind-unsigned-linux-arm64-",
 		boxes: JSON.parse(process.env.ARM_BOXES ?? "[]") as string[],
 	},
 	{
-		prefix: "open-grind-unsigned-",
+		prefix: "regrind-unsigned-",
 		boxes: JSON.parse(process.env.BOXES ?? "[]") as string[],
 	},
 ];
@@ -24,7 +24,7 @@ if (!downloads || !out || FLEETS.every(({ boxes }) => boxes.length === 0)) {
 
 const byName = new Map<string, { paths: string[]; expected: number }>();
 for await (const entry of new Bun.Glob(
-	"open-grind-unsigned-*/*.{apk,deb,exe}",
+	"regrind-unsigned-*/*.{apk,deb,exe}",
 ).scan({ cwd: downloads })) {
 	const [dir = "", name = ""] = entry.split("/");
 	const fleet = FLEETS.find(({ prefix }) => dir.startsWith(prefix));

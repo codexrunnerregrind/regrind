@@ -43,7 +43,7 @@ export async function quit(): Promise<void> {
 }
 
 export function launch({ origin, key }: { origin: string; key: string }): void {
-	const app = Bun.spawn([`${runningApp}/Contents/MacOS/open-grind`], {
+	const app = Bun.spawn([`${runningApp}/Contents/MacOS/regrind`], {
 		env: {
 			...process.env,
 			OPEN_GRIND_UPDATE_ORIGIN: origin,

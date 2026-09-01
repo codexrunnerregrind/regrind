@@ -22,7 +22,7 @@ let
 in
 {
   package = common.mkDesktopScript {
-    name = "open-grind-build-macos";
+    name = "regrind-build-macos";
     runtimeInputs = toolchainInputs;
     inherit env;
     text = ''

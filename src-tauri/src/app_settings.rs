@@ -18,7 +18,7 @@ pub fn plugin() -> TauriPlugin<Wry> {
 			#[cfg(target_os = "android")]
 			{
 				let handle = _api.register_android_plugin(
-					"org.opengrind.appsettings",
+					"org.regrind.appsettings",
 					"AppSettingsPlugin",
 				)?;
 				_app.manage(AndroidAppSettings { handle });

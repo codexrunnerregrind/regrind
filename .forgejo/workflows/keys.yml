@@ -10,7 +10,7 @@ on:
   workflow_dispatch: {}
 
 concurrency:
-  group: open-grind-keys
+  group: regrind-keys
   cancel-in-progress: false
 
 jobs:
