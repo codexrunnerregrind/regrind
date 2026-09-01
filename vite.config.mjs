@@ -12,7 +12,7 @@ export default defineConfig(async ({ command }) => ({
 
 	esbuild: { drop: command === "build" ? ["console", "debugger"] : [] },
 
-	optimizeDeps: { include: ["leaflet", "sveaflet"] },
+	optimizeDeps: { include: ["maplibre-gl/dist/maplibre-gl-csp.js"] },
 
 	// Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
 	//

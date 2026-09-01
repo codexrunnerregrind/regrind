@@ -10,8 +10,7 @@
 		"sourceMap": true,
 		"strict": true,
 		"noUncheckedIndexedAccess": true,
-		"moduleResolution": "bundler",
-		"types": ["@types/leaflet"]
+		"moduleResolution": "bundler"
 	},
 	"include": [
 		".svelte-kit/ambient.d.ts",

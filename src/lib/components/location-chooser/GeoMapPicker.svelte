@@ -4,28 +4,21 @@
 		getCurrentPosition,
 		requestPermissions,
 	} from "@tauri-apps/plugin-geolocation";
-	import { divIcon } from "leaflet";
 	import { BookmarkSimpleIcon, GpsFixIcon, StarIcon } from "phosphor-svelte";
-	import {
-		ControlAttribution,
-		ControlZoom,
-		Map,
-		Marker,
-		TileLayer,
-	} from "sveaflet";
 	import { toast } from "svelte-sonner";
-	import type {
-		DragEndEvent,
-		Map as LeafletMap,
-		Marker as LeafletMarker,
-		LeafletMouseEventHandlerFn,
-	} from "leaflet";
+	import type { MapMouseEvent } from "maplibre-gl";
 
 	import { getPlaces } from "$lib/api/browse/location";
 	import { showErrorToast } from "$lib/api/error-toast";
 	import { getSavedLocationsSnapshot } from "$lib/app-data/preferences.svelte";
 	import { rememberLocation } from "$lib/app-data/saved-locations";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
+	import {
+		type MapLibreMap,
+		type MapLibreModule,
+		pinElement,
+	} from "$lib/components/map/basemap";
+	import MapView from "$lib/components/map/MapView.svelte";
 	import Button from "$lib/components/ui/button/button.svelte";
 	import { Input } from "$lib/components/ui/input";
 	import Spinner from "$lib/components/ui/spinner/spinner.svelte";
@@ -55,7 +48,8 @@
 		savedPlacesOpen?: boolean;
 	} = $props();
 
-	let map: LeafletMap | undefined = $state();
+	let map: MapLibreMap | undefined = $state();
+	let maplibre: MapLibreModule | undefined = $state();
 
 	$effect(() => {
 		const container = map?.getContainer();
@@ -77,27 +71,49 @@
 	let gpsRequestInProgress = $state(false);
 
 	$effect(() => {
-		if (map) {
-			const onMapClick: LeafletMouseEventHandlerFn = ({ latlng }) => {
-				pinPos = { lat: latlng.lat, lon: latlng.lng };
-				atCurrentLocation = false;
-				pinLabel = undefined;
-				map?.panTo(latlng);
-			};
-			map.on("click", onMapClick);
-			return () => {
-				map?.off("click", onMapClick);
-			};
-		}
+		const instance = map;
+		if (!instance) return;
+		const onMapClick = ({ lngLat }: MapMouseEvent) => {
+			pinPos = { lat: lngLat.lat, lon: lngLat.lng };
+			atCurrentLocation = false;
+			pinLabel = undefined;
+			instance.panTo(lngLat);
+		};
+		instance.on("click", onMapClick);
+		return () => {
+			instance.off("click", onMapClick);
+		};
 	});
 
-	// Leaflet measures its container on init; inside an animating drawer/dialog
-	// that size is wrong, leaving tiles half-loaded. Re-measure on every resize.
+	// The pin is a plain DOM marker rather than markup, so it survives the style
+	// swap a theme change triggers.
 	$effect(() => {
-		if (!map) return;
-		const observer = new ResizeObserver(() => map?.invalidateSize());
-		observer.observe(map.getContainer());
-		return () => observer.disconnect();
+		const instance = map;
+		const position = pinPos;
+		if (!instance || !maplibre || !position) return;
+		const marker = new maplibre.Marker({
+			element: pinElement(),
+			anchor: "bottom",
+			draggable: true,
+		})
+			.setLngLat([position.lon, position.lat])
+			.addTo(instance);
+		marker.on("dragend", () => {
+			const { lat, lng } = marker.getLngLat();
+			pinPos = { lat, lon: lng };
+			atCurrentLocation = false;
+			pinLabel = undefined;
+		});
+		return () => marker.remove();
+	});
+
+	// Zoom buttons default to the top-left, straight under the search bar.
+	$effect(() => {
+		const instance = map;
+		if (!instance || !maplibre) return;
+		const zoom = new maplibre.NavigationControl({ showCompass: false });
+		instance.addControl(zoom, "bottom-left");
+		return () => instance.removeControl(zoom);
 	});
 
 	// Detects the device position, drops the pin on it and marks it as the
@@ -177,16 +193,16 @@
 		if (!map) {
 			pendingCenter = { lat, lon, zoom };
 		} else {
-			map.setView([lat, lon], zoom);
+			map.jumpTo({ center: [lon, lat], zoom });
 		}
 	}
 
 	$effect(() => {
 		if (pendingCenter && map) {
-			map.setView(
-				[pendingCenter.lat, pendingCenter.lon],
-				pendingCenter.zoom,
-			);
+			map.jumpTo({
+				center: [pendingCenter.lon, pendingCenter.lat],
+				zoom: pendingCenter.zoom,
+			});
 			pendingCenter = undefined;
 		}
 	});
@@ -292,54 +308,16 @@
 		tabindex="-1"
 		class="pointer-events-none absolute top-0 left-0 size-px opacity-0"
 	/>
-	<Map
+	<MapView
+		class="size-full"
 		options={{
-			center: [40.42267869390329, -3.697633348267032],
+			center: [-3.697633348267032, 40.42267869390329],
 			zoom: 2,
-			attributionControl: false,
-			// Leaflet's own zoom buttons default to the top-left, straight under
-			// the search bar; re-added below in a free corner instead.
-			zoomControl: false,
+			attributionControl: { compact: true },
 		}}
 		bind:instance={map}
-	>
-		<TileLayer
-			url={"https://tile.openstreetmap.org/{z}/{x}/{y}.png"}
-			options={{
-				maxZoom: 19,
-				attribution:
-					'&copy; <a href="http://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer nofollow noopener">OpenStreetMap</a> &nbsp;',
-				// do not enable: https://github.com/Leaflet/Leaflet/issues/6195
-				// detectRetina: true,
-			}}
-		/>
-		<ControlAttribution options={{ prefix: undefined }} />
-		<ControlZoom options={{ position: "bottomleft" }} />
-
-		{#if pinPos}
-			<Marker
-				latLng={[pinPos.lat, pinPos.lon]}
-				ondragend={(event: DragEndEvent) => {
-					const { lat, lng } = (
-						event.target as LeafletMarker
-					).getLatLng();
-					pinPos = { lat, lon: lng };
-					atCurrentLocation = false;
-					pinLabel = undefined;
-				}}
-				options={{
-					draggable: true,
-					title: "Selected location",
-					icon: divIcon({
-						html: '<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" width="40" height="40" fill="#ffba20" stroke="#000000" stroke-width="8px" viewBox="0 0 256 256"><path d="M128,16a88.1,88.1,0,0,0-88,88c0,75.3,80,132.17,83.41,134.55a8,8,0,0,0,9.18,0C136,236.17,216,179.3,216,104A88.1,88.1,0,0,0,128,16Zm0,56a32,32,0,1,1-32,32A32,32,0,0,1,128,72Z"></path></svg>',
-						iconAnchor: [20, 40],
-						iconSize: [40, 40],
-						className: "",
-					}),
-				}}
-			/>
-		{/if}
-	</Map>
+		bind:library={maplibre}
+	/>
 	<!-- Anchored to the top: the software keyboard rises from the bottom, and on
 	iOS it either covers the lower half or scrolls it out of the webview, so a
 	search bar down there hides exactly what is being typed. -->

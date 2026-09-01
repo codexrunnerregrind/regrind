@@ -8,11 +8,17 @@ import {
 } from "./preferences.svelte";
 
 let systemQuery: MediaQueryList | null = null;
+let systemDark = $state(false);
 
 function resolvesToDark(mode: ThemeMode): boolean {
 	if (mode === "dark") return true;
 	if (mode === "light") return false;
-	return systemQuery?.matches ?? false;
+	return systemDark;
+}
+
+/** Whether the app is currently painted dark, tracking mode and OS setting. */
+export function isDarkTheme(): boolean {
+	return resolvesToDark(getThemeModeSnapshot());
 }
 
 /**
@@ -67,7 +73,10 @@ function apply(mode: ThemeMode): void {
  */
 export function initTheme(): () => void {
 	systemQuery = window.matchMedia("(prefers-color-scheme: dark)");
-	const onSystemChange = () => apply(getThemeModeSnapshot());
+	systemDark = systemQuery.matches;
+	const onSystemChange = () => {
+		systemDark = systemQuery?.matches ?? false;
+	};
 	systemQuery.addEventListener("change", onSystemChange);
 
 	const stop = $effect.root(() => {
