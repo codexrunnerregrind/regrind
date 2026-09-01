@@ -113,7 +113,8 @@
 		if (!instance || !maplibre) return;
 		const zoom = new maplibre.NavigationControl({ showCompass: false });
 		instance.addControl(zoom, "bottom-left");
-		return () => instance.removeControl(zoom);
+		// MapView's map.remove() already ran onRemove; a second one throws.
+		return () => instance.hasControl(zoom) && instance.removeControl(zoom);
 	});
 
 	// Detects the device position, drops the pin on it and marks it as the

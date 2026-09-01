@@ -419,4 +419,26 @@ test.describe("attachments drawer", () => {
 			"and no classic scrollbar reserves width inside the sheet",
 		).toBe(0);
 	});
+
+	// The map's controls used to be removed twice on teardown — once by the
+	// map's own remove(), once by the picker — and the throw left the sheet
+	// unable to mount again.
+	test("the location tab still opens after the sheet is closed", async ({
+		page,
+	}) => {
+		const crashes: string[] = [];
+		page.on("pageerror", (error) => crashes.push(error.message));
+
+		await openAttachments(page);
+		await page.getByRole("tab", { name: "Location" }).click();
+		const search = page.getByPlaceholder("Search places...");
+		await search.waitFor({ timeout: 60_000 });
+
+		await page.keyboard.press("Escape");
+		await page.locator(DRAWER).waitFor({ state: "detached" });
+		await page.getByRole("button", { name: "Add attachment" }).click();
+
+		await expect(search).toBeVisible({ timeout: 60_000 });
+		expect(crashes, "tearing the map down threw").toEqual([]);
+	});
 });
