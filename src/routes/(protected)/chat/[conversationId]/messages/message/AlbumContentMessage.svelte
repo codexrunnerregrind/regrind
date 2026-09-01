@@ -200,7 +200,7 @@
 	<div class={["flex max-w-[74%] flex-col", { "items-end": media.isOut }]}>
 		<div
 			class={[
-				"relative w-fit max-w-full shrink-0 overflow-visible rounded-bubble px-3.5 py-2.75 text-row/[1.45] select-text",
+				"relative w-fit max-w-full shrink-0 overflow-visible rounded-bubble px-3.5 py-2.75 text-bubble/[1.45] select-text",
 				{
 					"pointer-coarse:select-none": !media.clone,
 					"bg-message-bubble-in text-message-bubble-foreground":

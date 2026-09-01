@@ -263,7 +263,10 @@
 	   handoff table, so a screen can be checked against it by class name. */
 	--text-screen-title: 1.6875rem; /* 27px — Nearby / Inbox / Settings */
 	--text-section: 0.59375rem; /* 9.5px — ACCOUNT / PINNED / ABOUT */
-	--text-row: 0.90625rem; /* 14.5px — list row title, bubble text */
+	--text-row: 0.90625rem; /* 14.5px — list row title */
+	/* A message bubble reads a step larger than a list row: it is the thing
+	   being read, not a label being scanned. */
+	--text-bubble: 0.96875rem; /* 15.5px — bubble text */
 	--text-preview: 0.78125rem; /* 12.5px — message preview, chip label */
 	--text-meta: 0.71875rem; /* 11.5px — timestamp, tile name plate */
 	--text-distance: 0.65625rem; /* 10.5px — distance overlay, bubble time */
