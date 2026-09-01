@@ -52,6 +52,20 @@
 	let savingAll = $state(false);
 
 	const hasBar = $derived(chromeHasBar(actions));
+	// Published to the whole viewer, so a video slide can lift its controls off
+	// the bar: the player fills the screen the photos do, and its own control
+	// row would otherwise land right under the reply field.
+	// Left unset without a bar, so the player falls back to the safe area alone.
+	let barHeight = $state(0);
+	$effect(() => {
+		const { style } = pswp.element ?? {};
+		if (style === undefined) return;
+		if (hasBar && barHeight > 0) {
+			style.setProperty("--viewer-bar-height", `${barHeight}px`);
+		} else {
+			style.removeProperty("--viewer-bar-height");
+		}
+	});
 	// Once there is something to send, the bar becomes the chat composer's: the
 	// tap and chat buttons give up their place to a single send button beside
 	// the field, and give it their width back when the draft is cleared.
@@ -435,6 +449,7 @@
 		     photo on a scrim, so the controls carry their own fill (blurred, since
 		     what's behind them is the photo rather than a bar). -->
 		<form
+			bind:clientHeight={barHeight}
 			class="pswp__hide-on-close pointer-events-auto relative flex items-center bg-linear-to-t from-black/70 to-transparent px-screen pt-6 pb-[calc(26px+var(--safe-area-bottom,0px))]"
 			onpointerdown={stopPointer}
 			onsubmit={sendReply}

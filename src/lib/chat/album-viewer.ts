@@ -60,6 +60,10 @@ export type AlbumSharer = {
  */
 export type LoadedAlbum = AlbumContentResponse;
 
+type AlbumSlide = LoadedAlbum["content"][number];
+
+const isVideo = (slide: AlbumSlide) => slide.contentType.startsWith("video/");
+
 // A slide's size while its media is still being measured. PhotoSwipe lays a
 // slide out from its intrinsic size and given 0x0 it stretches it over the whole
 // viewport, so the viewport is the placeholder that looks least wrong.
@@ -95,9 +99,7 @@ function createSlideSizer(content: LoadedAlbum["content"]): SlideSizer {
 		try {
 			// A video's cover is the cheaper measurement and has the same
 			// frame; only a video without one has to be loaded to be measured.
-			const cover = slide.contentType.startsWith("video/")
-				? slide.coverUrl
-				: slide.url;
+			const cover = isVideo(slide) ? slide.coverUrl : slide.url;
 			sizes[index] =
 				cover === null
 					? await measureVideo(slide.url)
@@ -441,13 +443,25 @@ export async function openAlbumLightbox(
 		// A slide PhotoSwipe reaches before its media has been measured is laid
 		// out at the placeholder size and re-rendered once the real one is in.
 		// The slide the viewer opens on is measured below before `init`, so this
-		// only ever re-renders slides being preloaded off-screen.
-		if (!sizer.measured(index)) {
+		// only ever re-renders slides being preloaded off-screen. A video's own
+		// size does not decide its layout, and re-rendering one would remount
+		// its player, so videos are left alone.
+		if (!isVideo(slide) && !sizer.measured(index)) {
 			void sizer
 				.ensure(index)
 				.then(() => lightbox.pswp?.refreshSlideContent(index));
 		}
-		return { src: slide.url, ...sizer.sizeAt(index) };
+		// PhotoSwipe's fit zoom never scales a slide past its intrinsic size,
+		// which is right for a photo — upscaling one only blurs it. A video is
+		// measured from its cover, a thumbnail far smaller than the screen, so
+		// that left it playing in a small box while the photos beside it filled
+		// the viewport. Video slides take the viewport as their size and the
+		// player's `object-contain` letterboxes inside it, the way any
+		// full-screen player draws them.
+		return {
+			src: slide.url,
+			...(isVideo(slide) ? viewportSize() : sizer.sizeAt(index)),
+		};
 	});
 	// Re-measures once the opening animation lands, so a viewer opened while the
 	// keyboard was up centres on the screen it actually got.
@@ -456,7 +470,7 @@ export async function openAlbumLightbox(
 	// and controls in place of PhotoSwipe's image content.
 	applyPhotoSwipeVideo(lightbox, (index) => {
 		const slide = album.content[index];
-		if (!slide?.contentType.startsWith("video/")) return null;
+		if (!slide || !isVideo(slide)) return null;
 		return { src: slide.url, poster: slide.coverUrl };
 	});
 	// No download button on PhotoSwipe's toolbar: the chrome hides it and puts

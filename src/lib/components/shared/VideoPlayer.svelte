@@ -90,8 +90,11 @@
 		onerror={onfail}
 	></video>
 	{#if controlsVisible}
+		<!-- `--viewer-bar-height` is the height of the reply bar the media viewer
+		     floats over the player, safe area included (see MediaViewerChrome).
+		     Without a bar over the player the safe area is the whole inset. -->
 		<div
-			class="absolute right-[calc(1rem+var(--safe-area-right))] bottom-[calc(1rem+var(--safe-area-bottom))] left-[calc(1rem+var(--safe-area-left))] flex justify-center"
+			class="absolute right-[calc(1rem+var(--safe-area-right))] bottom-[calc(1rem+var(--viewer-bar-height,var(--safe-area-bottom,0px)))] left-[calc(1rem+var(--safe-area-left))] flex justify-center"
 		>
 			<div
 				data-pswp-interactive
