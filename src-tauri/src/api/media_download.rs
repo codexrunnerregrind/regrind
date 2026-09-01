@@ -14,7 +14,7 @@ pub struct DownloadedMedia {
 	pub data: String,
 }
 
-/// Fetches a chat media URL (image or video) and returns its bytes. Done in Rust
+/// Fetches a chat media URL (image, video or voice note) and returns its bytes. Done in Rust
 /// rather than the webview so the request isn't subject to the webview's CORS
 /// policy, which the media CDN does not satisfy.
 #[tauri::command]

@@ -14,8 +14,8 @@
 		deleteMessageForMe,
 		unsendMessage,
 	} from "$lib/api/messaging/messages";
-	import type { ApiResponseMessage } from "$lib/model/messaging/messages";
 	import { openExternalLink } from "$lib/platform/link-opener";
+	import type { ApiResponseMessage } from "$lib/model/messaging/messages";
 	import { getConversationState } from "../conversation-state.svelte";
 	import { processMessages } from "../messages";
 	import Message from "./message/Message.svelte";
@@ -62,6 +62,10 @@
 		}),
 	);
 
+	// Oldest first, the way they are read down the screen — which is also the
+	// order a run of voice notes plays in.
+	const rendered = $derived(messages.toReversed());
+
 	function reportUnsendFailure(error: unknown) {
 		if (tieredFeature(error) === "UnsentMessage") {
 			toast.error("Unsend feature now requires Grindr subscription", {
@@ -80,10 +84,14 @@
 	}
 </script>
 
-{#each messages.toReversed() as message (message.messageId)}
+{#each rendered as message, index (message.messageId)}
 	{@const isOut = message.senderId === conversationState.ourProfileId}
+	{@const after = rendered[index + 1]}
 	<Message
 		{message}
+		nextAudioMessageId={after?.type === "Audio"
+			? after.messageId
+			: undefined}
 		{isOut}
 		indexInStack={message.indexInStack}
 		stackLength={message.stackLength}

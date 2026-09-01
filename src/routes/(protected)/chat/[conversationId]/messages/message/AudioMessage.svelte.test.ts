@@ -67,7 +67,7 @@ function audioMessage({
 	};
 }
 
-function bubble(message: ApiResponseMessage) {
+function bubble(message: ApiResponseMessage, nextAudioMessageId?: string) {
 	const { container } = render(Message, {
 		props: {
 			message,
@@ -75,6 +75,7 @@ function bubble(message: ApiResponseMessage) {
 			isRead: null,
 			indexInStack: 0,
 			stackLength: 1,
+			nextAudioMessageId,
 		},
 	});
 	return {
@@ -185,5 +186,46 @@ describe("AudioMessage", () => {
 
 		// Half way along a ten-second note.
 		expect(audio.currentTime).toBe(5);
+	});
+
+	// A run of voice notes plays through the way WhatsApp's does: reaching the
+	// end of one starts the next, and anything else in between ends the run.
+	describe("playing on from one note to the next", () => {
+		it("starts the voice note below it when one ends", async () => {
+			const first = bubble(
+				audioMessage({ messageId: "1:a", mediaId: 1 }),
+				"1:b",
+			);
+			const second = bubble(
+				audioMessage({ messageId: "1:b", mediaId: 2 }),
+			);
+
+			await fireEvent.ended(first.audio);
+			await settled();
+
+			expect(play).toHaveBeenCalledTimes(1);
+			expect(play.mock.instances[0]).toBe(second.audio);
+		});
+
+		it("stops when the message below is not a voice note", async () => {
+			const only = bubble(audioMessage({ messageId: "1:a", mediaId: 1 }));
+
+			await fireEvent.ended(only.audio);
+			await settled();
+
+			expect(play).not.toHaveBeenCalled();
+		});
+
+		it("stops when the voice note below it has scrolled away", async () => {
+			const first = bubble(
+				audioMessage({ messageId: "1:a", mediaId: 1 }),
+				"1:gone",
+			);
+
+			await fireEvent.ended(first.audio);
+			await settled();
+
+			expect(play).not.toHaveBeenCalled();
+		});
 	});
 });

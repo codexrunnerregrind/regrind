@@ -42,6 +42,7 @@
 		onUnshareAlbum,
 		onReply,
 		onCopyError,
+		nextAudioMessageId,
 	}: {
 		message: ApiResponseMessage;
 		isOut: boolean;
@@ -57,6 +58,9 @@
 		onUnshareAlbum?: () => void;
 		onReply?: () => void;
 		onCopyError?: () => void;
+		// Only voice notes use it: the id of the message right below this one,
+		// when that one is a voice note too.
+		nextAudioMessageId?: string;
 	} = $props();
 
 	const swipe = untrack(() =>
@@ -246,6 +250,7 @@
 				message={message.body}
 				conversationId={message.conversationId}
 				messageId={message.messageId}
+				{nextAudioMessageId}
 			/>
 		{:else if message.type === "Location"}
 			<LocationMessage message={message.body} />

@@ -96,6 +96,10 @@ export class VoiceMessageComposer {
 	get pendingDurationMs(): number {
 		return this.#pending?.clip.durationMs ?? 0;
 	}
+	/** The take's own bytes, for the review row's waveform. */
+	get pendingBytes(): Uint8Array | null {
+		return this.#pending?.clip.bytes ?? null;
+	}
 
 	#startX = 0;
 	#pressedAt = 0;

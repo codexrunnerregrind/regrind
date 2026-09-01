@@ -2,6 +2,13 @@
 	import { PauseIcon, PlayIcon, TrashIcon } from "phosphor-svelte";
 	import { fade } from "svelte/transition";
 
+	import { measurePeaks } from "$lib/chat/audio-peaks";
+	import {
+		formatSpeed,
+		nextSpeed,
+		type PlaybackSpeed,
+	} from "$lib/chat/audio-speed";
+	import AudioWaveform from "$lib/components/audio/AudioWaveform.svelte";
 	import { formatMediaDuration } from "$lib/util/format-time";
 	import ComposerButton from "../ComposerButton.svelte";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
@@ -12,6 +19,26 @@
 	let paused = $state(true);
 	let currentTime = $state(0);
 	let elementDuration = $state(0);
+	let speed = $state<PlaybackSpeed>(1);
+	let peaks = $state<number[] | null>(null);
+
+	// The take is already in hand, so its shape costs nothing but the decode.
+	$effect(() => {
+		const bytes = voice.pendingBytes;
+		peaks = null;
+		if (bytes === null) return;
+		let current = true;
+		void measurePeaks(bytes).then((measured) => {
+			if (current) peaks = measured;
+		});
+		return () => {
+			current = false;
+		};
+	});
+
+	$effect(() => {
+		if (audio !== null) audio.playbackRate = speed;
+	});
 
 	// A recording the webview has not finished containerising reports no duration
 	// of its own, so the recorder's measured length carries the row until it does.
@@ -27,8 +54,10 @@
 
 	function toggle() {
 		if (audio === null) return;
-		if (paused) void audio.play();
-		else audio.pause();
+		if (paused) {
+			audio.playbackRate = speed;
+			void audio.play();
+		} else audio.pause();
 	}
 </script>
 
@@ -70,14 +99,20 @@
 				<PauseIcon weight="fill" class="size-3.5" />
 			{/if}
 		</button>
-		<!-- A plain bar, not a waveform: it says where playback is, which is all a
-		     take you just made needs. -->
-		<div class="h-1 min-w-0 grow rounded-full bg-muted">
-			<div
-				class="h-full rounded-full bg-primary"
-				style:width={`${(played * 100).toFixed(1)}%`}
-			></div>
-		</div>
+		<AudioWaveform
+			{peaks}
+			progress={played}
+			class="h-6 min-w-0 grow text-primary"
+		/>
+		<button
+			type="button"
+			class="shrink-0 cursor-pointer rounded-full bg-muted px-1.5 text-row leading-tight font-semibold tabular-nums disabled:opacity-50"
+			aria-label="Change playback speed"
+			disabled={voice.sending}
+			onclick={() => (speed = nextSpeed(speed))}
+		>
+			{formatSpeed(speed)}
+		</button>
 		<span class="shrink-0 text-row tabular-nums">
 			{formatMediaDuration(readout)}
 		</span>
