@@ -20,8 +20,28 @@
 	import { postTimeLeft } from "$lib/right-now/post-expiry";
 	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
 	import { getNow } from "$lib/util/now";
+	import { morphClose, morphOpen } from "./post-morph";
 
-	let { open = $bindable() }: { open: boolean } = $props();
+	let {
+		open = $bindable(),
+		pill = null,
+	}: { open: boolean; pill?: HTMLElement | null } = $props();
+
+	let panel = $state<HTMLElement | null>(null);
+	let morphing = false;
+
+	// The panel only exists while the drawer is up, and vaul keeps it around for
+	// its own exit, so the closing morph still has something to hand off from.
+	$effect(() => {
+		const surface = panel;
+		if (open && surface !== null && pill !== null && !morphing) {
+			morphing = true;
+			morphOpen(pill, surface);
+		} else if (!open && morphing) {
+			morphing = false;
+			if (surface !== null && pill !== null) morphClose(pill, surface);
+		}
+	});
 
 	const post = $derived(myRightNowPost.post);
 	const editing = $derived(post !== null);
@@ -127,6 +147,7 @@
 
 <Drawer.Root bind:open>
 	<Drawer.Content
+		bind:ref={panel}
 		preventOverflowTextSelection={false}
 		class="mx-auto max-w-160"
 	>

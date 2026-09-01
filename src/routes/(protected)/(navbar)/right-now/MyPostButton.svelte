@@ -15,6 +15,9 @@
 
 	let open = $state(false);
 
+	// Handed to the sheet, which morphs this pill into its own panel.
+	let pill = $state<HTMLElement | null>(null);
+
 	// The post that is already up can always be edited: the allowance is spent on
 	// putting one up, not on changing it.
 	const locked = $derived(!myRightNowPost.allowed && !myRightNowPost.hasPost);
@@ -48,13 +51,24 @@
      No text-size utility in the class list: Button merges what it is given
      through tailwind-merge, which reads a custom `text-row` as a text *color*
      and drops the variant's own `text-primary-foreground` with it — which left
-     the label inheriting near-white on a yellow pill. -->
+     the label inheriting near-white on a yellow pill.
+
+     The icon's box carries ~3px of its own whitespace on each side, so the left
+     padding and the gap are both a notch tighter than they measure: it takes
+     that much to put the same visible space on either side of the content and
+     keep the icon reading as part of the label rather than beside it.
+
+     Opening morphs this pill into the sheet's panel and back — see
+     post-morph.ts, which hides the pill for as long as its stand-in is up. -->
 <div
 	class="pointer-events-none fixed inset-x-0 bottom-0 z-20 flex justify-end px-4 pb-nav-clear"
 >
 	<Button
 		size="lg"
-		class="pointer-events-auto h-auto min-h-12 rounded-full px-5 py-2.5 font-semibold shadow-lg"
+		bind:ref={pill}
+		class="pointer-events-auto h-auto min-h-12 gap-1 rounded-full py-2.5 pr-5 pl-4 font-semibold shadow-lg"
+		aria-hidden={open}
+		tabindex={open ? -1 : 0}
 		onclick={() => {
 			if (locked) {
 				toast("You have no Right Now posts left for now");
@@ -97,4 +111,4 @@
 	</Button>
 </div>
 
-<MyPostSheet bind:open />
+<MyPostSheet bind:open {pill} />
