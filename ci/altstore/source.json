@@ -4,7 +4,7 @@
 	"sourceURL": "https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/ci/altstore/source.json",
 	"subtitle": "Unofficial Grindr client, redesigned. Free, libre and ad-free",
 	"description": "A fork of Open Grind, the cross-platform, free, libre, ad-free, tracker-free,\nprivacy-centered and community-driven unofficial client for the Grindr queer\nsocial network.\n\nThis fork started as an iOS port — the original builds for Android and desktop\n— and grew into a redesign plus the features that were missing from daily use.\nMost of the work in it was done with AI.\n\nFrom Open Grind\n\n• Unlocked grid\nUnlimited profiles for free, ads removed from grid, all filters unlocked\n\n• Location spoofing\nNative geolocation change with OpenStreetMap and location search built-in\n\n• Zero ads\nNo ads, first party, third party or self-promotion, no obstructive pop-ups\n\n• Privacy by default\nNo analytics, zero trackers, no data is collected\n\n• Security as foundation\nHuman code review, audit, supply chain security, end-to-end testing\n\nAdded in this fork\n\n• Redesigned interface\nA minimalist look throughout, redesigned settings, and your own theme, colors\nand chat wallpaper\n\n• Albums\nView albums shared with you, create and edit your own, add photos and reorder\nthem, and share or unshare from the chat composer, with an expiry if you want\none\n\n• Richer chat\nVoice messages you record and play, video messages and locations, replies to\nmessages, photos and locations, media downloads a whole set at a time, and\nevery photo from a conversation in one gallery\n\n• Several accounts\nSign in to more than one and switch between them, each with its own session,\nlocation and filters\n\n• Favorites\nA favorites screen, with notes you can add to profiles and search through\n\n• Gestures and feedback\nSwipe between tabs and between profiles, haptics, and a bubble when someone\nviews your profile\n\n• Blocked contacts\nManage everyone you have blocked",
-	"iconURL": "https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/fastlane/metadata/android/en-US/images/icon.png",
+	"iconURL": "https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/contrib/logo/regrind-512px.png",
 	"website": "https://git.opengrind.org/codexrunner/open-grind",
 	"tintColor": "0DB28F",
 	"apps": [
@@ -14,7 +14,7 @@
 			"developerName": "codexrunner",
 			"subtitle": "Unofficial Grindr client, redesigned. Free, libre and ad-free",
 			"localizedDescription": "A fork of Open Grind, the cross-platform, free, libre, ad-free, tracker-free,\nprivacy-centered and community-driven unofficial client for the Grindr queer\nsocial network.\n\nThis fork started as an iOS port — the original builds for Android and desktop\n— and grew into a redesign plus the features that were missing from daily use.\nMost of the work in it was done with AI.\n\nFrom Open Grind\n\n• Unlocked grid\nUnlimited profiles for free, ads removed from grid, all filters unlocked\n\n• Location spoofing\nNative geolocation change with OpenStreetMap and location search built-in\n\n• Zero ads\nNo ads, first party, third party or self-promotion, no obstructive pop-ups\n\n• Privacy by default\nNo analytics, zero trackers, no data is collected\n\n• Security as foundation\nHuman code review, audit, supply chain security, end-to-end testing\n\nAdded in this fork\n\n• Redesigned interface\nA minimalist look throughout, redesigned settings, and your own theme, colors\nand chat wallpaper\n\n• Albums\nView albums shared with you, create and edit your own, add photos and reorder\nthem, and share or unshare from the chat composer, with an expiry if you want\none\n\n• Richer chat\nVoice messages you record and play, video messages and locations, replies to\nmessages, photos and locations, media downloads a whole set at a time, and\nevery photo from a conversation in one gallery\n\n• Several accounts\nSign in to more than one and switch between them, each with its own session,\nlocation and filters\n\n• Favorites\nA favorites screen, with notes you can add to profiles and search through\n\n• Gestures and feedback\nSwipe between tabs and between profiles, haptics, and a bubble when someone\nviews your profile\n\n• Blocked contacts\nManage everyone you have blocked",
-			"iconURL": "https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/fastlane/metadata/android/en-US/images/icon.png",
+			"iconURL": "https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/contrib/logo/regrind-512px.png",
 			"tintColor": "0DB28F",
 			"category": "social",
 			"screenshots": [
@@ -35,13 +35,13 @@
 			],
 			"versions": [
 				{
-					"version": "0.1.0.6",
-					"buildVersion": "0.1.0.6",
-					"date": "2026-08-28",
-					"localizedDescription": "ReGrind 0.1.0-beta.6.",
-					"downloadURL": "https://git.opengrind.org/codexrunner/open-grind/releases/download/v0.1.0-beta.6/open-grind-v0.1.0-beta.6.ipa",
-					"size": 44043449,
-					"sha256": "c7a9f4b7c9ddc1ffb0f2f28f7220d2d05c553ccd63d9325d57301e13ceb621cc",
+					"version": "0.1.0.7",
+					"buildVersion": "0.1.0.7",
+					"date": "2026-09-01",
+					"localizedDescription": "- Renamed to ReGrind, with new artwork\n- Right Now posting, with the remaining allowance on the post button\n- Sent taps, video messages and voice messages added\n- Voice notes drawn as waveforms, and a run of them plays through\n- The Post pill morphs into the sheet it opens\n- Message bubbles have their own text size\n- Maps drawn with MapLibre GL instead of Leaflet\n- Location sheet opening only once fixed\n- Map attribution covering the picker's buttons fixed\n- Lists stay on screen when a refresh fails\n- A readable error when unsending a message needs Unlimited",
+					"downloadURL": "https://git.opengrind.org/codexrunner/open-grind/releases/download/v0.1.0-beta.7/regrind-v0.1.0-beta.7.ipa",
+					"size": 44898041,
+					"sha256": "3a1e0fc089352048e37e4f1d2b32f288cebd8ed47d46c6d69ee461f72389732c",
 					"minOSVersion": "14.0"
 				}
 			]

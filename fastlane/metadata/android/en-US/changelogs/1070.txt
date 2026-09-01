@@ -1,0 +1,11 @@
+- Renamed to ReGrind, with new artwork
+- Right Now posting, with the remaining allowance on the post button
+- Sent taps, video messages and voice messages added
+- Voice notes drawn as waveforms, and a run of them plays through
+- The Post pill morphs into the sheet it opens
+- Message bubbles have their own text size
+- Maps drawn with MapLibre GL instead of Leaflet
+- Location sheet opening only once fixed
+- Map attribution covering the picker's buttons fixed
+- Lists stay on screen when a refresh fails
+- A readable error when unsending a message needs Unlimited
