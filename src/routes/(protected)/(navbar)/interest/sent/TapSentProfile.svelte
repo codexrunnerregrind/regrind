@@ -32,13 +32,8 @@
 >
 	{#snippet description()}
 		<Item.Description class="text-muted-foreground">
-			{#if tap.readOn !== null}
-				Opened
-			{:else}
-				Not opened yet
-			{/if}
 			{#if tap.distance !== null}
-				· <DistanceFormatted distance={tap.distance} />
+				<DistanceFormatted distance={tap.distance} />
 			{/if}
 		</Item.Description>
 	{/snippet}
