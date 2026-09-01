@@ -30,6 +30,9 @@
 	// null so the snapshot takes over again.
 	let pending = $state<GridColumns | null>(null);
 	const current = $derived(pending ?? value);
+	// The segmented control is keyed by the option strings; spelling them out
+	// keeps the union, which interpolation would widen to `string`.
+	const currentOption: `${GridColumns}` = $derived(current === 2 ? "2" : "3");
 
 	const options: { value: `${GridColumns}`; label: string }[] = [
 		{ value: "2", label: "2 columns" },
@@ -55,7 +58,7 @@
 	<SettingsSegmented
 		{options}
 		bind:value={
-			() => `${current}`,
+			() => currentOption,
 			(next: `${GridColumns}`) => {
 				const columns = Number(next) as GridColumns;
 				if (columns === current) return;
