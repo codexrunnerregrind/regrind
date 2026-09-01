@@ -43,11 +43,13 @@ export type InboxRealtimeTarget = {
 export function subscribeInboxRealtime(
 	target: InboxRealtimeTarget,
 ): Promise<() => void>[] {
+	// `payload` is optional on the event schemas: the undocumented events carry
+	// none, and their handlers ignore the argument.
 	const guard =
 		<T>(handle: (payload: T) => void) =>
-		(event: { payload: T }) => {
+		(event: { payload?: T }) => {
 			if (!target.alive()) return;
-			handle(event.payload);
+			handle(event.payload as T);
 		};
 
 	return [

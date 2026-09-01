@@ -2,6 +2,12 @@ import z from "zod";
 
 import { mediaHashPublicSchema } from "$lib/model/media";
 import { rightNowStatusSchema } from "$lib/model/right-now";
+import {
+	arrayOfKnownVariants,
+	knownValueOr,
+	knownValueOrNull,
+	serverDefault,
+} from "$lib/model/tolerance";
 import { unixTimestampMsSchema, unmodeledSchema } from "$lib/model/types";
 import { sexualPositionSchema } from "$lib/model/users/profiles";
 
@@ -10,45 +16,53 @@ import { sexualPositionSchema } from "$lib/model/users/profiles";
 const conversationDataSchema = z.object({
 	conversationId: z.string(),
 	name: z.string(),
-	participants: z
-		.array(
-			z.object({
-				profileId: z.number(),
-				primaryMediaHash: mediaHashPublicSchema.nullable(),
-				lastOnline: unixTimestampMsSchema.nullable(),
-				onlineUntil: unixTimestampMsSchema.nullable(),
-				distanceMetres: z.number().nullable(),
-				position: sexualPositionSchema.nullable(),
-				isInAList: z.boolean(),
-				hasDatingPotential: z.boolean(),
+	participants: z.array(
+		z.object({
+			profileId: z.number(),
+			primaryMediaHash: mediaHashPublicSchema.nullish(),
+			lastOnline: unixTimestampMsSchema.nullish(),
+			onlineUntil: unixTimestampMsSchema.nullish(),
+			distanceMetres: z.number().nullish(),
+			position: knownValueOrNull({
+				value: sexualPositionSchema,
+				label: "conversation position",
 			}),
-		)
-		.length(1),
+			isInAList: serverDefault({ value: z.boolean(), fallback: false }),
+			hasDatingPotential: serverDefault({
+				value: z.boolean(),
+				fallback: false,
+			}),
+		}),
+	),
 	lastActivityTimestamp: unixTimestampMsSchema,
 	unreadCount: z.number(),
 	preview: z
 		.object({
 			type: z.string(),
-			text: z.string().nullable(),
-			albumId: z.number().nullable(),
-			imageHash: mediaHashPublicSchema.nullable(),
+			text: z.string().nullish(),
+			albumId: z.number().nullish(),
+			imageHash: mediaHashPublicSchema.nullish(),
 			lat: unmodeledSchema,
 			lon: unmodeledSchema,
 			duration: unmodeledSchema,
 			photoContentReply: unmodeledSchema,
 		})
-		.nullable(),
+		.nullish(),
 });
 
 export const fullConversationSchema = z.object({
 	type: z.literal("full_conversation_v1"),
 	data: conversationDataSchema.extend({
-		muted: z.boolean(),
-		pinned: z.boolean(),
-		favorite: z.boolean(),
-		rightNow: rightNowStatusSchema,
-		onlineUntil: z.number().nullable(),
-		hasUnreadThrob: z.boolean(),
+		muted: serverDefault({ value: z.boolean(), fallback: false }),
+		pinned: serverDefault({ value: z.boolean(), fallback: false }),
+		favorite: serverDefault({ value: z.boolean(), fallback: false }),
+		rightNow: knownValueOr({
+			value: rightNowStatusSchema,
+			fallback: "NOT_ACTIVE",
+			label: "conversation rightNow",
+		}),
+		onlineUntil: z.number().nullish(),
+		hasUnreadThrob: serverDefault({ value: z.boolean(), fallback: false }),
 	}),
 });
 
@@ -67,24 +81,36 @@ export const partialConversationSchema = z.object({
 	data: conversationDataSchema,
 });
 
-export const conversationSchema = z
-	.union([fullConversationSchema, partialConversationSchema])
-	.transform((entry) =>
-		entry.type === "full_conversation_v1"
-			? { ...entry, data: { ...entry.data, locked: false } }
-			: {
-					...entry,
-					data: {
-						...entry.data,
-						muted: false,
-						pinned: false,
-						favorite: false,
-						rightNow: "NOT_ACTIVE" as const,
-						onlineUntil: null,
-						hasUnreadThrob: false,
-						locked: true,
-					},
+export const conversationEntrySchema = z.discriminatedUnion("type", [
+	fullConversationSchema,
+	partialConversationSchema,
+]);
+
+function withLockedState(entry: z.infer<typeof conversationEntrySchema>) {
+	return entry.type === "full_conversation_v1"
+		? { ...entry, data: { ...entry.data, locked: false } }
+		: {
+				...entry,
+				data: {
+					...entry.data,
+					muted: false,
+					pinned: false,
+					favorite: false,
+					rightNow: "NOT_ACTIVE" as const,
+					onlineUntil: null,
+					hasUnreadThrob: false,
+					locked: true,
 				},
-	);
+			};
+}
+
+export const conversationSchema =
+	conversationEntrySchema.transform(withLockedState);
+
+// Entry types the server may add are dropped rather than failing the page.
+export const conversationEntriesSchema = arrayOfKnownVariants({
+	variants: conversationEntrySchema,
+	label: "inbox",
+}).transform((entries) => entries.map(withLockedState));
 
 export type Conversation = z.infer<typeof conversationSchema>;

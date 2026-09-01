@@ -2,18 +2,27 @@ import z from "zod";
 
 import { mediaUrlSchema } from "$lib/model/media";
 import { rightNowStatusSchema } from "$lib/model/right-now";
-import { unixTimestampMsSchema } from "$lib/model/types";
+import {
+	arrayOfKnownVariants,
+	knownValueOr,
+	serverDefault,
+} from "$lib/model/tolerance";
+import { unixTimestampMsSchema, unmodeledSchema } from "$lib/model/types";
 
 export const cascadeResponseProfileSchema = z.object({
 	profileId: z.int().nonnegative(),
-	onlineUntil: unixTimestampMsSchema.nullable(),
-	displayName: z.string().nullable().optional(),
-	distanceMeters: z.int().nonnegative().optional(),
+	onlineUntil: unixTimestampMsSchema.nullish(),
+	displayName: z.string().nullish(),
+	distanceMeters: z.number().nonnegative().nullish(),
 	lastOnline: unixTimestampMsSchema.nullish(),
-	rightNow: rightNowStatusSchema.catch("NOT_ACTIVE"),
-	unreadCount: z.int().nonnegative(),
-	isVisiting: z.boolean(),
-	isPopular: z.boolean(),
+	rightNow: knownValueOr({
+		value: rightNowStatusSchema,
+		fallback: "NOT_ACTIVE",
+		label: "cascade rightNow",
+	}),
+	unreadCount: serverDefault({ value: z.int().nonnegative(), fallback: 0 }),
+	isVisiting: serverDefault({ value: z.boolean(), fallback: false }),
+	isPopular: serverDefault({ value: z.boolean(), fallback: false }),
 });
 
 export const cascadeResponseFullProfileV1Schema = z.object({
@@ -25,7 +34,7 @@ export const cascadeResponsePartialProfileV1Schema = z.object({
 	type: z.literal("partial_profile_v1"),
 	data: z.object({
 		...cascadeResponseProfileSchema.shape,
-		upsellItemType: z.string(),
+		upsellItemType: z.string().nullish(),
 	}),
 });
 
@@ -64,18 +73,24 @@ export const cascadeExploreAggregationCtaItemSchema = z.object({
 	"@type": z.literal("ExploreAggregationItem$Cta"),
 });
 
+export const cascadeExploreAggregationItemSchema = z.discriminatedUnion(
+	"@type",
+	[
+		cascadeExploreAggregationLocationItemSchema,
+		cascadeExploreAggregationCtaItemSchema,
+	],
+);
+
 export const cascadeResponseExploreAggregationV1Schema = z.object({
 	type: z.literal("explore_aggregation_v1"),
 	data: z.object({
 		uuid: z.string(),
 		headerName: z.string(),
 		source: z.string(),
-		items: z.array(
-			z.discriminatedUnion("@type", [
-				cascadeExploreAggregationLocationItemSchema,
-				cascadeExploreAggregationCtaItemSchema,
-			]),
-		),
+		items: arrayOfKnownVariants({
+			variants: cascadeExploreAggregationItemSchema,
+			label: "explore aggregation",
+		}),
 	}),
 });
 
@@ -152,10 +167,19 @@ export const cascadeResponseProfileHideStatusSchema = z.object({
 	count: z.int().nonnegative(),
 });
 
+export const cascadeResponseRewardedProfilesEntryPointV1Schema = z.object({
+	type: z.literal("rewarded_profiles_entry_point_v1"),
+	data: z.object({
+		previewImageUrls: z.array(mediaUrlSchema),
+		remainingRewards: z.int().nonnegative(),
+		profilesPerRedemption: z.int().nonnegative(),
+	}),
+});
+
 export const cascadeResponseSchema = z.object({
 	items: z.array(z.unknown()),
 	nextPage: z.int().nonnegative().nullable(),
 	shuffled: z.boolean(),
-	hiddenProfiles: z.unknown(),
-	hiddenProfileInfo: z.unknown(),
+	hiddenProfiles: unmodeledSchema,
+	hiddenProfileInfo: unmodeledSchema,
 });

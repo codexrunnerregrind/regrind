@@ -4,6 +4,8 @@ import { demoConversationSeeds, localDateTime } from "./conversation-seeds";
 import { picsum } from "./picsum";
 import { photosOf, profileSeed } from "./profiles";
 
+const ALBUM_WITH_VIDEO = 5001;
+
 function generateAlbumContent(albumId: number) {
 	const count = 3 + (albumId % 3);
 	return Array.from({ length: count }, (_, i) => {
@@ -12,9 +14,10 @@ function generateAlbumContent(albumId: number) {
 			width: 300,
 			height: 400,
 		});
+		const video = albumId === ALBUM_WITH_VIDEO && i === count - 1;
 		return {
 			contentId: albumId * 100 + i,
-			contentType: "image/jpeg",
+			contentType: video ? "video/mp4" : "image/jpeg",
 			coverUrl: thumb,
 			statusId: 1,
 			thumbUrl: thumb,

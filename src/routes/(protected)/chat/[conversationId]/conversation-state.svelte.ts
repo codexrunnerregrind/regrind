@@ -222,6 +222,7 @@ export class ConversationState {
 			if (this.#destroyed) return;
 
 			this.profile = result.profile;
+			this.error = null;
 
 			const { messages, fresh, changed } = mergeServerMessages({
 				local: this.messages,
@@ -252,7 +253,11 @@ export class ConversationState {
 			if (error instanceof ConversationUnavailableError) {
 				this.error = error;
 			} else {
-				showErrorToast({ label: "Failed to refresh messages", error });
+				showErrorToast({
+					label: "Failed to refresh messages",
+					error,
+					onRetry: () => void this.refresh(),
+				});
 			}
 		} finally {
 			this.refreshing = false;

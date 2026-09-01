@@ -5,11 +5,13 @@ const {
 	connectedHandlers,
 	droppedHandlers,
 	undeliveredHandlers,
+	rejectedHandlers,
 } = vi.hoisted(() => ({
 	callMethodMock: vi.fn(() => Promise.resolve(1)),
 	connectedHandlers: [] as (() => void)[],
 	droppedHandlers: [] as ((skipped: number) => void)[],
 	undeliveredHandlers: [] as ((event: unknown) => void)[],
+	rejectedHandlers: [] as ((eventType: string) => void)[],
 }));
 
 vi.mock("$lib/api/methods", async (importOriginal) => ({
@@ -32,6 +34,10 @@ vi.mock("$lib/ws.svelte", () => ({
 			droppedHandlers.push(handler);
 			return Promise.resolve(vi.fn());
 		},
+		onEventRejected(handler: (eventType: string) => void) {
+			rejectedHandlers.push(handler);
+			return vi.fn();
+		},
 	},
 }));
 
@@ -41,6 +47,7 @@ async function freshReconciler() {
 	connectedHandlers.length = 0;
 	droppedHandlers.length = 0;
 	undeliveredHandlers.length = 0;
+	rejectedHandlers.length = 0;
 	vi.resetModules();
 	const { reconciler } = await import("./reconcile");
 	await flushMockSubscriptions();
@@ -104,6 +111,17 @@ describe("Reconciler resync after dropped websocket events", () => {
 
 		await vi.advanceTimersByTimeAsync(800);
 		expect(handler).toHaveBeenCalledTimes(2);
+	});
+
+	it("resyncs after a websocket event is rejected as unparsable", async () => {
+		const reconciler = await freshReconciler();
+		const handler = vi.fn();
+		reconciler.subscribe(handler);
+
+		rejectedHandlers.forEach((rejected) => rejected("tap.v1.tap_sent"));
+		await flushMockSubscriptions();
+
+		expect(handler).toHaveBeenCalledTimes(1);
 	});
 
 	it("coalesces a burst of drops into a single resync", async () => {

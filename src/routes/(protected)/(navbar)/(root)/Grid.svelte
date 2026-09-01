@@ -164,11 +164,11 @@
 					</div>
 				{/each}
 			{/if}
-		{:else if gridState.loading}
+		{:else if gridState.loading && gridProfiles.length === 0}
 			{#each Array.from({ length: PAGE_SKELETONS })}
 				<GridCellSkeleton />
 			{/each}
-		{:else if gridState.error}
+		{:else if gridState.error && gridProfiles.length === 0}
 			<div class="col-span-full flex p-4">
 				<ApiErrorDisplay
 					error={gridState.error}

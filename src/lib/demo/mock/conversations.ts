@@ -182,7 +182,7 @@ function buildMessage({
 				expiresAt: NOW + 30 * MINUTE,
 				expirationType: (message.expiring
 					? "ONE_DAY"
-					: "INDEFINITE") satisfies AlbumExpirationType,
+					: "INDEFINITE") as AlbumExpirationType,
 				coverUrl:
 					message.coverUrl === null
 						? null

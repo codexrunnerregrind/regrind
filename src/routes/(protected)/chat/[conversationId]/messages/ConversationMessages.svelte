@@ -192,7 +192,7 @@
 			{#key conversationState.conversationId}
 				<MessagesListSkeleton />
 			{/key}
-		{:else if conversationState.error}
+		{:else if conversationState.error && conversationState.messages.length === 0}
 			<ConversationError />
 		{:else}
 			<div
@@ -212,7 +212,7 @@
 			class="absolute top-22 left-1/2 z-10 shrink-0 -translate-x-1/2"
 		/>
 	{/if}
-	{#if !conversationState.loading && !conversationState.error}
+	{#if !conversationState.loading && (conversationState.messages.length > 0 || !conversationState.error)}
 		<DataRefreshControl
 			bind:this={refreshControl}
 			{container}

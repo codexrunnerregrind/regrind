@@ -13,9 +13,9 @@ export const VIDEO_MESSAGE_TYPES = [
 
 export type MessagePreview = {
 	type: string;
-	text: string | null;
-	albumId: number | null;
-	imageHash: string | null;
+	text?: string | null;
+	albumId?: number | null;
+	imageHash?: string | null;
 };
 
 export function previewFromMessage(
@@ -95,13 +95,17 @@ const TYPE_LABELS: Record<string, string> = {
 // opaque types (Generative, Unknown) — still has to read as something.
 const FALLBACK_LABEL = "Message";
 
-export function previewLabel(preview: MessagePreview | null): string | null {
+export function previewLabel(
+	preview: MessagePreview | null | undefined,
+): string | null {
 	// An empty type is the absence of a message, not a message without a
 	// preview: a conversation with no last message names nothing at all.
-	if (preview === null || preview.type === "") return null;
-	if (preview.text !== null) return preview.text;
-	if (preview.albumId !== null) return "Album";
-	if (preview.imageHash !== null) return "Photo";
+	if (preview === null || preview === undefined || preview.type === "")
+		return null;
+	const text = preview.text ?? null;
+	if (text !== null) return text;
+	if ((preview.albumId ?? null) !== null) return "Album";
+	if ((preview.imageHash ?? null) !== null) return "Photo";
 	return TYPE_LABELS[preview.type] ?? FALLBACK_LABEL;
 }
 

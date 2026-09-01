@@ -297,10 +297,15 @@ class ConversationsState {
 			}
 
 			this.#sortEntries();
+			this.error = null;
 			reconciled = true;
 		} catch (error) {
 			console.error(error);
-			showErrorToast({ label: "Failed to refresh conversations", error });
+			showErrorToast({
+				label: "Failed to refresh conversations",
+				error,
+				onRetry: () => void this.refresh(),
+			});
 		} finally {
 			this.refreshing = false;
 			if (reconciled || this.paging.failure === null) this.paging.rearm();
@@ -348,6 +353,7 @@ class ConversationsState {
 				}
 			}
 			this.#sortEntries();
+			this.error = null;
 			return true;
 		} catch (error) {
 			console.error(error);

@@ -56,7 +56,7 @@
 				{#each Array(8)}
 					<ListRowSkeleton />
 				{/each}
-			{:else if taps.error}
+			{:else if taps.error && taps.taps.length === 0}
 				<div class="flex flex-1">
 					<ApiErrorDisplay
 						error={taps.error}

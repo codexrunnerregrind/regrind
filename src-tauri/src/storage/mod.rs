@@ -133,6 +133,8 @@ mod tests {
 
 	const ME: ProfileId = 42;
 	const THEM: ProfileId = 77;
+	const PERSISTED_ENTRIES: [&str; 3] =
+		["device-info", "device-signing-key", "session"];
 
 	fn lock() -> std::sync::MutexGuard<'static, ()> {
 		DEFAULT_STORE.lock().unwrap_or_else(|e| e.into_inner())
@@ -286,6 +288,17 @@ mod tests {
 			assert!(DeviceStorage::load(THEM).unwrap().is_some());
 			assert!(SigningKeyStorage::load(THEM).unwrap().is_some());
 		});
+	}
+
+	#[test]
+	fn the_windows_uninstaller_clears_every_keyring_entry() {
+		let hooks = include_str!("../../installer-hooks.nsh");
+		for name in PERSISTED_ENTRIES {
+			assert!(
+				hooks.contains(&format!("\"{name}.open-grind\"")),
+				"installer-hooks.nsh leaves {name} in Credential Manager"
+			);
+		}
 	}
 
 	#[test]

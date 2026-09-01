@@ -1,7 +1,8 @@
 import z from "zod";
 
 import { mediaUrlSchema } from "$lib/model/media";
-import { unixTimestampMsSchema } from "$lib/model/types";
+import { knownValueOrNull } from "$lib/model/tolerance";
+import { unixTimestampMsSchema, unmodeledSchema } from "$lib/model/types";
 
 /**
  * Album names are capped at 255 *UTF-8 bytes*, not characters — one emoji can
@@ -51,11 +52,10 @@ export type AlbumExpirationType = z.infer<typeof albumExpirationTypeSchema>;
 
 export const albumExpirationSchema = z.object({
 	expiresAt: unixTimestampMsSchema.nullable(),
-	// Deliberately lenient rather than `albumExpirationTypeSchema`: a
-	// conversation page parses its messages as a plain array, so an expiration
-	// type we don't know about yet would fail the whole page instead of one
-	// message. Nothing reads this value back out.
-	expirationType: z.string().optional().nullable(),
+	expirationType: knownValueOrNull({
+		value: albumExpirationTypeSchema,
+		label: "album expirationType",
+	}).optional(),
 });
 
 export const albumContentMin = z.object({
@@ -69,7 +69,7 @@ export const albumContentSchema = albumContentMin.extend({
 	thumbUrl: mediaUrlSchema,
 	url: mediaUrlSchema.or(z.literal("")),
 	processing: z.boolean().nullable(),
-	rejectionId: z.unknown().nullable(),
+	rejectionId: unmodeledSchema,
 });
 
 export const myAlbumSchema = albumDetailsSchema.extend({

@@ -25,17 +25,7 @@
 	>
 		<ArrowLeftIcon size={26} />
 	</a>
-	{#if conversationState.loading || conversationState.profile === null}
-		<div class="flex flex-1 items-center gap-3 py-4 ps-1">
-			<Skeleton class="size-avatar rounded-full" />
-			<div class="flex flex-col gap-2">
-				<Skeleton class="h-4 w-20 rounded-md" />
-				<Skeleton class="h-3 w-12 rounded-md" />
-			</div>
-		</div>
-	{:else if conversationState.error}
-		<span class="flex-1">Failed to load conversation</span>
-	{:else}
+	{#if conversationState.profile !== null}
 		<ConversationNavBarProfile
 			profile={conversationState.profile}
 			typing={conversationState.typing}
@@ -47,5 +37,15 @@
 		<ConversationActionsMenu
 			profileId={conversationState.profile.profileId}
 		/>
+	{:else if conversationState.error}
+		<span class="flex-1">Failed to load conversation</span>
+	{:else}
+		<div class="flex flex-1 items-center gap-3 py-4 ps-1">
+			<Skeleton class="size-avatar rounded-full" />
+			<div class="flex flex-col gap-2">
+				<Skeleton class="h-4 w-20 rounded-md" />
+				<Skeleton class="h-3 w-12 rounded-md" />
+			</div>
+		</div>
 	{/if}
 </ProgressiveBlur>

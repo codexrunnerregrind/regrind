@@ -2,7 +2,7 @@
 	import { CaretUpDownIcon } from "phosphor-svelte";
 
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-	import type { Option } from "$lib/util/options";
+	import { type Option, selectionKeepingUnlisted } from "$lib/util/options";
 	import { inlineLabelClass, inlineRowClass, valueClass } from "./row";
 
 	let {
@@ -62,11 +62,11 @@
 			bind:value={
 				() => values.map(String),
 				(newValue: string[]) => {
-					values = options
-						.filter((option) =>
-							newValue.includes(String(option.value)),
-						)
-						.map((option) => option.value);
+					values = selectionKeepingUnlisted({
+						values,
+						selectedKeys: newValue,
+						options,
+					});
 				}
 			}
 		>

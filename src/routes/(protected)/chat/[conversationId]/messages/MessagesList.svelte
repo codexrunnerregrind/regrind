@@ -3,6 +3,7 @@
 
 	import { promptCopyError } from "$lib/api/error-copy";
 	import { showErrorToast } from "$lib/api/error-toast";
+	import { tieredFeature } from "$lib/api/error-urn";
 	import {
 		forgetAlbumShared,
 		getAlbumShared,
@@ -14,6 +15,7 @@
 		unsendMessage,
 	} from "$lib/api/messaging/messages";
 	import type { ApiResponseMessage } from "$lib/model/messaging/messages";
+	import { openExternalLink } from "$lib/platform/link-opener";
 	import { getConversationState } from "../conversation-state.svelte";
 	import { processMessages } from "../messages";
 	import Message from "./message/Message.svelte";
@@ -59,6 +61,23 @@
 			ourProfileId: conversationState.ourProfileId,
 		}),
 	);
+
+	function reportUnsendFailure(error: unknown) {
+		if (tieredFeature(error) === "UnsentMessage") {
+			toast.error("Unsend feature now requires Grindr subscription", {
+				id: "unsend-paywall",
+				action: {
+					label: "Learn more",
+					onClick: () =>
+						openExternalLink(
+							"https://git.opengrind.org/open-grind/open-grind/issues/319#issuecomment-2453",
+						),
+				},
+			});
+			return;
+		}
+		showErrorToast({ label: "Failed to unsend message", error });
+	}
 </script>
 
 {#each messages.toReversed() as message (message.messageId)}
@@ -122,10 +141,7 @@
 						});
 					} catch (error) {
 						console.error(error);
-						showErrorToast({
-							label: "Failed to unsend message",
-							error,
-						});
+						reportUnsendFailure(error);
 						revert?.();
 					}
 				}
