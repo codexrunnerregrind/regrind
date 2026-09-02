@@ -28,6 +28,8 @@
 	import LockedMedia from "./LockedMedia.svelte";
 	import { MessageMediaState } from "./message-media.svelte";
 
+	const ALBUM_MEMO_TTL_MS = 10 * 60 * 1000;
+
 	let { message }: { message: AlbumMessage["body"] } = $props();
 
 	const media = new MessageMediaState();
@@ -140,12 +142,14 @@
 	});
 
 	let phase = $state<"idle" | "loading" | "open">("idle");
-	// Reopening the same album shouldn't refetch it. A share flipping does not
-	// stale it either: only our own albums can flip here, and those resolve to
-	// the same full album whether the share is on or off — it is a stranger's
-	// bubble that would come from the teaser, and we are never told when one of
-	// those changes.
+	// Reopening the same album shouldn't refetch it, but only for a while: the
+	// media urls are signed and short-lived, and the owner can add or drop
+	// slides meanwhile. A share flipping does not stale it: only our own albums
+	// can flip here, and those resolve to the same full album whether the share
+	// is on or off — it is a stranger's bubble that would come from the teaser,
+	// and we are never told when one of those changes.
 	let cachedAlbum: LoadedAlbum | null = null;
+	let cachedAt = 0;
 	// Set once the album came from the paywall teaser rather than the album
 	// itself: those slides have no ids to reply or react to.
 	let cachedFromPaywall = false;
@@ -162,7 +166,8 @@
 		if (phase !== "idle") return;
 		phase = "loading";
 		try {
-			if (cachedAlbum === null) {
+			const fresh = getNow() - cachedAt < ALBUM_MEMO_TTL_MS;
+			if (cachedAlbum === null || !fresh) {
 				// Somebody else's locked bubble says so on its face, so there is no
 				// point asking for an album the API will refuse: go straight to the
 				// teaser. One of ours is a different kind of locked — the share is
@@ -178,6 +183,7 @@
 				});
 				cachedAlbum = resolved.album;
 				cachedFromPaywall = resolved.fromPaywall;
+				cachedAt = getNow();
 			}
 			destroyLightbox = await openAlbumLightbox(cachedAlbum, {
 				sharer,

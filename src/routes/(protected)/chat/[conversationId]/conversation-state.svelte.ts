@@ -30,6 +30,7 @@ import {
 	removeDuplicateMessages,
 } from "./merge-messages";
 import { getConversation } from "./messages";
+import { lockSharedAlbumInPlace, unsendInPlace } from "./optimistic-edits";
 import { ReadReceiptQueue } from "./read-receipts";
 
 export type { OptimisticMessage };
@@ -630,59 +631,22 @@ export class ConversationState {
 		}
 	}
 
-	markMessageAsUnsent(messageId: string) {
-		const msg = this.messages.find((m) => m.messageId === messageId);
-		let revert: () => void = () => {};
-		if (msg) {
-			const original = {
-				unsent: msg.unsent,
-				type: msg.type,
-				body: msg.body,
-			};
-			msg.unsent = true;
-			msg.type = "Unsent";
-			msg.body = null;
-			this.#syncCache();
-			this.#updatePreview(msg);
-			revert = () => {
-				msg.unsent = original.unsent;
-				msg.type = original.type;
-				msg.body = original.body;
-				this.#syncCache();
-				this.#updatePreview(msg);
-			};
-		}
-		return { revert };
+	markMessageAsUnsent(messageId: string): { revert: () => void } {
+		return unsendInPlace({
+			messages: this.messages,
+			messageId,
+			sync: () => this.#syncCache(),
+			refreshPreview: (message) => this.#updatePreview(message),
+		});
 	}
 
-	// Locks our album bubbles for `albumId` in place after the album is
-	// unshared, so the recipient can no longer view them. The backend keeps
-	// historical messages, so a refresh would still show them as shared — we
-	// update local state instead. Returns a revert to undo the optimistic
-	// change if the unshare request fails.
 	lockSharedAlbum(albumId: number): { revert: () => void } {
-		const affected = this.messages.filter(
-			(m) =>
-				m.senderId === this.ourProfileId &&
-				!m.unsent &&
-				(m.type === "Album" ||
-					m.type === "ExpiringAlbum" ||
-					m.type === "ExpiringAlbumV2") &&
-				(m.body as { albumId: number } | null)?.albumId === albumId,
-		);
-		const previous = affected.map((m) => ({
-			body: m.body as { isViewable: boolean },
-			wasViewable: (m.body as { isViewable: boolean }).isViewable,
-		}));
-		for (const { body } of previous) body.isViewable = false;
-		if (previous.length > 0) this.#syncCache();
-		return {
-			revert: () => {
-				for (const { body, wasViewable } of previous)
-					body.isViewable = wasViewable;
-				if (previous.length > 0) this.#syncCache();
-			},
-		};
+		return lockSharedAlbumInPlace({
+			messages: this.messages,
+			albumId,
+			ourProfileId: this.ourProfileId,
+			sync: () => this.#syncCache(),
+		});
 	}
 }
 
