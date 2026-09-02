@@ -144,6 +144,25 @@ describe("quoteLabel", () => {
 		expect(quoteLabel(preview(type))).toBe(expected);
 	});
 
+	// A call status message has no text of its own, so the preview carries the
+	// outcome the bubble shows rather than the bare type name.
+	it("previews a call by its outcome", () => {
+		expect(
+			previewLabel(
+				previewFromMessage({
+					type: "VideoCall",
+					body: { result: "SUCCESSFUL", videoCallDuration: 83 },
+					messageId: "msg-call",
+					conversationId: "conversation-1",
+					senderId: 42,
+					timestamp: 1_710_000_000_000,
+					unsent: false,
+					reactions: [],
+				}),
+			),
+		).toBe("Video call · 1:23");
+	});
+
 	it.each(["Unknown", "Generative", "SomethingNewFromTheApi"])(
 		"falls back to a plain name for %s",
 		(type) => {

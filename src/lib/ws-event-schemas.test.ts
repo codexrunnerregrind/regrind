@@ -5,6 +5,8 @@ import {
 	chatV1ConversationReadEventSchema,
 	chatV1MessageSentEventSchema,
 	commandResponseEventSchema,
+	videocallV1CallEndedEventSchema,
+	videocallV1IncomingCallEventSchema,
 } from "./ws.svelte";
 
 const deleteEvent = {
@@ -64,6 +66,53 @@ describe("websocket event envelopes", () => {
 				status: 200,
 			}).success,
 		).toBe(true);
+	});
+
+	// The sender id arrives as a string on the video-call events where the chat
+	// events send a number, and it is the only handle on who is calling.
+	it("reads a caller whose id came as a string", () => {
+		const parsed = videocallV1IncomingCallEventSchema.safeParse({
+			type: "videocall.v1.incoming_call",
+			payload: { channelId: "channel-1", senderId: "42" },
+		});
+
+		expect(parsed.data?.payload.senderId).toBe(42);
+	});
+
+	it("rejects an incoming call with no channel to answer on", () => {
+		expect(
+			videocallV1IncomingCallEventSchema.safeParse({
+				type: "videocall.v1.incoming_call",
+				payload: { senderId: 42 },
+			}).success,
+		).toBe(false);
+	});
+
+	// The outcome and the duration are both undocumented and both optional; the
+	// channel is the one field that decides whether the event is about our call.
+	it("accepts a call ended that carries nothing but the channel", () => {
+		expect(
+			videocallV1CallEndedEventSchema.safeParse({
+				type: "videocall.v1.call_ended",
+				payload: { channelId: "channel-1" },
+			}).success,
+		).toBe(true);
+	});
+
+	it("reads the outcome and duration of a call that ended", () => {
+		const parsed = videocallV1CallEndedEventSchema.safeParse({
+			type: "videocall.v1.call_ended",
+			payload: {
+				channelId: "channel-1",
+				senderId: 42,
+				recipientId: 7,
+				result: "DECLINED",
+				duration: 0,
+			},
+		});
+
+		expect(parsed.data?.payload.result).toBe("DECLINED");
+		expect(parsed.data?.payload.duration).toBe(0);
 	});
 
 	it("rejects an event whose payload does not match its type", () => {

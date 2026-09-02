@@ -284,9 +284,18 @@ export const unknownMessageSchema = messageBaseSchema.safeExtend({
 
 export type UnknownMessage = z.infer<typeof unknownMessageSchema>;
 
+// A status message about a call that already happened — never a live call, and
+// never anything to play. `result` arrives in several casings and spellings for
+// the same outcome (see `videoCallOutcome`), and a body we cannot read still has
+// to render as *some* call outcome rather than take the conversation down.
 export const videoCallMessageSchema = messageBaseSchema.safeExtend({
 	type: z.literal("VideoCall"),
-	body: unmodeledSchema,
+	body: z
+		.looseObject({
+			result: z.string().nullish(),
+			videoCallDuration: z.number().nullish(),
+		})
+		.catch({}),
 });
 
 export type VideoCallMessage = z.infer<typeof videoCallMessageSchema>;

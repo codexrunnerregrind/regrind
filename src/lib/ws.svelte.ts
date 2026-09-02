@@ -126,6 +126,37 @@ export const tapV1TapSentEventSchema = notificationEventSchema.safeExtend({
 	}),
 });
 
+/**
+ * Someone is calling us. The only signal that a call exists: there is no REST
+ * endpoint to poll for one, and nothing else says who is ringing.
+ */
+export const videocallV1IncomingCallEventSchema =
+	notificationEventSchema.safeExtend({
+		type: z.literal("videocall.v1.incoming_call"),
+		payload: z.looseObject({
+			channelId: z.string(),
+			senderId: z.coerce.number().int().nonnegative(),
+		}),
+	});
+
+/**
+ * A call is over, whichever side ended it and whether or not it ever
+ * connected. `result` is the outcome (`SUCCESSFUL`, `DECLINED`, `UNANSWERED`,
+ * `TARGET_PROFILE_UNAVAILABLE`), and it is the caller's only word on whether
+ * the other side ever picked up.
+ */
+export const videocallV1CallEndedEventSchema =
+	notificationEventSchema.safeExtend({
+		type: z.literal("videocall.v1.call_ended"),
+		payload: z.looseObject({
+			channelId: z.string(),
+			senderId: z.coerce.number().int().nonnegative().nullish(),
+			recipientId: z.coerce.number().int().nonnegative().nullish(),
+			result: z.string().nullish(),
+			duration: z.coerce.number().nullish(),
+		}),
+	});
+
 export const viewedMeV1NewViewReceivedEventSchema =
 	notificationEventSchema.safeExtend({
 		type: z.literal("viewed_me.v1.new_view_received"),
@@ -165,6 +196,12 @@ export type ChatV1TypingStatusEventPayload = z.infer<
 >;
 export type ChatV1MessageDeletedEventPayload = z.infer<
 	typeof chatV1MessageDeletedEventSchema
+>;
+export type VideocallV1IncomingCallEventPayload = z.infer<
+	typeof videocallV1IncomingCallEventSchema
+>;
+export type VideocallV1CallEndedEventPayload = z.infer<
+	typeof videocallV1CallEndedEventSchema
 >;
 
 export type WsStatus = "disconnected" | "connected";

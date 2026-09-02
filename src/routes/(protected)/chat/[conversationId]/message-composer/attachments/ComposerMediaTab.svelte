@@ -4,6 +4,7 @@
 	import PlusIcon from "phosphor-svelte/lib/PlusIcon";
 	import TrashIcon from "phosphor-svelte/lib/TrashIcon";
 	import VideoCameraIcon from "phosphor-svelte/lib/VideoCameraIcon";
+	import VideoCameraSlashIcon from "phosphor-svelte/lib/VideoCameraSlashIcon";
 	import { toast } from "svelte-sonner";
 
 	import {
@@ -31,6 +32,8 @@
 	} from "$lib/platform/media-picker";
 	import { videoDurationSeconds } from "$lib/platform/video-metadata";
 	import { SelectionSet } from "$lib/util/selection.svelte";
+	import { videoCall } from "$lib/video-call/call-state.svelte";
+	import { getConversationState } from "../../conversation-state.svelte";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
 
 	let {
@@ -45,6 +48,25 @@
 
 	const composer = getMessageComposerContext();
 	const selected = new SelectionSet<number>(10);
+
+	// The official app pairs the two video actions in this sheet — record one,
+	// or place a call — so the call sits beside "Send video" rather than only
+	// behind the conversation menu.
+	const conversationState = $derived(getConversationState()());
+	const callBlockedReason = $derived(videoCall.blockedReason);
+
+	function startCall() {
+		const profile = conversationState.profile;
+		if (callBlockedReason !== null || !profile) return;
+		// The call takes the whole screen, so the sheet has no business staying
+		// open underneath it.
+		onClose();
+		void videoCall.call({
+			profileId: profile.profileId,
+			name: profile.name ?? null,
+			mediaHash: profile.mediaHash ?? null,
+		});
+	}
 
 	function toggleSelected(id: number) {
 		selected.toggle(id);
@@ -287,6 +309,19 @@
 					<VideoCameraIcon weight="fill" />
 					Send video
 				</Button>
+				<Button
+					variant="outline"
+					disabled={callBlockedReason !== null}
+					onclick={startCall}
+				>
+					{#if callBlockedReason === null}
+						<VideoCameraIcon weight="regular" />
+						Video call
+					{:else}
+						<VideoCameraSlashIcon weight="regular" />
+						{callBlockedReason}
+					{/if}
+				</Button>
 			</Empty.Content>
 		</Empty.Root>
 	{:else}
@@ -313,6 +348,25 @@
 			>
 				<VideoCameraIcon weight="fill" class="size-6" />
 				<span class="text-xs font-medium">Send video</span>
+			</button>
+			<!-- Also not a selectable tile: it sends nothing and closes the
+			     sheet behind the call. -->
+			<button
+				type="button"
+				class="flex aspect-(--photo-grid-aspect) flex-col items-center justify-center gap-1 bg-card-foreground/5 text-muted-foreground transition-colors not-disabled:cursor-pointer not-disabled:hover:bg-card-foreground/10 not-disabled:hover:text-foreground disabled:opacity-50"
+				aria-label="Video call"
+				disabled={callBlockedReason !== null}
+				onclick={startCall}
+			>
+				{#if callBlockedReason === null}
+					<VideoCameraIcon weight="regular" class="size-6" />
+					<span class="text-xs font-medium">Video call</span>
+				{:else}
+					<VideoCameraSlashIcon weight="regular" class="size-6" />
+					<span class="text-center text-xs font-medium"
+						>{callBlockedReason}</span
+					>
+				{/if}
 			</button>
 			{#each Array(uploadingCount)}
 				<Skeleton class="aspect-(--photo-grid-aspect) rounded-none" />

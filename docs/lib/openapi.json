@@ -141,7 +141,7 @@
 		},
 		{
 			"name": "videocalls",
-			"x-wip": true
+			"description": "Grindr's video calls are Agora RTC channels: these endpoints hand out the channel and a token for it, and the [WebSocket](/grindr-api/websocket/notification-event#videocallv1incoming_call) carries the ringing. The Agora App ID needed alongside the token is served by none of them."
 		},
 		{
 			"name": "commerce/vip",
@@ -3037,20 +3037,34 @@
 					"videocalls"
 				],
 				"operationId": "getVideoCallInfo",
+				"security": [
+					{
+						"Grindr3Auth": []
+					}
+				],
 				"responses": {
 					"200": {
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/UndocumentedObject",
-									"x-original-type": "VideoCallInfoResponse"
+									"x-original-type": "VideoCallInfoResponse",
+									"type": "object",
+									"required": [
+										"remainingSeconds"
+									],
+									"properties": {
+										"remainingSeconds": {
+											"type": "integer",
+											"description": "How much calling the account has left this period — per day on a free account, per month on XTRA/Unlimited. Account-wide rather than per conversation, and only changes after a call or when a new period starts."
+										}
+									}
 								}
 							}
 						},
 						"description": "OK"
 					}
 				},
-				"x-wip": true
+				"summary": "Get the remaining video call allowance"
 			}
 		},
 		"/v1/video-call": {
@@ -3059,17 +3073,29 @@
 					"videocalls"
 				],
 				"operationId": "createVideoCall",
+				"security": [
+					{
+						"Grindr3Auth": []
+					}
+				],
+				"description": "Places a call. The other side is rung over the WebSocket as [`videocall.v1.incoming_call`](/grindr-api/websocket/notification-event#videocallv1incoming_call); nothing here or afterwards confirms that they answered, so the caller can only learn it from their client turning up in the media channel.\n\nThe media itself is an Agora RTC channel: join `channelId` with `token`, under your own profile id as the uid the token was issued against — any other uid is rejected as an invalid token even when the channel and token are right. The Agora App ID needed alongside the token is not in this response.",
 				"requestBody": {
 					"required": true,
 					"content": {
 						"application/json": {
 							"schema": {
-								"allOf": [
-									{
-										"$ref": "#/components/schemas/UndocumentedObject"
-									}
+								"x-original-type": "CreateVideoCallRequest",
+								"type": "object",
+								"required": [
+									"targetProfileId"
 								],
-								"x-original-type": "CreateVideoCallRequest"
+								"properties": {
+									"targetProfileId": {
+										"type": "integer",
+										"format": "int64",
+										"description": "[profile id](/grindr-api/users/profiles#profile) to call"
+									}
+								}
 							}
 						}
 					}
@@ -3079,35 +3105,94 @@
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/UndocumentedObject",
-									"x-original-type": "CreateVideoCallResponse"
+									"x-original-type": "CreateVideoCallResponse",
+									"type": "object",
+									"properties": {
+										"result": {
+											"type": "string",
+											"nullable": true,
+											"description": "`\"SUCCESS\"` when the call was placed. Anything else is a refusal, and arrives with HTTP 200 and nothing to join — observed: `\"EXCEED_LENGTH_LIMIT\"` (no allowance left this period), `\"TARGET_PROFILE_UNAVAILABLE\"` (they are already on a call)."
+										},
+										"channelId": {
+											"type": "string",
+											"nullable": true,
+											"description": "Agora channel to join. `null` on a refusal."
+										},
+										"token": {
+											"type": "string",
+											"nullable": true,
+											"description": "Agora RTC token, bound to the channel and to your own profile id as the uid. `null` on a refusal."
+										},
+										"maxSeconds": {
+											"type": "integer",
+											"nullable": true,
+											"description": "How long the token is good for. A call outlasting it needs [Renew a video call](#renew-a-video-call) before it expires. `null` on a refusal."
+										},
+										"message": {
+											"type": "string",
+											"nullable": true,
+											"description": "Human-readable reason for a refusal, when there is one."
+										}
+									}
 								}
 							}
 						},
-						"description": "OK"
+						"description": "OK — including a refusal, which is a 200 whose `result` is not `\"SUCCESS\"`."
 					}
 				},
-				"x-wip": true
+				"summary": "Start a video call"
 			},
 			"patch": {
 				"tags": [
 					"videocalls"
 				],
 				"operationId": "renewVideoCall",
+				"security": [
+					{
+						"Grindr3Auth": []
+					}
+				],
+				"description": "Renews the Agora token for your own live call. Takes no body: the server finds the call from the session, so this cannot be pointed at anyone else's. Feed the new token into the connected Agora client rather than rejoining, which would tear the call down and put it back up.",
 				"responses": {
 					"200": {
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/UndocumentedObject",
-									"x-original-type": "RenewVideoCallResponse"
+									"x-original-type": "RenewVideoCallResponse",
+									"type": "object",
+									"properties": {
+										"result": {
+											"type": "string",
+											"nullable": true,
+											"description": "`\"SUCCESS\"` when renewed."
+										},
+										"token": {
+											"type": "string",
+											"nullable": true,
+											"description": "The renewed Agora RTC token."
+										},
+										"remainingSeconds": {
+											"type": "integer",
+											"nullable": true,
+											"description": "How long the renewed token is good for."
+										},
+										"refreshSeconds": {
+											"type": "integer",
+											"nullable": true,
+											"description": "How long before expiry the server wants to be asked again — renew at `remainingSeconds - refreshSeconds`. Observed: `300`."
+										},
+										"message": {
+											"type": "string",
+											"nullable": true
+										}
+									}
 								}
 							}
 						},
 						"description": "OK"
 					}
 				},
-				"x-wip": true
+				"summary": "Renew a video call"
 			}
 		},
 		"/v1/video-call/join": {
@@ -3116,17 +3201,28 @@
 					"videocalls"
 				],
 				"operationId": "joinVideoCall",
+				"security": [
+					{
+						"Grindr3Auth": []
+					}
+				],
+				"description": "Answers the call named by an incoming [`videocall.v1.incoming_call`](/grindr-api/websocket/notification-event#videocallv1incoming_call). The response shape is unconfirmed; the answering side's own Agora token is the one thing needed out of it, and it is not always present.",
 				"requestBody": {
 					"required": true,
 					"content": {
 						"application/json": {
 							"schema": {
-								"allOf": [
-									{
-										"$ref": "#/components/schemas/UndocumentedObject"
-									}
+								"x-original-type": "JoinVideoCallRequest",
+								"type": "object",
+								"required": [
+									"channelId"
 								],
-								"x-original-type": "JoinVideoCallRequest"
+								"properties": {
+									"channelId": {
+										"type": "string",
+										"description": "The channel from the incoming-call event."
+									}
+								}
 							}
 						}
 					}
@@ -3136,14 +3232,34 @@
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/UndocumentedObject",
-									"x-original-type": "JoinVideoCallResponse"
+									"x-original-type": "JoinVideoCallResponse",
+									"type": "object",
+									"properties": {
+										"result": {
+											"type": "string",
+											"nullable": true
+										},
+										"token": {
+											"type": "string",
+											"nullable": true,
+											"description": "Agora RTC token for the answering side, bound to your own profile id as the uid."
+										},
+										"channelId": {
+											"type": "string",
+											"nullable": true
+										},
+										"maxSeconds": {
+											"type": "integer",
+											"nullable": true
+										}
+									}
 								}
 							}
 						},
 						"description": "OK"
 					}
 				},
+				"summary": "Join a video call",
 				"x-wip": true
 			}
 		},
@@ -3153,17 +3269,28 @@
 					"videocalls"
 				],
 				"operationId": "leaveVideoCall",
+				"security": [
+					{
+						"Grindr3Auth": []
+					}
+				],
+				"description": "Hangs up, declines, or cancels — the server draws no distinction, and records the outcome from whether the call had connected. Both sides are then sent [`videocall.v1.call_ended`](/grindr-api/websocket/notification-event#videocallv1call_ended), and the conversation gains a `VideoCall` status message.",
 				"requestBody": {
 					"required": true,
 					"content": {
 						"application/json": {
 							"schema": {
-								"allOf": [
-									{
-										"$ref": "#/components/schemas/UndocumentedObject"
-									}
+								"x-original-type": "LeaveVideoCallRequestChatV3",
+								"type": "object",
+								"required": [
+									"channelId"
 								],
-								"x-original-type": "LeaveVideoCallRequestChatV3"
+								"properties": {
+									"channelId": {
+										"type": "string",
+										"description": "The call to leave."
+									}
+								}
 							}
 						}
 					}
@@ -3173,7 +3300,7 @@
 						"description": "OK"
 					}
 				},
-				"x-wip": true
+				"summary": "Leave a video call"
 			}
 		},
 		"/v1/vip/passed/{passedProfileId}": {

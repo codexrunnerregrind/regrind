@@ -1,3 +1,4 @@
+import { videoCallStatusLabel } from "$lib/model/messaging/video-calls";
 import type {
 	ApiResponseMessage,
 	QuotedMessage,
@@ -52,6 +53,15 @@ export function previewFromMessage(
 				type: message.type,
 				text: null,
 				albumId: message.body.albumId,
+				imageHash: null,
+			};
+		// The outcome is the whole of what a call status message says, so the
+		// preview carries it rather than the bare word "Video call".
+		case "VideoCall":
+			return {
+				type: "VideoCall",
+				text: videoCallStatusLabel(message),
+				albumId: null,
 				imageHash: null,
 			};
 		case "ExpiringImage":

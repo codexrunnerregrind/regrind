@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { reportAccountProfile } from "$lib/api/accounts.svelte";
 	import CommandCenter from "$lib/components/command-center/CommandCenter.svelte";
+	import VideoCallOverlay from "$lib/components/video-call/VideoCallOverlay.svelte";
 	import { notifications } from "$lib/notifications/notifications.svelte";
 	import { startOnlineHeartbeat } from "$lib/presence/online-heartbeat";
+	import { videoCall } from "$lib/video-call/call-state.svelte";
 
 	let { data, children }: import("./$types").LayoutProps = $props();
 
@@ -14,8 +16,12 @@
 		// an account learns them the first time it is simply used, including the
 		// one already signed in when the app opens.
 		void reportAccountProfile(ourProfileId);
+		// A call can arrive on any screen, so it is listened for here rather
+		// than in the conversation that would have placed it.
+		void videoCall.start(ourProfileId);
 		return () => {
 			void notifications.stop();
+			void videoCall.stop();
 		};
 	});
 
@@ -24,3 +30,4 @@
 
 {@render children()}
 <CommandCenter />
+<VideoCallOverlay />

@@ -464,6 +464,21 @@ export function demoRoute({
 		return ok(demoRightNowFeed(params));
 	}
 	if (rawPath === "/v1/entitlements") return ok({ rightNow: 1 });
+	// The allowance is real so the entry point reads normally, but there is no
+	// media server behind the demo, so placing a call has to refuse rather than
+	// ring forever.
+	if (method === "GET" && rawPath === "/v3/video-call") {
+		return ok({ remainingSeconds: 600 });
+	}
+	if (rawPath === "/v1/video-call") {
+		return ok({
+			result: "DEMO_UNAVAILABLE",
+			channelId: null,
+			token: null,
+			maxSeconds: null,
+			message: "Video calls aren't available in the demo",
+		});
+	}
 	if (method === "GET" && rawPath === "/v3/rightnow/active-post") {
 		return ok(demoOwnRightNowPost());
 	}

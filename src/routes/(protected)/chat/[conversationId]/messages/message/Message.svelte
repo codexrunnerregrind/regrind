@@ -25,6 +25,7 @@
 	import TextMessage from "./TextMessage.svelte";
 	import UnsentMessage from "./UnsentMessage.svelte";
 	import UnsupportedMessage from "./UnsupportedMessage.svelte";
+	import VideoCallMessage from "./VideoCallMessage.svelte";
 	import VideoMessage from "./VideoMessage.svelte";
 
 	let {
@@ -258,6 +259,8 @@
 			<AlbumContentMessage message={message.body} />
 		{:else if message.type === "ProfilePhotoReply"}
 			<ProfilePhotoReplyMessage message={message.body} />
+		{:else if message.type === "VideoCall"}
+			<VideoCallMessage {message} />
 		{:else if message.type === "Unsent"}
 			<UnsentMessage />
 		{:else}

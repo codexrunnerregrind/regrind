@@ -101,3 +101,23 @@ New view received, e.g. when another profile views your profile.
     - `photoHash` — hash of the profile photo, if available
     - `timestamp` — unix timestamp in milliseconds of the view
 
+## `videocall.v1.incoming_call`
+
+Someone is calling you. The only signal that a call exists — there is nothing to poll for one.
+
+- *everything from [Notification Event](#notification-event)*
+- `payload` — object
+  - `channelId` — the channel to answer on, passed to [Join a video call](/grindr-api/videocalls#join-a-video-call-wip)
+  - `senderId` — ID of the profile calling you
+
+## `videocall.v1.call_ended`
+
+A call is over, whichever side ended it and whether or not it ever connected. The caller's only word on whether the other side picked up: nothing else reports it.
+
+- *everything from [Notification Event](#notification-event)*
+- `payload` — object
+  - `channelId` — the call this is about
+  - `senderId` — ID of the profile that placed the call
+  - `recipientId` — ID of the profile that was called
+  - `result` — string, observed values: `SUCCESSFUL` (answered, then ended), `DECLINED`, `UNANSWERED`, `TARGET_PROFILE_UNAVAILABLE` (already on another call)
+  - `duration` — how long the call ran, in seconds; `0` for one that never connected
