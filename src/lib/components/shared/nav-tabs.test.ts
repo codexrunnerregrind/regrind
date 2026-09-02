@@ -25,6 +25,13 @@ describe("swipeToNavTab", () => {
 		expect(goto).toHaveBeenCalledWith("/");
 	});
 
+	it("carries a swipe off Interest's last sub-tab on to Inbox", () => {
+		expect(swipeToNavTab("/(protected)/(navbar)/interest/sent", 1)).toBe(
+			true,
+		);
+		expect(goto).toHaveBeenCalledWith("/chat");
+	});
+
 	it("declines at either end rather than wrapping", () => {
 		expect(swipeToNavTab(BROWSE, -1)).toBe(false);
 		expect(swipeToNavTab(SETTINGS, 1)).toBe(false);
@@ -45,13 +52,14 @@ describe("swipeToNavTab", () => {
 	});
 
 	it("keeps every tab's own screen swipeable", () => {
-		// Interest is two sub-tabs and has no page of its own; the rest are
+		// Interest is three sub-tabs and has no page of its own; the rest are
 		// their route as the tab bar links to it.
 		const roots = [
 			BROWSE,
 			RIGHT_NOW,
 			"/(protected)/(navbar)/interest/views",
 			"/(protected)/(navbar)/interest/taps",
+			"/(protected)/(navbar)/interest/sent",
 			"/(protected)/chat",
 			SETTINGS,
 		];

@@ -44,7 +44,8 @@ export const navTabs = [
 		match: (id: string) => id.startsWith("/(protected)/(navbar)/interest"),
 		swipeRoot: (id: string) =>
 			id === "/(protected)/(navbar)/interest/views" ||
-			id === "/(protected)/(navbar)/interest/taps",
+			id === "/(protected)/(navbar)/interest/taps" ||
+			id === "/(protected)/(navbar)/interest/sent",
 	},
 	{
 		href: "/chat",
