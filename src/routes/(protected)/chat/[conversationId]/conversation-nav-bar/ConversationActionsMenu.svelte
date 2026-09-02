@@ -1,12 +1,6 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
-	import {
-		DotsThreeIcon,
-		ImageIcon,
-		ProhibitIcon,
-		VideoCameraIcon,
-		VideoCameraSlashIcon,
-	} from "phosphor-svelte";
+	import { DotsThreeIcon, ImageIcon, ProhibitIcon } from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
 	import { showErrorToast } from "$lib/api/error-toast";
@@ -15,7 +9,6 @@
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
 	import { draftFromMessage } from "$lib/model/messaging/messages";
 	import { profileMediaUrl } from "$lib/util/media";
-	import { videoCall } from "$lib/video-call/call-state.svelte";
 	import { getConversationState } from "../conversation-state.svelte";
 	import { collectReceivedPhotos } from "./received-photos";
 	import type { ReceivedPhoto } from "./received-photos";
@@ -130,11 +123,6 @@
 
 	let blockOpen = $state(false);
 
-	// The allowance is account-wide and already in hand, so saying what is left
-	// of it here costs no request.
-	const callBlockedReason = $derived(videoCall.blockedReason);
-	const callTimeLeft = $derived(videoCall.timeLeftLabel);
-
 	$effect(() => () => teardown?.());
 </script>
 
@@ -160,30 +148,6 @@
 		>
 			<ImageIcon class="size-6" />
 			Received photos
-		</DropdownMenu.Item>
-		<DropdownMenu.Item
-			class="w-22 flex-col gap-1.5 px-2 py-3 text-center text-caption leading-tight"
-			disabled={callBlockedReason !== null}
-			onSelect={() =>
-				void videoCall.call({
-					profileId,
-					name: conversationState.profile?.name ?? null,
-					mediaHash: conversationState.profile?.mediaHash ?? null,
-				})}
-		>
-			{#if callBlockedReason === null}
-				<VideoCameraIcon class="size-6" />
-			{:else}
-				<VideoCameraSlashIcon class="size-6" />
-			{/if}
-			<span class="flex flex-col">
-				<span>Video call</span>
-				{#if (callBlockedReason ?? callTimeLeft) !== null}
-					<span class="text-ink3"
-						>{callBlockedReason ?? callTimeLeft}</span
-					>
-				{/if}
-			</span>
 		</DropdownMenu.Item>
 		<DropdownMenu.Item
 			variant="destructive"

@@ -7,162 +7,133 @@
 		VideoCameraIcon,
 		VideoCameraSlashIcon,
 	} from "phosphor-svelte";
+	import type { Snippet } from "svelte";
 
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
 	import { formatCallDuration } from "$lib/model/messaging/video-calls";
-	import { isMobilePlatform } from "$lib/platform/os";
 	import { videoCall } from "$lib/video-call/call-state.svelte";
 
-	// Front/back only exists on a phone; a desktop webcam has no camera facing
-	// the other way for the switch to find.
-	const canSwitchCamera = isMobilePlatform();
-
 	const name = $derived(videoCall.party?.name ?? "Someone");
-	const ringing = $derived(
-		videoCall.phase === "incoming" || videoCall.phase === "outgoing",
+	const active = $derived(videoCall.phase === "active");
+	const incoming = $derived(videoCall.phase === "incoming");
+
+	// Named on our own tile so that "flip" has a visible effect even on the
+	// frames where the two cameras look alike.
+	const facingLabel = $derived(
+		videoCall.facing === "user" ? "front" : "back",
 	);
-
-	const controlClass =
-		"flex size-14 items-center justify-center rounded-full border border-white/15 bg-black/40 text-white backdrop-blur-md transition active:scale-90";
-
-	// Where the small tile sits, shared by the tile itself and the button that
-	// swaps it — the two have to line up exactly.
-	const pipClass =
-		"absolute right-4 z-10 h-40 w-28 rounded-xl bottom-[calc(8rem+var(--safe-area-bottom))]";
 </script>
+
+<!-- One control: a round button with its job written under it, so the row
+     reads as labels rather than as a line of glyphs to be guessed at. -->
+{#snippet control({
+	label,
+	icon,
+	onclick,
+	disabled = false,
+	tone = "neutral",
+}: {
+	label: string;
+	icon: Snippet;
+	onclick: () => void;
+	disabled?: boolean;
+	tone?: "neutral" | "decline" | "accept";
+})}
+	<button
+		type="button"
+		aria-label={label}
+		{disabled}
+		{onclick}
+		class="flex w-18 flex-col items-center gap-1.5 text-center disabled:opacity-35"
+	>
+		<span
+			class={[
+				"flex size-14 items-center justify-center rounded-full text-white shadow-lg transition",
+				{
+					"border border-white/15 bg-white/10 backdrop-blur-md":
+						tone === "neutral",
+					"bg-destructive": tone === "decline",
+					"bg-online": tone === "accept",
+					"active:scale-90": !disabled,
+				},
+			]}
+		>
+			{@render icon()}
+		</span>
+		<span class="text-caption leading-none text-white/80">{label}</span>
+	</button>
+{/snippet}
+
+{#snippet micIcon()}
+	{#if videoCall.micMuted}
+		<MicrophoneSlashIcon size={24} />
+	{:else}
+		<MicrophoneIcon size={24} />
+	{/if}
+{/snippet}
+
+{#snippet cameraIcon()}
+	{#if videoCall.cameraOff}
+		<VideoCameraSlashIcon size={24} />
+	{:else}
+		<VideoCameraIcon size={24} />
+	{/if}
+{/snippet}
+
+{#snippet flipIcon()}
+	<CameraRotateIcon size={24} />
+{/snippet}
+
+{#snippet hangUpIcon()}
+	<PhoneSlashIcon size={26} />
+{/snippet}
+
+{#snippet answerIcon()}
+	<VideoCameraIcon size={26} weight="fill" />
+{/snippet}
 
 {#if videoCall.phase !== "idle"}
 	<!-- Above every sheet and dialog in the app: a call is the one thing that
 	     may not end up behind something else. -->
-	<div
-		class="fixed inset-0 z-100 flex flex-col items-center bg-black text-white"
-	>
-		{#if videoCall.phase === "active"}
-			<!-- Two tiles that trade places rather than two pairs that appear and
-			     disappear: a track plays into one element, and swapping which
-			     element it is keeps both streams running through the swap. -->
-			{#each [{ local: false }, { local: true }] as tile (tile.local)}
-				{@const main = tile.local === videoCall.localIsMain}
-				{@const covered = tile.local
-					? videoCall.cameraOff
-					: videoCall.remoteCameraOff}
-				<div
-					class={[
-						"overflow-hidden bg-neutral-900",
-						{
-							"absolute inset-0": main,
-							[`${pipClass} border border-white/15 shadow-lg`]:
-								!main,
-						},
-					]}
-				>
-					<div
-						class="size-full"
-						{@attach (element) => {
-							if (tile.local) videoCall.setLocalTile(element);
-							else videoCall.setRemoteTile(element);
-							return () => {
-								if (tile.local) videoCall.setLocalTile(null);
-								else videoCall.setRemoteTile(null);
-							};
-						}}
-					></div>
-					<!-- A muted camera leaves the last frame frozen on screen,
-					     so their face covers it rather than a still of them. -->
-					{#if covered}
-						<div class="absolute inset-0">
-							<UserAvatar
-								mediaHash={tile.local
-									? videoCall.ownMediaHash
-									: (videoCall.party?.mediaHash ?? null)}
-								class="size-full"
-								size="xl"
-							/>
-						</div>
-					{/if}
-				</div>
-			{/each}
-
-			<!-- Its own control rather than a click handler on the tile: the
-			     tiles are where video plays, and only one of them is ever the
-			     small one. -->
-			<button
-				type="button"
-				aria-label="Swap the video tiles"
-				class={[pipClass, "z-20"]}
-				onclick={() => videoCall.swapTiles()}
-			></button>
-
+	<div class="fixed inset-0 z-100 flex flex-col bg-black text-white">
+		{#if active}
+			<!-- Their picture fills the screen; ours is the small tile. -->
 			<div
-				class="absolute top-0 z-20 rounded-full border border-white/15 bg-black/40 px-3 py-1 pt-fixed-header text-caption tabular-nums backdrop-blur-md"
-			>
-				{formatCallDuration(videoCall.elapsedSeconds)}
-			</div>
-
-			{#if canSwitchCamera}
-				<button
-					type="button"
-					aria-label="Switch camera"
-					class={[
-						"absolute top-2 left-4 z-20 pt-fixed-header",
-						controlClass,
-					]}
-					onclick={() => void videoCall.switchCamera()}
-				>
-					<CameraRotateIcon size={24} />
-				</button>
+				class="absolute inset-0 overflow-hidden bg-neutral-900"
+				{@attach (element) => {
+					videoCall.setRemoteTile(element);
+					return () => videoCall.setRemoteTile(null);
+				}}
+			></div>
+			{#if videoCall.remoteCameraOff}
+				<!-- A muted camera leaves their last frame frozen on screen, so
+				     their face covers it rather than a still of them. -->
+				<div class="absolute inset-0">
+					<UserAvatar
+						mediaHash={videoCall.party?.mediaHash ?? null}
+						class="size-full"
+						size="xl"
+					/>
+				</div>
 			{/if}
 
 			<div
-				class="relative z-20 mt-auto flex w-full items-center justify-center gap-6 pb-10 pb-fixed-nav"
+				class="relative z-20 px-4 pt-fixed-header"
+				style:text-shadow="0 1px 4px rgb(0 0 0 / 0.7)"
 			>
-				<button
-					type="button"
-					aria-label={videoCall.micMuted
-						? "Unmute microphone"
-						: "Mute microphone"}
-					class={controlClass}
-					onclick={() => videoCall.toggleMic()}
-				>
-					{#if videoCall.micMuted}
-						<MicrophoneSlashIcon size={24} />
-					{:else}
-						<MicrophoneIcon size={24} />
-					{/if}
-				</button>
-				<button
-					type="button"
-					aria-label="Hang up"
-					class="flex size-16 items-center justify-center rounded-full bg-destructive text-white shadow-lg transition active:scale-90"
-					onclick={() => void videoCall.hangUp()}
-				>
-					<PhoneSlashIcon size={28} />
-				</button>
-				<button
-					type="button"
-					aria-label={videoCall.cameraOff
-						? "Turn camera on"
-						: "Turn camera off"}
-					class={controlClass}
-					onclick={() => videoCall.toggleCamera()}
-				>
-					{#if videoCall.cameraOff}
-						<VideoCameraSlashIcon size={24} />
-					{:else}
-						<VideoCameraIcon size={24} />
-					{/if}
-				</button>
+				<div class="text-title font-bold">{name}</div>
+				<div class="text-body text-white/70 tabular-nums">
+					{formatCallDuration(videoCall.elapsedSeconds)}
+				</div>
 			</div>
 		{:else}
 			<div
-				class="flex flex-1 flex-col items-center justify-center gap-4 px-6 pb-fixed-nav text-center"
+				class="relative z-20 flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center"
 			>
 				<div class="relative size-28">
-					{#if ringing}
-						<span
-							class="absolute inset-0 animate-ping rounded-full bg-primary/25"
-						></span>
-					{/if}
+					<span
+						class="absolute inset-0 animate-ping rounded-full bg-primary/25"
+					></span>
 					<UserAvatar
 						mediaHash={videoCall.party?.mediaHash ?? null}
 						class="relative size-28 overflow-hidden rounded-full border-2 border-primary/40"
@@ -171,33 +142,102 @@
 				</div>
 				<div class="text-title font-bold">{name}</div>
 				<div class="text-body text-white/70">
-					{videoCall.phase === "incoming"
-						? "Incoming video call"
-						: "Calling…"}
-				</div>
-				<div class="mt-8 flex items-center gap-8">
-					{#if videoCall.phase === "incoming"}
-						<button
-							type="button"
-							aria-label="Answer"
-							class="flex size-16 items-center justify-center rounded-full bg-online text-white shadow-lg transition active:scale-90"
-							onclick={() => void videoCall.accept()}
-						>
-							<VideoCameraIcon size={28} />
-						</button>
-					{/if}
-					<button
-						type="button"
-						aria-label={videoCall.phase === "incoming"
-							? "Decline"
-							: "Cancel the call"}
-						class="flex size-16 items-center justify-center rounded-full bg-destructive text-white shadow-lg transition active:scale-90"
-						onclick={() => void videoCall.hangUp()}
-					>
-						<PhoneSlashIcon size={28} />
-					</button>
+					{incoming ? "Incoming video call" : "Calling…"}
 				</div>
 			</div>
 		{/if}
+
+		<!-- Our own tile sits above the controls in every phase, ringing
+		     included: a call is answered having already seen what is going out,
+		     and on the camera picked for it. -->
+		<div
+			class="absolute right-4 bottom-36 z-20 h-40 w-28 overflow-hidden rounded-xl border border-white/15 bg-neutral-900 shadow-lg"
+		>
+			<div
+				class="size-full"
+				{@attach (element) => {
+					videoCall.setLocalTile(element);
+					return () => videoCall.setLocalTile(null);
+				}}
+			></div>
+			{#if videoCall.cameraOff}
+				<div
+					class="absolute inset-0 flex flex-col items-center justify-center gap-1.5 border border-dashed border-white/20 bg-neutral-900"
+				>
+					<VideoCameraSlashIcon size={22} class="text-white/40" />
+					<span class="text-caption text-white/50">Camera off</span>
+				</div>
+			{:else if !videoCall.cameraReady}
+				<!-- Not off, just not open yet — our face stands in rather than
+				     a black rectangle. -->
+				<UserAvatar
+					mediaHash={videoCall.ownMediaHash}
+					class="absolute inset-0 size-full"
+					size="xl"
+				/>
+			{/if}
+			{#if !videoCall.cameraOff}
+				<span
+					class="pointer-events-none absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 to-transparent px-2 pt-4 pb-1.5 text-center text-caption leading-none text-white/85"
+				>
+					You · {facingLabel}
+				</span>
+			{/if}
+			{#if active}
+				<!-- Its own control rather than a handler on the tile: the tile
+				     is where the video plays. -->
+				<button
+					type="button"
+					aria-label="Swap the video tiles"
+					class="absolute inset-0"
+					onclick={() => videoCall.swapTiles()}
+				></button>
+			{/if}
+		</div>
+
+		<div
+			class="relative z-20 mt-auto flex items-start justify-center gap-2 px-4 pb-8 pb-fixed-nav"
+		>
+			{#if active}
+				{@render control({
+					label: videoCall.micMuted ? "Unmute" : "Mute",
+					icon: micIcon,
+					onclick: () => videoCall.toggleMic(),
+				})}
+			{:else}
+				{@render control({
+					label: "Camera",
+					icon: cameraIcon,
+					onclick: () => videoCall.toggleCamera(),
+				})}
+			{/if}
+			{@render control({
+				label: "Flip",
+				icon: flipIcon,
+				disabled: !videoCall.canFlip,
+				onclick: () => void videoCall.switchCamera(),
+			})}
+			{#if active}
+				{@render control({
+					label: "Camera",
+					icon: cameraIcon,
+					onclick: () => videoCall.toggleCamera(),
+				})}
+			{/if}
+			{@render control({
+				label: active ? "End" : incoming ? "Decline" : "Cancel",
+				icon: hangUpIcon,
+				tone: "decline",
+				onclick: () => void videoCall.hangUp(),
+			})}
+			{#if incoming}
+				{@render control({
+					label: "Accept",
+					icon: answerIcon,
+					tone: "accept",
+					onclick: () => void videoCall.accept(),
+				})}
+			{/if}
+		</div>
 	</div>
 {/if}

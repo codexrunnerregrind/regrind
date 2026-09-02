@@ -16,6 +16,8 @@ const {
 	wsOnMock,
 	agoraJoinMock,
 	agoraLeaveMock,
+	agoraOpenCameraMock,
+	agoraSwitchCameraMock,
 } = vi.hoisted(() => ({
 	startVideoCallMock: vi.fn(),
 	joinVideoCallMock: vi.fn(),
@@ -28,6 +30,8 @@ const {
 	wsOnMock: vi.fn(),
 	agoraJoinMock: vi.fn(),
 	agoraLeaveMock: vi.fn(),
+	agoraOpenCameraMock: vi.fn(),
+	agoraSwitchCameraMock: vi.fn(),
 }));
 
 vi.mock("$lib/api/messaging/video-calls", () => ({
@@ -38,6 +42,7 @@ vi.mock("$lib/api/messaging/video-calls", () => ({
 	getVideoCallInfo: getVideoCallInfoMock,
 }));
 vi.mock("$lib/api/users/profiles", () => ({ getProfile: getProfileMock }));
+vi.mock("$lib/platform/os", () => ({ isMobilePlatform: () => true }));
 vi.mock("$lib/api/error-toast", () => ({ showErrorToast: showErrorToastMock }));
 vi.mock("svelte-sonner", () => ({
 	toast: { error: toastErrorMock, info: toastInfoMock },
@@ -54,9 +59,13 @@ vi.mock("$lib/video-call/agora-session", () => ({
 		}
 		join = agoraJoinMock;
 		leave = agoraLeaveMock;
+		openCamera = agoraOpenCameraMock;
+		switchCamera = agoraSwitchCameraMock;
 		playLocalVideo = vi.fn();
 		setMicMuted = vi.fn();
 		setCameraMuted = vi.fn();
+		facing: "user" | "environment" = "user";
+		hasCamera = true;
 	},
 }));
 
@@ -107,6 +116,8 @@ describe("videoCall", () => {
 		leaveVideoCallMock.mockResolvedValue(undefined);
 		agoraJoinMock.mockResolvedValue(undefined);
 		agoraLeaveMock.mockResolvedValue(undefined);
+		agoraOpenCameraMock.mockResolvedValue(undefined);
+		agoraSwitchCameraMock.mockResolvedValue("environment");
 		// jsdom has no WebRTC of its own, and every entry point checks for it.
 		globalThis.RTCPeerConnection ??= class {} as never;
 		Object.defineProperty(navigator, "mediaDevices", {
@@ -201,6 +212,62 @@ describe("videoCall", () => {
 
 		expect(videoCall.party?.name).toBe("Sam");
 		expect(videoCall.party?.mediaHash).toBe("hash-1");
+	});
+
+	// The camera comes up while it is still ringing, so that answering is done
+	// having seen what is about to go out — and on the camera chosen for it.
+	it("previews our own camera before the call is answered", async () => {
+		listeners.get("videocall.v1.incoming_call")?.({
+			payload: { channelId: "channel-9", senderId: 7 },
+		});
+		await settle();
+
+		expect(agoraOpenCameraMock).toHaveBeenCalled();
+		expect(videoCall.cameraReady).toBe(true);
+		expect(videoCall.facing).toBe("user");
+		// Nothing is published, and no channel is joined, until we answer.
+		expect(agoraJoinMock).not.toHaveBeenCalled();
+	});
+
+	it("swaps to the back camera while it is still ringing", async () => {
+		listeners.get("videocall.v1.incoming_call")?.({
+			payload: { channelId: "channel-9", senderId: 7 },
+		});
+		await settle();
+
+		expect(videoCall.canFlip).toBe(true);
+		await videoCall.switchCamera();
+
+		expect(videoCall.facing).toBe("environment");
+	});
+
+	// Turning the camera off before answering is not a reason to offer a swap
+	// of a camera that is not running.
+	it("stops offering the swap once the camera is off", async () => {
+		listeners.get("videocall.v1.incoming_call")?.({
+			payload: { channelId: "channel-9", senderId: 7 },
+		});
+		await settle();
+
+		videoCall.toggleCamera();
+
+		expect(videoCall.cameraOff).toBe(true);
+		expect(videoCall.canFlip).toBe(false);
+	});
+
+	// The preview and the call are one session, so answering does not stop and
+	// restart the camera that has been on screen all along.
+	it("answers on the camera the preview already opened", async () => {
+		listeners.get("videocall.v1.incoming_call")?.({
+			payload: { channelId: "channel-9", senderId: 7 },
+		});
+		await settle();
+		agoraOpenCameraMock.mockClear();
+
+		await videoCall.accept();
+
+		expect(agoraJoinMock).toHaveBeenCalledTimes(1);
+		expect(agoraOpenCameraMock).not.toHaveBeenCalled();
 	});
 
 	// Answering is a deliberate act, so there is nobody left to wait for: the

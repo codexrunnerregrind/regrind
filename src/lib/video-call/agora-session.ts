@@ -47,6 +47,8 @@ export class AgoraSession {
 	#mic: IMicrophoneAudioTrack | null = null;
 	#camera: ICameraVideoTrack | null = null;
 	#facing: "user" | "environment" = "user";
+	#micMuted = false;
+	#cameraMuted = false;
 
 	constructor(handlers: AgoraSessionHandlers) {
 		// The official app uses the live-broadcasting profile rather than the
@@ -77,11 +79,44 @@ export class AgoraSession {
 		});
 	}
 
+	/** Which way the camera faces, once there is one. */
+	get facing(): "user" | "environment" {
+		return this.#facing;
+	}
+
+	/** Whether a camera is open — false until `openCamera` has succeeded. */
+	get hasCamera(): boolean {
+		return this.#camera !== null;
+	}
+
+	/**
+	 * Opens the camera without joining anything, so the local tile can show a
+	 * preview while a call is still ringing and the choice of camera can be
+	 * made before answering rather than after.
+	 *
+	 * Deliberately the camera alone: the microphone is not opened until the
+	 * call is actually answered. Nothing is published either way — publishing
+	 * only happens in `join` — but an open mic before you have picked up is
+	 * not something to ask of anyone.
+	 */
+	async openCamera(): Promise<void> {
+		if (this.#camera) return;
+		if (!webRtcSupported()) throw new WebRtcUnsupportedError();
+		const camera = await AgoraRTC.createCameraVideoTrack({
+			facingMode: this.#facing,
+		});
+		if (this.#cameraMuted) await camera.setMuted(true);
+		this.#camera = camera;
+	}
+
 	/**
 	 * Joins the channel and starts publishing. `uid` must be our own profile
 	 * id: the token is issued against that uid, and joining under any other
 	 * (including a server-assigned one) is rejected as an invalid token even
 	 * when the token and channel are right.
+	 *
+	 * Reuses whatever the preview already opened, so answering does not stop
+	 * and restart the camera the caller has been looking at.
 	 */
 	async join({
 		channelId,
@@ -93,11 +128,14 @@ export class AgoraSession {
 		profileId: number;
 	}): Promise<void> {
 		if (!webRtcSupported()) throw new WebRtcUnsupportedError();
+		await this.openCamera();
+		const mic = await AgoraRTC.createMicrophoneAudioTrack();
+		if (this.#micMuted) await mic.setMuted(true);
+		this.#mic = mic;
 		await this.#client.setClientRole("host");
 		await this.#client.join(AGORA_APP_ID, channelId, token, profileId);
-		[this.#mic, this.#camera] =
-			await AgoraRTC.createMicrophoneAndCameraTracks();
-		await this.#client.publish([this.#mic, this.#camera]);
+		// `openCamera` above guarantees the camera, or threw.
+		await this.#client.publish([mic, this.#camera!]);
 	}
 
 	playLocalVideo(into: HTMLElement): void {
@@ -112,11 +150,17 @@ export class AgoraSession {
 		await this.#client.renewToken(token);
 	}
 
+	// Both are remembered rather than only applied: the screen can mute either
+	// one while a call is still ringing, before the track it refers to exists,
+	// and that choice has to survive into the call rather than being lost when
+	// the track is finally created.
 	setMicMuted(muted: boolean): void {
+		this.#micMuted = muted;
 		void this.#mic?.setMuted(muted);
 	}
 
 	setCameraMuted(muted: boolean): void {
+		this.#cameraMuted = muted;
 		void this.#camera?.setMuted(muted);
 	}
 
@@ -125,11 +169,12 @@ export class AgoraSession {
 	 * a brief freeze rather than the track vanishing. Throws when the device
 	 * has no camera facing the other way, which a desktop webcam never does.
 	 */
-	async switchCamera(): Promise<void> {
-		if (!this.#camera) return;
+	async switchCamera(): Promise<"user" | "environment"> {
+		if (!this.#camera) return this.#facing;
 		const next = this.#facing === "user" ? "environment" : "user";
 		await this.#camera.setDevice({ facingMode: next });
 		this.#facing = next;
+		return next;
 	}
 
 	async leave(): Promise<void> {

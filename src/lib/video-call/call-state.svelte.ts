@@ -13,6 +13,7 @@ import {
 	isVideoCallSuccess,
 	videoCallResultMessage,
 } from "$lib/model/messaging/video-calls";
+import { isMobilePlatform } from "$lib/platform/os";
 import {
 	webRtcSupported,
 	WebRtcUnsupportedError,
@@ -69,6 +70,10 @@ class VideoCallState {
 	remainingSeconds = $state<number | null>(null);
 	/** Our own face, for our tile while our camera is off. */
 	ownMediaHash = $state<string | null>(null);
+	/** Which way our camera points, named on our own tile. */
+	facing = $state<"user" | "environment">("user");
+	/** Whether our camera is open, so the tile knows to show a picture. */
+	cameraReady = $state(false);
 
 	/** Set once the local media is up, so the screen can render it. */
 	#session: AgoraSession | null = null;
@@ -83,6 +88,14 @@ class VideoCallState {
 	#localTile: HTMLElement | null = null;
 	#remoteTile: HTMLElement | null = null;
 	#playRemote: ((into: HTMLElement) => void) | null = null;
+	/**
+	 * Whether the caller is still waiting to be picked up. Read by the session
+	 * handlers rather than captured when they are bound: the session now exists
+	 * before we know, because the camera preview opens it while ringing.
+	 */
+	#waitForThem = false;
+	/** The one session being built, so that two askers get the same one. */
+	#opening: Promise<AgoraSession> | null = null;
 
 	/** Whether a call can be placed from this build at all. */
 	get supported(): boolean {
@@ -115,6 +128,15 @@ class VideoCallState {
 		if (this.blockedReason !== null || seconds === null) return null;
 		const minutes = Math.floor(seconds / 60);
 		return minutes >= 1 ? `${minutes} min left` : `${seconds}s left`;
+	}
+
+	/**
+	 * Whether swapping front and back is on offer. Only on a phone — a desktop
+	 * webcam has nothing facing the other way — and only with a camera open and
+	 * running to swap.
+	 */
+	get canFlip(): boolean {
+		return isMobilePlatform() && this.cameraReady && !this.cameraOff;
 	}
 
 	/**
@@ -204,6 +226,9 @@ class VideoCallState {
 
 		this.party = party;
 		this.phase = "outgoing";
+		// Our own camera comes up while it rings rather than when they answer,
+		// so the wait is spent looking at what they are about to see.
+		void this.#startPreview();
 
 		let started;
 		try {
@@ -306,7 +331,8 @@ class VideoCallState {
 
 	async switchCamera(): Promise<void> {
 		try {
-			await this.#session?.switchCamera();
+			const facing = await this.#session?.switchCamera();
+			if (facing !== undefined) this.facing = facing;
 		} catch (error) {
 			console.warn("[video-call] switching camera failed", error);
 			toast.error("Couldn't switch camera");
@@ -334,10 +360,75 @@ class VideoCallState {
 	}
 
 	/**
-	 * Bring up our own media and, once it is up, the call. The Agora SDK is
-	 * imported here rather than at the top of the module so that it is fetched
-	 * on the first call rather than at startup.
+	 * The session for this call, made on first use. The Agora SDK is imported
+	 * here rather than at the top of the module so that it is fetched on the
+	 * first call rather than at startup.
+	 *
+	 * The promise is what is kept, not just the session: the preview and the
+	 * call both ask for it, and the preview is still opening when the call
+	 * arrives. Racing two of these would build two RTC clients and leave the
+	 * camera of whichever lost running with nothing to close it.
 	 */
+	#openSession(): Promise<AgoraSession> {
+		return (this.#opening ??= this.#makeSession());
+	}
+
+	async #makeSession(): Promise<AgoraSession> {
+		if (!webRtcSupported()) throw new WebRtcUnsupportedError();
+		const { AgoraSession } = await import("$lib/video-call/agora-session");
+		const session = new AgoraSession({
+			onRemoteVideo: (play) => {
+				this.#playRemote = play;
+				if (this.#remoteTile) play(this.#remoteTile);
+			},
+			onRemoteJoined: () => {
+				if (this.#waitForThem && this.phase === "outgoing")
+					this.#markActive();
+			},
+			onRemoteLeft: () => {
+				// Their client leaving the channel ends the call for us too;
+				// the socket event saying so may never arrive.
+				void this.hangUp();
+			},
+			onRemoteCameraMuted: (muted) => {
+				this.remoteCameraOff = muted;
+			},
+		});
+		this.#session = session;
+		return session;
+	}
+
+	/**
+	 * Open the camera while the call is still ringing, so that answering is a
+	 * decision made having seen what the other side is about to get — and so
+	 * the choice of camera can be made before picking up rather than after.
+	 *
+	 * Nothing is published until the call is joined, and the microphone is not
+	 * opened at all until then.
+	 */
+	async #startPreview(): Promise<void> {
+		try {
+			const session = await this.#openSession();
+			await session.openCamera();
+			// The call can have been declined, or have failed to start, while
+			// the camera was opening — in which case this one is nobody's and
+			// has to be shut rather than left running.
+			if (this.phase === "idle" || this.#session !== session) {
+				await session.leave();
+				return;
+			}
+			this.facing = session.facing;
+			this.cameraReady = session.hasCamera;
+			if (this.#localTile) session.playLocalVideo(this.#localTile);
+		} catch (error) {
+			// A preview we cannot show is not a reason to refuse the call: the
+			// real attempt at the camera happens on join and reports its own
+			// failure. The tile falls back to our profile picture.
+			console.warn("[video-call] could not preview the camera", error);
+		}
+	}
+
+	/** Join the channel and go live on it. */
 	async #connect({
 		channelId,
 		token,
@@ -349,30 +440,12 @@ class VideoCallState {
 	}): Promise<void> {
 		const ourProfileId = this.#ourProfileId;
 		if (ourProfileId === null) return;
+		this.#waitForThem = waitForThem;
 		try {
-			if (!webRtcSupported()) throw new WebRtcUnsupportedError();
-			const { AgoraSession } =
-				await import("$lib/video-call/agora-session");
-			const session = new AgoraSession({
-				onRemoteVideo: (play) => {
-					this.#playRemote = play;
-					if (this.#remoteTile) play(this.#remoteTile);
-				},
-				onRemoteJoined: () => {
-					if (waitForThem && this.phase === "outgoing")
-						this.#markActive();
-				},
-				onRemoteLeft: () => {
-					// Their client leaving the channel ends the call for us
-					// too; the socket event saying so may never arrive.
-					void this.hangUp();
-				},
-				onRemoteCameraMuted: (muted) => {
-					this.remoteCameraOff = muted;
-				},
-			});
+			const session = await this.#openSession();
 			await session.join({ channelId, token, profileId: ourProfileId });
-			this.#session = session;
+			this.facing = session.facing;
+			this.cameraReady = session.hasCamera;
 			if (this.#localTile) session.playLocalVideo(this.#localTile);
 			if (!waitForThem) this.#markActive();
 		} catch (error) {
@@ -448,6 +521,7 @@ class VideoCallState {
 		this.#channelId = channelId;
 		this.party = { profileId: senderId, name: null, mediaHash: null };
 		this.phase = "incoming";
+		void this.#startPreview();
 
 		// The event carries an id and nothing else, so the face and the name
 		// come from their profile — the ring shows regardless of whether that
@@ -498,6 +572,7 @@ class VideoCallState {
 		this.#channelId = null;
 		this.#maxSeconds = FALLBACK_MAX_SECONDS;
 		this.#playRemote = null;
+		this.#opening = null;
 		this.#localTile = null;
 		this.#remoteTile = null;
 		this.phase = "idle";
@@ -507,6 +582,9 @@ class VideoCallState {
 		this.remoteCameraOff = false;
 		this.localIsMain = false;
 		this.elapsedSeconds = 0;
+		this.facing = "user";
+		this.cameraReady = false;
+		this.#waitForThem = false;
 	}
 }
 
