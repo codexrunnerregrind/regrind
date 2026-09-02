@@ -7,6 +7,7 @@ import { AndroidFs } from "tauri-plugin-android-fs-api";
 import z from "zod";
 
 import { demoEnabled } from "$lib/demo";
+import { restampMediaToNow } from "$lib/platform/media-timestamp";
 import { fromBase64 } from "$lib/util/base64";
 import { unproxyMediaUrl } from "$lib/util/media";
 
@@ -60,6 +61,9 @@ async function fetchMedia(
 		hintMimeType ??
 		contentType?.split(";")[0]?.trim() ??
 		"application/octet-stream";
+	// The gallery files an import by the timestamps in the bytes, so without
+	// this a save lands wherever the photo was taken rather than under today.
+	restampMediaToNow(bytes, mimeType);
 	const isVideo = mimeType.startsWith("video/");
 	const extension =
 		extensionByMimeType[mimeType] ??
