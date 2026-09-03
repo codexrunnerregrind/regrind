@@ -30,6 +30,7 @@ private-api = []
 devtools = ["dep:tauri-plugin-devtools"]
 
 [build-dependencies]
+cc = "1"
 tauri-build = { version = "2", features = [] }
 
 [dev-dependencies]

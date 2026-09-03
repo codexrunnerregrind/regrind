@@ -8,15 +8,23 @@ use crate::state::AppState;
 
 const MAX_AUDIO_BYTES: usize = 32 * 1024 * 1024;
 
-/// What the API accepts for one chat video. Refused here rather than after the
-/// bytes have been pushed over a phone connection.
-const MAX_VIDEO_BYTES: usize = 12 * 1024 * 1024;
+/// A sanity bound on the base64 path, not the API's own limit — that one is
+/// unpublished and far lower, and answers with a 413 handled below. This only
+/// stops bytes that would not survive the IPC on a phone in the first place.
+/// Where the platform can re-encode, `upload_chat_video_file` avoids all of it.
+const MAX_VIDEO_BYTES: usize = 64 * 1024 * 1024;
 
+/// Only `media_id` is depended on. A photo's response carries a CDN url and a
+/// hash as well, but refusing an upload the server accepted over a field it may
+/// not send for every kind of media buys nothing: the drawer is re-read after an
+/// add, and the message body needs only the id.
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MediaUploadResponse {
 	pub media_id: i64,
+	#[serde(default)]
 	pub url: String,
+	#[serde(default)]
 	pub media_hash: String,
 }
 
@@ -153,9 +161,29 @@ pub async fn upload_chat_video(
 		return Err(AppError::Http("Refusing to upload empty video".into()));
 	}
 	if bytes.len() > MAX_VIDEO_BYTES {
-		return Err(AppError::Media("That video is too large to send".into()));
+		return Err(AppError::Media(format!(
+			"That video is too large to send ({} MB)",
+			bytes.len() / (1024 * 1024)
+		)));
 	}
 
+	send_video(&state, bytes, &content_type, length_seconds, looping, false)
+		.await
+}
+
+/// Puts the bytes on the wire, whether they came base64'd over the IPC or out
+/// of the platform's own encoder.
+async fn send_video(
+	state: &tauri::State<'_, AppState>,
+	bytes: Vec<u8>,
+	content_type: &str,
+	length_seconds: Option<i64>,
+	looping: bool,
+	// Whether these bytes already came out of the platform's encoder, which
+	// decides whether a refusal is worth blaming on the recording.
+	converted: bool,
+) -> Result<MediaUploadResponse, AppError> {
+	let bytes_len = bytes.len();
 	let mut path =
 		format!("/v5/chat/media/upload?takenOnGrindr=false&looping={looping}");
 	if let Some(length) = length_seconds {
@@ -167,11 +195,29 @@ pub async fn upload_chat_video(
 		.request_authenticated_bytes(
 			grindr::Method::POST,
 			&path,
-			&content_type,
+			content_type,
 			bytes,
 		)
 		.await
 		.map_err(|e| AppError::from_client_error(e, &client))?;
+
+	// The API's own size limit, which it does not publish and which sits well
+	// below anything a phone camera produces at 4K. It answers with a bare
+	// `internal_error` body, so the status is the only readable part of it.
+	if response.status == 413 {
+		let megabytes = bytes_len / (1024 * 1024);
+		return Err(AppError::Media(if converted {
+			format!(
+				"The server refused this video: {megabytes} MB even after \
+				 converting it. It is too long to send — trim it first."
+			)
+		} else {
+			format!(
+				"The server refused this video as too large ({megabytes} MB). \
+				 Record a shorter clip, or lower the camera's video quality."
+			)
+		}));
+	}
 
 	if !(200..300).contains(&response.status) {
 		return Err(AppError::from_client_error(
@@ -183,6 +229,36 @@ pub async fn upload_chat_video(
 	serde_json::from_slice(&response.body).map_err(|e| {
 		AppError::Http(format!("Failed to parse video upload response: {e}"))
 	})
+}
+
+/// Whether this build can shrink a clip before sending it. The composer asks
+/// before it offers the file-based path below.
+#[tauri::command]
+pub fn video_transcoding_supported() -> bool {
+	crate::video::supported()
+}
+
+/// Uploads a clip straight off the camera roll, re-encoded on the way.
+///
+/// `source` is the picker's own handle on the file — a path on iOS, a
+/// `content://` URI on Android — not bytes: the original never crosses the IPC,
+/// which is the point. A 4K clip is tens of megabytes and the API has refused
+/// 15 MB, so what goes up is a 720p H.264 copy.
+#[tauri::command]
+pub async fn upload_chat_video_file(
+	app: tauri::AppHandle,
+	state: tauri::State<'_, AppState>,
+	source: String,
+	length_seconds: Option<i64>,
+	looping: bool,
+) -> Result<MediaUploadResponse, AppError> {
+	let bytes = crate::video::shrink(&app, &source).await?;
+	if bytes.is_empty() {
+		return Err(AppError::Media(
+			"That video came back empty from conversion".into(),
+		));
+	}
+	send_video(&state, bytes, "video/mp4", length_seconds, looping, true).await
 }
 
 /// The album endpoint takes `multipart/form-data`, the only upload in the API

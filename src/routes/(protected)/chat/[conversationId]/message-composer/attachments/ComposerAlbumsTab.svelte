@@ -138,6 +138,7 @@
 	export function expiryControl() {
 		if (stopMode || selected.size === 0) return null;
 		return {
+			title: "Share album for…",
 			label: expirationLabel,
 			selected: expirationType,
 			options: EXPIRATION_OPTIONS,

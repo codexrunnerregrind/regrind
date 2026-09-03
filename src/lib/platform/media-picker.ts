@@ -10,6 +10,7 @@ type MediaFilter = { name: string; extensions: string[]; mimeTypes: string[] };
 const mimeTypesByExtension: Record<string, string> = {
 	jpeg: "image/jpeg",
 	jpg: "image/jpeg",
+	mov: "video/quicktime",
 	mp4: "video/mp4",
 	png: "image/png",
 	webm: "video/webm",
@@ -17,7 +18,9 @@ const mimeTypesByExtension: Record<string, string> = {
 
 const imageExtensions = ["jpg", "jpeg", "png"];
 
-const videoExtensions = ["mp4", "webm"];
+// A clip off an iPhone camera is QuickTime, not MP4; without the extension here
+// one is labelled `video/mp4` on the way up, which is a lie about the bytes.
+const videoExtensions = ["mov", "mp4", "webm"];
 
 const filtersByKind = {
 	image: {
@@ -52,6 +55,22 @@ export async function pickMedia(kind: MediaKind): Promise<PickedMedia | null> {
 
 export function pickMultipleMedia(kind: MediaKind): Promise<PickedMedia[]> {
 	return pick({ kind, multiple: true });
+}
+
+/**
+ * The picker's own handle on the file, for the native side to open directly: a
+ * filesystem path on desktop and iOS, a `content://` URI on Android. `null` for
+ * a browser `File`, which has no path at all.
+ */
+export function nativeSource(media: PickedMedia): string | null {
+	switch (media.source) {
+		case "android":
+			return media.uri.uri;
+		case "desktop":
+			return media.path;
+		case "web":
+			return null;
+	}
 }
 
 export async function readMediaBytes(

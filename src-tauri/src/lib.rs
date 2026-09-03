@@ -8,6 +8,7 @@ pub mod media;
 mod photo;
 mod state;
 mod storage;
+mod video;
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 mod webview_recovery;
 
@@ -182,6 +183,7 @@ pub fn run() {
         .plugin(api::google_oauth::plugin())
         .plugin(api::update::plugin())
         .plugin(app_settings::plugin())
+        .plugin(video::plugin())
         .manage(AppState::default())
         .manage(media::MediaProxy::default())
         .manage(api::session_recovery::SessionRecovery::default())
@@ -207,6 +209,8 @@ pub fn run() {
             api::media_upload::upload_chat_media,
             api::media_upload::upload_chat_audio,
             api::media_upload::upload_chat_video,
+            api::media_upload::upload_chat_video_file,
+            api::media_upload::video_transcoding_supported,
             api::media_upload::upload_right_now_media,
             api::media_upload::upload_album_content,
             api::media_upload::upload_profile_image,

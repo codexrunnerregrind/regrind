@@ -462,6 +462,17 @@ export const outboundMessageSchema = z.discriminatedUnion("type", [
 			maxViews: z.int().nonnegative(),
 		}),
 	}),
+	// The unlimited-views counterpart of `Video`: the API takes the view cap as
+	// the message type, not as a number, so "Unlimited" is a type of its own
+	// rather than a `maxViews` the server would quietly clamp.
+	z.object({
+		type: z.literal("NonExpiringVideo"),
+		body: z.object({
+			mediaId: mediaIdSchema,
+			looping: z.boolean(),
+			maxViews: z.int().nonnegative(),
+		}),
+	}),
 	z.object({
 		type: z.literal("AlbumContentReaction"),
 		body: z.object({

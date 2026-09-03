@@ -27,6 +27,8 @@
 	// `expiryControl` lets a tab put a setting of its own on the line above the
 	// confirm button, where it stays put as the tab's own content scrolls.
 	type ExpiryControl = {
+		/** Names what the options do, above the list. */
+		title: string;
 		label: string;
 		selected: string;
 		options: { value: string; label: string }[];
@@ -40,7 +42,16 @@
 
 	let selectedTab = $state<Tab>("media");
 
-	const isFullsizeTab = $derived(FULLSIZE_TABS.includes(selectedTab));
+	// The media tab borrows the whole sheet while a pick is being framed: the
+	// tab bar and the send row would only offer ways to lose the edit.
+	let overlay = $state(false);
+
+	// The add-media panel is a dialog, not a grid: it sizes the sheet to itself
+	// and sits on the bottom edge, rather than opening at two-fifths of the
+	// screen with the rest of itself waiting below the fold.
+	const isFullsizeTab = $derived(
+		FULLSIZE_TABS.includes(selectedTab) && !overlay,
+	);
 
 	// Which tab the selection pill sits over, in the order the triggers are
 	// rendered below.
@@ -57,7 +68,7 @@
 
 	// Every tab confirms from the same row, so its button sits at one height
 	// whichever tab is showing.
-	const showActionRow = $derived(selectedCount > 0);
+	const showActionRow = $derived(selectedCount > 0 && !overlay);
 
 	// Closed with the selection: the dropdown's content is portalled out of the
 	// row, so nothing else would take it off screen with the button that opened
@@ -105,6 +116,7 @@
 		settleTimer = null;
 		counts = {};
 		expiring = false;
+		overlay = false;
 	});
 
 	dismissOnBackGesture({
@@ -157,8 +169,13 @@
 				<div
 					data-slot="sheet-panel"
 					class={[
-						" rounded-t-4xl border border-border bg-popover px-4 pb-20 shadow-xl",
-						{ "min-h-full": isFullsizeTab },
+						" rounded-t-4xl border border-border bg-popover px-4 shadow-xl",
+						{
+							"min-h-full": isFullsizeTab,
+							// Room for the tab bar, except while it is away.
+							"pb-4": overlay,
+							"pb-20": !overlay,
+						},
 					]}
 				>
 					<div
@@ -171,6 +188,7 @@
 							{expiring}
 							onSelectionChange={(count) =>
 								(counts.media = count)}
+							onOverlayChange={(active) => (overlay = active)}
 							onClose={() => (open = false)}
 						/>
 					</Tabs.Content>
@@ -243,7 +261,7 @@
 						</DropdownMenu.Trigger>
 						<DropdownMenu.Content class="w-52" align="center">
 							<DropdownMenu.Label
-								>Share album for…</DropdownMenu.Label
+								>{expiry.title}</DropdownMenu.Label
 							>
 							{#each expiry.options as option (option.value)}
 								<DropdownMenu.Item
@@ -265,7 +283,9 @@
 					</DropdownMenu.Root>
 				{/if}
 				<div class="flex justify-center gap-2">
-					{#if selectedTab === "media"}
+					<!-- Photos expire on a timer, clips on a view count: the
+					     toggle stands down for the dropdown a video brings. -->
+					{#if selectedTab === "media" && expiry === null}
 						<Toggle
 							aria-label="Set photo as expiring after 10 seconds"
 							size="lg"
@@ -296,7 +316,7 @@
 						class="pointer-events-auto shadow-lg"
 						onclick={sendSelected}
 					>
-						{expiring && selectedTab === "media"
+						{expiring && selectedTab === "media" && expiry === null
 							? "Send Expiring"
 							: (tabs[selectedTab]?.actionLabel?.() ?? "Send")}
 						{#if selectedTab === "media"}
@@ -312,7 +332,10 @@
 			</div>
 
 			<Drawer.Footer
-				class="absolute inset-x-0 bottom-0 items-center rounded-b-4xl pt-1 pb-2 select-none"
+				class={[
+					"absolute inset-x-0 bottom-0 items-center rounded-b-4xl pt-1 pb-2 select-none",
+					{ hidden: overlay },
+				]}
 			>
 				<!-- The main tab bar's capsule, worn here too: same glass
 				     material, same shadow, same sliding pill (see NavBar.svelte
