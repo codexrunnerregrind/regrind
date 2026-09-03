@@ -15,7 +15,8 @@
 	bind:this={ref}
 	data-slot="alert-dialog-footer"
 	class={cn(
-		"cn-alert-dialog-footer flex flex-col-reverse gap-2 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:flex-row sm:justify-end",
+		// Laid out like the dialog footer — see dialog-footer.svelte.
+		"cn-alert-dialog-footer flex flex-wrap justify-end gap-2 *:min-w-28 *:flex-1 group-data-[size=sm]/alert-dialog-content:grid group-data-[size=sm]/alert-dialog-content:grid-cols-2 sm:*:flex-none",
 		className,
 	)}
 	{...restProps}

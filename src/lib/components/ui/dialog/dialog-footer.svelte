@@ -20,7 +20,11 @@
 	bind:this={ref}
 	data-slot="dialog-footer"
 	class={cn(
-		"flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+		// A row, not a stack: two buttons in a phone-width dialog fit side by side,
+		// and stacking them read as two separate full-width actions. `flex-1` splits
+		// the row evenly, `flex-wrap` with a floor on each button drops the extras
+		// onto a second line rather than squeezing their labels.
+		"flex flex-wrap justify-end gap-2 *:min-w-28 *:flex-1 sm:*:flex-none",
 		className,
 	)}
 	{...restProps}
