@@ -34,7 +34,7 @@
     <rect x="15" y="15" width="482" height="482" rx="106"
           fill="none" stroke="url(#accentGrad)" stroke-width="4" stroke-opacity="0.7"/>
 
-    <g stroke="url(#gridGrad)" stroke-width="6" stroke-linecap="round" stroke-dasharray="80 30">
+    <g stroke="url(#gridGrad)" stroke-width="6" stroke-linecap="round">
       <line x1="144" y1="80" x2="144" y2="432"/>
       <line x1="216" y1="80" x2="216" y2="432"/>
       <line x1="296" y1="80" x2="296" y2="432"/>

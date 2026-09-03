@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Android themed-icon layer: the mark alone. The grid is left out because
+       --mono flattens every stroke to one opaque colour, which would give the
+       grid the same weight as the "R". -->
+  <path d="M168 360V152H272C316 152 344 180 344 220C344 260 316 288 272 288H220M258 288L332 360"
+        fill="none" stroke="#FF8F00" stroke-width="28"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M224 216L272 192L248 240L240 224Z" fill="#FF8F00"/>
+</svg>

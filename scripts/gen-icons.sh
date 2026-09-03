@@ -31,7 +31,7 @@ bun scripts/svg-to-android-vector.ts \
 
 # Monochrome icons
 bun scripts/svg-to-android-vector.ts \
-  contrib/logo/app-foreground-icon.svg \
+  contrib/logo/app-monochrome-icon.svg \
   "$RES/drawable/ic_launcher_monochrome.xml" \
   --width 108 --height 108 --scale 0.9 --mono '#FFFFFF'
 

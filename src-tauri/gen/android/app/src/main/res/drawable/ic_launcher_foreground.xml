@@ -11,6 +11,46 @@
         android:pivotX="256"
         android:pivotY="256">
         <path
+            android:strokeColor="#8CFF6F00"
+            android:strokeWidth="6"
+            android:strokeLineCap="round"
+            android:pathData="M144 130V382" />
+        <path
+            android:strokeColor="#8CFF6F00"
+            android:strokeWidth="6"
+            android:strokeLineCap="round"
+            android:pathData="M216 130V382" />
+        <path
+            android:strokeColor="#8CFF6F00"
+            android:strokeWidth="6"
+            android:strokeLineCap="round"
+            android:pathData="M296 130V382" />
+        <path
+            android:strokeColor="#8CFF6F00"
+            android:strokeWidth="6"
+            android:strokeLineCap="round"
+            android:pathData="M368 130V382" />
+        <path
+            android:strokeColor="#8CFF6F00"
+            android:strokeWidth="6"
+            android:strokeLineCap="round"
+            android:pathData="M130 144H382" />
+        <path
+            android:strokeColor="#8CFF6F00"
+            android:strokeWidth="6"
+            android:strokeLineCap="round"
+            android:pathData="M130 216H382" />
+        <path
+            android:strokeColor="#8CFF6F00"
+            android:strokeWidth="6"
+            android:strokeLineCap="round"
+            android:pathData="M130 296H382" />
+        <path
+            android:strokeColor="#8CFF6F00"
+            android:strokeWidth="6"
+            android:strokeLineCap="round"
+            android:pathData="M130 368H382" />
+        <path
             android:strokeColor="#FF8F00"
             android:strokeWidth="28"
             android:strokeLineCap="round"

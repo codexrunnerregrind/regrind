@@ -30,7 +30,7 @@
   <!-- Full-bleed: iOS and macOS mask their own corners. -->
   <rect width="512" height="512" fill="url(#bgGrad)"/>
 
-  <g stroke="url(#gridGrad)" stroke-width="6" stroke-linecap="round" stroke-dasharray="80 30">
+  <g stroke="url(#gridGrad)" stroke-width="6" stroke-linecap="round">
     <line x1="144" y1="80" x2="144" y2="432"/>
     <line x1="216" y1="80" x2="216" y2="432"/>
     <line x1="296" y1="80" x2="296" y2="432"/>
