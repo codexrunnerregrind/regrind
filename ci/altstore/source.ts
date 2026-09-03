@@ -26,7 +26,9 @@ const RAW = `${REPO}/raw/branch/main`;
 const METADATA = "fastlane/metadata/android/en-US";
 const SHOTS = "contrib/altstore";
 // The fork's own artwork; fastlane/metadata still carries upstream's mask icon.
-const ICON = "contrib/logo/regrind-512px.png";
+// The full app icon, not the bare mark: a store listing wants the icon a user
+// will see on their home screen, background and grid included.
+const ICON = "contrib/logo/app-icon.png";
 const LISTING = "ci/altstore";
 
 const root = resolve(import.meta.dir, "../..");
