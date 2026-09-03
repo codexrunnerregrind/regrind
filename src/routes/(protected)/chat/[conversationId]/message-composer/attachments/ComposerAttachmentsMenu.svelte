@@ -259,7 +259,14 @@
 								</button>
 							{/snippet}
 						</DropdownMenu.Trigger>
-						<DropdownMenu.Content class="w-52" align="center">
+						<!-- Upwards: the trigger rides just above the send button
+						     at the foot of the sheet, so the default side put the
+						     options off the bottom of the screen. -->
+						<DropdownMenu.Content
+							class="w-52"
+							align="center"
+							side="top"
+						>
 							<DropdownMenu.Label
 								>{expiry.title}</DropdownMenu.Label
 							>
