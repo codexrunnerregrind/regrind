@@ -53,7 +53,7 @@ const config = {
 		adapter: adapter({ fallback: "index.html" }),
 		alias: { $layout: "src/layout.css" },
 		version: {
-			name: `OpenGrind/${projectVersion}\ngrindr3/${grindrApiVersion};${grindrApiBuildNumber}`,
+			name: `ReGrind/${projectVersion}\ngrindr3/${grindrApiVersion};${grindrApiBuildNumber}`,
 		},
 	},
 };
