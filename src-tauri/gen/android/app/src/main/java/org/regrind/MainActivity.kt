@@ -17,6 +17,11 @@ import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.crates.keyring.Keyring
+import java.lang.ref.WeakReference
+import org.json.JSONObject
+import org.regrind.push.PushFirebase
+import org.regrind.push.PushHub
+import org.regrind.push.PushNotifier
 
 class MainActivity : TauriActivity() {
 	private var insetsTop = 0
@@ -66,10 +71,26 @@ class MainActivity : TauriActivity() {
 			runOnUiThread { this@MainActivity.moveTaskToBack(true) }
 		}
 	}
-	
+
+	// Bridge for the FCM push path: the frontend keeps native suppression state
+	// current and syncs the token through it (see push.svelte.ts).
+	inner class PushInterface {
+		@JavascriptInterface fun setPrefs(messages: Boolean, taps: Boolean) {
+			PushHub.messagesEnabled = messages
+			PushHub.tapsEnabled = taps
+		}
+
+		@JavascriptInterface fun setActiveRoute(route: String?) {
+			PushHub.setActiveRoute(route)
+		}
+	}
+
 	override fun onCreate(savedInstanceState: Bundle?) {
 		enableEdgeToEdge()
 		Keyring.initializeNdkContext(applicationContext)
+		activityRef = WeakReference(this)
+		PushFirebase.initialize(this)
+		PushFirebase.fetchToken { token -> onFcmTokenRefreshed(token) }
 		pendingWebViewWarning = WebViewSupport.current(
 			context = this,
 			minSupportedMajor = BuildConfig.MIN_SUPPORTED_WEBVIEW_MAJOR,
@@ -117,7 +138,65 @@ class MainActivity : TauriActivity() {
 		webView.settings.setGeolocationEnabled(false)
 		webView.addJavascriptInterface(InsetsInterface(), "__AndroidInsets")
 		webView.addJavascriptInterface(BackInterface(), "__AndroidBack")
+		webView.addJavascriptInterface(PushInterface(), "__RegrindPush")
+		latestFcmToken?.let { dispatchFcmToken(it) }
+		handlePushIntent(intent)
 		maybeWarnAboutWebView()
+	}
+
+	override fun onResume() {
+		super.onResume()
+		PushHub.inForeground = true
+		latestFcmToken?.let { dispatchFcmToken(it) }
+	}
+
+	override fun onPause() {
+		PushHub.inForeground = false
+		super.onPause()
+	}
+
+	override fun onNewIntent(intent: Intent) {
+		super.onNewIntent(intent)
+		setIntent(intent)
+		handlePushIntent(intent)
+	}
+
+	// Route the app to the screen a tapped notification points at. The webview
+	// may not exist yet on a cold start; onWebViewCreate replays the intent.
+	private fun handlePushIntent(intent: Intent?) {
+		val route = intent?.getStringExtra(PushNotifier.EXTRA_ROUTE) ?: return
+		intent.removeExtra(PushNotifier.EXTRA_ROUTE)
+		val webView = webViewRef ?: return
+		runOnUiThread {
+			webView.evaluateJavascript(
+				"window.dispatchEvent(new CustomEvent('regrind:push-open', " +
+					"{ detail: { route: ${JSONObject.quote(route)} } }));",
+				null,
+			)
+		}
+	}
+
+	private fun dispatchFcmToken(token: String) {
+		val webView = webViewRef ?: return
+		runOnUiThread {
+			webView.evaluateJavascript(
+				"window.__REGRIND_FCM_TOKEN = ${JSONObject.quote(token)};" +
+					"window.dispatchEvent(new CustomEvent('regrind:fcm-token', " +
+					"{ detail: { token: ${JSONObject.quote(token)} } }));",
+				null,
+			)
+		}
+	}
+
+	companion object {
+		private var activityRef: WeakReference<MainActivity>? = null
+		private var latestFcmToken: String? = null
+
+		@JvmStatic
+		fun onFcmTokenRefreshed(token: String) {
+			latestFcmToken = token
+			activityRef?.get()?.dispatchFcmToken(token)
+		}
 	}
 
 	private fun maybeWarnAboutWebView() {

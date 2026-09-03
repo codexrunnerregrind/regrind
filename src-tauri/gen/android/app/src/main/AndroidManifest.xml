@@ -54,6 +54,16 @@
 			android:stopWithTask="false"
 			android:foregroundServiceType="dataSync" />
 
+		<!-- Firebase Cloud Messaging: server push while the app is backgrounded
+		     or killed (see org.regrind.push). -->
+		<service
+			android:name="org.regrind.push.PushMessagingService"
+			android:exported="false">
+			<intent-filter>
+				<action android:name="com.google.firebase.MESSAGING_EVENT" />
+			</intent-filter>
+		</service>
+
 		<receiver
 			android:name="org.regrind.update.InstallResultReceiver"
 			android:exported="false" />

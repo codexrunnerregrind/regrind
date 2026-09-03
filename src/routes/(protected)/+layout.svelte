@@ -1,8 +1,12 @@
 <script lang="ts">
+	import { afterNavigate } from "$app/navigation";
+	import { page } from "$app/state";
+
 	import { reportAccountProfile } from "$lib/api/accounts.svelte";
 	import CommandCenter from "$lib/components/command-center/CommandCenter.svelte";
 	import VideoCallOverlay from "$lib/components/video-call/VideoCallOverlay.svelte";
 	import { notifications } from "$lib/notifications/notifications.svelte";
+	import { push } from "$lib/notifications/push.svelte";
 	import { startOnlineHeartbeat } from "$lib/presence/online-heartbeat";
 	import { videoCall } from "$lib/video-call/call-state.svelte";
 
@@ -11,6 +15,8 @@
 	$effect(() => {
 		const ourProfileId = data.ourProfileId;
 		void notifications.start(ourProfileId);
+		// Android-only FCM push; a no-op on other platforms.
+		push.start(ourProfileId);
 		// The switcher shows a name and a face per account, both read from the
 		// account's own profile. Doing it here rather than only on a switch means
 		// an account learns them the first time it is simply used, including the
@@ -21,9 +27,13 @@
 		void videoCall.start(ourProfileId);
 		return () => {
 			void notifications.stop();
+			push.stop();
 			void videoCall.stop();
 		};
 	});
+
+	// Let native push suppress banners for the screen already on show.
+	afterNavigate(() => push.setActiveRoute(page.url.pathname));
 
 	$effect(() => startOnlineHeartbeat());
 </script>

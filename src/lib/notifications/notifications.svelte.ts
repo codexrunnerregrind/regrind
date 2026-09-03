@@ -13,6 +13,9 @@ import {
 	previewFromMessage,
 	previewLabel,
 } from "$lib/model/messaging/message-preview";
+import { cacheNotificationImage } from "$lib/notifications/notification-image";
+import { isAndroidPlatform, isIosPlatform } from "$lib/platform/os";
+import { profileMediaUrl } from "$lib/util/media";
 import {
 	chatV1MessageSentEventSchema,
 	tapV1TapSentEventSchema,
@@ -26,15 +29,48 @@ type PermissionState = "unknown" | "granted" | "denied" | "default";
 // stash the in-app route to open there.
 const notificationExtraSchema = z.object({ route: z.string().optional() });
 
+// A small icon in front of a media label reads faster in the shade than the
+// bare word. Text messages keep their own text, unadorned.
+const MEDIA_BODY_ICONS: Record<string, string> = {
+	Album: "🖼️",
+	Audio: "🎤",
+	Gaymoji: "😊",
+	Giphy: "🎞️",
+	Image: "📷",
+	Location: "📍",
+	Video: "🎥",
+	VideoCall: "📞",
+};
+
+function notificationBody(message: ApiResponseMessage): string {
+	const preview = previewFromMessage(message);
+	const label = previewLabel(preview);
+	if (label === null) return "Sent you a message";
+	if (preview.type === "Text") return label;
+	const icon = MEDIA_BODY_ICONS[preview.type];
+	return icon ? `${icon} ${label}` : label;
+}
+
+// The image to show inline on platforms that support attachments, or null. Uses
+// the message's own picture; the sender's photo is the caller's fallback.
+function messageImageUrl(message: ApiResponseMessage): string | null {
+	if (message.type === "Image") return message.body.url;
+	if (message.type === "Giphy") {
+		const path = message.body.previewPath;
+		return path.startsWith("http") ? path : null;
+	}
+	return null;
+}
+
 /**
  * OS-level notifications for incoming realtime events.
  *
- * This is an unofficial client with no backend of its own, so there is no APNs/FCM
- * push channel to hook into. Instead we surface *local* notifications from the same
- * realtime WebSocket the app already listens to. That means notifications only fire
- * while our process is still running: reliably on desktop (window backgrounded or
- * unfocused) and during brief mobile backgrounds, but not once the OS has fully
- * suspended the webview. That is the best achievable without a push server.
+ * These are *local* notifications surfaced from the same realtime WebSocket the
+ * app already listens to, so they only fire while our process is running:
+ * reliably on desktop (window backgrounded or unfocused) and during brief mobile
+ * backgrounds, but not once the OS has fully suspended the webview. On Android
+ * that gap is covered by real FCM push instead (see push.svelte.ts), so this
+ * path is skipped there; desktop and iOS have no push channel and rely on it.
  *
  * We only notify when the app is *not* in the foreground — when it is, the in-app
  * incoming-message toast already covers the message case and an OS banner would be
@@ -142,6 +178,9 @@ class NotificationService {
 
 	async #onMessage(message: ApiResponseMessage): Promise<void> {
 		if (this.#ourProfileId === null) return;
+		// Android delivers these through FCM (see push.svelte.ts), which fires
+		// even once the OS suspends us; posting here too would double up.
+		if (isAndroidPlatform()) return;
 		if (message.senderId === this.#ourProfileId) return; // our own echo
 		if (this.#appIsForeground()) return;
 
@@ -158,14 +197,41 @@ class NotificationService {
 		if (!(await this.#ensurePermission())) return;
 
 		const senderName = entry?.data.name?.trim();
+		const sender = entry?.data.participants.find(
+			(p) => p.profileId === message.senderId,
+		);
+
+		// iOS renders an attachment image; the desktop backend ignores it, so
+		// only pay for the download there. Prefer the message's own picture,
+		// falling back to the sender's photo.
+		const attachments = isIosPlatform()
+			? await this.#imageAttachment(message, sender?.primaryMediaHash)
+			: undefined;
+
 		sendNotification({
 			title: senderName || "New message",
-			body:
-				previewLabel(previewFromMessage(message)) ??
-				"Sent you a message",
+			body: notificationBody(message),
 			group: message.conversationId,
 			extra: { route: `/chat/${message.conversationId}` },
+			attachments,
 		});
+	}
+
+	async #imageAttachment(
+		message: ApiResponseMessage,
+		avatarMediaHash: string | null | undefined,
+	): Promise<{ id: string; url: string }[] | undefined> {
+		const source =
+			messageImageUrl(message) ??
+			(avatarMediaHash
+				? profileMediaUrl({ mediaHash: avatarMediaHash, size: "thumb" })
+				: null);
+		if (!source) return undefined;
+		const file = await cacheNotificationImage(
+			source,
+			message.conversationId,
+		);
+		return file ? [{ id: message.conversationId, url: file }] : undefined;
 	}
 
 	async #onTap(tap: {
@@ -174,6 +240,7 @@ class NotificationService {
 		senderDisplayName: string | null;
 	}): Promise<void> {
 		if (this.#ourProfileId === null) return;
+		if (isAndroidPlatform()) return; // delivered via FCM instead
 		if (tap.recipientId !== this.#ourProfileId) return;
 		if (this.#appIsForeground()) return;
 

@@ -10,6 +10,11 @@ declare global {
 		};
 		__AndroidOnBackGesture?: () => boolean;
 		__AndroidBack?: { moveTaskToBack(): void };
+		__RegrindPush?: {
+			setPrefs(messages: boolean, taps: boolean): void;
+			setActiveRoute(route: string | null): void;
+		};
+		__REGRIND_FCM_TOKEN?: string;
 	}
 }
 

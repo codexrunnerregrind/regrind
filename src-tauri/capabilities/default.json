@@ -49,6 +49,9 @@
 				},
 				{
 					"path": "$APPLOCALDATA/preferences.*.data.tmp"
+				},
+				{
+					"path": "$APPCACHE/notifications/*"
 				}
 			]
 		},
@@ -85,6 +88,9 @@
 			"allow": [
 				{
 					"path": "$APPLOCALDATA"
+				},
+				{
+					"path": "$APPCACHE/notifications"
 				}
 			]
 		},
