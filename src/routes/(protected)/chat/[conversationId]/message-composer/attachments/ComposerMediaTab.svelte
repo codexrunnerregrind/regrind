@@ -54,6 +54,10 @@
 	// behind the conversation menu.
 	const conversationState = $derived(getConversationState()());
 	const callBlockedReason = $derived(videoCall.blockedReason);
+	// The allowance is account-wide and already in hand, so saying what is left
+	// of it costs no request — and a call is worth starting knowing how long it
+	// can run, since the server cuts it off when the time is spent.
+	const callTimeLeft = $derived(videoCall.timeLeftLabel);
 
 	function startCall() {
 		const profile = conversationState.profile;
@@ -317,6 +321,9 @@
 					{#if callBlockedReason === null}
 						<VideoCameraIcon weight="regular" />
 						Video call
+						{#if callTimeLeft !== null}
+							<span class="text-ink3">· {callTimeLeft}</span>
+						{/if}
 					{:else}
 						<VideoCameraSlashIcon weight="regular" />
 						{callBlockedReason}
@@ -361,6 +368,11 @@
 				{#if callBlockedReason === null}
 					<VideoCameraIcon weight="regular" class="size-6" />
 					<span class="text-xs font-medium">Video call</span>
+					{#if callTimeLeft !== null}
+						<span class="text-2xs leading-none text-ink3"
+							>{callTimeLeft}</span
+						>
+					{/if}
 				{:else}
 					<VideoCameraSlashIcon weight="regular" class="size-6" />
 					<span class="text-center text-xs font-medium"
