@@ -32,7 +32,7 @@ Needs iOS 15 or later. Apps installed this way stop working after 7 days — tur
 - **Download the APK** from the [latest release](https://git.opengrind.org/codexrunner/open-grind/releases/latest) — `regrind-v<version>-android.apk`.
 - **Open it** on your phone and allow installing from your browser or file manager when Android asks.
 
-Needs Android 9 or later. The package is `org.regrind`, so it installs alongside the original Open Grind rather than over it. It is signed with this fork's own key, and there is no auto-update — grab the new APK from the releases page.
+Needs Android 9 or later. The package is `org.regrind`, so it installs alongside the original Open Grind rather than over it. It is signed with this fork's own key. The in-app updater only ever looks at the original project's releases, so it will not offer you a fork build — check this releases page when you want a newer one.
 
 ## What's different
 
