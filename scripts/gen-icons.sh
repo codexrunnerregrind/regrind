@@ -4,6 +4,7 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 RES="src-tauri/gen/android/app/src/main/res"
+DEBUG_RES="src-tauri/gen/android/app/src/debug/res"
 
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -35,6 +36,15 @@ bun scripts/svg-to-android-vector.ts \
   "$RES/drawable/ic_launcher_monochrome.xml" \
   --width 108 --height 108 --scale 0.9 --mono '#FFFFFF'
 
+# Debug-build foreground, badged DEV. Gradle's debug source set overrides the
+# same-named drawable in main/, so debug installs are told apart from release
+# ones: they share applicationId and signing key otherwise.
+mkdir -p "$DEBUG_RES/drawable"
+bun scripts/svg-to-android-vector.ts \
+  contrib/logo/app-foreground-icon-dev.svg \
+  "$DEBUG_RES/drawable/ic_launcher_foreground.xml" \
+  --width 108 --height 108 --scale 0.9
+
 # Adaptive icon
 cat > "$RES/mipmap-anydpi-v26/ic_launcher.xml" <<'XML'
 <?xml version="1.0" encoding="utf-8"?>
@@ -51,6 +61,15 @@ cat > "$RES/values/ic_launcher_background.xml" <<'XML'
   <color name="ic_launcher_background">#0A0A0A</color>
 </resources>
 XML
+
+# iOS debug icon set. project.yml points ASSETCATALOG_COMPILER_APPICON_NAME at
+# it for the debug configuration, which is what `tauri ios build --debug` uses.
+DEV_SET="src-tauri/gen/apple/Assets.xcassets/AppIcon-Dev.appiconset"
+bun tauri icon ./contrib/logo/app-icon-dev.svg --ios-color='#0A0A0A' -o "$TMP/dev" >/dev/null
+rm -rf "$DEV_SET"
+mkdir -p "$DEV_SET"
+cp "$TMP"/dev/ios/AppIcon-*.png "$DEV_SET/"
+cp src-tauri/gen/apple/Assets.xcassets/AppIcon.appiconset/Contents.json "$DEV_SET/"
 
 # macOS .icns. `tauri icon` only resizes, so the margin and corner radius macOS
 # expects have to come pre-baked from a separate source.

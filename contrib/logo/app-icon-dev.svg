@@ -1,0 +1,59 @@
+<!-- Dev-build icon: app-icon.svg plus a DEV badge. Keep in sync with it. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#1C1A26"/>
+      <stop offset="60%" stop-color="#121216"/>
+      <stop offset="100%" stop-color="#09090B"/>
+    </radialGradient>
+
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFC107"/>
+      <stop offset="50%" stop-color="#FF8F00"/>
+      <stop offset="100%" stop-color="#FF5722"/>
+    </linearGradient>
+
+    <linearGradient id="gridGrad" gradientUnits="userSpaceOnUse" x1="0" y1="80" x2="0" y2="432">
+      <stop offset="0%" stop-color="#FFC107" stop-opacity="0.8"/>
+      <stop offset="50%" stop-color="#FF6F00" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#FF3D00" stop-opacity="0.4"/>
+    </linearGradient>
+
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Full-bleed: iOS and macOS mask their own corners. -->
+  <rect width="512" height="512" fill="url(#bgGrad)"/>
+
+  <g stroke="url(#gridGrad)" stroke-width="6" stroke-linecap="round">
+    <line x1="144" y1="80" x2="144" y2="432"/>
+    <line x1="216" y1="80" x2="216" y2="432"/>
+    <line x1="296" y1="80" x2="296" y2="432"/>
+    <line x1="368" y1="80" x2="368" y2="432"/>
+    <line x1="80" y1="144" x2="432" y2="144"/>
+    <line x1="80" y1="216" x2="432" y2="216"/>
+    <line x1="80" y1="296" x2="432" y2="296"/>
+    <line x1="80" y1="368" x2="432" y2="368"/>
+  </g>
+
+  <!-- "R" with a compass needle in the bowl. -->
+  <g filter="url(#neonGlow)">
+    <path d="M168 360V152H272C316 152 344 180 344 220C344 260 316 288 272 288H220M258 288L332 360"
+          fill="none" stroke="url(#accentGrad)" stroke-width="28"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M224 216L272 192L248 240L240 224Z" fill="url(#accentGrad)"/>
+  </g>
+
+  <!-- "DEV" badge, bottom-right. Opaque so it reads over the grid, and clear of
+       the mark, which keeps its full size. -->
+  <path d="M311 392H423A33 33 0 0 1 423 458H311A33 33 0 0 1 311 392Z" fill="#0A0A0A" stroke="#FFC107" stroke-width="7"/>
+  <path d="M315 409V441M315 409H330C340 409 345 416 345 425C345 434 340 441 330 441H315" fill="none" stroke="#FFC107" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M382 409H352V441H382M352 425H376" fill="none" stroke="#FFC107" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M389 409L404 441L419 409" fill="none" stroke="#FFC107" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

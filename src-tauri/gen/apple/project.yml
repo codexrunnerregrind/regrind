@@ -46,6 +46,8 @@ targets:
         LSRequiresIPhoneOS: true
         NSLocationWhenInUseUsageDescription: ReGrind uses your location to show where you are on the map and to share your location in chats.
         NSPhotoLibraryAddUsageDescription: ReGrind saves photos and videos you download from chats to your Photos library.
+        NSMicrophoneUsageDescription: ReGrind uses your microphone for the voice messages you send in chats and for video calls.
+        NSCameraUsageDescription: ReGrind uses your camera for video calls.
         UILaunchStoryboardName: LaunchScreen
         UIRequiredDeviceCapabilities: [arm64, metal]
         UISupportedInterfaceOrientations:
@@ -66,6 +68,10 @@ targets:
         RUST_BACKTRACE: full
         RUST_LOG: info
     settings:
+      configs:
+        # Debug builds carry the DEV-badged icon set (bun run gen:icons writes it).
+        debug:
+          ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon-Dev
       base:
         ENABLE_BITCODE: false
         ARCHS: [arm64]

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Android adaptive foreground: flat paths only, no groups, gradients or
+       filters (scripts/svg-to-android-vector.ts cannot express them). Grid
+       inset to 130-382 so its ends survive the launcher mask after the 0.9
+       scale gen-icons.sh applies. -->
+  <path d="M144 130V382" fill="none" stroke="#FF6F00" stroke-opacity="0.55" stroke-width="6" stroke-linecap="round"/>
+  <path d="M216 130V382" fill="none" stroke="#FF6F00" stroke-opacity="0.55" stroke-width="6" stroke-linecap="round"/>
+  <path d="M296 130V382" fill="none" stroke="#FF6F00" stroke-opacity="0.55" stroke-width="6" stroke-linecap="round"/>
+  <path d="M368 130V382" fill="none" stroke="#FF6F00" stroke-opacity="0.55" stroke-width="6" stroke-linecap="round"/>
+  <path d="M130 144H382" fill="none" stroke="#FF6F00" stroke-opacity="0.55" stroke-width="6" stroke-linecap="round"/>
+  <path d="M130 216H382" fill="none" stroke="#FF6F00" stroke-opacity="0.55" stroke-width="6" stroke-linecap="round"/>
+  <path d="M130 296H382" fill="none" stroke="#FF6F00" stroke-opacity="0.55" stroke-width="6" stroke-linecap="round"/>
+  <path d="M130 368H382" fill="none" stroke="#FF6F00" stroke-opacity="0.55" stroke-width="6" stroke-linecap="round"/>
+
+  <path d="M168 360V152H272C316 152 344 180 344 220C344 260 316 288 272 288H220M258 288L332 360"
+        fill="none" stroke="#FF8F00" stroke-width="28"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M224 216L272 192L248 240L240 224Z" fill="#FF8F00"/>
+
+  <!-- "DEV" badge, bottom-right, opaque so it reads over the grid and the
+       mark's leg. Kept within r=189 of centre, which is the 72dp visible
+       circle once gen-icons.sh scales by 0.9, so no launcher mask clips it. -->
+  <path d="M259 352H353A29 29 0 0 1 353 410H259A29 29 0 0 1 259 352Z" fill="#0A0A0A" stroke="#FFC107" stroke-width="6"/>
+  <path d="M254 366V396M254 366H268C277 366 284 373 284 381C284 389 277 396 268 396H254" fill="none" stroke="#FFC107" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M321 366H291V396H321M291 381H315" fill="none" stroke="#FFC107" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M328 366L343 396L358 366" fill="none" stroke="#FFC107" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
