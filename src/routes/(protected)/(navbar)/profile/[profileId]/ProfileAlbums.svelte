@@ -116,9 +116,14 @@
 </script>
 
 {#snippet tile(album: AlbumEntry)}
+	<!-- The cover is positioned out of flow: as an in-flow child its `height:
+	     100%` resolves against the aspect-ratio box's indefinite height, and the
+	     tile — a column flex item, so `min-height: auto` — grows to the cover's
+	     intrinsic height instead, which Android WebView does and leaves the row
+	     ragged. -->
 	<div
 		class={[
-			"relative aspect-square",
+			"relative aspect-square shrink-0 overflow-hidden rounded-xl bg-card-foreground/10",
 			{ "opacity-50": opener.openingId === album.albumId },
 		]}
 	>
@@ -126,12 +131,12 @@
 			<img
 				src={album.coverUrl}
 				alt=""
-				class="size-full rounded-xl bg-card-foreground/10 object-cover"
+				class="absolute inset-0 size-full object-cover"
 				draggable="false"
 			/>
 		{:else}
 			<div
-				class="flex size-full items-center justify-center rounded-xl bg-card-foreground/10 text-muted-foreground"
+				class="absolute inset-0 flex items-center justify-center text-muted-foreground"
 			>
 				<FolderOpenIcon weight="fill" class="size-6" />
 			</div>
