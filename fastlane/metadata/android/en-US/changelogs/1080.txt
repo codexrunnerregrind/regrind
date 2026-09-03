@@ -1,0 +1,10 @@
+- Video calls, with a preview of your camera before the call is answered
+- The remaining call time shows on the button before you place a call
+- Push notifications on Android, with the sender's photo
+- Videos stay in the media drawer, shrunk to fit
+- Saved photos and videos are stamped with the date
+- Alternate app icons on Android, and the icon grid no longer breaks up
+- A swipe off Sent taps reaches the Inbox again
+- Dialog buttons stand side by side on a phone
+- The profile's album row sits level on Android
+- The clip's watch-count menu opens upwards

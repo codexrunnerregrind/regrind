@@ -4,7 +4,7 @@ A fork of [Open Grind](https://git.opengrind.org/open-grind/open-grind), an unof
 
 This fork started because I wanted to try the app on my iPhone. The original builds for Android and desktop, so I got it running on iOS, then kept going and filled in the things I missed while using it every day.
 
-I build this for myself and sideload it onto my own phone. If you want to try it, see [Install on iOS](#install-on-ios).
+I build this for myself and sideload it onto my own phone. If you want to try it, see [Install on iOS](#install-on-ios) or [Install on Android](#install-on-android).
 
 **NOTE:** Most of the work here was done with AI, which is why I haven't opened any pull requests against the original project.
 
@@ -26,6 +26,13 @@ I build this for myself and sideload it onto my own phone. If you want to try it
 - **Install ReGrind** from the source.
 
 Needs iOS 15 or later. Apps installed this way stop working after 7 days — turn on LocalDevVPN, then open SideStore and hit refresh.
+
+## Install on Android
+
+- **Download the APK** from the [latest release](https://git.opengrind.org/codexrunner/open-grind/releases/latest) — `regrind-v<version>-android.apk`.
+- **Open it** on your phone and allow installing from your browser or file manager when Android asks.
+
+Needs Android 9 or later. The package is `org.regrind`, so it installs alongside the original Open Grind rather than over it. It is signed with this fork's own key, and there is no auto-update — grab the new APK from the releases page.
 
 ## What's different
 

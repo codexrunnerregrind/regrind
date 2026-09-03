@@ -35,13 +35,13 @@
 			],
 			"versions": [
 				{
-					"version": "0.1.0.7",
-					"buildVersion": "0.1.0.7",
-					"date": "2026-09-01",
-					"localizedDescription": "- Renamed to ReGrind, with new artwork\n- Right Now posting, with the remaining allowance on the post button\n- Sent taps, video messages and voice messages added\n- Voice notes drawn as waveforms, and a run of them plays through\n- The Post pill morphs into the sheet it opens\n- Message bubbles have their own text size\n- Maps drawn with MapLibre GL instead of Leaflet\n- Location sheet opening only once fixed\n- Map attribution covering the picker's buttons fixed\n- Lists stay on screen when a refresh fails\n- A readable error when unsending a message needs Unlimited",
-					"downloadURL": "https://git.opengrind.org/codexrunner/open-grind/releases/download/v0.1.0-beta.7/regrind-v0.1.0-beta.7.ipa",
-					"size": 44898041,
-					"sha256": "3a1e0fc089352048e37e4f1d2b32f288cebd8ed47d46c6d69ee461f72389732c",
+					"version": "0.1.0.8",
+					"buildVersion": "0.1.0.8",
+					"date": "2026-09-03",
+					"localizedDescription": "- Video calls, with a preview of your camera before the call is answered\n- The remaining call time shows on the button before you place a call\n- Push notifications on Android, with the sender's photo\n- Videos stay in the media drawer, shrunk to fit\n- Saved photos and videos are stamped with the date\n- Alternate app icons on Android, and the icon grid no longer breaks up\n- A swipe off Sent taps reaches the Inbox again\n- Dialog buttons stand side by side on a phone\n- The profile's album row sits level on Android\n- The clip's watch-count menu opens upwards",
+					"downloadURL": "https://git.opengrind.org/codexrunner/open-grind/releases/download/v0.1.0-beta.8/regrind-v0.1.0-beta.8.ipa",
+					"size": 45687269,
+					"sha256": "14a9ca955c44c0d0d5ed3147fcba346d87aaeff791edec9063398ae514ab9364",
 					"minOSVersion": "14.0"
 				}
 			]
