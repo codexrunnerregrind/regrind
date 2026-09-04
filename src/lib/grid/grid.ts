@@ -3,6 +3,7 @@ import type z from "zod";
 import { getCascadeV4 } from "$lib/api/browse/grid";
 import { TtlCache } from "$lib/api/cache";
 import { getProfiles } from "$lib/api/users/profiles";
+import { awaitEntitlementSeed } from "$lib/entitlements/expiring-media-entitlement";
 import { now } from "$lib/util/clock";
 import type { cascadeV4ResponseFullProfileV1Schema } from "$lib/model/browse/grid/cascade/response/v4";
 import type { RightNowStatus } from "$lib/model/right-now";
@@ -75,6 +76,10 @@ function gridProfile(profile: CascadeProfileData): GridProfile {
 }
 
 export async function getGrid(query: Parameters<typeof getCascadeV4>[0]) {
+	// Hold off until the entitlement seed's location report and refresh have
+	// settled, so this real-location request never lands in between. Instant
+	// once nothing is seeding.
+	await awaitEntitlementSeed();
 	const response = await getCascadeV4(query);
 	const items: GridProfile[] = [];
 

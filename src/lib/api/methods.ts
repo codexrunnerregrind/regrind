@@ -88,7 +88,12 @@ export const methods = {
 		request: z.undefined(),
 		response: z.enum(["keyring", "file", "unavailable"]),
 	},
-	refresh_token: { request: z.undefined(), response: loginResultSchema },
+	// The optional geohash seeds the resumed session's recorded location, used
+	// to unlock the region-gated expiring-media and unsend entitlements.
+	refresh_token: {
+		request: z.object({ geohash: z.string().optional() }),
+		response: loginResultSchema,
+	},
 	rotate_api_params: {
 		request: z.undefined(),
 		response: z.object({

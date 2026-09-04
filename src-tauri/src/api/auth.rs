@@ -105,13 +105,18 @@ pub async fn google_sign_in(
 	Ok(LoginResult::from(result))
 }
 
+/// Refreshes the session. An optional `geohash` tags the refresh so the server
+/// records that approximate location for the resumed session; the app uses it
+/// to seed a location whose region grants the expiring-media and unsend
+/// entitlements, which then stick for the rest of the session.
 #[tauri::command]
 pub async fn refresh_token(
 	state: tauri::State<'_, AppState>,
+	geohash: Option<String>,
 ) -> Result<LoginResult, AppError> {
 	let client = state.client()?;
 	let result = client
-		.refresh_token()
+		.refresh_token_with_geohash(geohash.as_deref())
 		.await
 		.map_err(|e| AppError::from_client_error(e, &client))?;
 	Ok(LoginResult::from(result))
