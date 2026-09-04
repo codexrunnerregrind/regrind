@@ -62,8 +62,9 @@ cat > "$RES/values/ic_launcher_background.xml" <<'XML'
 </resources>
 XML
 
-# iOS debug icon set. project.yml points ASSETCATALOG_COMPILER_APPICON_NAME at
-# it for the debug configuration, which is what `tauri ios build --debug` uses.
+# iOS DEV-badged icon set, the default every local build carries
+# (project.yml points ASSETCATALOG_COMPILER_APPICON_NAME at it); only the public
+# release opts back out to the plain AppIcon, in scripts/ios-release-ipa.sh.
 DEV_SET="src-tauri/gen/apple/Assets.xcassets/AppIcon-Dev.appiconset"
 bun tauri icon ./contrib/logo/app-icon-dev.svg --ios-color='#0A0A0A' -o "$TMP/dev" >/dev/null
 rm -rf "$DEV_SET"

@@ -68,11 +68,12 @@ targets:
         RUST_BACKTRACE: full
         RUST_LOG: info
     settings:
-      configs:
-        # Debug builds carry the DEV-badged icon set (bun run gen:icons writes it).
-        debug:
-          ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon-Dev
       base:
+        # Every local build carries the DEV-badged icon set (bun run gen:icons
+        # writes it), so a sideload is told apart from the plain public release.
+        # The release is release-config too, so it can't opt out by
+        # configuration: scripts/ios-release-ipa.sh forces AppIcon for its build.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon-Dev
         ENABLE_BITCODE: false
         ARCHS: [arm64]
         VALID_ARCHS: arm64 

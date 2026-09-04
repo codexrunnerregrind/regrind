@@ -65,7 +65,15 @@ if [ "$SKIP_BUILD" = false ]; then
 		exit 1
 	fi
 	STARTED="$(mktemp)"
+	# Every local build is DEV-badged by default (see gen/apple/project.yml), and
+	# the release is release-config like a sideload, so it can't opt out of the
+	# badge by configuration. Swap the project to the plain AppIcon for this
+	# build, then restore it — `git checkout` also undoes the DEVELOPMENT_TEAM
+	# literal `tauri ios build` writes in.
+	PBXPROJ="src-tauri/gen/apple/regrind.xcodeproj/project.pbxproj"
+	sed -i '' 's/ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-Dev";/ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;/g' "$PBXPROJ"
 	bun run tauri ios build || echo "build reported failure; checking the archive"
+	git checkout -- "$PBXPROJ" 2>/dev/null || true
 	if [ ! -d "$ARCHIVE_APP" ] || [ ! "$ARCHIVE_APP" -nt "$STARTED" ]; then
 		rm -f "$STARTED"
 		echo "no bundle newer than this run at $ARCHIVE_APP —" >&2
