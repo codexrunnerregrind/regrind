@@ -121,10 +121,100 @@ function relaxLabelZooms(map: MapLibreMap): void {
 	}
 }
 
+/**
+ * CARTO's styles carry the full OpenMapTiles `poi` source-layer but only ever
+ * draw parks and stadiums from it, so a city block comes up as bare streets.
+ * Adds back the shops, bars, stations and the rest as a dot plus a label,
+ * ranked so collision keeps the notable ones when they crowd.
+ */
+function addPoiLabels(map: MapLibreMap, dark: boolean): void {
+	const DOT = "app-poi-dot";
+	const LABEL = "app-poi-label";
+	if (map.getLayer(DOT) || map.getLayer(LABEL)) return;
+
+	// Both taken from a layer the style already draws, so a source rename or a
+	// glyph stack the CDN does not serve cannot strip the labels.
+	const existing = map
+		.getStyle()
+		?.layers.find(
+			(layer): layer is MapLibre.SymbolLayerSpecification =>
+				layer.type === "symbol" && layer["source-layer"] === "poi",
+		);
+	if (!existing) return;
+	const source = existing.source;
+	const font = map.getLayoutProperty(existing.id, "text-font") as
+		| string[]
+		| undefined;
+
+	const rank: MapLibre.ExpressionSpecification = [
+		"to-number",
+		["get", "rank"],
+		99,
+	];
+	try {
+		map.addLayer({
+			id: DOT,
+			type: "circle",
+			source,
+			"source-layer": "poi",
+			minzoom: 15,
+			filter: ["all", ["has", "name"], ["!=", ["get", "class"], "park"]],
+			paint: {
+				"circle-radius": [
+					"interpolate",
+					["linear"],
+					["zoom"],
+					15,
+					1.8,
+					18,
+					3,
+				],
+				"circle-color": dark ? "#8fa3a8" : "#8a8a8a",
+			},
+		});
+		map.addLayer({
+			id: LABEL,
+			type: "symbol",
+			source,
+			"source-layer": "poi",
+			minzoom: 15,
+			filter: ["all", ["has", "name"], ["!=", ["get", "class"], "park"]],
+			layout: {
+				"text-field": ["get", "name"],
+				...(font ? { "text-font": font } : {}),
+				"text-size": [
+					"interpolate",
+					["linear"],
+					["zoom"],
+					15,
+					10,
+					18,
+					12,
+				],
+				"text-anchor": "top",
+				"text-offset": [0, 0.6],
+				"text-max-width": 8,
+				"text-padding": 4,
+				// Lower rank is more notable, and a lower sort key is placed
+				// first — so the ones worth keeping win the crowded blocks.
+				"symbol-sort-key": rank,
+			},
+			paint: {
+				"text-color": dark ? "#c3d0d4" : "#4a4a4a",
+				"text-halo-color": dark ? "#10181b" : "#ffffff",
+				"text-halo-width": 1.2,
+			},
+		});
+	} catch {
+		// an upstream schema change; the basemap still stands without them
+	}
+}
+
 /** Applies the app's own tweaks to a freshly (re)loaded basemap style. */
 export function decorateStyle(map: MapLibreMap, dark: boolean): void {
 	relaxLabelZooms(map);
 	if (dark) tintDarkStyle(map);
+	addPoiLabels(map, dark);
 }
 
 /** The dropped-pin marker, sized for the picker (40px) or a preview (36px). */
