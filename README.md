@@ -20,7 +20,7 @@ I build this for myself and sideload it onto my own phone. If you want to try it
 - **Add this source** in SideStore, under Sources → **+**:
 
     ```
-    https://git.opengrind.org/codexrunner/open-grind/raw/branch/main/ci/altstore/source.json
+    https://git.opengrind.org/codexrunner/regrind/raw/branch/main/ci/altstore/source.json
     ```
 
 - **Install ReGrind** from the source.
@@ -29,7 +29,7 @@ Needs iOS 15 or later. Apps installed this way stop working after 7 days — tur
 
 ## Install on Android
 
-- **Download the APK** from the [latest release](https://git.opengrind.org/codexrunner/open-grind/releases/latest) — `regrind-v<version>-android.apk`.
+- **Download the APK** from the [latest release](https://git.opengrind.org/codexrunner/regrind/releases/latest) — `regrind-v<version>-android.apk`.
 - **Open it** on your phone and allow installing from your browser or file manager when Android asks.
 
 Needs Android 9 or later. The package is `org.regrind`, so it installs alongside the original Open Grind rather than over it. It is signed with this fork's own key.

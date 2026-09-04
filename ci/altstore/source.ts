@@ -21,7 +21,7 @@ import { resolve } from "node:path";
 // would 404. Override to retarget a different mirror.
 const REPO =
 	process.env.OPEN_GRIND_REPO ??
-	"https://git.opengrind.org/codexrunner/open-grind";
+	"https://git.opengrind.org/codexrunner/regrind";
 const RAW = `${REPO}/raw/branch/main`;
 const METADATA = "fastlane/metadata/android/en-US";
 const SHOTS = "contrib/altstore";
