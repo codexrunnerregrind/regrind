@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { SlidersHorizontalIcon, StarIcon } from "phosphor-svelte";
 
+	import CommandCenterTrigger from "$lib/components/command-center/CommandCenterTrigger.svelte";
 	import {
 		ACTIVE_FILTER,
 		ACTIVE_FILTER_PRESSED,
@@ -42,6 +43,7 @@
 >
 	<StarIcon weight={isFavorite ? "fill" : "regular"} />
 </Button>
+<CommandCenterTrigger />
 <Button
 	variant="secondary"
 	onclick={() => (openFilters.age = true)}

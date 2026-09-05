@@ -1,5 +1,5 @@
 <script>
-	import { TerminalIcon } from "phosphor-svelte";
+	import { UserIcon } from "phosphor-svelte";
 
 	import { Button } from "$lib/components/ui/button";
 	import * as Kbd from "$lib/components/ui/kbd";
@@ -12,11 +12,12 @@
 </script>
 
 <Button
-	variant="outline"
+	variant="secondary"
+	aria-label="Open profile by ID"
 	onclick={() => (commandCenterState.open = true)}
 	class={{ "pe-1.5": !isMobile }}
 >
-	<TerminalIcon />
+	<UserIcon />
 	{#if !isMobile}
 		<Kbd.Root>{modifierKey} + K</Kbd.Root>
 	{/if}

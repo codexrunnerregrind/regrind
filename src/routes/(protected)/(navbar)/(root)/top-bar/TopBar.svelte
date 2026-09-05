@@ -1,5 +1,4 @@
 <script lang="ts">
-	import CommandCenterTrigger from "$lib/components/command-center/CommandCenterTrigger.svelte";
 	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
 	import { gridState } from "$lib/grid/grid-state.svelte";
 	import type { FavoriteSearch } from "$lib/favorites/favorite-search.svelte";
@@ -41,7 +40,6 @@
 	<div class="scrollbar-thin flex gap-0.5 overflow-x-auto p-4 pt-0">
 		<LocationChange />
 		<QuickFilters bind:openFilters />
-		<CommandCenterTrigger />
 	</div>
 	{#if showingFavorites}
 		<!-- Only opacity and transform animate, and the row keeps its height either
