@@ -11,7 +11,7 @@ use ed25519_dalek::{Signature, VerifyingKey};
 use super::error::UpdateError;
 
 const RELEASE_KEY: &str =
-	"RWReleaseOpenGrindurRQcmR+NovOaU5IEU3LM5l6TcXJvOGYw2m4O+";
+	"RWRVQTYl8FTUIBqdh0prTdptQKwYDu5Wfvt9FSqq6YJ+948MiiRsIv6u";
 
 const PREHASHED: &[u8; 2] = b"ED";
 
@@ -240,6 +240,26 @@ mod tests {
 		(0..200_000u32)
 			.map(|i| ((i * 7 + 13) % 251) as u8)
 			.collect()
+	}
+
+	// scripts/lib/minisign.ts signs the fork's releases in place of the
+	// minisign binary, so the pinned key must accept what it produces.
+	const OWN_SIGNER_SIG: &str = concat!(
+        "untrusted comment: signature from minisign secret key\n",
+        "RURVQTYl8FTUIB4SN3S1Hy9XOMk7fUi06D/hdAKKxAh+37tCkjhuLxwMhQk75WLsPtCxV5z1TChMmoAauek0WG4mpcepgsD6zQY=\n",
+        "trusted comment: timestamp:1788613650\tfile:signer.bin\thashed\n",
+        "3wTA8NZRmSwTkcJzaMYS/5nszt2eZYVXnhFnYi+vgv7NU6dSNFt3aVG4qnv4SuNP5GT5jyH8tAGs2fLQQRXPBw==\n",
+    );
+	const OWN_SIGNER_PAYLOAD: &[u8] = b"regrind fork signer fixture\n";
+
+	#[test]
+	fn verifies_a_signature_from_the_repository_signer() {
+		verify_digest(
+			OWN_SIGNER_SIG,
+			&prehash(&payload(OWN_SIGNER_PAYLOAD)).unwrap(),
+			"signer.bin",
+		)
+		.expect("the pinned key must accept scripts/minisign.ts output");
 	}
 
 	#[test]

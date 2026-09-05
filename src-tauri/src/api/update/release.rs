@@ -5,7 +5,7 @@ use super::client;
 use super::error::UpdateError;
 
 const INDEX_PATH: &str =
-	"api/v1/repos/open-grind/open-grind/releases?limit=3&draft=false";
+	"api/v1/repos/codexrunner/regrind/releases?limit=3&draft=false";
 const INDEX_MAX_BYTES: usize = 256 * 1024;
 const MAX_PAYLOAD_BYTES: u64 = 512 * 1024 * 1024;
 

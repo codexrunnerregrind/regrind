@@ -44,24 +44,26 @@ b4O3eJHsIrOtmBqzBEKRFuNqXz/uPGHImw0=
 
 ## Release signing
 
-Releases are signed with [minisign](https://jedisct1.github.io/minisign/) key:
+Fork releases are signed with this fork's own [minisign](https://jedisct1.github.io/minisign/) key, not the upstream project's:
 
 ```
-RWReleaseOpenGrindurRQcmR+NovOaU5IEU3LM5l6TcXJvOGYw2m4O+
+RWRVQTYl8FTUIBqdh0prTdptQKwYDu5Wfvt9FSqq6YJ+948MiiRsIv6u
 ```
 
 Each artifact ships a detached `.minisig` next to it:
 
 ```bash
-minisign -Vm open-grind.apk -P RWReleaseOpenGrindurRQcmR+NovOaU5IEU3LM5l6TcXJvOGYw2m4O+
+minisign -Vm regrind-v0.1.0-beta.10-android.apk -P RWRVQTYl8FTUIBqdh0prTdptQKwYDu5Wfvt9FSqq6YJ+948MiiRsIv6u
 ```
+
+Without the minisign binary, `bun scripts/minisign.ts verify <file>` checks the same signature against the key above.
 
 ## Platforms signing
 
 Android JKS SHA-256 fingerprint:
 
 ```
-2805fdd8f0badb9424d3244c5e5b3473cef5b8798ec1117382e89eda45c3658c
+0266c7bf4936be5f94e96870755f5003c85ea27997098100bbcd55ca264e3940
 ```
 
 ## Governance certification

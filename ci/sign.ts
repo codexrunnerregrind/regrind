@@ -2,15 +2,22 @@
 import { $ } from "bun";
 import path from "path";
 
+import {
+	decodeSecretKey,
+	publicKeyLine,
+	signDetached,
+	verifyDetached,
+} from "../scripts/lib/minisign";
+
 const TOOLING = {
 	apk: {
-		binaries: ["apksigner", "minisign"],
+		binaries: ["apksigner"],
 		shell: "nix develop .#android",
 		rewrites: true,
 	},
-	deb: { binaries: ["minisign"], shell: "nix develop", rewrites: false },
-	exe: { binaries: ["minisign"], shell: "nix develop", rewrites: false },
-	zip: { binaries: ["minisign"], shell: "nix develop", rewrites: false },
+	deb: { binaries: [], shell: "nix develop", rewrites: false },
+	exe: { binaries: [], shell: "nix develop", rewrites: false },
+	zip: { binaries: [], shell: "nix develop", rewrites: false },
 };
 type Artifact = keyof typeof TOOLING;
 
@@ -25,7 +32,10 @@ if (!input || !artifact) {
 			.join(" | ")}> [out]`,
 	);
 	console.error(
-		"  OPEN_GRIND_MINISIGN_KEY overrides ~/.minisign/minisign.key",
+		"  REGRIND_MINISIGN_KEY overrides ~/.config/regrind/minisign.key",
+	);
+	console.error(
+		"  an already-signed APK needs no keystore, and is only minisigned",
 	);
 	process.exit(2);
 }
@@ -38,13 +48,16 @@ const output =
 	);
 
 const tooling = TOOLING[artifact];
-if (tooling.rewrites && output === input) {
+// Gradle signs the fork's release APK itself, so there is nothing to rewrite.
+const rewrites =
+	tooling.rewrites && !!process.env.OPEN_GRIND_KEYSTORE_PROPERTIES;
+if (rewrites && output === input) {
 	console.error(
 		`signing rewrites ${path.basename(input)} in place, pass [out]`,
 	);
 	process.exit(2);
 }
-for (const binary of tooling.binaries) {
+for (const binary of rewrites ? tooling.binaries : []) {
 	if (!Bun.which(binary)) {
 		console.error(`${binary} not found, run inside '${tooling.shell}'`);
 		process.exit(1);
@@ -53,6 +66,8 @@ for (const binary of tooling.binaries) {
 
 const home = process.env.HOME ?? "~";
 const untilde = (p: string) => p.replace(/^~/, home);
+const secretKeyPath =
+	process.env.REGRIND_MINISIGN_KEY ?? "~/.config/regrind/minisign.key";
 
 const releaseKey = (
 	await Bun.file(path.join(import.meta.dir, "..", "KEYS.md")).text()
@@ -128,27 +143,17 @@ async function signApk(input: string, output: string) {
 }
 
 async function minisign(file: string) {
-	const secret = process.env.OPEN_GRIND_MINISIGN_KEY;
-	const signature = Bun.spawnSync(
-		[
-			"minisign",
-			"-S",
-			...(secret ? ["-s", untilde(secret)] : []),
-			"-m",
-			file,
-		],
-		{ stdio: ["inherit", "inherit", "inherit"] },
-	);
-	if (signature.exitCode !== 0) {
-		throw new Error(`minisign exited ${signature.exitCode}`);
+	const key = decodeSecretKey(await Bun.file(untilde(secretKeyPath)).text());
+	if (publicKeyLine(key) !== releaseKey) {
+		throw new Error(`${secretKeyPath} is not the key published in KEYS.md`);
 	}
-
-	const verified = await $`minisign -Vm ${file} -P ${releaseKey}`.text();
-	console.log(verified.trim());
+	const signature = await signDetached(file, key);
+	await Bun.write(`${file}.minisig`, signature);
+	await verifyDetached(file, signature, releaseKey);
 	console.log(`signed: ${file}.minisig`);
 }
 
-if (tooling.rewrites) {
+if (rewrites) {
 	await signApk(input, output);
 }
 await minisign(output);

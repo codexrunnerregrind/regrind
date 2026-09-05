@@ -53,9 +53,6 @@ export async function android({
 	force: boolean;
 	keepData: boolean;
 }): Promise<void> {
-	if (!Bun.which("minisign")) {
-		throw new Error("minisign not found — run this inside 'nix develop'");
-	}
 	const serial = await requireDevice();
 	const { newApk, oldApk } = await androidFixtures({ force });
 

@@ -93,7 +93,7 @@ LOCAL="$(find src-tauri/gen/android/app/build/outputs/apk/universal/release -nam
 
 # 2. Fetch from https://git.opengrind.org/open-grind/open-grind/releases
 PUBLISHED=/path/to/regrind-v<tag>-android.apk
-RELEASE_CERT=2805fdd8f0badb9424d3244c5e5b3473cef5b8798ec1117382e89eda45c3658c # KEYS.md
+RELEASE_CERT=0266c7bf4936be5f94e96870755f5003c85ea27997098100bbcd55ca264e3940 # KEYS.md
 
 # 3. Confirm the content reproduces
 SIGCOPIED="$(mktemp -d)/$(basename "$PUBLISHED")"

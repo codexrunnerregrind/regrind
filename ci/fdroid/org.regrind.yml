@@ -39,7 +39,7 @@ Builds:
       - export NIX_REMOTE=
       - nix run .#build-android -- apk
 
-AllowedAPKSigningKeys: 2805fdd8f0badb9424d3244c5e5b3473cef5b8798ec1117382e89eda45c3658c
+AllowedAPKSigningKeys: 0266c7bf4936be5f94e96870755f5003c85ea27997098100bbcd55ca264e3940
 
 MaintainerNotes: |-
   Built with the project's Nix flake so F-Droid reproduces the published release binary,

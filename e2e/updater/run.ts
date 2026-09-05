@@ -44,9 +44,6 @@ export const harnessOptions = {
 };
 
 async function preflight(): Promise<void> {
-	if (!Bun.which("minisign")) {
-		throw new Error("minisign not found — run this inside 'nix develop'");
-	}
 	if ((await runningPids()).length) {
 		throw new Error("the demo app is already running — quit it first");
 	}

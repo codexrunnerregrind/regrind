@@ -138,6 +138,18 @@ OPEN_GRIND_KEYSTORE_PROPERTIES=~/.config/regrind/keystore.properties
 bun /path/to/regrind/ci/sign.ts /path/to/regrind.apk /out/path/to/regrind-signed.apk
 ```
 
+When `keystore.properties` is copied into `src-tauri/gen/android` before the
+build, gradle signs the release itself. Then only the minisign step is left, and
+`sign.ts` runs it alone with no keystore in the environment:
+
+```bash
+bun /path/to/regrind/ci/sign.ts /path/to/regrind-v<version>-android.apk
+```
+
+A release must carry that `.minisig` beside the APK, or the in-app updater
+refuses it. `bun scripts/minisign.ts keygen` creates the release key once, at
+`~/.config/regrind/minisign.key`; its public half belongs in [KEYS.md](./KEYS.md).
+
 ### Verify Android release
 
 - [Verify minisign signature](#verify-minisign-signature) to prove the APK was built by Open Grind developers
@@ -493,12 +505,14 @@ What is pinned, which builds reproduce, and how CI proves it: [REPRODUCIBILITY.m
 
 Published artifacts are signed with [minisign](https://jedisct1.github.io/minisign/) signature. You can confirm the key and its provenance in [KEYS.md](./KEYS.md).
 
+Without the minisign binary, `bun scripts/minisign.ts verify /path/to/file` checks the same signature against the key published in KEYS.md.
+
 [Install minisign](https://github.com/jedisct1/minisign#installation), then check the .minisig signature of downloaded artifact at `/path/to/file`:
 
 ```bash
 PUBLISHED=/path/to/file
 
-if minisign -Vm "$PUBLISHED" -P RWReleaseOpenGrindurRQcmR+NovOaU5IEU3LM5l6TcXJvOGYw2m4O+; then
+if minisign -Vm "$PUBLISHED" -P RWRVQTYl8FTUIBqdh0prTdptQKwYDu5Wfvt9FSqq6YJ+948MiiRsIv6u; then
   echo "✓ signature valid and verified"
 else
   echo "✗ signature invalid, do not install this APK" >&2

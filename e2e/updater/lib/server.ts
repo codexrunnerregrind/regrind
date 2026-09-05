@@ -1,6 +1,13 @@
 import { $ } from "bun";
 
 import { hostAssetSuffix } from "../../../scripts/lib/asset-suffix";
+import {
+	decodeSecretKey,
+	encodeSecretKey,
+	generateKeypair,
+	publicKeyLine,
+	signDetached,
+} from "../../../scripts/lib/minisign";
 
 const tick = 100;
 
@@ -30,43 +37,18 @@ export type ServerOptions = {
 	notes?: string;
 };
 
-function minisign({ args, input }: { args: string[]; input: string }): void {
-	const { success } = Bun.spawnSync(["minisign", ...args], {
-		stdin: Buffer.from(input),
-		stdout: "inherit",
-		stderr: "inherit",
-	});
-	if (!success) throw new Error(`minisign ${args[0]} failed`);
-}
-
-function passwordProtected(key: string): boolean {
-	const encoded = key.split("\n")[1]?.trim();
-	if (!encoded) return false;
-	const kdf = Buffer.from(encoded, "base64").subarray(2, 4);
-	return kdf.length === 2 && !kdf.every((byte) => byte === 0);
-}
-
 async function releaseKey(home: string): Promise<string> {
-	if (!Bun.which("minisign")) {
-		throw new Error("minisign not found — run this inside 'nix develop'");
-	}
 	const secret = `${home}/minisign.key`;
-	const publicKeyPath = `${home}/minisign.pub`;
 	await $`mkdir -p ${home}`;
 	if (!(await Bun.file(secret).exists())) {
-		minisign({
-			args: ["-G", "-f", "-W", "-p", publicKeyPath, "-s", secret],
-			input: "",
-		});
-	} else if (passwordProtected(await Bun.file(secret).text())) {
-		minisign({ args: ["-C", "-W", "-s", secret], input: "\n" });
+		await Bun.write(secret, `${encodeSecretKey(generateKeypair())}\n`);
 	}
-	const published = (await Bun.file(publicKeyPath).text())
-		.split("\n")
-		.map((line) => line.trim())
-		.find((line) => line.startsWith("RW") && line.length === 56);
-	if (!published) throw new Error(`${publicKeyPath} holds no minisign key`);
-	return published;
+	return publicKeyLine(decodeSecretKey(await Bun.file(secret).text()));
+}
+
+async function sign(payload: string, home: string): Promise<void> {
+	const key = decodeSecretKey(await Bun.file(`${home}/minisign.key`).text());
+	await Bun.write(`${payload}.minisig`, await signDetached(payload, key));
 }
 
 async function signedPayload({
@@ -78,14 +60,8 @@ async function signedPayload({
 	name: string;
 	home: string;
 }) {
-	const secret = `${home}/minisign.key`;
 	const payload = `${home}/${name}`;
 	const detached = `${payload}.minisig`;
-	const sign = () =>
-		minisign({
-			args: ["-S", "-s", secret, "-m", payload, "-x", detached],
-			input: "",
-		});
 
 	if ("invent" in source) {
 		const signedAlready =
@@ -96,7 +72,7 @@ async function signedPayload({
 				payload,
 				new Uint8Array(source.invent).map((_, index) => index % 251),
 			);
-			sign();
+			await sign(payload, home);
 		}
 	} else {
 		await $`rm -f ${payload} ${detached}`;
@@ -105,7 +81,7 @@ async function signedPayload({
 		} else {
 			await Bun.write(payload, Bun.file(source.file));
 		}
-		sign();
+		await sign(payload, home);
 	}
 
 	return {
