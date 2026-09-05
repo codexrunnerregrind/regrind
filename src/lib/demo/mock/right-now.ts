@@ -208,6 +208,8 @@ export function demoRightNowOf(profileId: number): {
 	rightNow: "NOT_ACTIVE" | "HOSTING" | "NOT_HOSTING";
 	rightNowText: string | null;
 	rightNowPosted: number | null;
+	rightNowThumbnailUrl: string | null;
+	rightNowFullImageUrl: string | null;
 } {
 	const inFeed =
 		profileId >= STARTING_PROFILE_ID &&
@@ -217,12 +219,17 @@ export function demoRightNowOf(profileId: number): {
 			rightNow: "NOT_ACTIVE",
 			rightNowText: null,
 			rightNowPosted: null,
+			rightNowThumbnailUrl: null,
+			rightNowFullImageUrl: null,
 		};
 	}
+	const photo = imediaOf(profileId)[0]?.data;
 	return {
 		rightNow: hosting(profileId) ? "HOSTING" : "NOT_HOSTING",
 		rightNowText: textOf(profileId) ?? null,
 		rightNowPosted: postedOf(profileId),
+		rightNowThumbnailUrl: photo?.thumbnailUrl ?? null,
+		rightNowFullImageUrl: photo?.fullImageUrl ?? null,
 	};
 }
 

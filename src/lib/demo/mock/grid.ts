@@ -64,8 +64,6 @@ export function buildShortProfile(seed: DemoSeed): DemoShortProfile {
 		lastUpdatedTime: NOW - ((seed.id % 6) + 1) * DAY,
 		medias: mediasOf(seed),
 		rightNowDistance: null,
-		rightNowThumbnailUrl: null,
-		rightNowFullImageUrl: null,
 	};
 }
 

@@ -219,6 +219,8 @@
 						isNew,
 						rightNow,
 						rightNowText,
+						rightNowThumbnailUrl,
+						rightNowFullImageUrl,
 					} = profile}
 					<div class="relative">
 						<ImageCarousel
@@ -287,7 +289,14 @@
 								</span>
 							{/if}
 						</div>
-						<ProfileRightNow text={rightNowText} />
+						<ProfileRightNow
+							text={rightNowText}
+							thumbnailUrl={rightNowThumbnailUrl}
+							fullImageUrl={rightNowFullImageUrl}
+							{profileId}
+							{displayName}
+							self={ourProfile}
+						/>
 						{#if sexualPosition !== null || height !== null || weight !== null || bodyType !== null}
 							<div
 								class="mt-3 flex flex-wrap items-center gap-2 text-caption font-medium"
