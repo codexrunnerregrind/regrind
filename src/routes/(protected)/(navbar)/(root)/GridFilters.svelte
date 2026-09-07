@@ -2,7 +2,9 @@
 	import { untrack } from "svelte";
 
 	import AgeFilter from "$lib/components/filters/age/AgeFilterField.svelte";
-	import FilterBoolean from "$lib/components/filters/FilterBoolean.svelte";
+	import FilterRowGroup from "$lib/components/filters/FilterRowGroup.svelte";
+	import FilterSection from "$lib/components/filters/FilterSection.svelte";
+	import FilterSwitch from "$lib/components/filters/FilterSwitch.svelte";
 	import GendersFilter from "$lib/components/filters/GendersFilter.svelte";
 	import HeightFilter from "$lib/components/filters/HeightFilter.svelte";
 	import { optionFilters } from "$lib/components/filters/option-filters";
@@ -15,6 +17,10 @@
 	import { Button } from "$lib/components/ui/button";
 	import * as Sheet from "$lib/components/ui/sheet";
 	import { gridState } from "$lib/grid/grid-state.svelte";
+	import {
+		countActiveFilters,
+		defaultFilters,
+	} from "$lib/model/browse/grid/filters";
 	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
 
 	let { open = $bindable() }: { open: boolean } = $props();
@@ -27,6 +33,8 @@
 		}
 	});
 
+	const activeCount = $derived(countActiveFilters(filters));
+
 	let contentScroll = $state(0);
 
 	dismissOnBackGesture({
@@ -38,86 +46,107 @@
 </script>
 
 {#snippet col1()}
-	<FilterBoolean id="favorite" bind:checked={filters.isFavorite}>
-		Favorites
-	</FilterBoolean>
-	<FilterBoolean id="online" bind:checked={filters.isOnline}>
-		Online
-	</FilterBoolean>
-	<FilterBoolean id="right-now" bind:checked={filters.isRightNow}>
-		Right now
-	</FilterBoolean>
+	<FilterRowGroup>
+		<FilterSwitch id="favorite" bind:checked={filters.isFavorite}>
+			Favorites only
+		</FilterSwitch>
+		<FilterSwitch id="online" bind:checked={filters.isOnline}>
+			Online now
+		</FilterSwitch>
+		<FilterSwitch id="right-now" bind:checked={filters.isRightNow}>
+			Right now
+		</FilterSwitch>
+		<FilterSwitch
+			id="havent-chatted-today"
+			bind:checked={filters.haventChattedTodayEnabled}
+		>
+			Haven't chatted today
+		</FilterSwitch>
+	</FilterRowGroup>
 	<AgeFilter bind:checked={filters.ageEnabled} bind:value={filters.age} />
-	<GendersFilter
-		bind:checked={filters.genderEnabled}
-		bind:value={filters.genders}
-	/>
+	<FilterSection title="Basics">
+		<FilterRowGroup>
+			<GendersFilter
+				bind:checked={filters.genderEnabled}
+				bind:value={filters.genders}
+			/>
+			<PositionFilter
+				bind:checked={filters.positionEnabled}
+				bind:value={filters.positions}
+			/>
+			<PhotosFilter
+				bind:checked={filters.photosEnabled}
+				bind:value={filters.photos}
+			/>
+		</FilterRowGroup>
+	</FilterSection>
 {/snippet}
 {#snippet col2()}
-	<PositionFilter
-		bind:checked={filters.positionEnabled}
-		bind:value={filters.positions}
-	/>
-	<PhotosFilter
-		bind:checked={filters.photosEnabled}
-		bind:value={filters.photos}
-	/>
-	<TagsFilter bind:checked={filters.tagsEnabled} bind:value={filters.tags} />
-	<UsernameFilter
-		bind:checked={filters.usernameEnabled}
-		bind:value={filters.username}
-	/>
+	<FilterSection title="Them">
+		<FilterRowGroup>
+			<TagsFilter
+				bind:checked={filters.tagsEnabled}
+				bind:value={filters.tags}
+			/>
+			<OptionFilter
+				filter={optionFilters.tribes}
+				bind:checked={filters.tribesEnabled}
+				bind:value={filters.tribes}
+			/>
+			<OptionFilter
+				filter={optionFilters.bodyTypes}
+				bind:checked={filters.bodyTypesEnabled}
+				bind:value={filters.bodyTypes}
+			/>
+			<HeightFilter
+				bind:checked={filters.heightEnabled}
+				bind:value={filters.height}
+			/>
+			<WeightFilter
+				bind:checked={filters.weightEnabled}
+				bind:value={filters.weight}
+			/>
+			<OptionFilter
+				filter={optionFilters.relationshipStatuses}
+				bind:checked={filters.relationshipStatusesEnabled}
+				bind:value={filters.relationshipStatuses}
+			/>
+			<UsernameFilter
+				bind:checked={filters.usernameEnabled}
+				bind:value={filters.username}
+			/>
+		</FilterRowGroup>
+	</FilterSection>
 {/snippet}
 {#snippet col3()}
-	<OptionFilter
-		filter={optionFilters.tribes}
-		bind:checked={filters.tribesEnabled}
-		bind:value={filters.tribes}
-	/>
-	<OptionFilter
-		filter={optionFilters.bodyTypes}
-		bind:checked={filters.bodyTypesEnabled}
-		bind:value={filters.bodyTypes}
-	/>
-	<HeightFilter
-		bind:checked={filters.heightEnabled}
-		bind:value={filters.height}
-	/>
-	<WeightFilter
-		bind:checked={filters.weightEnabled}
-		bind:value={filters.weight}
-	/>
-	<OptionFilter
-		filter={optionFilters.relationshipStatuses}
-		bind:checked={filters.relationshipStatusesEnabled}
-		bind:value={filters.relationshipStatuses}
-	/>
-	<OptionFilter
-		filter={optionFilters.acceptNSFWPics}
-		bind:checked={filters.acceptNSFWPicsEnabled}
-		bind:value={filters.acceptNSFWPics}
-	/>
-	<OptionFilter
-		filter={optionFilters.lookingFor}
-		bind:checked={filters.lookingForEnabled}
-		bind:value={filters.lookingFor}
-	/>
-	<OptionFilter
-		filter={optionFilters.meetAt}
-		bind:checked={filters.meetAtEnabled}
-		bind:value={filters.meetAt}
-	/>
-	<FilterBoolean
-		id="havent-chatted-today"
-		bind:checked={filters.haventChattedTodayEnabled}
-	>
-		Haven't chatted today
-	</FilterBoolean>
-	<OptionFilter
-		filter={optionFilters.healthPractices}
-		bind:checked={filters.healthPracticesEnabled}
-		bind:value={filters.healthPractices}
-	/>
+	<FilterSection title="Meeting">
+		<FilterRowGroup>
+			<OptionFilter
+				filter={optionFilters.lookingFor}
+				bind:checked={filters.lookingForEnabled}
+				bind:value={filters.lookingFor}
+			/>
+			<OptionFilter
+				filter={optionFilters.meetAt}
+				bind:checked={filters.meetAtEnabled}
+				bind:value={filters.meetAt}
+			/>
+		</FilterRowGroup>
+	</FilterSection>
+	<FilterSection title="Health & NSFW">
+		<FilterRowGroup>
+			<OptionFilter
+				filter={optionFilters.acceptNSFWPics}
+				bind:checked={filters.acceptNSFWPicsEnabled}
+				bind:value={filters.acceptNSFWPics}
+			/>
+			<OptionFilter
+				filter={optionFilters.healthPractices}
+				bind:checked={filters.healthPracticesEnabled}
+				bind:value={filters.healthPractices}
+			/>
+		</FilterRowGroup>
+	</FilterSection>
 {/snippet}
 <Sheet.Root bind:open>
 	<Sheet.Content
@@ -127,14 +156,36 @@
 	>
 		<Sheet.Header
 			class={[
-				"border border-x-0 border-t-0 border-transparent p-4 transition-colors",
+				"gap-0.5 border border-x-0 border-t-0 border-transparent p-4 transition-colors",
 				{ "border-muted": contentScroll > 0 },
 			]}
 		>
-			<Sheet.Title>Filters</Sheet.Title>
+			<!-- Reset sits on the title's line, tucked in beside the close
+			     button the sheet draws at the top right. -->
+			<div class="flex min-w-0 items-center justify-between gap-3 pe-11">
+				<Sheet.Title>Filters</Sheet.Title>
+				{#if activeCount > 0}
+					<Button
+						variant="ghost"
+						size="sm"
+						class="-me-2 text-primary"
+						onclick={() => (filters = { ...defaultFilters })}
+					>
+						Reset
+					</Button>
+				{/if}
+			</div>
+			<!-- The count is the one thing you cannot see from the top of a
+			     sheet this long: how much is still narrowing the grid further
+			     down. -->
+			<span class="text-xs text-muted-foreground">
+				{activeCount === 0
+					? "No filters active"
+					: `${activeCount} active`}
+			</span>
 		</Sheet.Header>
 		<div
-			class="flex max-h-full min-h-0 w-full flex-1 shrink gap-4 overflow-auto px-4 py-1 pb-4 *:flex-1 *:flex-col *:gap-4 **:break-inside-avoid max-lg:flex-col lg:gap-12"
+			class="flex max-h-full min-h-0 w-full flex-1 shrink gap-4 overflow-auto px-4 py-1 pb-4 *:flex-1 *:flex-col *:gap-5 **:break-inside-avoid max-lg:flex-col lg:gap-12"
 			onscroll={(event) => {
 				if (event.target instanceof HTMLDivElement) {
 					contentScroll =

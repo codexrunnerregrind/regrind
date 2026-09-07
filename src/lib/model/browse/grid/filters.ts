@@ -220,3 +220,32 @@ export type RightNowFilters = z.infer<typeof rightNowFiltersSchema>;
 
 export const defaultRightNowFilters: RightNowFilters =
 	rightNowFiltersSchema.parse({});
+
+/** Every flag that makes the grid show fewer profiles than it otherwise would. */
+const ACTIVE_FILTER_FLAGS = [
+	"isFavorite",
+	"isOnline",
+	"isRightNow",
+	"isFresh",
+	"ageEnabled",
+	"genderEnabled",
+	"usernameEnabled",
+	"tagsEnabled",
+	"positionEnabled",
+	"photosEnabled",
+	"tribesEnabled",
+	"bodyTypesEnabled",
+	"heightEnabled",
+	"weightEnabled",
+	"relationshipStatusesEnabled",
+	"acceptNSFWPicsEnabled",
+	"lookingForEnabled",
+	"meetAtEnabled",
+	"haventChattedTodayEnabled",
+	"healthPracticesEnabled",
+] as const satisfies readonly (keyof GridSearchFilters)[];
+
+/** How many filters are narrowing the grid, for the sheet's "N active" line. */
+export function countActiveFilters(filters: GridSearchFilters): number {
+	return ACTIVE_FILTER_FLAGS.filter((key) => filters[key]).length;
+}

@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { XIcon } from "phosphor-svelte";
+
 	import { getTags } from "$lib/api/users/tags";
 	import { Button } from "$lib/components/ui/button";
 	import { Input } from "$lib/components/ui/input";
@@ -78,6 +80,32 @@
 				class="mb-2 text-sm"
 			/>
 		</div>
+
+		{#if value.length > 0}
+			<div class="mb-2 flex min-w-0 flex-col gap-1">
+				<span
+					class="px-1 text-3xs font-semibold tracking-wider text-muted-foreground uppercase"
+				>
+					Selected
+				</span>
+				<div class="flex flex-wrap gap-1">
+					{#each value as tag (tag)}
+						<button
+							type="button"
+							class="flex items-center gap-1 rounded-full bg-primary px-2.5 py-1 text-xs text-primary-foreground"
+							aria-label="Remove {tag}"
+							onclick={() => {
+								value = value.filter((t) => t !== tag);
+								checked = value.length > 0;
+							}}
+						>
+							{tag}
+							<XIcon />
+						</button>
+					{/each}
+				</div>
+			</div>
+		{/if}
 
 		{#await tagsPromise}
 			<div class="flex justify-center py-4">

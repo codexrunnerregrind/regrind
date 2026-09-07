@@ -1,8 +1,10 @@
 <script lang="ts">
-	import { Checkbox } from "$lib/components/ui/checkbox";
-	import { Label } from "$lib/components/ui/label";
-	import { ageRangeLabel } from "$lib/model/browse/grid/filters";
-	import FilterField from "../FilterField.svelte";
+	import {
+		AGE_MAX,
+		AGE_MIN,
+		ageRangeLabel,
+	} from "$lib/model/browse/grid/filters";
+	import FilterSection from "../FilterSection.svelte";
 	import AgeFilterSlider from "./AgeFilterSlider.svelte";
 
 	let {
@@ -11,27 +13,19 @@
 	}: { checked: boolean; value: number[] } = $props();
 
 	const label = $derived(ageRangeLabel(value));
-
-	const uid = $props.id();
 </script>
 
-<div class="inline-block w-full space-y-3">
-	<FilterField>
-		<Checkbox id="filters-age-{uid}" bind:checked />
-		<Label for="filters-age-{uid}">Age</Label>
-		<span class="ml-auto min-w-0 truncate">
-			{label}
-		</span>
-	</FilterField>
-	<div class="ps-7">
+<FilterSection title="Age" status={checked ? label : undefined}>
+	<div class="px-1 pt-1">
 		<AgeFilterSlider
 			bind:value={
 				() => value,
 				(v: number[]) => {
-					checked = true;
+					// The full span is no filter at all; anything narrower is.
+					checked = v[0] !== AGE_MIN || v[1] !== AGE_MAX;
 					value = v;
 				}
 			}
 		/>
 	</div>
-</div>
+</FilterSection>

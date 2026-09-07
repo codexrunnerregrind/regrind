@@ -6,7 +6,8 @@
 	import Button from "$lib/components/ui/button/button.svelte";
 	import { Spinner } from "$lib/components/ui/spinner";
 	import * as ToggleGroup from "$lib/components/ui/toggle-group";
-	import FilterBoolean from "./FilterBoolean.svelte";
+	import FilterDropdown from "./FilterDropdown.svelte";
+	import { selectionSummary } from "./summary";
 
 	let {
 		checked = $bindable(),
@@ -32,11 +33,43 @@
 	};
 
 	let expanded = $state(false);
+
+	// The row's summary needs names, which only arrive with the gender list.
+	let names: Record<string, string> = $state({});
+	$effect(() => {
+		void genders.then((list) => {
+			names = {
+				"-1": "Not specified",
+				...Object.fromEntries(
+					list.map((g) => [
+						String(g.genderId),
+						g.genderPlural ?? g.gender,
+					]),
+				),
+			};
+		});
+	});
+
+	const endLabel = $derived(
+		selectionSummary(value.map((v) => names[String(v)] ?? String(v))),
+	);
 </script>
 
-<div class="flex min-w-0 flex-col gap-2">
-	<FilterBoolean id="gender" bind:checked>Gender</FilterBoolean>
-	<div class="ps-6">
+<FilterDropdown
+	id="gender"
+	label="Gender"
+	{endLabel}
+	bind:checked={
+		() => checked,
+		(v: boolean) => {
+			checked = v;
+			if (!v) {
+				value = [];
+			}
+		}
+	}
+>
+	<div>
 		{#await genders}
 			<Spinner />
 		{:then genders}
@@ -82,4 +115,4 @@
 			<div class="text-sm text-destructive">Failed to load genders</div>
 		{/await}
 	</div>
-</div>
+</FilterDropdown>

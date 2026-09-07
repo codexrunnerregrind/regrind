@@ -16,31 +16,41 @@
 	const units = $derived(getPreferencesSnapshot().units);
 	const min = $derived(value[0] ?? WEIGHT_KG_MIN);
 	const max = $derived(value[1] ?? WEIGHT_KG_MAX);
+	const label = $derived(
+		`${min === WEIGHT_KG_MIN ? "No min" : formatWeightKg(min, units)} - ${
+			max === WEIGHT_KG_MAX ? "No max" : formatWeightKg(max, units)
+		}`,
+	);
 </script>
 
-<div class="block w-full space-y-3">
-	<FilterDropdown
-		id="weight"
-		label="Weight"
-		bind:checked
-		endLabel={`${min === WEIGHT_KG_MIN ? "No min" : formatWeightKg(min, units)} - ${
-			max === WEIGHT_KG_MAX ? "No max" : formatWeightKg(max, units)
-		}`}
-		contentClass="ps-7 h-6"
-	>
-		<Slider
-			type="multiple"
-			bind:value={
-				() => value,
-				(v: number[]) => {
-					checked = true;
-					value = v;
-				}
+<FilterDropdown
+	id="weight"
+	label="Weight"
+	bind:checked={
+		() => checked,
+		(v: boolean) => {
+			checked = v;
+			if (!v) {
+				value = [WEIGHT_KG_MIN, WEIGHT_KG_MAX];
 			}
-			min={WEIGHT_KG_MIN}
-			max={WEIGHT_KG_MAX}
-			step={1}
-			thumbLabels={["Minimum weight", "Maximum weight"]}
-		/>
-	</FilterDropdown>
-</div>
+		}
+	}
+	endLabel={label}
+	contentClass="h-8 px-4"
+>
+	<Slider
+		type="multiple"
+		bind:value={
+			() => value,
+			(v: number[]) => {
+				// The full span is no filter at all; anything narrower is.
+				checked = v[0] !== WEIGHT_KG_MIN || v[1] !== WEIGHT_KG_MAX;
+				value = v;
+			}
+		}
+		min={WEIGHT_KG_MIN}
+		max={WEIGHT_KG_MAX}
+		step={1}
+		thumbLabels={["Minimum weight", "Maximum weight"]}
+	/>
+</FilterDropdown>
