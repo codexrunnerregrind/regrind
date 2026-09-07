@@ -483,6 +483,34 @@ a {
 	--pswp-bg: var(--viewer-surface);
 }
 
+/* MapLibre's own zoom controls ship on a white plate with dark glyphs, which
+   reads as a hole in a dark map. Repainted onto the app's surfaces here rather
+   than in the picker, since the markup is the library's. Doubled class: maplibre's stylesheet loads with the map chunk,
+   so it lands after this file. The glyphs are background SVGs with no color to
+   set, so dark mode inverts them. */
+.maplibregl-ctrl.maplibregl-ctrl-group {
+	@apply overflow-hidden rounded-lg border border-border bg-card shadow-md;
+}
+
+.maplibregl-ctrl-group button + button {
+	@apply border-t-border;
+}
+
+/* Smaller than MapLibre's 29px default: the zoom pair is a secondary control
+   next to the picker's own buttons, and the map is only drawer-sized. The icons
+   are 29px background SVGs, so they need sizing down with the button. */
+.maplibregl-ctrl-group button {
+	@apply size-6;
+}
+
+.maplibregl-ctrl-group .maplibregl-ctrl-icon {
+	background-size: 18px 18px;
+}
+
+.dark .maplibregl-ctrl-icon {
+	filter: invert(1);
+}
+
 @layer components {
 	.scrollbar-thin {
 		scrollbar-width: thin;

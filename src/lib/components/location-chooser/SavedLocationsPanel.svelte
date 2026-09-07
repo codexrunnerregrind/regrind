@@ -136,7 +136,7 @@
 			<Input
 				bind:ref={nameInput}
 				bind:value={draftName}
-				class="h-9 flex-1 border-black/20 bg-white text-black"
+				class="h-9 flex-1 rounded-lg border-border bg-background"
 				aria-label="Location name"
 				maxlength={60}
 				onkeydown={(event: KeyboardEvent) => {
@@ -153,7 +153,7 @@
 				size="icon"
 				variant="ghost"
 				aria-label="Save name"
-				class="shrink-0 text-current hover:bg-black/5"
+				class="shrink-0 text-current hover:bg-muted"
 				onclick={() => void commitName(location.id)}
 			>
 				<CheckIcon />
@@ -162,7 +162,7 @@
 				size="icon"
 				variant="ghost"
 				aria-label="Cancel rename"
-				class="shrink-0 text-current hover:bg-black/5"
+				class="shrink-0 text-current hover:bg-muted"
 				onclick={stopEditing}
 			>
 				<XIcon />
@@ -170,11 +170,13 @@
 		{:else}
 			<Button
 				variant="ghost"
-				class="flex h-auto min-w-0 flex-1 cursor-pointer flex-col items-start justify-start gap-0 py-1.5 text-left text-current hover:bg-black/5"
+				class="flex h-auto min-w-0 flex-1 cursor-pointer flex-col items-start justify-start gap-0 py-1.5 text-left text-current hover:bg-muted"
 				onclick={() => void pick(location)}
 			>
 				<span class="block max-w-full truncate">{location.name}</span>
-				<span class="block max-w-full truncate text-sm text-black/40">
+				<span
+					class="block max-w-full truncate text-sm text-muted-foreground"
+				>
 					{formatCoordinates(location)}
 				</span>
 			</Button>
@@ -186,7 +188,7 @@
 					: `Add ${location.name} to favorites`}
 				aria-pressed={location.favorite}
 				class={[
-					"shrink-0 hover:bg-black/5",
+					"shrink-0 hover:bg-muted",
 					{
 						// Same yellow the profile favorite stars use; --primary
 						// would follow the user's accent instead.
@@ -202,7 +204,7 @@
 				size="icon"
 				variant="ghost"
 				aria-label={`Rename ${location.name}`}
-				class="shrink-0 text-current hover:bg-black/5"
+				class="shrink-0 text-current hover:bg-muted"
 				onclick={() => void startEditing(location)}
 			>
 				<PencilSimpleIcon />
@@ -211,7 +213,7 @@
 				size="icon"
 				variant="ghost"
 				aria-label={`Delete ${location.name}`}
-				class="shrink-0 text-current hover:bg-black/5"
+				class="shrink-0 text-current hover:bg-muted"
 				onclick={() => void remove(location)}
 			>
 				<TrashIcon />
@@ -222,16 +224,16 @@
 
 <div class="absolute top-0 left-0 z-1020 size-full p-1">
 	<div
-		class="flex h-full w-full flex-col rounded-md bg-white text-black shadow-md"
+		class="flex h-full w-full flex-col rounded-lg border border-border bg-popover text-popover-foreground shadow-xl"
 	>
-		<div class="flex items-center gap-2 border-b border-black/10 px-2 py-2">
+		<div class="flex items-center gap-2 border-b border-border px-2 py-2">
 			<BookmarkSimpleIcon weight="fill" class="size-5 shrink-0" />
 			<span class="flex-1 font-medium">Saved places</span>
 			<Button
 				size="icon"
 				variant="ghost"
 				aria-label="Close saved places"
-				class="text-current hover:bg-black/5"
+				class="text-current hover:bg-muted"
 				onclick={onClose}
 			>
 				<XIcon />
@@ -239,14 +241,14 @@
 		</div>
 		<div bind:this={listEl} class="flex-1 overflow-auto px-1 py-2">
 			{#if favorites.length === 0 && recents.length === 0}
-				<p class="p-4 text-center text-sm text-black/50">
+				<p class="p-4 text-center text-sm text-muted-foreground">
 					No saved places yet. Drop a pin and tap the bookmark to save
 					it here.
 				</p>
 			{/if}
 			{#if favorites.length > 0}
 				<h3
-					class="px-2 pb-1 text-xs font-medium tracking-wide text-black/40 uppercase"
+					class="px-2 pb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase"
 				>
 					Favorites
 				</h3>
@@ -258,7 +260,7 @@
 			{/if}
 			{#if recents.length > 0}
 				<h3
-					class="px-2 pt-3 pb-1 text-xs font-medium tracking-wide text-black/40 uppercase"
+					class="px-2 pt-3 pb-1 text-xs font-medium tracking-wide text-muted-foreground uppercase"
 				>
 					Recent
 				</h3>

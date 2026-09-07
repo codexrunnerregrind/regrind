@@ -5,6 +5,7 @@
 		requestPermissions,
 	} from "@tauri-apps/plugin-geolocation";
 	import { BookmarkSimpleIcon, GpsFixIcon, StarIcon } from "phosphor-svelte";
+	import MagnifyingGlassIcon from "phosphor-svelte/lib/MagnifyingGlassIcon";
 	import { toast } from "svelte-sonner";
 	import type { MapMouseEvent } from "maplibre-gl";
 
@@ -20,7 +21,7 @@
 	} from "$lib/components/map/basemap";
 	import MapView from "$lib/components/map/MapView.svelte";
 	import Button from "$lib/components/ui/button/button.svelte";
-	import { Input } from "$lib/components/ui/input";
+	import * as InputGroup from "$lib/components/ui/input-group";
 	import Spinner from "$lib/components/ui/spinner/spinner.svelte";
 	import { spotKey } from "$lib/model/saved-location";
 	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
@@ -314,7 +315,7 @@
 		options={{
 			center: [-3.697633348267032, 40.42267869390329],
 			zoom: 2,
-			attributionControl: { compact: true },
+			attributionControl: false,
 		}}
 		bind:instance={map}
 		bind:library={maplibre}
@@ -323,31 +324,37 @@
 	iOS it either covers the lower half or scrolls it out of the webview, so a
 	search bar down there hides exactly what is being typed. -->
 	<div class="absolute top-2 right-2 left-2 z-1010">
-		<Input
-			bind:ref={searchInput}
-			id="search-place"
-			type="search"
-			placeholder="Search places..."
-			bind:value={
-				() => searchQuery,
-				(v: string) => {
-					searchQuery = v;
-					showSearchResults = v.length > 0;
+		<InputGroup.Root
+			class="h-11 rounded-lg border-border bg-popover shadow-lg"
+		>
+			<InputGroup.Addon>
+				<MagnifyingGlassIcon />
+			</InputGroup.Addon>
+			<InputGroup.Input
+				bind:ref={searchInput}
+				id="search-place"
+				type="search"
+				placeholder="Search places"
+				bind:value={
+					() => searchQuery,
+					(v: string) => {
+						searchQuery = v;
+						showSearchResults = v.length > 0;
+					}
 				}
-			}
-			class="border-black/10 bg-white text-black shadow-md"
-			maxlength={100}
-			onfocus={() => {
-				if (searchQuery.trim()) {
-					showSearchResults = true;
-				}
-			}}
-			onblur={() => {
-				setTimeout(() => {
-					showSearchResults = false;
-				}, 200);
-			}}
-		/>
+				maxlength={100}
+				onfocus={() => {
+					if (searchQuery.trim()) {
+						showSearchResults = true;
+					}
+				}}
+				onblur={() => {
+					setTimeout(() => {
+						showSearchResults = false;
+					}, 200);
+				}}
+			/>
+		</InputGroup.Root>
 	</div>
 	{#if showSearchResults}
 		<!-- Hangs off the search bar rather than filling the map, so results stay
@@ -356,13 +363,13 @@
 			class="absolute top-14 right-2 left-2 z-1000 max-h-[calc(100%-4.5rem)]"
 		>
 			<div
-				class="flex max-h-full w-full flex-col gap-2 overflow-auto rounded-md bg-white px-1 py-3 text-black shadow-md"
+				class="flex max-h-full w-full flex-col gap-2 overflow-auto rounded-lg border border-border bg-popover px-1 py-3 text-popover-foreground shadow-xl"
 			>
 				{#await searchPlaces}
 					<Spinner class="mx-auto my-4 size-8" />
 				{:then response}
 					{#if response && response.places.length === 0}
-						<p class="px-3 py-2 text-sm text-black/50">
+						<p class="px-3 py-2 text-sm text-muted-foreground">
 							No places found.
 						</p>
 					{/if}
@@ -390,7 +397,7 @@
 									{place.name}
 								</span>
 								<span
-									class="line-clamp-1 block max-w-full truncate text-sm text-black/40"
+									class="line-clamp-1 block max-w-full truncate text-sm text-muted-foreground"
 								>
 									{place.address}
 								</span>
@@ -407,21 +414,19 @@
 			</div>
 		</div>
 	{/if}
-	<!-- Clear of the attribution badge, which sits in the bottom-right corner. -->
-	<div class="absolute right-2 bottom-10 z-1010 flex flex-col gap-2">
+	<!-- Sat on the same baseline as MapLibre's zoom pair opposite: 10px is that
+	     control's own margin, so the two columns end level. -->
+	<div class="absolute right-2.5 bottom-2.5 z-1010 flex flex-col gap-2">
 		{#if pinPos}
 			<Button
 				size="icon-lg"
 				aria-label={savedAtPin
 					? "Rename this saved place"
 					: "Save this place"}
-				variant="default"
+				variant="secondary"
 				class={[
-					"cursor-pointer bg-white shadow-sm hover:bg-neutral-100",
-					{
-						"text-yellow-500": savedAtPin,
-						"text-black": !savedAtPin,
-					},
+					"cursor-pointer rounded-lg border border-border shadow-md",
+					{ "text-primary": savedAtPin },
 				]}
 				disabled={savingPin}
 				onclick={() => {
@@ -443,8 +448,8 @@
 		<Button
 			size="icon-lg"
 			aria-label="Saved places"
-			variant="default"
-			class="cursor-pointer bg-white text-black shadow-sm hover:bg-neutral-100"
+			variant="secondary"
+			class="cursor-pointer rounded-lg border border-border shadow-md"
 			onclick={() => {
 				editingSavedId = undefined;
 				savedPlacesOpen = !savedPlacesOpen;
@@ -457,8 +462,8 @@
 			<Button
 				size="icon-lg"
 				aria-label="Locate me"
-				variant="default"
-				class="cursor-pointer bg-white text-black shadow-sm hover:bg-neutral-100"
+				variant="secondary"
+				class="cursor-pointer rounded-lg border border-border shadow-md"
 				disabled={gpsRequestInProgress}
 				onclick={() => void locate()}
 			>
