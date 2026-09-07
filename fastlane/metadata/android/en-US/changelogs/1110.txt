@@ -1,0 +1,3 @@
+- Fixed push notifications on Android: release builds never registered with Grindr's push sender
+- The push token is no longer lost when it arrives before sign-in
+- The app now asks for notification permission on launch
