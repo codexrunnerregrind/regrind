@@ -14,7 +14,11 @@
 <div
 	bind:this={ref}
 	data-slot="sheet-footer"
-	class={cn("mt-auto flex flex-col gap-2 p-6", className)}
+	class={cn(
+		// Buttons shaped like the dialog footer's — see dialog-footer.svelte.
+		"mt-auto flex flex-col gap-2.5 p-5 [&_.cn-button]:h-10! [&_.cn-button]:rounded-lg!",
+		className,
+	)}
 	{...restProps}
 >
 	{@render children?.()}

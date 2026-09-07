@@ -188,17 +188,23 @@
 			</Dialog.Title>
 		</Dialog.Header>
 		{#if editor !== null}
-			<Input
-				bind:value={editor.value}
-				placeholder="Phrase"
-				maxlength={SAVED_PHRASE_MAX_LENGTH}
-				autofocus
-				onkeydown={(event: KeyboardEvent) => {
-					if (event.key !== "Enter") return;
-					event.preventDefault();
-					submitEditor();
-				}}
-			/>
+			<div class="flex flex-col gap-1.5">
+				<Input
+					bind:value={editor.value}
+					class="h-12 rounded-lg border-border bg-background"
+					placeholder="Phrase"
+					maxlength={SAVED_PHRASE_MAX_LENGTH}
+					autofocus
+					onkeydown={(event: KeyboardEvent) => {
+						if (event.key !== "Enter") return;
+						event.preventDefault();
+						submitEditor();
+					}}
+				/>
+				<span class="text-meta text-ink3">
+					Appears as a chip above the composer
+				</span>
+			</div>
 		{/if}
 		<Dialog.Footer>
 			<Button variant="outline" onclick={() => (editor = null)}>

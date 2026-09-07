@@ -22,9 +22,11 @@
 	class={cn(
 		// A row, not a stack: two buttons in a phone-width dialog fit side by side,
 		// and stacking them read as two separate full-width actions. `flex-1` splits
-		// the row evenly, `flex-wrap` with a floor on each button drops the extras
-		// onto a second line rather than squeezing their labels.
-		"flex flex-wrap justify-end gap-2 *:min-w-28 *:flex-1 sm:*:flex-none",
+		// the row evenly at every width, `flex-wrap` with a floor on each button
+		// drops the extras onto a second line rather than squeezing their labels.
+		// The buttons are squarer and taller than the app's default pill: they are
+		// the dialog's own footer, matched to the field above them.
+		"flex flex-wrap justify-end gap-2.5 *:min-w-28 *:flex-1 [&_.cn-button]:h-10! [&_.cn-button]:rounded-lg!",
 		className,
 	)}
 	{...restProps}

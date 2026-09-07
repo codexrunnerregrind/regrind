@@ -308,7 +308,7 @@
 						: ""}
 				</Drawer.Description>
 			</Drawer.Header>
-			<div class="flex flex-col gap-2 px-4 pb-4">
+			<Drawer.Footer class="pt-0">
 				<Button
 					variant="destructive"
 					size="lg"
@@ -323,7 +323,7 @@
 				>
 					Cancel
 				</Button>
-			</div>
+			</Drawer.Footer>
 		</Drawer.Content>
 	</Drawer.Root>
 {/if}
