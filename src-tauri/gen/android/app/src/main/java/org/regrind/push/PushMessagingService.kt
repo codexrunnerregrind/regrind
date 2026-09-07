@@ -12,6 +12,10 @@ class PushMessagingService : FirebaseMessagingService() {
 	override fun onMessageReceived(message: RemoteMessage) {
 		super.onMessageReceived(message)
 		if (message.data.isEmpty()) return
+		if (PushNotifier.isMarketingCampaign(message.data)) {
+			Log.d("RegrindPush", "ignoring marketing campaign push")
+			return
+		}
 		if (PushNotifier.isRedelivery(message.messageId)) {
 			Log.d("RegrindPush", "ignoring redelivered push id=${message.messageId}")
 			return

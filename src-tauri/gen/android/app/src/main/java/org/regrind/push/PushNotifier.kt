@@ -223,6 +223,17 @@ object PushNotifier {
 		return BODY_KEY_TYPES.firstOrNull { upper.contains(it.first) }?.second
 	}
 
+
+	/**
+	 * Grindr pushes marketing campaigns down the same channel as chat, tagged
+	 * with AWS Pinpoint keys and carrying no conversation. buildPayload has
+	 * nothing to make a chat notification out of, so they arrived captioned
+	 * "Sent you a message" — an advert wearing a message's clothes. Their text
+	 * is localisation keys plus titleArgs/bodyArgs we cannot resolve anyway.
+	 */
+	fun isMarketingCampaign(data: Map<String, String>): Boolean =
+		data.keys.any { it.startsWith("pinpoint.") }
+
 	private const val CDN_BASE = "https://cdns.grindr.com"
 
 	// The payload shape is inconsistent across message types, so probe the same
