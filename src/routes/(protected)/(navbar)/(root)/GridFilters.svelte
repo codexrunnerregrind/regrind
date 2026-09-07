@@ -123,6 +123,7 @@
 	<Sheet.Content
 		side="bottom"
 		class="mt-(--safe-area-top) mb-(--safe-area-bottom) max-h-screen-safe"
+		showCloseButton
 	>
 		<Sheet.Header
 			class={[
