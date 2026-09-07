@@ -56,9 +56,13 @@ export function applyKeyboardInset(): () => void {
 	let keyboard = 0;
 
 	const update = () => {
-		// With nothing focused the viewport is at rest, so re-baseline. This is
-		// what keeps a rotation from reading as a keyboard.
-		if (!isEditable(document.activeElement)) resting = viewport.height;
+		// With nothing focused the viewport is at rest, so re-baseline — this is
+		// what keeps a rotation from reading as a keyboard. Upwards only: a
+		// dialog closing hands the focus back through the body, and adopting
+		// that height would read as "no keyboard" while the keys are still up.
+		// Anything that genuinely shortens the window rebaselines below.
+		if (!isEditable(document.activeElement))
+			resting = Math.max(resting, viewport.height);
 
 		const nextHeight = Math.round(viewport.height);
 		if (nextHeight !== height) {
@@ -91,20 +95,39 @@ export function applyKeyboardInset(): () => void {
 		}
 		// The app is sized to the visible part now, so WebKit's caret reveal has
 		// nothing left to reveal and only shifts the app off its own top.
-		if (open && viewport.offsetTop !== 0) window.scrollTo(0, 0);
+		if (viewport.offsetTop !== 0) window.scrollTo(0, 0);
+	};
+
+	// The window is only ever resized by something that really is a smaller
+	// window — a rotation, split view — so that is where the baseline may drop.
+	const rebaseline = () => {
+		if (!isEditable(document.activeElement)) resting = viewport.height;
+		update();
+	};
+
+	// An overlay's scroll lock can hold a pan through the focus change that
+	// closes it: overflow: hidden makes the reset a no-op, so try again once
+	// the lock is gone.
+	const updateAfterFocus = () => {
+		update();
+		requestAnimationFrame(update);
 	};
 
 	viewport.addEventListener("resize", update);
 	viewport.addEventListener("scroll", update);
-	document.addEventListener("focusin", update);
-	document.addEventListener("focusout", update);
+	window.addEventListener("resize", rebaseline);
+	window.addEventListener("orientationchange", rebaseline);
+	document.addEventListener("focusin", updateAfterFocus);
+	document.addEventListener("focusout", updateAfterFocus);
 	update();
 
 	return () => {
 		viewport.removeEventListener("resize", update);
 		viewport.removeEventListener("scroll", update);
-		document.removeEventListener("focusin", update);
-		document.removeEventListener("focusout", update);
+		window.removeEventListener("resize", rebaseline);
+		window.removeEventListener("orientationchange", rebaseline);
+		document.removeEventListener("focusin", updateAfterFocus);
+		document.removeEventListener("focusout", updateAfterFocus);
 		root.style.setProperty("--safe-area-bottom", baseInset);
 		root.style.removeProperty("--viewport-height");
 		root.style.removeProperty("--keyboard-height");
