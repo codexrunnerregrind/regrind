@@ -14,6 +14,7 @@
 	import TagsFilter from "$lib/components/filters/TagsFilter.svelte";
 	import UsernameFilter from "$lib/components/filters/UsernameFilter.svelte";
 	import WeightFilter from "$lib/components/filters/WeightFilter.svelte";
+	import * as AlertDialog from "$lib/components/ui/alert-dialog";
 	import { Button } from "$lib/components/ui/button";
 	import * as Sheet from "$lib/components/ui/sheet";
 	import { gridState } from "$lib/grid/grid-state.svelte";
@@ -22,6 +23,7 @@
 		defaultFilters,
 	} from "$lib/model/browse/grid/filters";
 	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
+	import { deepEqual } from "$lib/util/deep-equal";
 
 	let { open = $bindable() }: { open: boolean } = $props();
 
@@ -35,14 +37,27 @@
 
 	const activeCount = $derived(countActiveFilters(filters));
 
+	// Nothing here reaches the grid until Apply, so a stray tap on the close
+	// button or a back gesture would silently throw the edits away.
+	const dirty = $derived(!deepEqual(filters, gridState.filters.snapshot()));
+	let confirmDiscard = $state(false);
+
+	function apply() {
+		gridState.filters.set(filters);
+		open = false;
+	}
+
+	function requestClose() {
+		if (dirty) {
+			confirmDiscard = true;
+		} else {
+			open = false;
+		}
+	}
+
 	let contentScroll = $state(0);
 
-	dismissOnBackGesture({
-		active: () => open,
-		dismiss: () => {
-			open = false;
-		},
-	});
+	dismissOnBackGesture({ active: () => open, dismiss: requestClose });
 </script>
 
 {#snippet col1()}
@@ -148,7 +163,18 @@
 		</FilterRowGroup>
 	</FilterSection>
 {/snippet}
-<Sheet.Root bind:open>
+<Sheet.Root
+	bind:open={
+		() => open,
+		(v: boolean) => {
+			if (v) {
+				open = true;
+			} else {
+				requestClose();
+			}
+		}
+	}
+>
 	<Sheet.Content
 		side="bottom"
 		class="mt-(--safe-area-top) mb-(--safe-area-bottom) max-h-screen-safe"
@@ -210,15 +236,31 @@
 				{ "border-muted": contentScroll < 1 },
 			]}
 		>
-			<Button
-				type="submit"
-				onclick={() => {
-					gridState.filters.set(filters);
-					open = false;
-				}}
-			>
-				Apply
-			</Button>
+			<Button type="submit" onclick={apply}>Apply</Button>
 		</Sheet.Footer>
 	</Sheet.Content>
 </Sheet.Root>
+
+<AlertDialog.Root bind:open={confirmDiscard}>
+	<AlertDialog.Content>
+		<AlertDialog.Header>
+			<AlertDialog.Title>Discard filter changes?</AlertDialog.Title>
+			<AlertDialog.Description>
+				You changed the filters but haven't applied them yet. Closing
+				now leaves the grid as it was.
+			</AlertDialog.Description>
+		</AlertDialog.Header>
+		<AlertDialog.Footer>
+			<AlertDialog.Cancel>Keep editing</AlertDialog.Cancel>
+			<AlertDialog.Action
+				variant="destructive"
+				onclick={() => {
+					confirmDiscard = false;
+					open = false;
+				}}
+			>
+				Discard
+			</AlertDialog.Action>
+		</AlertDialog.Footer>
+	</AlertDialog.Content>
+</AlertDialog.Root>
