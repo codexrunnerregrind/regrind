@@ -35,13 +35,13 @@
 			],
 			"versions": [
 				{
-					"version": "0.1.0.9",
-					"buildVersion": "0.1.0.9",
-					"date": "2026-09-04",
-					"localizedDescription": "- Send unlimited expiring pics\n- Unsend messages",
-					"downloadURL": "https://git.opengrind.org/codexrunner/regrind/releases/download/v0.1.0-beta.9/regrind-v0.1.0-beta.9.ipa",
-					"size": 45683195,
-					"sha256": "516ba91363e85603b909ae3bd01c7496c0986452042f2a3e66c041416a59c4ea",
+					"version": "0.1.0.10",
+					"buildVersion": "0.1.0.10",
+					"date": "2026-09-07",
+					"localizedDescription": "- Redesigned sign-in screen\n- Grid filters redesigned\n- Right Now posts now appear on the profile\n- Expiring pics and unsend stay unlocked\n- The Android updater now tracks this fork's own releases\n- Other fixes",
+					"downloadURL": "https://git.opengrind.org/codexrunner/regrind/releases/download/v0.1.0-beta.10/regrind-v0.1.0-beta.10.ipa",
+					"size": 45669252,
+					"sha256": "60b6c0e202d569e1a978c3049cbb55b4de17e105b4bf00ef37d9f4722b9d27ca",
 					"minOSVersion": "14.0"
 				}
 			]

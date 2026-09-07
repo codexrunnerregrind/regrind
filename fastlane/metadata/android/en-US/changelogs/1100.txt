@@ -1,0 +1,6 @@
+- Redesigned sign-in screen
+- Grid filters redesigned
+- Right Now posts now appear on the profile
+- Expiring pics and unsend stay unlocked
+- The Android updater now tracks this fork's own releases
+- Other fixes

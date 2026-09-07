@@ -36,7 +36,7 @@ body:
     attributes:
       label: Version of ReGrind
       description: You can find this in the app's settings. Put "N/A" only if version is not applicable.
-      placeholder: e.g. v0.1.0-beta.9
+      placeholder: e.g. v0.1.0-beta.10
   - type: checkboxes
     id: existing-issues-searcehd
     visible: [form]
