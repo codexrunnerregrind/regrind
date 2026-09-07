@@ -90,7 +90,7 @@ describe("SignInForm", () => {
 		render(SignInForm);
 
 		await fireEvent.click(
-			screen.getByRole("button", { name: "Sign in with Google" }),
+			screen.getByRole("button", { name: "Continue with Google" }),
 		);
 		await settle();
 
@@ -104,7 +104,7 @@ describe("SignInForm", () => {
 		render(SignInForm);
 
 		await fireEvent.click(
-			screen.getByRole("button", { name: "Sign in with Google" }),
+			screen.getByRole("button", { name: "Continue with Google" }),
 		);
 		await settle();
 

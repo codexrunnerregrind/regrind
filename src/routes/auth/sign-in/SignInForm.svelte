@@ -19,7 +19,6 @@
 	import { noticeStorageBackend } from "$lib/api/storage-notice";
 	import { clearProfileCaches } from "$lib/api/users/profiles";
 	import { Button } from "$lib/components/ui/button";
-	import * as Card from "$lib/components/ui/card";
 	import { Input } from "$lib/components/ui/input";
 	import { Label } from "$lib/components/ui/label";
 	import { Spinner } from "$lib/components/ui/spinner";
@@ -28,6 +27,7 @@
 	let email = $state("");
 	let password = $state("");
 	let submitting: false | "password" | "google" = $state(false);
+	let showPassword = $state(false);
 
 	function handleAccountBlock(error: unknown): boolean {
 		const ban = asBanned(error);
@@ -156,57 +156,69 @@
 	}
 </script>
 
-<form onsubmit={signIn} class="contents">
-	<Card.Root class="m-auto w-full max-w-sm">
-		<Card.Header>
-			<Card.Title>Sign in to your account</Card.Title>
-			<Card.Description>
-				Enter your email below to sign in to your account
-			</Card.Description>
-			<Card.Action>
-				<Button variant="link" href="/auth/sign-up" class="px-0">
-					Sign Up
-				</Button>
-			</Card.Action>
-		</Card.Header>
-		<Card.Content>
-			<div class="flex flex-col gap-6">
-				<div class="grid gap-2">
-					<Label for="email">Email</Label>
-					<Input
-						id="email"
-						type="email"
-						placeholder="m@example.com"
-						required
-						bind:value={email}
-						disabled={submitting !== false}
-					/>
-				</div>
-				<div class="grid gap-2">
-					<div class="flex items-center">
-						<Label for="password">Password</Label>
-						<a
-							href="/auth/password-reset"
-							class="ms-auto inline-block text-sm underline-offset-4 hover:underline"
-						>
-							Forgot your password?
-						</a>
-					</div>
+<form onsubmit={signIn} class="flex flex-1 flex-col">
+	<div class="my-auto flex w-full max-w-sm flex-col gap-6 self-center py-10">
+		<div class="flex flex-col gap-2">
+			<h1 class="font-heading text-4xl font-bold tracking-tight">
+				Sign in
+			</h1>
+			<p class="text-base text-muted-foreground">
+				Use the email and password you signed up with.
+			</p>
+		</div>
+
+		<div class="flex flex-col gap-4">
+			<div class="grid gap-2">
+				<Label for="email" class="text-sm text-muted-foreground">
+					Email
+				</Label>
+				<Input
+					id="email"
+					type="email"
+					placeholder="you@example.com"
+					required
+					autocomplete="email"
+					bind:value={email}
+					disabled={submitting !== false}
+					class="h-13 rounded-xl border-border/60 px-4 text-base"
+				/>
+			</div>
+
+			<div class="grid gap-2">
+				<Label for="password" class="text-sm text-muted-foreground">
+					Password
+				</Label>
+				<div class="relative">
 					<Input
 						id="password"
-						type="password"
+						type={showPassword ? "text" : "password"}
 						required
 						autocomplete="current-password"
 						bind:value={password}
 						disabled={submitting !== false}
+						class="h-13 rounded-xl border-border/60 px-4 pe-18 text-base"
 					/>
+					<button
+						type="button"
+						class="absolute inset-y-0 end-4 text-sm font-medium text-primary"
+						onclick={() => (showPassword = !showPassword)}
+					>
+						{showPassword ? "Hide" : "Show"}
+					</button>
 				</div>
+				<a
+					href="/auth/password-reset"
+					class="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+				>
+					Forgot your password?
+				</a>
 			</div>
-		</Card.Content>
-		<Card.Footer class="flex-col gap-2">
+		</div>
+
+		<div class="flex flex-col gap-4">
 			<Button
 				type="submit"
-				class="w-full"
+				class="h-13 w-full rounded-xl text-base"
 				disabled={submitting !== false}
 			>
 				{#if submitting === "password"}
@@ -214,19 +226,55 @@
 				{/if}
 				Sign in
 			</Button>
+
+			<div class="flex items-center gap-4 text-sm text-muted-foreground">
+				<span class="h-px flex-1 bg-border"></span>
+				or
+				<span class="h-px flex-1 bg-border"></span>
+			</div>
+
 			<Button
 				type="button"
 				variant="outline"
-				class="w-full"
+				class="h-13 w-full gap-3 rounded-xl text-base"
 				disabled={submitting !== false}
 				onclick={signInWithGoogle}
 			>
 				{#if submitting === "google"}
 					<Spinner />
+				{:else}
+					<svg viewBox="0 0 48 48" class="size-5" aria-hidden="true">
+						<path
+							fill="#EA4335"
+							d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
+						/>
+						<path
+							fill="#4285F4"
+							d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
+						/>
+						<path
+							fill="#FBBC05"
+							d="M10.53 28.59A14.4 14.4 0 0 1 9.77 24c0-1.6.28-3.15.76-4.59l-7.98-6.19A23.94 23.94 0 0 0 0 24c0 3.88.93 7.54 2.56 10.78l7.97-6.19z"
+						/>
+						<path
+							fill="#34A853"
+							d="M24 48c6.48 0 11.93-2.13 15.9-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.17 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
+						/>
+					</svg>
 				{/if}
-				Sign in with Google
+				Continue with Google
 			</Button>
-		</Card.Footer>
-	</Card.Root>
+		</div>
+	</div>
+
+	<p class="mt-auto text-center text-sm text-muted-foreground">
+		New here?
+		<a
+			href="/auth/sign-up"
+			class="font-medium text-primary underline-offset-4 hover:underline"
+		>
+			Create an account
+		</a>
+	</p>
 </form>
 <RecaptchaUnsupported bind:open={recaptchaDialogOpen} />
