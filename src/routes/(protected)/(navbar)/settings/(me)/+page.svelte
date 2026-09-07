@@ -2,6 +2,7 @@
 	import {
 		GearIcon,
 		IdentificationCardIcon,
+		ImagesSquareIcon,
 		PaletteIcon,
 		UserCircleIcon,
 	} from "phosphor-svelte";
@@ -33,6 +34,11 @@
 					<SettingsRow title="Edit Profile" href="/settings/profile">
 						{#snippet icon()}
 							<IdentificationCardIcon weight="fill" />
+						{/snippet}
+					</SettingsRow>
+					<SettingsRow title="My Albums" href="/albums">
+						{#snippet icon()}
+							<ImagesSquareIcon weight="fill" />
 						{/snippet}
 					</SettingsRow>
 					<SettingsRow
