@@ -13,6 +13,17 @@ import { isAndroidPlatform } from "$lib/platform/os";
 // the local notifications in notifications.svelte.ts.
 
 const SYNCED_KEY = "regrind:push-token-synced";
+const TOKEN_KEY = "regrind:fcm-token";
+
+// The native side persists the token here as well as firing the event, so a
+// token that arrived before sign-in is not lost.
+function storedToken(): string | null {
+	try {
+		return localStorage.getItem(TOKEN_KEY);
+	} catch {
+		return null;
+	}
+}
 
 async function syncToken(token: string, profileId: number): Promise<void> {
 	const trimmed = token.trim();
@@ -73,10 +84,10 @@ class PushService {
 		window.addEventListener("regrind:push-open", this.#onOpen);
 
 		// A token captured before this profile signed in is stashed on the
-		// window; pick it up now rather than waiting for the next refresh.
-		if (window.__REGRIND_FCM_TOKEN) {
-			void this.#trySync(window.__REGRIND_FCM_TOKEN);
-		}
+		// window and in localStorage; pick it up now rather than waiting for
+		// the next refresh.
+		const known = window.__REGRIND_FCM_TOKEN ?? storedToken();
+		if (known) void this.#trySync(known);
 	}
 
 	stop(): void {

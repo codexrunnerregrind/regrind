@@ -2,6 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 	<uses-permission android:name="android.permission.INTERNET" />
 
+	<!-- Chat/tap push notifications (see org.regrind.push). Requested at launch
+	     in MainActivity; API 33+ drops notifications without the grant. -->
+	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
 	<uses-permission android:name="org.opengrind.google_oauth.permission.REQUEST_TOKEN" />
 
 	<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />

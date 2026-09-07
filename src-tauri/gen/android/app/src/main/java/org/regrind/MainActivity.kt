@@ -1,10 +1,16 @@
 package org.regrind
 
+import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
+import android.util.Log
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
@@ -32,6 +38,7 @@ class MainActivity : TauriActivity() {
 	private var webViewRef: WebView? = null
 	private var pendingWebViewWarning: WebViewSupport.Status? = null
 	private var shownWebViewWarning = false
+	private val mainHandler = Handler(Looper.getMainLooper())
 
 	override val handleBackNavigation = false
 
@@ -98,6 +105,7 @@ class MainActivity : TauriActivity() {
 		super.onCreate(savedInstanceState)
 
 		onBackPressedDispatcher.addCallback(this, backGestureCallback)
+		ensureNotificationPermission()
 
 		WindowInsetsControllerCompat(window, window.decorView).apply {
 			isAppearanceLightStatusBars = false
@@ -132,6 +140,20 @@ class MainActivity : TauriActivity() {
 		}
 	}
 	
+	// Nothing else asks for this on Android — the push path posts notifications
+	// natively rather than through the Tauri plugin — and without the grant
+	// API 33+ drops every one of them silently.
+	private fun ensureNotificationPermission() {
+		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+		val permission = Manifest.permission.POST_NOTIFICATIONS
+		if (checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED) return
+		try {
+			requestPermissions(arrayOf(permission), REQUEST_POST_NOTIFICATIONS)
+		} catch (e: Exception) {
+			Log.w("RegrindPush", "notification permission request failed", e)
+		}
+	}
+
 	override fun onWebViewCreate(webView: WebView) {
 		super.onWebViewCreate(webView)
 		webViewRef = webView
@@ -176,19 +198,39 @@ class MainActivity : TauriActivity() {
 		}
 	}
 
-	private fun dispatchFcmToken(token: String) {
+	// The token usually arrives before the webview has navigated to the app, so
+	// injecting blind loses it: the global is wiped by the page load and no
+	// listener exists yet. Wait for the real document, then stash the token in
+	// localStorage as well so the frontend can pick it up whenever it signs in.
+	private fun dispatchFcmToken(token: String, attempt: Int = 0) {
 		val webView = webViewRef ?: return
+		val quoted = JSONObject.quote(token)
+		val script =
+			"(function(){" +
+				"if (String(location.href).indexOf('localhost') === -1) return 'retry';" +
+				"var t = $quoted;" +
+				"try { localStorage.setItem('regrind:fcm-token', t); } catch (e) { return 'retry'; }" +
+				"window.__REGRIND_FCM_TOKEN = t;" +
+				"window.dispatchEvent(new CustomEvent('regrind:fcm-token', { detail: { token: t } }));" +
+				"return 'ok';" +
+				"})();"
 		runOnUiThread {
-			webView.evaluateJavascript(
-				"window.__REGRIND_FCM_TOKEN = ${JSONObject.quote(token)};" +
-					"window.dispatchEvent(new CustomEvent('regrind:fcm-token', " +
-					"{ detail: { token: ${JSONObject.quote(token)} } }));",
-				null,
-			)
+			webView.evaluateJavascript(script) { result ->
+				if (result?.contains("retry") == true && attempt < FCM_DISPATCH_ATTEMPTS) {
+					mainHandler.postDelayed(
+						{ dispatchFcmToken(token, attempt + 1) },
+						FCM_DISPATCH_RETRY_MS,
+					)
+				}
+			}
 		}
 	}
 
 	companion object {
+		private const val REQUEST_POST_NOTIFICATIONS = 4711
+		private const val FCM_DISPATCH_ATTEMPTS = 25
+		private const val FCM_DISPATCH_RETRY_MS = 400L
+
 		private var activityRef: WeakReference<MainActivity>? = null
 		private var latestFcmToken: String? = null
 
