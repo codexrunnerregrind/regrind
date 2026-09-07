@@ -35,13 +35,13 @@
 			],
 			"versions": [
 				{
-					"version": "0.1.0.12",
-					"buildVersion": "0.1.0.12",
+					"version": "0.1.0.13",
+					"buildVersion": "0.1.0.13",
 					"date": "2026-09-07",
 					"localizedDescription": "- Redesigned sign-in screen\n- Grid filters redesigned\n- Crop and straighten a photo before it goes to an album, your profile or Right Now\n- Several fixes for push notifications on Android\n- Right Now posts now appear on the profile\n- Expiring pics and unsend stay unlocked\n- The Android updater now tracks this fork's own releases\n- Other fixes",
-					"downloadURL": "https://git.opengrind.org/codexrunner/regrind/releases/download/v0.1.0-beta.12/regrind-v0.1.0-beta.12.ipa",
-					"size": 45685156,
-					"sha256": "348a684b15581e2331036b209a123c3da9293868b8e69cf1f9c23f8d595fb2c5",
+					"downloadURL": "https://git.opengrind.org/codexrunner/regrind/releases/download/v0.1.0-beta.13/regrind-v0.1.0-beta.13.ipa",
+					"size": 45685676,
+					"sha256": "eb54c8ea01010c9c91cabccf02993ce668131bf0ee4921fc02b59524c063fd24",
 					"minOSVersion": "14.0"
 				}
 			]
