@@ -110,12 +110,12 @@
 	</Dialog.Root>
 {:else}
 	<Drawer.Root bind:open>
-		<!-- Height stays a class, never `h-full!`: vaul shrinks the drawer to the
-		visual viewport with an inline height when the keyboard opens, and an
-		important utility would outrank it, leaving the fields under the keyboard. -->
+		<!-- Full height rather than auto: the picker is a map, which has none of
+		its own. --screen-safe already excludes the keyboard, so this is the
+		visible area and nothing sits behind the keys. -->
 		<Drawer.Content
 			preventOverflowTextSelection={false}
-			class="mt-0! mb-(--safe-area-bottom) h-full"
+			class="mt-0! mb-(--safe-area-bottom) h-screen-safe"
 		>
 			<div
 				class="mt-4 mb-2 h-full min-h-0 flex-1 touch-manipulation overflow-clip rounded-lg"
