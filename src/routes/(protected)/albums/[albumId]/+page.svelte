@@ -30,6 +30,8 @@
 	import { downloadAllMedia } from "$lib/chat/lightbox-download";
 	import { clearMyAlbumsCache } from "$lib/chat/my-albums";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
+	import { PhotoEditQueue } from "$lib/components/media/photo-edit-queue.svelte";
+	import PhotoEditorDrawer from "$lib/components/media/PhotoEditorDrawer.svelte";
 	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
 	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
 	import { Button } from "$lib/components/ui/button";
@@ -39,10 +41,7 @@
 		albumNameByteLength,
 	} from "$lib/model/messaging/albums";
 	import { hapticImpact } from "$lib/platform/haptics";
-	import {
-		pickMultipleMedia,
-		readMediaBytes,
-	} from "$lib/platform/media-picker";
+	import { pickMultipleMedia } from "$lib/platform/media-picker";
 	import { dragReorder } from "$lib/util/drag-reorder";
 	import AlbumDeleteDialog from "./AlbumDeleteDialog.svelte";
 	import AlbumRenameDialog from "./AlbumRenameDialog.svelte";
@@ -76,6 +75,7 @@
 	let deleteAlbumOpen = $state(false);
 
 	let adding = $state(false);
+	const edits = new PhotoEditQueue();
 	let savingAll = $state(false);
 
 	async function load(id: number) {
@@ -233,23 +233,22 @@
 	}
 
 	async function addPhotos() {
-		if (album === null || adding || busy) return;
+		if (album === null || adding || busy || edits.current !== null) return;
 		const picked = await pickMultipleMedia("image");
 		if (picked.length === 0) return;
 
-		adding = true;
 		let added = 0;
 		try {
-			for (const media of picked) {
+			// Each photo is framed before it goes up, and the one after it only
+			// opens once this one has landed.
+			for await (const photo of edits.edit(picked)) {
+				adding = true;
 				// One request per photo — the endpoint takes a single part, and
 				// uploading in turn keeps the album's order the order they were
 				// picked in.
-				await uploadAlbumContent({
-					albumId,
-					bytes: await readMediaBytes(media),
-					contentType: media.mimeType ?? "image/jpeg",
-				});
+				await uploadAlbumContent({ albumId, ...photo });
 				added += 1;
+				adding = false;
 			}
 		} catch (err) {
 			console.error(err);
@@ -556,4 +555,11 @@
 	bind:open={deleteAlbumOpen}
 	{busy}
 	onConfirm={() => void confirmDeleteAlbum()}
+/>
+
+<PhotoEditorDrawer
+	queue={edits}
+	title="Add to album"
+	confirmLabel="Add to album"
+	busy={adding}
 />

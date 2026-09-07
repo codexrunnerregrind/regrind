@@ -5,6 +5,8 @@
 
 	import { showErrorToast } from "$lib/api/error-toast";
 	import { uploadRightNowMedia } from "$lib/api/right-now";
+	import { PhotoEditQueue } from "$lib/components/media/photo-edit-queue.svelte";
+	import PhotoEditorDrawer from "$lib/components/media/PhotoEditorDrawer.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import * as Drawer from "$lib/components/ui/drawer";
 	import { Spinner } from "$lib/components/ui/spinner";
@@ -52,6 +54,7 @@
 	let photoUrl = $state<string | null>(null);
 	let uploading = $state(false);
 	let removing = $state(false);
+	const edits = new PhotoEditQueue();
 
 	// Seeded when the sheet opens and never again, so a background refresh of the
 	// post cannot overwrite what is being typed. The post's own photo is not
@@ -87,6 +90,7 @@
 	const busy = $derived(myRightNowPost.busy || uploading || removing);
 
 	async function addPhoto() {
+		if (edits.current !== null) return;
 		let picked;
 		try {
 			picked = await pickMedia("image");
@@ -96,11 +100,15 @@
 			return;
 		}
 		if (picked === null) return;
-		uploading = true;
 		try {
-			const uploaded = await uploadRightNowMedia(picked);
-			media = [{ type: "image_v1", data: { id: uploaded.mediaId } }];
-			photoUrl = uploaded.thumbnailUrl;
+			// One pick, so the walk is one photo long: the editor first, then
+			// what it was left as.
+			for await (const photo of edits.edit([picked])) {
+				uploading = true;
+				const uploaded = await uploadRightNowMedia(photo);
+				media = [{ type: "image_v1", data: { id: uploaded.mediaId } }];
+				photoUrl = uploaded.thumbnailUrl;
+			}
 		} catch (error) {
 			console.error(error);
 			showErrorToast({ label: "Couldn't add that photo", error });
@@ -286,5 +294,15 @@
 				</button>
 			{/if}
 		</Drawer.Footer>
+
+		<!-- Inside the sheet's own drawer, which is what a nested drawer wants:
+		     the sheet stays put behind the editor instead of closing under it. -->
+		<PhotoEditorDrawer
+			queue={edits}
+			title="Add a photo"
+			confirmLabel="Use photo"
+			busy={uploading}
+			nested
+		/>
 	</Drawer.Content>
 </Drawer.Root>

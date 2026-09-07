@@ -3,10 +3,9 @@
 
 	import { showErrorToast } from "$lib/api/error-toast";
 	import { uploadProfilePhoto } from "$lib/api/users/profiles";
-	import {
-		pickMultipleMedia,
-		readMediaBytes,
-	} from "$lib/platform/media-picker";
+	import { PhotoEditQueue } from "$lib/components/media/photo-edit-queue.svelte";
+	import PhotoEditorDrawer from "$lib/components/media/PhotoEditorDrawer.svelte";
+	import { pickMultipleMedia } from "$lib/platform/media-picker";
 	import { dragReorder } from "$lib/util/drag-reorder";
 	import ProfilePictureSlot from "./ProfilePictureSlot.svelte";
 
@@ -22,7 +21,8 @@
 		),
 	);
 
-	let uploading = $state(0);
+	let uploading = $state(false);
+	const edits = new PhotoEditQueue();
 
 	function removePhoto(mediaHash: string) {
 		medias = medias.filter((media) => media.mediaHash !== mediaHash);
@@ -49,28 +49,27 @@
 	 */
 	async function addPhotos() {
 		const room = MAX_PHOTOS - medias.length;
-		if (uploading > 0 || room <= 0) return;
+		if (uploading || room <= 0 || edits.current !== null) return;
 		const picked = (await pickMultipleMedia("image")).slice(0, room);
 		if (picked.length === 0) return;
 
-		uploading = picked.length;
 		try {
-			for (const media of picked) {
-				const { mediaHash } = await uploadProfilePhoto({
-					bytes: await readMediaBytes(media),
-					contentType: media.mimeType ?? "image/jpeg",
-				});
+			// Framed one at a time, and uploaded as each is confirmed rather
+			// than in a batch at the end: the slot it fills appears with it.
+			for await (const photo of edits.edit(picked)) {
+				uploading = true;
+				const { mediaHash } = await uploadProfilePhoto(photo);
 				if (
 					!medias.some((existing) => existing.mediaHash === mediaHash)
 				)
 					medias = [...medias, { mediaHash }];
-				uploading -= 1;
+				uploading = false;
 			}
 		} catch (error) {
 			console.error(error);
 			showErrorToast({ label: "Failed to upload photo", error });
 		} finally {
-			uploading = 0;
+			uploading = false;
 		}
 	}
 </script>
@@ -78,7 +77,7 @@
 <div
 	class="reorder-grid grid grid-cols-3 gap-2"
 	use:dragReorder={{
-		enabled: medias.length > 1 && uploading === 0,
+		enabled: medias.length > 1 && !uploading,
 		onReorder: movePhoto,
 	}}
 >
@@ -96,11 +95,11 @@
 			<button
 				type="button"
 				class="flex aspect-square items-center justify-center rounded-xl border border-dashed border-border text-muted-foreground disabled:opacity-50"
-				disabled={uploading > 0}
+				disabled={uploading}
 				onclick={() => void addPhotos()}
 				aria-label="Add profile photo"
 			>
-				{#if uploading > 0}
+				{#if uploading}
 					<SpinnerGapIcon class="size-6 animate-spin" />
 				{:else}
 					<PlusIcon class="size-6" />
@@ -122,3 +121,10 @@
 		you save.
 	</p>
 {/if}
+
+<PhotoEditorDrawer
+	queue={edits}
+	title="Add profile photo"
+	confirmLabel="Upload"
+	busy={uploading}
+/>

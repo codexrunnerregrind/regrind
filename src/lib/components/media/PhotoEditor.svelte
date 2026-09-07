@@ -5,7 +5,7 @@
 	import { Spinner } from "$lib/components/ui/spinner";
 
 	/**
-	 * What the uploader downscales a chat photo to (`photo::encode::MAX_EDGE`).
+	 * What the uploader downscales a photo to (`photo::encode::MAX_EDGE`).
 	 * Editing above it is work thrown away, and on a phone a 12-megapixel canvas
 	 * is the difference between a rotation landing at once and taking seconds.
 	 */

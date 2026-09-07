@@ -13,7 +13,6 @@ import {
 	rightNowOwnPostSchema,
 	type RightNowUpdatePost,
 } from "$lib/model/right-now/post";
-import { type PickedMedia, readMediaBytes } from "$lib/platform/media-picker";
 import { toBase64 } from "$lib/util/base64";
 import { urlSearchParamsCodec } from "$lib/util/url-search-params";
 
@@ -97,11 +96,13 @@ export async function updateRightNowPost({
  * Uploads a photo for a post. Its own endpoint, and its own response — the feed
  * renders the thumbnail this hands back rather than a media hash.
  */
-export async function uploadRightNowMedia(
-	media: PickedMedia,
-): Promise<RightNowMediaUpload> {
-	const bytes = await readMediaBytes(media);
-	const contentType = media.mimeType ?? "image/jpeg";
+export async function uploadRightNowMedia({
+	bytes,
+	contentType,
+}: {
+	bytes: Uint8Array<ArrayBuffer>;
+	contentType: string;
+}): Promise<RightNowMediaUpload> {
 	if (demoEnabled) {
 		return demoUploadRightNowMedia({ bytes, contentType });
 	}
