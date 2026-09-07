@@ -173,6 +173,22 @@ describe("message API wrappers", () => {
 		);
 	});
 
+	it("fails a single-message fetch on an error status before parsing", async () => {
+		fetchRestMock.mockResolvedValue(
+			response({
+				status: 400,
+				body: JSON.stringify({ type: "urn:gr:err:bad_request" }),
+			}),
+		);
+
+		await expect(
+			getSingleMessage({
+				conversationId: "conversation-1",
+				messageId: "msg-2",
+			}),
+		).rejects.toThrow("API request failed with status 400");
+	});
+
 	it("sends direct messages through the expected request shape", async () => {
 		const message = apiMessage();
 		fetchRestMock.mockResolvedValue(response({ data: message }));

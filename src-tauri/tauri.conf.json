@@ -73,6 +73,7 @@
 		},
 		"android": {
 			"autoIncrementVersionCode": false,
+			"debugApplicationIdSuffix": ".dev",
 			"minSdkVersion": 28,
 			"versionCode": 1120
 		},

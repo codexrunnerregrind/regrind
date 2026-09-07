@@ -68,9 +68,10 @@ export async function getSingleMessage({
 	const message = await fetchRest(
 		`/v4/chat/conversation/${conversationId}/message/${messageId}`,
 		{ method: "GET" },
-	).then((res) =>
-		res.jsonParsed(z.object({ message: apiResponseMessageSchema })),
-	);
+	).then((res) => {
+		res.assertOk();
+		return res.jsonParsed(z.object({ message: apiResponseMessageSchema }));
+	});
 	return message;
 }
 
