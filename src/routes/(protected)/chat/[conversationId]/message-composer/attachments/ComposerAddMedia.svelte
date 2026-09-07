@@ -3,10 +3,10 @@
 	import SealCheckIcon from "phosphor-svelte/lib/SealCheckIcon";
 	import XIcon from "phosphor-svelte/lib/XIcon";
 
+	import PhotoEditor from "$lib/components/media/PhotoEditor.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import { Spinner } from "$lib/components/ui/spinner";
 	import SwitchField from "$lib/components/ui/switch-field/SwitchField.svelte";
-	import MediaCropper from "./MediaCropper.svelte";
 
 	let {
 		url,
@@ -95,7 +95,7 @@
 			class="max-h-[45dvh] w-full rounded-xl bg-black object-contain"
 		></video>
 	{:else}
-		<MediaCropper bind:this={cropper} src={url} watermark={takenOnGrindr} />
+		<PhotoEditor bind:this={cropper} src={url} watermark={takenOnGrindr} />
 		<SwitchField
 			title="Taken on Grindr watermark"
 			description="Include the timestamp to certify the authenticity and recency of your photo"
