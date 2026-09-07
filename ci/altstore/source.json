@@ -35,13 +35,13 @@
 			],
 			"versions": [
 				{
-					"version": "0.1.0.11",
-					"buildVersion": "0.1.0.11",
+					"version": "0.1.0.12",
+					"buildVersion": "0.1.0.12",
 					"date": "2026-09-07",
-					"localizedDescription": "- Fixed push notifications on Android: release builds never registered with Grindr's push sender\n- The push token is no longer lost when it arrives before sign-in\n- The app now asks for notification permission on launch",
-					"downloadURL": "https://git.opengrind.org/codexrunner/regrind/releases/download/v0.1.0-beta.11/regrind-v0.1.0-beta.11.ipa",
-					"size": 45685174,
-					"sha256": "2515b3eec535148c7bf49d7a3f0dd70a2c9ddb1857871ed9c553de18daa15e22",
+					"localizedDescription": "- Redesigned sign-in screen\n- Grid filters redesigned\n- Crop and straighten a photo before it goes to an album, your profile or Right Now\n- Several fixes for push notifications on Android\n- Right Now posts now appear on the profile\n- Expiring pics and unsend stay unlocked\n- The Android updater now tracks this fork's own releases\n- Other fixes",
+					"downloadURL": "https://git.opengrind.org/codexrunner/regrind/releases/download/v0.1.0-beta.12/regrind-v0.1.0-beta.12.ipa",
+					"size": 45685156,
+					"sha256": "348a684b15581e2331036b209a123c3da9293868b8e69cf1f9c23f8d595fb2c5",
 					"minOSVersion": "14.0"
 				}
 			]

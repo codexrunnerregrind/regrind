@@ -1,0 +1,8 @@
+- Redesigned sign-in screen
+- Grid filters redesigned
+- Crop and straighten a photo before it goes to an album, your profile or Right Now
+- Several fixes for push notifications on Android
+- Right Now posts now appear on the profile
+- Expiring pics and unsend stay unlocked
+- The Android updater now tracks this fork's own releases
+- Other fixes
