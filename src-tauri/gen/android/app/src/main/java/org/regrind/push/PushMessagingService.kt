@@ -13,7 +13,8 @@ class PushMessagingService : FirebaseMessagingService() {
 		super.onMessageReceived(message)
 		if (message.data.isEmpty()) return
 		if (PushNotifier.isMarketingCampaign(message.data)) {
-			Log.d("RegrindPush", "ignoring marketing campaign push")
+			// Key names only, never values — enough to re-check the filter later.
+			Log.d("RegrindPush", "ignoring marketing campaign push; keys=${message.data.keys.sorted()}")
 			return
 		}
 		if (PushNotifier.isRedelivery(message.messageId)) {

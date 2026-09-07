@@ -226,13 +226,28 @@ object PushNotifier {
 
 	/**
 	 * Grindr pushes marketing campaigns down the same channel as chat, tagged
-	 * with AWS Pinpoint keys and carrying no conversation. buildPayload has
-	 * nothing to make a chat notification out of, so they arrived captioned
+	 * with AWS Pinpoint campaign keys and carrying no conversation. buildPayload
+	 * has nothing to make a chat notification out of, so they arrived captioned
 	 * "Sent you a message" — an advert wearing a message's clothes. Their text
 	 * is localisation keys plus titleArgs/bodyArgs we cannot resolve anyway.
+	 *
+	 * Pinpoint is the delivery layer for *everything* Grindr sends, chat
+	 * included, so the `pinpoint.` prefix alone is not the tell — matching on it
+	 * silently dropped real messages. Require a campaign id, and never drop a
+	 * push that carries chat or tap content.
 	 */
-	fun isMarketingCampaign(data: Map<String, String>): Boolean =
-		data.keys.any { it.startsWith("pinpoint.") }
+	fun isMarketingCampaign(data: Map<String, String>): Boolean {
+		if (data.keys.none { it.startsWith("pinpoint.campaign.") }) return false
+		return !carriesChatContent(data)
+	}
+
+	private fun carriesChatContent(data: Map<String, String>): Boolean {
+		if (normalizeNullableString(data["conversationId"]) != null) return true
+		if (normalizeNullableString(data["message"]) != null) return true
+		if (normalizeNullableString(data["action"]) != null) return true
+		val body = normalizeNullableString(data["body"]) ?: return false
+		return body.startsWith("CHAT_") || body == "TAP_NOTIFICATION_BODY"
+	}
 
 	private const val CDN_BASE = "https://cdns.grindr.com"
 
