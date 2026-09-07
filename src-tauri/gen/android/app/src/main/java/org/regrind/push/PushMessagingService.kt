@@ -12,6 +12,10 @@ class PushMessagingService : FirebaseMessagingService() {
 	override fun onMessageReceived(message: RemoteMessage) {
 		super.onMessageReceived(message)
 		if (message.data.isEmpty()) return
+		if (PushNotifier.isRedelivery(message.messageId)) {
+			Log.d("RegrindPush", "ignoring redelivered push id=${message.messageId}")
+			return
+		}
 		try {
 			PushNotifier.post(this, buildPayload(message.data))
 		} catch (e: Exception) {
@@ -25,7 +29,7 @@ class PushMessagingService : FirebaseMessagingService() {
 	}
 
 	private fun buildPayload(data: Map<String, String>): JSONObject {
-		val senderName = PushNotifier.normalizeSenderName(data["title"] ?: data["senderDisplayName"])
+		val senderName = PushNotifier.resolveSenderName(data)
 		val action = data["action"]
 		val topBody = data["body"]
 
@@ -38,7 +42,16 @@ class PushMessagingService : FirebaseMessagingService() {
 			isTap = true
 			text = "Tapped you"
 		} else if (topBody != null && topBody.startsWith("CHAT_")) {
-			text = "Sent you a message"
+			// A localisation key, not text. It still names the message type, and
+			// saying "Album" beats saying "Sent you a message" about one.
+			val labelled = PushNotifier.typeFromBodyKey(topBody)
+				?.let { PushNotifier.typeLabel(it) }
+			if (labelled != null) {
+				text = labelled
+			} else {
+				text = "Sent you a message"
+				Log.d("RegrindPush", "unmapped chat body key=$topBody")
+			}
 		} else if (!topBody.isNullOrBlank()) {
 			text = topBody
 		}
@@ -54,22 +67,17 @@ class PushMessagingService : FirebaseMessagingService() {
 				}
 				val type = json.optString("type")
 				val body = json.optJSONObject("body")
-				when (type) {
-					"Text" -> {
-						val plain = json.optString("body")
-						val direct = body?.optString("text")?.trim().orEmpty()
-						text = direct.ifEmpty { plain.takeIf { it.isNotBlank() && it != "{}" } ?: text }
+				if (type == "Text") {
+					val plain = json.optString("body")
+					val direct = body?.optString("text")?.trim().orEmpty()
+					text = direct.ifEmpty { plain.takeIf { it.isNotBlank() && it != "{}" } ?: text }
+				} else {
+					val labelled = PushNotifier.typeLabel(type)
+					if (labelled != null) {
+						text = labelled
+					} else if (!type.isNullOrBlank()) {
+						Log.d("RegrindPush", "unmapped message type=$type")
 					}
-					"Image" -> text = "Sent you a picture"
-					"Giphy" -> text = "Sent you a gif"
-					"Location" -> text = "Sent you their location"
-					"Audio" -> text = "Sent you a voice message"
-					"Gaymoji" -> text = "Sent you a gaymoji"
-					"ExpiringImage" -> text = "Sent you an expiring picture"
-					"Album" -> text = "Shared an album with you"
-					"AlbumContentReaction" -> text = "Liked your album picture"
-					"Video" -> text = "Sent you a video"
-					else -> {}
 				}
 				// Inline the actual media for the types that carry a still image.
 				// ExpiringImage is deliberately left out — a view-once picture

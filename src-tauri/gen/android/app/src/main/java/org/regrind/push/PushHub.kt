@@ -20,4 +20,13 @@ object PushHub {
 		onTapsScreen = path.startsWith("/interest/taps")
 		activeConversationId = Regex("^/chat/([^/]+)").find(path)?.groupValues?.get(1)
 	}
+
+	// The route only says what the user is looking at while we are foregrounded,
+	// and the service consults it only when we are not — so it has to be dropped
+	// on the way out. Left set, it silently swallowed every message from the
+	// conversation the app was last backgrounded from.
+	fun clearActiveRoute() {
+		onTapsScreen = false
+		activeConversationId = null
+	}
 }

@@ -15,6 +15,7 @@ declare global {
 			setActiveRoute(route: string | null): void;
 		};
 		__REGRIND_FCM_TOKEN?: string;
+		__REGRIND_PUSH_ROUTE?: string;
 	}
 }
 

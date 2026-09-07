@@ -83,6 +83,14 @@ class PushService {
 		};
 		window.addEventListener("regrind:push-open", this.#onOpen);
 
+		// A tap that cold-started the app fires the event before this listener
+		// exists, so native leaves the route here as well. Consume it once.
+		const opened = window.__REGRIND_PUSH_ROUTE;
+		if (opened) {
+			window.__REGRIND_PUSH_ROUTE = undefined;
+			void goto(opened);
+		}
+
 		// A token captured before this profile signed in is stashed on the
 		// window and in localStorage; pick it up now rather than waiting for
 		// the next refresh.

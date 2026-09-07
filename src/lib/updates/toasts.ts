@@ -11,7 +11,9 @@ import UpdateToast from "./UpdateToast.svelte";
 
 const PLACEMENT = { position: "top-center" } as const;
 const CARD_CLASS = "update-toast rounded-2xl";
-const RELEASES = "https://git.opengrind.org/open-grind/open-grind/releases/tag";
+// The fork's releases, matching the feed in src-tauri/src/api/update/release.rs.
+// Upstream carries no tag for a fork version, so its releases page 404s.
+const RELEASES = "https://git.opengrind.org/codexrunner/regrind/releases/tag";
 const STAGE_TOAST = "update";
 const INSTALLED_TOAST = "update-installed";
 

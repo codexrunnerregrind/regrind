@@ -28,18 +28,31 @@ object PushNotifier {
 	const val CHAT_CHANNEL_ID = "regrind_chat"
 	const val TAPS_CHANNEL_ID = "regrind_taps"
 	private const val TAG = "RegrindPush"
-	private const val DEDUP_WINDOW_MS = 45_000L
+	private const val DEDUP_WINDOW_MS = 5 * 60_000L
 
-	private val recentKeys = mutableMapOf<String, Long>()
+	private val recentIds = mutableMapOf<String, Long>()
 	private val bitmapCache = LruCache<String, Bitmap>(8)
 
+	/**
+	 * Guards against FCM handing us the same push twice, which it does. Keyed on
+	 * the transport's own message id, so it catches a redelivery and nothing
+	 * else.
+	 *
+	 * This deliberately does not dedupe by conversation. free-grind does, because
+	 * there a message can arrive over FCM *and* over the chat WebSocket and
+	 * whichever lands first should win. We turned the WebSocket path off on
+	 * Android (see the isAndroidPlatform guards in notifications.svelte.ts), so
+	 * FCM is the only channel and a conversation-wide window only swallowed the
+	 * second and later messages of a live conversation.
+	 */
 	@Synchronized
-	private fun isDuplicate(key: String): Boolean {
+	fun isRedelivery(messageId: String?): Boolean {
+		val id = normalizeNullableString(messageId) ?: return false
 		val now = System.currentTimeMillis()
-		recentKeys.entries.removeAll { now - it.value >= DEDUP_WINDOW_MS }
-		val seen = recentKeys.containsKey(key)
-		recentKeys[key] = now
-		return seen
+		recentIds.entries.removeAll { now - it.value >= DEDUP_WINDOW_MS }
+		if (recentIds.containsKey(id)) return true
+		recentIds[id] = now
+		return false
 	}
 
 	fun post(context: Context, payload: JSONObject) {
@@ -54,11 +67,9 @@ object PushNotifier {
 		if (isTap && PushHub.onTapsScreen) return
 		if (!isTap && PushHub.isOnConversation(conversationId)) return
 
+		// Also the notification's tag, so a further message in the same
+		// conversation updates that notification instead of stacking a new one.
 		val key = if (isTap) "tap:${title.lowercase()}" else "chat:${conversationId ?: title.lowercase()}"
-		if (isDuplicate(key)) {
-			Log.d(TAG, "suppressing duplicate key=$key")
-			return
-		}
 
 		ensureChannels(context)
 		val channelId = if (isTap) TAPS_CHANNEL_ID else CHAT_CHANNEL_ID
@@ -149,24 +160,162 @@ object PushNotifier {
 		}
 	}
 
+
+	// Mirrors TYPE_LABELS/MEDIA_BODY_ICONS in message-preview.ts and
+	// notifications.svelte.ts, so a push reads the same as the inbox row and the
+	// same as the notification iOS posts. Kotlin cannot share the TS map, so
+	// changes there belong here too.
+	private val TYPE_LABELS = mapOf(
+		"Album" to "\uD83D\uDDBC\uFE0F Album",
+		"AlbumContentReaction" to "\uD83D\uDDBC\uFE0F Album",
+		"AlbumContentReply" to "\uD83D\uDDBC\uFE0F Album",
+		"Audio" to "\uD83C\uDFA4 Voice message",
+		"ExpiringAlbum" to "\uD83D\uDDBC\uFE0F Album",
+		"ExpiringAlbumV2" to "\uD83D\uDDBC\uFE0F Album",
+		"ExpiringImage" to "\uD83D\uDCF7 Expiring photo",
+		"Gaymoji" to "\uD83D\uDE0A Gaymoji",
+		"Giphy" to "\uD83C\uDF9E\uFE0F GIF",
+		"Image" to "\uD83D\uDCF7 Photo",
+		"Location" to "\uD83D\uDCCD Location",
+		"NonExpiringVideo" to "\uD83C\uDFA5 Video",
+		"PrivateVideo" to "\uD83C\uDFA5 Video",
+		"ProfileLink" to "Profile",
+		"ProfilePhotoReply" to "\uD83D\uDCF7 Photo",
+		"RightNowRequest" to "Right Now",
+		"Unsent" to "Unsent message",
+		"Video" to "\uD83C\uDFA5 Video",
+		"VideoCall" to "\uD83D\uDCDE Video call",
+	)
+
+	/** The label for a message type, or null for one we do not name yet. */
+	fun typeLabel(type: String?): String? {
+		val name = normalizeNullableString(type) ?: return null
+		return TYPE_LABELS[name]
+	}
+
+	// The blob-less push variant names the type only inside its localisation
+	// key ("CHAT_<something>_NOTIFICATION_BODY"), which we cannot resolve but can
+	// read: scan for a type word rather than trying to enumerate every key.
+	// Longest tokens first so EXPIRING_IMAGE does not match as IMAGE.
+	private val BODY_KEY_TYPES = listOf(
+		"EXPIRING_ALBUM" to "ExpiringAlbum",
+		"EXPIRING_IMAGE" to "ExpiringImage",
+		"EXPIRING_PHOTO" to "ExpiringImage",
+		"VIDEO_CALL" to "VideoCall",
+		"RIGHT_NOW" to "RightNowRequest",
+		"VOICE" to "Audio",
+		"AUDIO" to "Audio",
+		"ALBUM" to "Album",
+		"GAYMOJI" to "Gaymoji",
+		"GIPHY" to "Giphy",
+		"GIF" to "Giphy",
+		"LOCATION" to "Location",
+		"PICTURE" to "Image",
+		"PHOTO" to "Image",
+		"IMAGE" to "Image",
+		"VIDEO" to "Video",
+		"PROFILE" to "ProfileLink",
+	)
+
+	/** The type a `CHAT_*` body key names, or null when it names none. */
+	fun typeFromBodyKey(key: String): String? {
+		val upper = key.uppercase()
+		return BODY_KEY_TYPES.firstOrNull { upper.contains(it.first) }?.second
+	}
+
 	private const val CDN_BASE = "https://cdns.grindr.com"
 
-	// The sender's profile photo, from whichever field the push carried it in.
-	fun senderAvatarUrl(data: Map<String, String>): String? {
-		for (key in listOf("senderProfileImageMediaHash", "profileImageMediaHash", "profileMediaHash")) {
-			val hash = normalizeNullableString(data[key])
-			if (hash != null && isMediaHash(hash)) return "$CDN_BASE/images/thumb/320x320/$hash"
-		}
+	// The payload shape is inconsistent across message types, so probe the same
+	// field names free-grind does rather than the three hashes we started with —
+	// a ready-made url first, then any hash we recognise.
+	private val AVATAR_URL_KEYS = listOf(
+		"senderAvatarUrl",
+		"senderProfileImageUrl",
+		"profileImageUrl",
+		"thumbnailUrl",
+		"imageUrl",
+	)
+	private val AVATAR_HASH_KEYS = listOf(
+		"senderProfileImageMediaHash",
+		// The spelling the chat WebSocket uses (see ws.svelte.ts) — the push
+		// payload turns out to use it too on some variants.
+		"senderProfileImageHash",
+		"profileImageMediaHash",
+		"profileImageHash",
+		"profileMediaHash",
+		"imageHash",
+		"photoHash",
+		"mediaHash",
+	)
+
+	private val SENDER_NAME_KEYS = listOf(
+		"title",
+		"senderDisplayName",
+		"senderName",
+		"displayName",
+		"name",
+	)
+
+	// Grindr sends a localisation key rather than a name on the generic push
+	// variants ("SOMEONE_TITLE"), and the arguments that would fill it in are
+	// not something we can render. Treat those as absent and keep looking.
+	private val LOCALISATION_KEY = Regex("^[A-Z0-9]+(_[A-Z0-9]+)+$")
+
+	private fun realName(value: String?): String? {
+		val trimmed = normalizeNullableString(value) ?: return null
+		if (LOCALISATION_KEY.matches(trimmed)) return null
+		return trimmed
+	}
+
+	/**
+	 * The sender's name from whichever field carries it. The old code read
+	 * `title ?: senderDisplayName`, which never reached the fallback: `title` is
+	 * present-but-placeholder on the variant that needs it, not null, so every
+	 * such message showed as "Someone".
+	 */
+	fun resolveSenderName(data: Map<String, String>): String {
+		for (key in SENDER_NAME_KEYS) realName(data[key])?.let { return it }
+		var senderKeys: List<String>? = null
 		data["message"]?.let { raw ->
 			try {
 				val sender = JSONObject(raw).optJSONObject("sender") ?: return@let
-				for (key in listOf("profileImageMediaHash", "profileMediaHash", "mediaHash")) {
-					val hash = normalizeNullableString(sender.optString(key))
-					if (hash != null && isMediaHash(hash)) return "$CDN_BASE/images/thumb/320x320/$hash"
-				}
+				for (key in SENDER_NAME_KEYS) realName(sender.optString(key))?.let { return it }
+				senderKeys = sender.keys().asSequence().sorted().toList()
 			} catch (_: Exception) {
 			}
 		}
+		// Log on every fallback, not just when a blob was present: a tap push
+		// carries no blob, so the old placement stayed silent on exactly the
+		// case that shows "Someone". Names only, never values.
+		Log.d(TAG, "no sender name; keys=${data.keys.sorted()} senderKeys=$senderKeys")
+		return "Someone"
+	}
+
+	private fun avatarFrom(lookup: (String) -> String?): String? {
+		for (key in AVATAR_URL_KEYS) {
+			httpUrlOrNull(lookup(key))?.let { return it }
+		}
+		for (key in AVATAR_HASH_KEYS) {
+			val hash = normalizeNullableString(lookup(key))
+			if (hash != null && isMediaHash(hash)) {
+				return "$CDN_BASE/images/thumb/320x320/$hash"
+			}
+		}
+		return null
+	}
+
+	// The sender's profile photo, from whichever field the push carried it in.
+	fun senderAvatarUrl(data: Map<String, String>): String? {
+		avatarFrom { data[it] }?.let { return it }
+		data["message"]?.let { raw ->
+			try {
+				val sender = JSONObject(raw).optJSONObject("sender") ?: return@let
+				avatarFrom { sender.optString(it) }?.let { return it }
+			} catch (_: Exception) {
+			}
+		}
+		// Names only, never values — enough to tell which field to add next.
+		Log.d(TAG, "no sender avatar in push; keys=${data.keys.sorted()}")
 		return null
 	}
 

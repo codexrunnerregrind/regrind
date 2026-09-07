@@ -39,6 +39,7 @@ class MainActivity : TauriActivity() {
 	private var pendingWebViewWarning: WebViewSupport.Status? = null
 	private var shownWebViewWarning = false
 	private val mainHandler = Handler(Looper.getMainLooper())
+	private var pendingPushRoute: String? = null
 
 	override val handleBackNavigation = false
 
@@ -162,6 +163,9 @@ class MainActivity : TauriActivity() {
 		webView.addJavascriptInterface(BackInterface(), "__AndroidBack")
 		webView.addJavascriptInterface(PushInterface(), "__RegrindPush")
 		latestFcmToken?.let { dispatchFcmToken(it) }
+		// A route captured while there was no webview to deliver it to; runs
+		// before handlePushIntent so the two cannot both start a chain.
+		flushPushRoute(0)
 		handlePushIntent(intent)
 		maybeWarnAboutWebView()
 	}
@@ -174,6 +178,7 @@ class MainActivity : TauriActivity() {
 
 	override fun onPause() {
 		PushHub.inForeground = false
+		PushHub.clearActiveRoute()
 		super.onPause()
 	}
 
@@ -183,18 +188,42 @@ class MainActivity : TauriActivity() {
 		handlePushIntent(intent)
 	}
 
-	// Route the app to the screen a tapped notification points at. The webview
-	// may not exist yet on a cold start; onWebViewCreate replays the intent.
+	// Route the app to the screen a tapped notification points at.
 	private fun handlePushIntent(intent: Intent?) {
 		val route = intent?.getStringExtra(PushNotifier.EXTRA_ROUTE) ?: return
 		intent.removeExtra(PushNotifier.EXTRA_ROUTE)
+		pendingPushRoute = route
+		flushPushRoute(0)
+	}
+
+	// On a cold start the webview exists but has not navigated to the app yet,
+	// so dispatching straight away fired the event into a blank document and the
+	// tap only ever opened the grid. Hold the route, wait for the real document,
+	// and leave it on the window too — `push.start` runs after sign-in, which
+	// can be later still.
+	private fun flushPushRoute(attempt: Int) {
+		val route = pendingPushRoute ?: return
 		val webView = webViewRef ?: return
+		val quoted = JSONObject.quote(route)
+		val script =
+			"(function(){" +
+				"if (String(location.href).indexOf('localhost') === -1) return 'retry';" +
+				"var r = $quoted;" +
+				"window.__REGRIND_PUSH_ROUTE = r;" +
+				"window.dispatchEvent(new CustomEvent('regrind:push-open', { detail: { route: r } }));" +
+				"return 'ok';" +
+				"})();"
 		runOnUiThread {
-			webView.evaluateJavascript(
-				"window.dispatchEvent(new CustomEvent('regrind:push-open', " +
-					"{ detail: { route: ${JSONObject.quote(route)} } }));",
-				null,
-			)
+			webView.evaluateJavascript(script) { result ->
+				if (result?.contains("ok") == true) {
+					pendingPushRoute = null
+				} else if (attempt < FCM_DISPATCH_ATTEMPTS) {
+					mainHandler.postDelayed(
+						{ flushPushRoute(attempt + 1) },
+						FCM_DISPATCH_RETRY_MS,
+					)
+				}
+			}
 		}
 	}
 
