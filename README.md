@@ -6,8 +6,6 @@ This fork started because I wanted to try the app on my iPhone. The original bui
 
 I build this for myself and sideload it onto my own phone. If you want to try it, see [Install on iOS](#install-on-ios) or [Install on Android](#install-on-android).
 
-**NOTE:** Most of the work here was done with AI, which is why I haven't opened any pull requests against the original project.
-
 <img src="./contrib/screenshots/browse-grid.webp" alt="Browse grid" width="220">
 <img src="./contrib/screenshots/right-now.webp" alt="Right Now" width="220">
 <img src="./contrib/screenshots/inbox.webp" alt="Inbox" width="220">
@@ -43,17 +41,13 @@ Some of this is mine, some comes from pull requests that haven't landed in the o
 - General redesign with a minimalist look
 - Redesigned settings
 - Appearance of the app: pick your own theme, colors, etc
-- Manage blocked contacts
 - Set your current location, or pick one on the map
 - Save the places you teleport to and jump straight back to them
-- Filter the grid by username
 - Swipe between tabs
 - Swipe between profiles
 - Haptics feedback
 - A small bubble that shows up when someone views your profile
-- A pill on the profile photo when someone recently tapped or chatted with you
 - Tap 7 times on app version to enter / leave Demo mode
-- Plenty of other changes I'm probably forgetting :)
 
 <img src="./contrib/screenshots/profile-activity.webp" alt="Profile with recent tap and chat" width="220">
 <img src="./contrib/screenshots/settings.webp" alt="Settings" width="220">
@@ -64,9 +58,7 @@ Some of this is mine, some comes from pull requests that haven't landed in the o
 - View albums shared with you
 - Create and edit your own albums
 - Add photos from your library to an album, or to your profile
-- Reorder the photos in an album, and your profile photos the same way
 - Share or unshare an album from the chat composer
-- Share with an expiry, or unshare later
 
 <img src="./contrib/screenshots/albums-inbox.webp" alt="Albums inbox" width="220">
 <img src="./contrib/screenshots/album-edit.webp" alt="Edit album" width="220">
@@ -76,10 +68,10 @@ Some of this is mine, some comes from pull requests that haven't landed in the o
 
 - Voice messages: record and send them, play the ones you get
 - Support for video messages and locations
-- Reply to messages, photos, locations
+- Support for video calls
+- Reply to messages, photos, videos, locations
 - Share your location or pick a location
 - Download media (photos / videos), or hold the download button to save a whole set at once
-- A doodle chat wallpaper, and bubble colors you pick yourself
 - Received photos gallery. All the photos from a conversation in one place, reachable from the chat top bar.
 
 <img src="./contrib/screenshots/chat.webp" alt="Chat" width="220">
@@ -93,13 +85,6 @@ Some of this is mine, some comes from pull requests that haven't landed in the o
 - Only the account you're using is online. The others hold their sign-in but stay disconnected, so nobody sees them online until you switch back — which also means only the account in use notifies you.
 
 <img src="./contrib/screenshots/accounts.webp" alt="Account switcher" width="220">
-
-### Favorites
-
-- Favorites screen
-- Add notes to the profiles you favorite
-- Search through your notes
-
 <img src="./contrib/screenshots/favorite-notes.webp" alt="Favorites with notes" width="220">
 
 ## Building
