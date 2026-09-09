@@ -121,7 +121,10 @@
 		instagram: initial.socialNetworks.instagram?.userId ?? null,
 		twitter: initial.socialNetworks.twitter?.userId ?? null,
 		facebook: initial.socialNetworks.facebook?.userId ?? null,
-		medias: initial.medias.map((media) => ({ mediaHash: media.mediaHash })),
+		medias: initial.medias.map((media) => ({
+			mediaHash: media.mediaHash,
+			takenOnGrindr: media.takenOnGrindr ?? false,
+		})),
 	});
 
 	let saving = $state(false);
@@ -194,6 +197,9 @@
 				await setProfilePhotos({
 					cacheProfileId: ourProfileId,
 					mediaHashes: currentHashes,
+					takenOnGrindrHashes: sent.medias
+						.filter((media) => media.takenOnGrindr)
+						.map((media) => media.mediaHash),
 				});
 			}
 			await deleteProfilePhotos({

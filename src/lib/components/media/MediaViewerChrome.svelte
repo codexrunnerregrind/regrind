@@ -6,6 +6,7 @@
 	import ImagesIcon from "phosphor-svelte/lib/ImagesIcon";
 	import MagnifyingGlassPlusIcon from "phosphor-svelte/lib/MagnifyingGlassPlusIcon";
 	import PaperPlaneRightIcon from "phosphor-svelte/lib/PaperPlaneRightIcon";
+	import SealCheckIcon from "phosphor-svelte/lib/SealCheckIcon";
 	import UserIcon from "phosphor-svelte/lib/UserIcon";
 	import XIcon from "phosphor-svelte/lib/XIcon";
 	import type PhotoSwipe from "photoswipe";
@@ -17,8 +18,10 @@
 		chromeHasBar,
 		type MediaViewerActions,
 		type MediaViewerHeader,
+		type MediaViewerStamp,
 	} from "$lib/chat/media-viewer-chrome";
 	import { hapticImpact, hapticNotification } from "$lib/platform/haptics";
+	import { formatTimeRelativeCustom } from "$lib/util/format-time";
 	import { HoldGesture } from "$lib/util/hold-gesture.svelte";
 	import { profileMediaUrl } from "$lib/util/media";
 	import { formatDistance } from "$lib/util/units";
@@ -28,12 +31,14 @@
 		count,
 		header: headerProp,
 		actions,
+		stamp,
 		progress = true,
 	}: {
 		pswp: PhotoSwipe;
 		count: number;
 		header: MediaViewerHeader | ((index: number) => MediaViewerHeader);
 		actions: MediaViewerActions;
+		stamp?: (index: number) => MediaViewerStamp | null;
 		progress?: boolean;
 	} = $props();
 
@@ -92,6 +97,13 @@
 	);
 	// Fire gives up the end position to chat when both are there.
 	const fireEnd = $derived(actions.onOpenChat === undefined ? 0 : SLOT);
+	const slideStamp = $derived(stamp?.(index) ?? null);
+	const slideStampLabel = $derived(
+		slideStamp === null || slideStamp.createdAt === null
+			? null
+			: formatTimeRelativeCustom(slideStamp.createdAt),
+	);
+
 	const header = $derived(
 		typeof headerProp === "function" ? headerProp(index) : headerProp,
 	);
@@ -152,6 +164,16 @@
 		distanceMetres === null
 			? null
 			: `${formatDistance(distanceMetres, getUnitsSnapshot())} away`,
+	);
+
+	// The second line under the name: distance where there is one, else whatever
+	// the caller named it, else — only where the slides are really one set — how
+	// many there are. A count across a feed of different people's posts says
+	// nothing.
+	const subtitleText = $derived(
+		distanceLabel ??
+			header.subtitle ??
+			(progress ? `${count} ${count === 1 ? "item" : "items"}` : null),
 	);
 
 	const linksToProfile = $derived(
@@ -304,15 +326,22 @@
 			{displayName}
 		</span>
 		<span class="mt-2 truncate text-preview leading-none text-viewer-ink2">
-			{#if distanceLabel}
-				{distanceLabel}
-			{:else if header.subtitle}
-				{header.subtitle}
-			{:else if progress}
-				<!-- Only where the slides are one set: a count across a feed of
-				     different people's posts says nothing. -->
-				{count}
-				{count === 1 ? "item" : "items"}
+			{#if subtitleText !== null}{subtitleText}{/if}
+			{#if slideStamp !== null}
+				<!-- On this line rather than over the photo: the viewer is where the
+				     photo itself is being looked at, and a chip on top of it would be
+				     the one thing in the way. `inline-flex`, so the line still
+				     truncates around it. -->
+				<span
+					class={[
+						"inline-flex items-center gap-0.5 align-middle",
+						{ "ms-1.5": subtitleText !== null },
+					]}
+				>
+					<SealCheckIcon weight="fill" class="size-3" />
+					<span class="sr-only">Taken on Grindr</span>
+					{#if slideStampLabel !== null}{slideStampLabel}{/if}
+				</span>
 			{/if}
 		</span>
 	</div>

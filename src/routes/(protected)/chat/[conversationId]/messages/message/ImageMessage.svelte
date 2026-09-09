@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { showErrorToast } from "$lib/api/error-toast";
 	import { openImageGalleryLightbox } from "$lib/chat/image-gallery";
+	import TakenOnGrindrBadge from "$lib/components/media/TakenOnGrindrBadge.svelte";
 	import MediaImage from "$lib/components/shared/MediaImage.svelte";
 	import { draftFromMessage } from "$lib/model/messaging/messages";
 	import { profileMediaUrl } from "$lib/util/media";
@@ -36,6 +37,8 @@
 				url: m.body.url,
 				width: m.body.width,
 				height: m.body.height,
+				takenOnGrindr: m.body.takenOnGrindr,
+				createdAt: m.body.createdAt,
 			}))
 			.reverse(),
 	);
@@ -180,6 +183,14 @@
 			}}
 			bind:failedSrc
 		/>
+		{#if message.takenOnGrindr}
+			<!-- Bottom corner: the reactions hang off the top one. Inside the
+			     link, so a tap on it opens the photo like any other. -->
+			<TakenOnGrindrBadge
+				createdAt={message.createdAt}
+				class="absolute start-1.5 bottom-1.5"
+			/>
+		{/if}
 	</a>
 	{@render media.adornments?.()}
 </div>

@@ -22,6 +22,7 @@
 	import { asAppError } from "$lib/api/methods";
 	import { getAlbumGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
+	import TakenOnGrindrBadge from "$lib/components/media/TakenOnGrindrBadge.svelte";
 	import MediaImage from "$lib/components/shared/MediaImage.svelte";
 	import SelectionCheck from "$lib/components/shared/SelectionCheck.svelte";
 	import { Button } from "$lib/components/ui/button";
@@ -499,6 +500,12 @@
 										src={item.url}
 										class="size-full rounded-[inherit]"
 										imgClass="bg-card-foreground/10"
+									/>
+								{/if}
+								{#if item.takenOnGrindr}
+									<TakenOnGrindrBadge
+										compact
+										class="absolute start-1 bottom-1"
 									/>
 								{/if}
 								{#if isSelected}

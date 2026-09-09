@@ -11,8 +11,9 @@
 
 	const MAX_PHOTOS = 6;
 
-	let { medias = $bindable() }: { medias: { mediaHash: string }[] } =
-		$props();
+	let {
+		medias = $bindable(),
+	}: { medias: { mediaHash: string; takenOnGrindr: boolean }[] } = $props();
 
 	const emptySlots = $derived(
 		Array.from(
@@ -62,7 +63,10 @@
 				if (
 					!medias.some((existing) => existing.mediaHash === mediaHash)
 				)
-					medias = [...medias, { mediaHash }];
+					medias = [
+						...medias,
+						{ mediaHash, takenOnGrindr: photo.takenOnGrindr },
+					];
 				uploading = false;
 			}
 		} catch (error) {
@@ -86,6 +90,7 @@
 			<ProfilePictureSlot
 				mediaHash={media.mediaHash}
 				position={i + 1}
+				takenOnGrindr={media.takenOnGrindr}
 				onDelete={() => removePhoto(media.mediaHash)}
 			/>
 		</div>
@@ -127,4 +132,5 @@
 	title="Add profile photo"
 	confirmLabel="Upload"
 	busy={uploading}
+	offerTakenOnGrindr
 />

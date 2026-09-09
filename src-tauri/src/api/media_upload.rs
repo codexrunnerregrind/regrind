@@ -468,14 +468,15 @@ pub async fn upload_right_now_media(
 /// `PUT /v3/me/profile/images` takes. Nothing about the profile changes until
 /// that call — an upload on its own only parks the file on the CDN.
 ///
-/// Takes the unsigned legacy endpoint for the same reason chat media does:
-/// signing marks the media as taken on Grindr, and a photo out of the gallery
-/// was not.
+/// A photo out of the gallery takes the unsigned legacy endpoint, for the same
+/// reason chat media does: signing is what marks media as taken on Grindr. Only
+/// a photo the uploader asked to stamp takes the signed one.
 #[tauri::command]
 pub async fn upload_profile_image(
 	app: tauri::AppHandle,
 	state: tauri::State<'_, AppState>,
 	content_type: String,
+	taken_on_grindr: bool,
 	// Base64, for the same reason as `upload_chat_media` above.
 	data: String,
 ) -> Result<ProfileImageUploadResponse, AppError> {
@@ -492,14 +493,23 @@ pub async fn upload_profile_image(
 		AppError::Media("Unreadable or damaged photo".to_owned())
 	})?;
 
+	let thumb_coords = centre_square_thumb_coords(width, height);
+
 	let client = state.client()?;
+	if taken_on_grindr {
+		let response = client
+			.upload_profile_image(photo.bytes, Some(&thumb_coords), true)
+			.await
+			.map_err(|e| AppError::from_client_error(e, &client))?;
+		return Ok(ProfileImageUploadResponse {
+			media_hash: response.hash,
+		});
+	}
+
 	let response = client
 		.request_authenticated_bytes(
 			grindr::Method::POST,
-			&format!(
-				"/v4/media/upload?thumbCoords={}&takenOnGrindr=false",
-				centre_square_thumb_coords(width, height)
-			),
+			&format!("/v4/media/upload?thumbCoords={thumb_coords}&takenOnGrindr=false"),
 			&photo.content_type,
 			photo.bytes,
 		)

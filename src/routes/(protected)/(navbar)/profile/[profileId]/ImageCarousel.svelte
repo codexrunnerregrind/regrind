@@ -175,6 +175,14 @@
 							: null,
 					}),
 					actions,
+					// The badge on the tile stays on the photo; in the viewer it
+					// goes beside the name, where nothing covers the photo.
+					stamp: (index) => {
+						const media = medias[index];
+						return media?.takenOnGrindr === true
+							? { createdAt: media.createdAt }
+							: null;
+					},
 				});
 
 				lightboxRef = lightbox;
@@ -218,12 +226,13 @@
 						: 0);
 			}}
 		>
-			{#each medias as { mediaHash, createdAt }, index (mediaHash + index)}
+			{#each medias as { mediaHash, createdAt, takenOnGrindr }, index (mediaHash + index)}
 				{@const src = profileMediaUrl({ mediaHash, size: "full" })}
 				<ImageCarouselItem
 					{src}
 					thumb={src}
 					{createdAt}
+					{takenOnGrindr}
 					label="Profile photo {index + 1} of {medias.length}"
 				/>
 			{/each}

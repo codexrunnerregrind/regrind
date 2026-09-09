@@ -58,6 +58,12 @@ export function chromeHasBar(actions: MediaViewerActions): boolean {
 	);
 }
 
+/**
+ * A slide's "Taken on Grindr" stamp, or `null` for one that carries none. The
+ * time is part of what the stamp says, so it travels with it.
+ */
+export type MediaViewerStamp = { createdAt: number | null };
+
 export type MediaViewerChromeOptions = {
 	count: number;
 	/**
@@ -66,6 +72,11 @@ export type MediaViewerChromeOptions = {
 	 */
 	header: MediaViewerHeader | ((index: number) => MediaViewerHeader);
 	actions: MediaViewerActions;
+	/**
+	 * Per-slide stamp, shown beside the header's second line. Given a function
+	 * because a set can mix stamped photos with plain ones.
+	 */
+	stamp?: (index: number) => MediaViewerStamp | null;
 	/**
 	 * Whether to show where you are in the set. Off for galleries whose slides
 	 * aren't really one set — the Right Now feed strings together every poster's
@@ -87,7 +98,13 @@ export type MediaViewerChromeOptions = {
  */
 export function registerMediaViewerChrome(
 	lightbox: PhotoSwipeLightbox,
-	{ count, header, actions, progress = true }: MediaViewerChromeOptions,
+	{
+		count,
+		header,
+		actions,
+		stamp,
+		progress = true,
+	}: MediaViewerChromeOptions,
 ): void {
 	// Mounted inside the lightbox's own root so it shares its stacking context
 	// and its open/close animation, and goes away with it.
@@ -98,7 +115,7 @@ export function registerMediaViewerChrome(
 		pswp.element.classList.add("pswp--chrome");
 		chrome = mount(MediaViewerChrome, {
 			target: pswp.element,
-			props: { pswp, count, header, actions, progress },
+			props: { pswp, count, header, actions, stamp, progress },
 		});
 	});
 	// Typing in the reply field would otherwise flip between slides (arrows) or

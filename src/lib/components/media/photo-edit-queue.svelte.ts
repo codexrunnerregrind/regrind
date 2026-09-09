@@ -3,7 +3,13 @@ import { type PickedMedia, readMediaBytes } from "$lib/platform/media-picker";
 export type EditedPhoto = {
 	bytes: Uint8Array<ArrayBuffer>;
 	contentType: string;
+	/** Whether the editor was left asking for the Taken on Grindr stamp. */
+	takenOnGrindr: boolean;
 };
+
+/** The photo as the editor left it — `blob` is `null` when nothing was done to
+ *  it — or `undefined` for a cancel. */
+type Edit = { blob: Blob | null; takenOnGrindr: boolean };
 
 type Editing = {
 	key: string;
@@ -11,7 +17,7 @@ type Editing = {
 	url: string;
 	/** How many more picks are waiting behind this one. */
 	remaining: number;
-	decide: (edit: Blob | null | undefined) => void;
+	decide: (edit: Edit | undefined) => void;
 };
 
 /**
@@ -37,7 +43,7 @@ export class PhotoEditQueue {
 					new Blob([bytes], { type: contentType }),
 				);
 				try {
-					const edit = await new Promise<Blob | null | undefined>(
+					const edit = await new Promise<Edit | undefined>(
 						(resolve) => {
 							this.current = {
 								key: media.key,
@@ -50,11 +56,18 @@ export class PhotoEditQueue {
 					if (edit === undefined) return;
 					// Nothing was done to it: the picked bytes are the better
 					// upload, having been through one encoder fewer.
-					yield edit === null
-						? { bytes, contentType }
+					yield edit.blob === null
+						? {
+								bytes,
+								contentType,
+								takenOnGrindr: edit.takenOnGrindr,
+							}
 						: {
-								bytes: new Uint8Array(await edit.arrayBuffer()),
-								contentType: edit.type,
+								bytes: new Uint8Array(
+									await edit.blob.arrayBuffer(),
+								),
+								contentType: edit.blob.type,
+								takenOnGrindr: edit.takenOnGrindr,
 							};
 				} finally {
 					URL.revokeObjectURL(url);
@@ -65,9 +78,9 @@ export class PhotoEditQueue {
 		}
 	}
 
-	/** `null` when the editor was left untouched. */
-	confirm(edit: Blob | null) {
-		this.current?.decide(edit);
+	/** `edit` is `null` when the editor was left untouched. */
+	confirm(edit: Blob | null, takenOnGrindr = false) {
+		this.current?.decide({ blob: edit, takenOnGrindr });
 	}
 
 	cancel() {

@@ -397,13 +397,21 @@ const profileImageUploadSchema = z.object({ mediaHash: mediaHashPublicSchema });
 export async function uploadProfilePhoto({
 	bytes,
 	contentType,
+	takenOnGrindr = false,
 }: {
 	bytes: Uint8Array<ArrayBuffer>;
 	contentType: string;
+	/**
+	 * Stamps the photo as taken on Grindr, which is what earns it the badge. It
+	 * takes the signed upload — signing is what marks the media — so a photo off
+	 * the camera roll is only ever marked when the uploader asks for it.
+	 */
+	takenOnGrindr?: boolean;
 }): Promise<{ mediaHash: string }> {
 	if (demoEnabled) return demoUploadProfileImage({ bytes, contentType });
 	const response = await invoke("upload_profile_image", {
 		contentType,
+		takenOnGrindr,
 		data: toBase64(bytes),
 	});
 	return profileImageUploadSchema.parse(response);
@@ -421,9 +429,13 @@ export async function uploadProfilePhoto({
 export async function setProfilePhotos({
 	cacheProfileId,
 	mediaHashes,
+	takenOnGrindrHashes = [],
 }: {
 	cacheProfileId: number;
 	mediaHashes: string[];
+	/** Which of them were stamped, so a photo just uploaded shows its badge
+	 *  without waiting for the profile to be fetched again. */
+	takenOnGrindrHashes?: string[];
 }) {
 	const [primaryImageHash = null, ...secondaryImageHashes] = mediaHashes;
 	const res = await fetchRest("/v3/me/profile/images", {
@@ -447,7 +459,7 @@ export async function setProfilePhotos({
 						type: 1,
 						state: 0,
 						reason: null,
-						takenOnGrindr: false,
+						takenOnGrindr: takenOnGrindrHashes.includes(mediaHash),
 						createdAt: null,
 					},
 			),

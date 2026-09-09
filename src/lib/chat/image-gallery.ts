@@ -20,6 +20,10 @@ export type GalleryImage = {
 	url: string;
 	width: number | null;
 	height: number | null;
+	/** Stamped as taken on Grindr, which the chrome shows beside the sender. */
+	takenOnGrindr?: boolean;
+	/** When it was taken, for that stamp. */
+	createdAt?: number | null;
 };
 
 // Room left for PhotoSwipe's own toolbar when the gallery has no chrome of its
@@ -140,6 +144,14 @@ export async function openImageGalleryLightbox(
 			count: images.length,
 			header: chrome.header,
 			actions,
+			// Read off the slides themselves: every caller already carries the
+			// flag on the photo, so none has to pass the stamp separately.
+			stamp: (index) => {
+				const image = images[index];
+				return image?.takenOnGrindr === true
+					? { createdAt: image.createdAt ?? null }
+					: null;
+			},
 		});
 	}
 	if (onClosed) {
