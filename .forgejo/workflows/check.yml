@@ -76,6 +76,7 @@ jobs:
 
           cd "$CI_WORKSPACE"
           . ci/rust-env.sh
+          bun run patch-deps
           cargo metadata --quiet --manifest-path src-tauri/Cargo.toml --format-version 1 >/dev/null
 
       - name: Install JS dependencies
@@ -86,6 +87,9 @@ jobs:
 
       - name: Check the Android backup rules
         run: cd "$CI_WORKSPACE" && bun run check:backup-rules
+
+      - name: Check the credits against the lockfiles
+        run: cd "$CI_WORKSPACE" && bun run check:credits-sync
 
       - name: Lint
         run: cd "$CI_WORKSPACE" && bun ci/lint.ts

@@ -22,6 +22,7 @@ const messagelessMessages: Partial<Record<ApiErrorKind, string>> = {
 	NetworkBlocked: "Something blocked the request before it reached Grindr",
 	RateLimited: "Grindr is rate limiting us",
 	NotLoggedIn: "You're signed out",
+	SessionStale: "Couldn't refresh your session",
 };
 
 export const banInfoSchema = z.object({
@@ -74,6 +75,10 @@ export const methods = {
 	login_with_google: { request: z.undefined(), response: loginResultSchema },
 	google_sign_in: {
 		request: z.object({ token: z.string().min(1) }),
+		response: loginResultSchema,
+	},
+	login_with_facebook: {
+		request: z.undefined(),
 		response: loginResultSchema,
 	},
 	auth_state: {

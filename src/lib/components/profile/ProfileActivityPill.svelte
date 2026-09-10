@@ -47,7 +47,7 @@
 	     plus a 16px line), so one line rounds to a pill and further lines keep
 	     exactly those corners instead of bowing out into a lozenge. -->
 	<div
-		class="pointer-events-none absolute start-3 -bottom-3.5 flex max-w-[calc(100%-8.5rem)] flex-col gap-1.5 rounded-[14px] bg-plate px-2 py-1.5 backdrop-blur-sm"
+		class="pointer-events-none absolute start-3 -bottom-3.5 flex max-w-[calc(100%-8.5rem)] flex-col gap-1.5 rounded-[14px] bg-plate scrim px-2 py-1.5 backdrop-filter-(--bd-veil)"
 	>
 		{#each activity as entry (entry.kind)}
 			<div class="flex items-center gap-1.5">

@@ -30,7 +30,7 @@
      the distance chip use, over a scrim rather than a solid fill. -->
 <span
 	class={[
-		"pointer-events-none flex items-center gap-0.5 rounded-full bg-black/45 text-distance leading-none font-medium text-white/90 backdrop-blur-sm",
+		"pointer-events-none flex items-center gap-0.5 rounded-full bg-black/45 scrim text-distance leading-none font-medium text-white/90 backdrop-filter-(--bd-veil)",
 		{ "p-1": compact, "px-1.5 py-1": !compact },
 		className,
 	]}

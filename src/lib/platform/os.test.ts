@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
 	isAndroidPlatform,
 	isIosPlatform,
+	isLinuxPlatform,
 	isMobilePlatform,
 } from "$lib/platform/os";
 
@@ -65,5 +66,19 @@ describe("isIosPlatform", () => {
 
 		runningOn("android");
 		expect(isIosPlatform()).toBe(false);
+	});
+});
+
+describe("isLinuxPlatform", () => {
+	it("is false outside Tauri instead of reading the missing os plugin", () => {
+		expect(isLinuxPlatform()).toBe(false);
+	});
+
+	it("is true only on linux", () => {
+		runningOn("linux");
+		expect(isLinuxPlatform()).toBe(true);
+
+		runningOn("android");
+		expect(isLinuxPlatform()).toBe(false);
 	});
 });

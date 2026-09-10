@@ -26,3 +26,8 @@
 # arrive. Shrinking is unaffected.
 -keepnames class com.google.firebase.**
 -keepnames class com.google.android.gms.**
+
+# Reached only from wry over JNI, so R8 cannot see the call and strips it
+-keep class org.regrind.RustWebView {
+  void clearAllBrowsingData();
+}

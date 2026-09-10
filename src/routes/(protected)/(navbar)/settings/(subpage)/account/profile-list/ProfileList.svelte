@@ -7,6 +7,7 @@
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import ProfileActionRow from "$lib/components/profile/ProfileActionRow.svelte";
 	import ProfileActionRowSkeleton from "$lib/components/profile/ProfileActionRowSkeleton.svelte";
+	import ScrollToTopButton from "$lib/components/shared/ScrollToTopButton.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import { observeIntersection } from "$lib/util/observe-intersection";
 	import { nearestScrollableAncestor } from "$lib/util/scroll";
@@ -219,4 +220,5 @@
 			{/if}
 		{/if}
 	{/if}
+	<ScrollToTopButton container={scroller} class="fixed bottom-nav-clear" />
 </div>

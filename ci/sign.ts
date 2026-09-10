@@ -16,6 +16,7 @@ const TOOLING = {
 		rewrites: true,
 	},
 	deb: { binaries: [], shell: "nix develop", rewrites: false },
+	AppImage: { binaries: [], shell: "nix develop", rewrites: false },
 	exe: { binaries: [], shell: "nix develop", rewrites: false },
 	zip: { binaries: [], shell: "nix develop", rewrites: false },
 };

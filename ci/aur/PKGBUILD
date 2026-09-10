@@ -20,8 +20,8 @@ options=('!strip')
 makedepends=('minisign')
 
 depends=(
-	at-spi2-core
 	cairo
+	dbus
 	gdk-pixbuf2
 	glib2
 	glibc
@@ -29,7 +29,6 @@ depends=(
 	hicolor-icon-theme
 	libgcc
 	libsoup3
-	libstdc++
 	pango
 	webkit2gtk-4.1
 )

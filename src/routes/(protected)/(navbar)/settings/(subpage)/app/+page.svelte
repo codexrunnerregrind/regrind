@@ -1,13 +1,16 @@
 <script lang="ts">
-	import { DeviceMobileIcon, LockKeyIcon } from "phosphor-svelte";
+	import { DeviceMobileIcon, HeartIcon, LockKeyIcon } from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
 	import ToastUnimplemented from "$lib/components/feedback/ToastUnimplemented.svelte";
 	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
 	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
 	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
+	import { desktopEntryAvailable } from "$lib/platform/desktop-entry.svelte";
 	import { updatesSelfManaged } from "$lib/updates/capability.svelte";
+	import AppsMenuEntrySetting from "./AppsMenuEntrySetting.svelte";
 	import AutomaticUpdatesSetting from "./AutomaticUpdatesSetting.svelte";
+	import BackdropBlurSetting from "./BackdropBlurSetting.svelte";
 	import NotificationSettings from "./NotificationSettings.svelte";
 	import RevealMessageReadSetting from "./RevealMessageReadSetting.svelte";
 	import RevealProfileViewSetting from "./RevealProfileViewSetting.svelte";
@@ -24,6 +27,10 @@
 <SectionHeader>Display</SectionHeader>
 <SettingsGroup divider="full">
 	<UnitsSetting />
+	<BackdropBlurSetting />
+	{#if desktopEntryAvailable()}
+		<AppsMenuEntrySetting />
+	{/if}
 </SettingsGroup>
 
 <SectionHeader>Notifications</SectionHeader>
@@ -66,3 +73,12 @@
 		<AutomaticUpdatesSetting />
 	</SettingsGroup>
 {/if}
+
+<SectionHeader>About</SectionHeader>
+<SettingsGroup>
+	<SettingsRow title="Credits & Licenses" href="/settings/app/credits">
+		{#snippet icon()}
+			<HeartIcon weight="fill" />
+		{/snippet}
+	</SettingsRow>
+</SettingsGroup>

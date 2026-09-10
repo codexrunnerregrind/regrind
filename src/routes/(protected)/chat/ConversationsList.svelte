@@ -9,6 +9,7 @@
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import ListRowSkeleton from "$lib/components/feedback/ListRowSkeleton.svelte";
 	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
+	import ScrollToTopButton from "$lib/components/shared/ScrollToTopButton.svelte";
 	import UnderlineTabs from "$lib/components/shared/UnderlineTabs.svelte";
 	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
 	import { hapticImpact, hapticSelection } from "$lib/platform/haptics";
@@ -273,6 +274,7 @@
 			<div
 				bind:this={container}
 				data-scroll-root
+				data-slot="conversations-scroller"
 				class={[
 					"flex min-h-0 flex-1 flex-col gap-0 overflow-auto overscroll-contain px-0 pb-0",
 					// pt-12 puts the first row at the pills' bottom edge
@@ -349,6 +351,7 @@
 					}}
 				/>
 			{/if}
+			<ScrollToTopButton {container} class="bottom-(--nav-clear)" />
 		</div>
 	{/if}
 </div>

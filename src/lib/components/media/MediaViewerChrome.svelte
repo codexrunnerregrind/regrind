@@ -491,7 +491,7 @@
 					aria-live="polite"
 				>
 					<span
-						class="rounded-full bg-viewer-chip/80 px-3 py-1 text-2xs font-medium text-viewer-ink backdrop-blur-md"
+						class="rounded-full bg-viewer-chip/80 scrim px-3 py-1 text-2xs font-medium text-viewer-ink backdrop-filter-(--bd-rail)"
 					>
 						{sentLabel}
 					</span>
@@ -513,7 +513,7 @@
 							event.preventDefault();
 							event.currentTarget.form?.requestSubmit();
 						}}
-						class="h-11 w-full rounded-composer bg-viewer-chip/80 px-4.5 text-sm text-viewer-ink backdrop-blur-md outline-none placeholder:text-viewer-ink3 focus-visible:ring-2 focus-visible:ring-viewer-ink/40 disabled:opacity-60"
+						class="h-11 w-full rounded-composer bg-viewer-chip/80 scrim px-4.5 text-sm text-viewer-ink backdrop-filter-(--bd-rail) outline-none placeholder:text-viewer-ink3 focus-visible:ring-2 focus-visible:ring-viewer-ink/40 disabled:opacity-60"
 					/>
 				</div>
 			{:else}
@@ -536,7 +536,7 @@
 						inert={composing}
 						style:inset-inline-end="{fireEnd}px"
 						class={[
-							"absolute top-0 flex size-11 items-center justify-center rounded-full bg-viewer-chip/80 text-viewer-ink backdrop-blur-md transition-[opacity,transform] duration-200 ease-out active:scale-90 disabled:opacity-60",
+							"absolute top-0 flex size-11 items-center justify-center rounded-full bg-viewer-chip/80 scrim text-viewer-ink backdrop-filter-(--bd-rail) transition-[opacity,transform] duration-200 ease-out active:scale-90 disabled:opacity-60",
 							{ "opacity-0": composing },
 						]}
 						aria-label="React with fire"
@@ -553,7 +553,7 @@
 						onclick={openChat}
 						inert={composing}
 						class={[
-							"absolute end-0 top-0 flex size-11 items-center justify-center rounded-full bg-viewer-chip/80 text-viewer-ink backdrop-blur-md transition-[opacity,transform] duration-200 ease-out active:scale-90",
+							"absolute end-0 top-0 flex size-11 items-center justify-center rounded-full bg-viewer-chip/80 scrim text-viewer-ink backdrop-filter-(--bd-rail) transition-[opacity,transform] duration-200 ease-out active:scale-90",
 							{ "opacity-0": composing },
 						]}
 						aria-label="Open chat"

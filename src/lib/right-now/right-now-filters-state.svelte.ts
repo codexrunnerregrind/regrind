@@ -1,5 +1,3 @@
-import { isEqual } from "lodash-es";
-
 import { showErrorToast } from "$lib/api/error-toast";
 import {
 	getPreferences,
@@ -9,6 +7,7 @@ import {
 	defaultRightNowFilters,
 	type RightNowFilters,
 } from "$lib/model/browse/grid/filters";
+import { deepEqual } from "$lib/util/deep-equal";
 
 export class RightNowSearchFiltersState {
 	value: RightNowFilters | null = $state(null);
@@ -24,7 +23,7 @@ export class RightNowSearchFiltersState {
 		const oldValue = this.value;
 		const newValue = Object.assign({}, oldValue, rightNowFilters);
 
-		if (!isEqual(oldValue, newValue)) {
+		if (!deepEqual(oldValue, newValue)) {
 			this.value = newValue;
 			void this.#save();
 			this.onRefresh();
@@ -32,7 +31,7 @@ export class RightNowSearchFiltersState {
 	}
 
 	resetFilters() {
-		if (isEqual(this.value, defaultRightNowFilters)) {
+		if (deepEqual(this.value, defaultRightNowFilters)) {
 			return;
 		}
 		this.set(defaultRightNowFilters);

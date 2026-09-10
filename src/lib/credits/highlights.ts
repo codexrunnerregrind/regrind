@@ -1,0 +1,82 @@
+import type { Highlight } from "./types";
+
+export const highlights: Highlight[] = [
+	{
+		ref: { ecosystem: "npm", id: "svelte" },
+		name: "Svelte",
+		blurb: "Thanks to {name} for the awesome UI building framework!",
+		url: "https://svelte.dev",
+	},
+	{
+		ref: { ecosystem: "npm", id: "@sveltejs/kit" },
+		name: "SvelteKit",
+		blurb: "Thanks to {name} for the awesome frontend framework!",
+		url: "https://svelte.dev/docs/kit",
+	},
+	{
+		ref: { ecosystem: "rust", id: "tauri" },
+		name: "Tauri",
+		blurb: "Thanks to {name} for the cross-platform framework!",
+		url: "https://tauri.app",
+	},
+	{
+		ref: { ecosystem: "npm", id: "photoswipe" },
+		name: "PhotoSwipe",
+		blurb: "Thanks to {name} for the awesome lightbox component!",
+		url: "https://photoswipe.com",
+	},
+	{
+		ref: { ecosystem: "npm", id: "maplibre-gl" },
+		name: "MapLibre GL JS",
+		blurb: "Thanks to {name} for the awesome map component!",
+		url: "https://maplibre.org",
+	},
+	{
+		ref: { ecosystem: "npm", id: "svelte-sonner" },
+		name: "svelte-sonner",
+		blurb: "Thanks to {name} for the awesome toasts component!",
+		url: "https://svelte-sonner.vercel.app",
+	},
+	{
+		ref: { ecosystem: "npm", id: "tailwindcss" },
+		name: "Tailwind CSS",
+		blurb: "Thanks to {name} for the framework to rapidly style UIs!",
+		url: "https://tailwindcss.com",
+	},
+	{
+		ref: { ecosystem: "npm", id: "zod" },
+		name: "Zod",
+		blurb: "Thanks to {name} for the awesome schema validation library!",
+		url: "https://zod.dev",
+	},
+	{
+		ref: { ecosystem: "npm", id: "shadcn-svelte" },
+		name: "shadcn-svelte",
+		blurb: "Thanks to {name} for re-building the awesome shadcn/ui!",
+		url: "https://shadcn-svelte.com",
+	},
+	{
+		ref: { ecosystem: "npm", id: "bits-ui" },
+		name: "Bits UI",
+		blurb: "Thanks to {name} for the awesome Svelte UI components library!",
+		url: "https://bits-ui.com",
+	},
+	{
+		ref: { ecosystem: "npm", id: "embla-carousel-svelte" },
+		name: "embla-carousel-svelte",
+		blurb: "Thanks to {name} for the awesome image carousel library!",
+		url: "https://www.embla-carousel.com",
+	},
+	{
+		ref: { ecosystem: "npm", id: "phosphor-svelte" },
+		name: "phosphor-svelte",
+		blurb: "Thanks to {name} for providing the awesome Phosphor Icons set!",
+		url: "https://github.com/haruaki07/phosphor-svelte",
+	},
+	{
+		ref: { ecosystem: "npm", id: "vaul-svelte" },
+		name: "vaul-svelte",
+		blurb: "Thanks to {name} for the awesome Drawer component!",
+		url: "https://vaul-svelte.com",
+	},
+];

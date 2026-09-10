@@ -212,6 +212,12 @@ export type WsStatus = "disconnected" | "connected";
 // have died silently.
 const RESUME_POKE_THRESHOLD_MS = 3000;
 
+function errorBody(payload: unknown): string {
+	return payload === undefined || payload === null
+		? ""
+		: JSON.stringify(payload);
+}
+
 class WsState {
 	status = $state<WsStatus>("disconnected");
 	#hiddenSince: number | undefined;
@@ -378,7 +384,10 @@ class WsState {
 								new ApiError({
 									message: `websocket command ${type} failed`,
 									request,
-									response: { status, body: "" },
+									response: {
+										status,
+										body: errorBody(response.payload),
+									},
 								}),
 							);
 							return;

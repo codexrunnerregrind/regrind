@@ -2,6 +2,8 @@ import { decode, encode } from "@msgpack/msgpack";
 import { toast } from "svelte-sonner";
 import z from "zod";
 
+import { backdropBlurCalibrationSchema } from "$lib/blur/calibration/decide";
+import { backdropBlurQualitySchema } from "$lib/blur/quality";
 import {
 	gridSearchFiltersSchema,
 	rightNowFiltersSchema,
@@ -45,6 +47,14 @@ const preferencesSchema = z.object({
 	// controls, while these only affect the chat transcript.
 	outgoingBubbleColor: bubbleColorSchema.default("yellow").catch("yellow"),
 	incomingBubbleColor: bubbleColorSchema.default("sky").catch("sky"),
+	backdropBlurCalibration: backdropBlurCalibrationSchema
+		.nullable()
+		.default(null)
+		.catch(null),
+	backdropBlurQuality: backdropBlurQualitySchema
+		.nullable()
+		.default(null)
+		.catch(null),
 	// The manually-picked ("mock") location. Preserved across mode switches so
 	// returning from current-location mode restores the last picked spot.
 	geohash: geohashSchema.nullable().default(null),

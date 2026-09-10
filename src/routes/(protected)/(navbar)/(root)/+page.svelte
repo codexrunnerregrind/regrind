@@ -11,6 +11,7 @@
 		setPreferences,
 	} from "$lib/app-data/preferences.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
+	import ScrollToTopButton from "$lib/components/shared/ScrollToTopButton.svelte";
 	import { FavoriteSearch } from "$lib/favorites/favorite-search.svelte";
 	import { gridState } from "$lib/grid/grid-state.svelte";
 	import { restoreScrollOnce } from "$lib/util/scroll-restore.svelte";
@@ -38,7 +39,7 @@
 			}
 		}
 		favoriteSearch.invalidate();
-		await gridState.refresh();
+		await gridState.refresh({ keepLoadedPages: false });
 	}
 
 	// Owned here so the top bar's search field and the grid below it are the same
@@ -123,6 +124,10 @@
 					onrefresh={() => void refreshGrid()}
 				/>
 			{/if}
+			<ScrollToTopButton
+				container={gridContainer}
+				class="bottom-nav-clear"
+			/>
 		</main>
 	{/if}
 {/await}

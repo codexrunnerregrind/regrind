@@ -3,6 +3,7 @@ mod app_settings;
 mod appearance;
 mod capabilities;
 mod context_menu;
+mod desktop_entry;
 mod error;
 pub mod media;
 mod photo;
@@ -181,6 +182,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
         .plugin(api::google_oauth::plugin())
+        .plugin(api::facebook_oauth::plugin())
         .plugin(api::update::plugin())
         .plugin(app_settings::plugin())
         .plugin(video::plugin())
@@ -192,6 +194,7 @@ pub fn run() {
             api::auth::login,
             api::auth::login_with_google,
             api::auth::google_sign_in,
+            api::auth::login_with_facebook,
             api::auth::refresh_token,
             api::auth::logout,
             api::auth::auth_state,
@@ -220,6 +223,9 @@ pub fn run() {
             api::client::rotate_api_params,
             api::session_recovery::set_app_active,
             api::session_recovery::session_health,
+            desktop_entry::desktop_entry_state,
+            desktop_entry::desktop_entry_install,
+            desktop_entry::desktop_entry_remove,
             api::update::commands::update_capability,
             api::update::commands::update_settings,
             api::update::commands::update_set_auto_check,
@@ -233,6 +239,7 @@ pub fn run() {
             api::update::commands::update_open_install_permission_settings,
             api::update::commands::update_discard,
             app_settings::open_app_settings,
+            appearance::backdrop_filter_renders,
         ])
         .setup(|app| {
             let user_agent = format!(

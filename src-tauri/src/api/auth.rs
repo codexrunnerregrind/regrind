@@ -110,6 +110,17 @@ pub async fn google_sign_in(
 /// to seed a location whose region grants the expiring-media and unsend
 /// entitlements, which then stick for the rest of the session.
 #[tauri::command]
+pub async fn login_with_facebook(
+	app: tauri::AppHandle,
+	state: tauri::State<'_, AppState>,
+) -> Result<LoginResult, AppError> {
+	let access_token =
+		super::facebook_oauth::fetch_facebook_access_token(&app).await?;
+	let result = state.client()?.facebook_sign_in(&access_token).await?;
+	Ok(LoginResult::from(result))
+}
+
+#[tauri::command]
 pub async fn refresh_token(
 	state: tauri::State<'_, AppState>,
 	geohash: Option<String>,
@@ -135,6 +146,7 @@ pub async fn logout(
 	state: tauri::State<'_, AppState>,
 	media: tauri::State<'_, MediaProxy>,
 ) -> Result<Option<u64>, AppError> {
+	super::facebook_oauth::forget_sign_in_profile(&app).await;
 	let Some(profile_id) = state.active_profile_id() else {
 		// Nothing is signed in; a sign-in in flight is simply abandoned.
 		super::accounts::account_add_cancel(state).await?;

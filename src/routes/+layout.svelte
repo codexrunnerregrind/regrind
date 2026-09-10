@@ -3,6 +3,7 @@
 	import "@fontsource-variable/ibm-plex-sans/wght-italic.css";
 
 	import "../layout.css";
+	import { beforeNavigate } from "$app/navigation";
 	import { page } from "$app/state";
 	import { IconContext } from "phosphor-svelte";
 	import { onMount } from "svelte";
@@ -14,6 +15,9 @@
 		preferencesLoaded,
 	} from "$lib/app-data/preferences.svelte";
 	import { initTheme } from "$lib/app-data/theme.svelte";
+	import { abortBackdropBlurTrialGesture } from "$lib/blur/calibration/trial.svelte";
+	import { hydrateBackdropCompositing } from "$lib/blur/compositing.svelte";
+	import { applyBackdropBlurQuality } from "$lib/blur/quality.svelte";
 	import { takeDemoAnnouncement } from "$lib/demo/config";
 	import {
 		applyAndroidInsets,
@@ -59,6 +63,9 @@
 		void hydratePreferences().catch((error: unknown) => {
 			console.error("Failed to hydrate preferences", error);
 		});
+		void hydrateBackdropCompositing().catch((error: unknown) => {
+			console.error("Failed to read backdrop compositing", error);
+		});
 		const demoMode = takeDemoAnnouncement();
 		if (demoMode !== undefined) {
 			toast(demoMode ? "Demo mode on" : "Demo mode off");
@@ -85,6 +92,12 @@
 	const onboarded = $derived(
 		preferencesLoaded() && getPreferencesSnapshot().onboardingComplete,
 	);
+
+	beforeNavigate(() => abortBackdropBlurTrialGesture());
+
+	$effect(() => {
+		applyBackdropBlurQuality();
+	});
 
 	$effect(() => {
 		if (!onboarded) return;

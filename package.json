@@ -23,6 +23,10 @@
 		"docs": "bun run --cwd docs start",
 		"format": "prettier --write .",
 		"gen:icons": "bash scripts/gen-icons.sh",
+		"gen:credits": "bun scripts/gen-credits.ts",
+		"check:credits": "bun scripts/gen-credits.ts --check",
+		"check:credits-sync": "bun scripts/check-credits-sync.ts",
+		"check:credits-android": "bun scripts/check-android-credits.ts",
 		"package:macos": "nix run .#build-macos --",
 		"lint": "svelte-kit sync && eslint --concurrency=2 .",
 		"preview": "vite preview",
@@ -43,6 +47,7 @@
 		"cookie": "^0.7.0",
 		"nanoid": "^3.3.18",
 		"postcss": "^8.5.24",
+		"postcss-selector-parser": "^7.1.3",
 		"valibot": "^1.4.2",
 		"vite": "^6.4.3"
 	},
@@ -75,6 +80,7 @@
 	},
 	"devDependencies": {
 		"@fontsource-variable/ibm-plex-sans": "^5.2.8",
+		"@icons-pack/svelte-simple-icons": "^7.2.0",
 		"@internationalized/date": "^3.12.1",
 		"@opengrind/config": "^1.3.1",
 		"@playwright/test": "^1.61.1",
@@ -85,7 +91,7 @@
 		"@testing-library/svelte": "^5.2.8",
 		"@total-typescript/ts-reset": "^0.6.1",
 		"@types/bun": "^1.3.14",
-		"@vitest/coverage-v8": "^4.1.5",
+		"@vitest/coverage-v8": "^4.1.11",
 		"bits-ui": "^2.18.1",
 		"clsx": "^2.1.1",
 		"embla-carousel-svelte": "^8.6.0",
@@ -95,7 +101,7 @@
 		"phosphor-svelte": "^3.1.0",
 		"prettier": "^3.8.3",
 		"shadcn-svelte": "^1.2.7",
-		"svelte": "^5.56.3",
+		"svelte": "^5.57.0",
 		"svelte-check": "^4.6.0",
 		"tailwind-merge": "^3.5.0",
 		"tailwind-variants": "^3.2.2",
@@ -103,7 +109,7 @@
 		"typescript": "^6.0.3",
 		"vaul-svelte": "^1.0.0-next.7",
 		"vite": "^6.4.3",
-		"vitest": "^4.1.5"
+		"vitest": "^4.1.11"
 	},
 	"patchedDependencies": {
 		"vaul-svelte@1.0.0-next.7": "patches/vaul-svelte@1.0.0-next.7.patch",

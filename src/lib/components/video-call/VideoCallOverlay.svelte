@@ -50,7 +50,7 @@
 			class={[
 				"flex size-14 items-center justify-center rounded-full text-white shadow-lg transition",
 				{
-					"border border-white/15 bg-white/10 backdrop-blur-md":
+					"border border-white/15 bg-white/10 scrim backdrop-filter-(--bd-rail)":
 						tone === "neutral",
 					"bg-destructive": tone === "decline",
 					"bg-online": tone === "accept",
