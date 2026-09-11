@@ -14,6 +14,7 @@ import { demoDrawerMedia } from "./drawer";
 import { demoFavoriteOf } from "./favorites";
 import { picsum } from "./picsum";
 import { lastOnlineOf, onlineUntilOf, photosOf, profileSeed } from "./profiles";
+import { demoRightNowOf } from "./right-now";
 
 const EXPIRING_IMAGE_DURATION_MS = 10 * SECOND;
 
@@ -348,7 +349,7 @@ export function demoConversations({
 						profileId: conv.withId,
 						seed: conv.favorite,
 					}),
-					rightNow: "NOT_ACTIVE",
+					rightNow: demoRightNowOf(conv.withId).rightNow,
 					onlineUntil: onlineUntilOf(seed),
 					hasUnreadThrob: false,
 					locked: false,

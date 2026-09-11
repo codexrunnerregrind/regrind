@@ -3,16 +3,16 @@
 
 	import { getUnitsSnapshot } from "$lib/app-data/preferences.svelte";
 	import {
-		DISTANCE_METRES_MAX,
-		DISTANCE_METRES_MIN,
-		DISTANCE_METRES_STEP,
-	} from "$lib/chat/conversation-filters.svelte";
+		closestMaxDistanceStep,
+		DEFAULT_MAX_DISTANCE_STEP,
+		maxDistanceLabel,
+		maxDistanceMetres,
+	} from "$lib/components/filters/distance/distance-steps";
+	import DistanceFilterSlider from "$lib/components/filters/distance/DistanceFilterSlider.svelte";
 	import { buttonVariants } from "$lib/components/ui/button";
 	import * as Drawer from "$lib/components/ui/drawer";
-	import { Slider } from "$lib/components/ui/slider";
 	import { Switch } from "$lib/components/ui/switch";
 	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
-	import { formatDistance } from "$lib/util/units";
 
 	let {
 		open = $bindable(),
@@ -24,18 +24,25 @@
 		onapply: (distanceMetres: number | null) => void;
 	} = $props();
 
+	const units = $derived(getUnitsSnapshot());
+
 	// The sheet edits its own copy, so dragging the slider does not refetch the
-	// inbox on every step — only Apply does.
+	// inbox on every step — only Apply does. The value is a step on the scale,
+	// not a raw distance: the steps are round numbers in whichever units are set.
 	let enabled = $state(untrack(() => distanceMetres !== null));
-	let value = $state([
-		untrack(() => distanceMetres) ?? DISTANCE_METRES_MAX / 2,
-	]);
+	let step = $state(DEFAULT_MAX_DISTANCE_STEP);
 
 	$effect(() => {
 		if (open) {
 			untrack(() => {
 				enabled = distanceMetres !== null;
-				value = [distanceMetres ?? DISTANCE_METRES_MAX / 2];
+				step =
+					distanceMetres === null
+						? DEFAULT_MAX_DISTANCE_STEP
+						: closestMaxDistanceStep({
+								metres: distanceMetres,
+								units,
+							});
 			});
 		}
 	});
@@ -47,9 +54,7 @@
 		},
 	});
 
-	const label = $derived(
-		`Within ${formatDistance(value[0] ?? 0, getUnitsSnapshot())}`,
-	);
+	const label = $derived(maxDistanceLabel({ step, units }));
 </script>
 
 <Drawer.Root bind:open>
@@ -69,26 +74,23 @@
 		</Drawer.Header>
 		<div class="mb-2 flex flex-col gap-1.5 px-4">
 			<div class="mb-2 w-full text-center">{label}</div>
-			<Slider
-				type="multiple"
+			<DistanceFilterSlider
 				bind:value={
-					() => value,
-					(v: number[]) => {
+					() => step,
+					(next: number) => {
 						enabled = true;
-						value = v;
+						step = next;
 					}
 				}
-				min={DISTANCE_METRES_MIN}
-				max={DISTANCE_METRES_MAX}
-				step={DISTANCE_METRES_STEP}
-				thumbLabels={["Maximum distance"]}
 			/>
 		</div>
 		<Drawer.Footer>
 			<Drawer.Close
 				class={buttonVariants({ variant: "default" })}
 				onclick={() => {
-					onapply(enabled ? (value[0] ?? null) : null);
+					onapply(
+						enabled ? maxDistanceMetres({ step, units }) : null,
+					);
 					open = false;
 				}}
 			>

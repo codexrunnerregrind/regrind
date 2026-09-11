@@ -8,6 +8,7 @@ export const CONVERSATION_FILTER_KEYS = [
 	"favorites",
 	"unread",
 	"online",
+	"rightNow",
 ] as const;
 
 export type ConversationFilterKey = (typeof CONVERSATION_FILTER_KEYS)[number];
@@ -24,10 +25,6 @@ export type ConversationFilterSelection = {
 	positions: FilterPositionId[];
 };
 
-export const DISTANCE_METRES_MIN = 1000;
-export const DISTANCE_METRES_MAX = 100_000;
-export const DISTANCE_METRES_STEP = 1000;
-
 const matchers: Record<
 	ConversationFilterKey,
 	(conversation: Conversation) => boolean
@@ -43,6 +40,8 @@ const matchers: Record<
 		(conversation.data.onlineUntil ??
 			conversation.data.participants[0]?.onlineUntil ??
 			0) > getNow(),
+	// Hosting or not, either counts as being up for something right now.
+	rightNow: (conversation) => conversation.data.rightNow !== "NOT_ACTIVE",
 };
 
 // A conversation the server sends without a distance cannot be shown to be
@@ -84,7 +83,7 @@ export function inboxFilterRequest(
 		unreadOnly: active.includes("unread"),
 		chemistryOnly: false,
 		favoritesOnly: active.includes("favorites"),
-		rightNowOnly: false,
+		rightNowOnly: active.includes("rightNow"),
 		onlineNowOnly: active.includes("online"),
 		distanceMeters: distanceMetres,
 		positions: [...positions],

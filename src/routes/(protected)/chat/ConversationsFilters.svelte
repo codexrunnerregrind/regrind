@@ -29,6 +29,7 @@
 	const favorite = $derived(filters.active.includes("favorites"));
 	const unread = $derived(filters.active.includes("unread"));
 	const online = $derived(filters.active.includes("online"));
+	const rightNow = $derived(filters.active.includes("rightNow"));
 
 	function toggle(key: ConversationFilterKey) {
 		onchange({
@@ -40,9 +41,10 @@
 </script>
 
 <!-- The grid's quick filters in miniature — same pills, same inverted fill when
-     on, same row that scrolls rather than wraps, and the same two that carry a
-     value of their own open a sheet instead of toggling. The order matches the
-     official app's: favorites, unread, distance, online, position. -->
+     on, same row that scrolls rather than wraps. Ordered by what a tap does
+     rather than by the official app's order: the pills that toggle on the spot
+     come first, then the two that carry a value of their own and open a sheet,
+     so the row does not alternate between the two behaviours. -->
 <div class={["scrollbar-thin flex gap-0.5 overflow-x-auto", className]}>
 	<Button
 		variant="secondary"
@@ -63,18 +65,26 @@
 	</Button>
 	<Button
 		variant="secondary"
-		onclick={() => (open.distance = true)}
-		class={{ [ACTIVE_FILTER]: filters.distanceMetres !== null }}
-	>
-		Distance
-	</Button>
-	<Button
-		variant="secondary"
 		aria-pressed={online}
 		onclick={() => toggle("online")}
 		class={{ [ACTIVE_FILTER]: online }}
 	>
 		Online
+	</Button>
+	<Button
+		variant="secondary"
+		aria-pressed={rightNow}
+		onclick={() => toggle("rightNow")}
+		class={{ [ACTIVE_FILTER]: rightNow }}
+	>
+		Right now
+	</Button>
+	<Button
+		variant="secondary"
+		onclick={() => (open.distance = true)}
+		class={{ [ACTIVE_FILTER]: filters.distanceMetres !== null }}
+	>
+		Distance
 	</Button>
 	<Button
 		variant="secondary"
