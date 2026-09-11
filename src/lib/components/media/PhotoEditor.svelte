@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ArrowClockwiseIcon from "phosphor-svelte/lib/ArrowClockwiseIcon";
-	import ArrowsHorizontalIcon from "phosphor-svelte/lib/ArrowsHorizontalIcon";
+	import FlipHorizontalIcon from "phosphor-svelte/lib/FlipHorizontalIcon";
 
 	import { Spinner } from "$lib/components/ui/spinner";
 
@@ -332,7 +332,7 @@
 			disabled={preview === null}
 			onclick={() => (steps = [...steps, "flip"])}
 		>
-			<ArrowsHorizontalIcon class="size-6" />
+			<FlipHorizontalIcon class="size-6" />
 		</button>
 		<button
 			type="button"
