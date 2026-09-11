@@ -918,7 +918,9 @@ a {
 }
 
 @theme {
+	--apple-system-glass-material-normal: -apple-system-glass-material;
 	--apple-system-glass-material-clear: -apple-system-glass-material-clear;
+	--apple-system-glass-material-subdued: -apple-system-glass-material-subdued;
 	--apple-system-glass-material-media-controls: -apple-system-glass-material-media-controls;
 	--apple-system-glass-material-media-controls-subdued: -apple-system-glass-material-media-controls-subdued;
 }
@@ -933,6 +935,14 @@ a {
 
 /* Backdrop blur: one token map per mode, keyed by data-backdrop-blur on <html>. */
 :root {
+	/* The capsule's own tint: transparent while the system material is the
+	   surface, opaque once blur is off and nothing else draws one. */
+	--glass-capsule-bg: transparent;
+	--glass-capsule-fallback-bg: color-mix(
+		in srgb,
+		var(--background) 72%,
+		transparent
+	);
 	--bar-content-gap: 0px;
 	--bd-lens: blur(1px);
 	--bd-veil: blur(8px);
@@ -957,9 +967,13 @@ a {
 	--bd-rail: none;
 	--bd-panel: none;
 	--bd-chip: none;
+	--apple-system-glass-material-normal: none;
 	--apple-system-glass-material-clear: none;
+	--apple-system-glass-material-subdued: none;
 	--apple-system-glass-material-media-controls: none;
 	--apple-system-glass-material-media-controls-subdued: none;
+	--glass-capsule-bg: var(--background);
+	--glass-capsule-fallback-bg: var(--background);
 	--glass-controls-bg: rgba(0, 0, 0, 0.62);
 	--glass-controls-subdued-bg: rgba(0, 0, 0, 0.42);
 	--scrim: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.45));
@@ -1202,6 +1216,19 @@ a {
    own variables, and a hand-written one next to it is simply overwritten. */
 .glass-capsule {
 	@apply shadow-[0_8px_28px_rgb(0_0_0/0.28),0_1px_2px_rgb(0_0_0/0.16)];
+	background-color: var(--glass-capsule-bg);
+}
+
+/* With blur off the material is gone, so the bar has to draw its own edge as
+   well as its own fill. */
+:root[data-backdrop-blur="off"] .glass-capsule {
+	@apply ring-1 ring-border/60;
+}
+
+/* Same reason: the scrubber thumb drops its fill mid-drag and lets the clear
+   material stand in for it, which off leaves as nothing at all. */
+:root[data-backdrop-blur="off"] [data-slot="scrubber-thumb"] {
+	@apply bg-white;
 }
 
 /* Everywhere but iOS this is the surface, not a stopgap, so it is built rather
@@ -1211,7 +1238,8 @@ a {
    and a hairline for the edge. */
 @supports not (-apple-visual-effect: -apple-system-glass-material) {
 	.glass-capsule {
-		@apply bg-background/72 ring-1 ring-border/60;
+		@apply ring-1 ring-border/60;
+		background-color: var(--glass-capsule-fallback-bg);
 		backdrop-filter: var(--bd-rail) saturate(1.8);
 	}
 }
