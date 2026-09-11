@@ -73,7 +73,7 @@
 		<use href="#d-cloud" transform="translate(203 75) rotate(-25) scale(.85)" />
 		<use href="#d-sun" transform="translate(248 79) rotate(12) scale(.85)" />
 		<use href="#d-moon" transform="translate(6 72) rotate(0) scale(.85)" />
-		<use href="#d-moon" transform="translate(-294 72) rotate(0) scale(.85)" />
+		<use href="#d-moon" transform="translate(306 72) rotate(0) scale(.85)" />
 		<use href="#d-smiley" transform="translate(26 131) rotate(-18) scale(.85)" />
 		<use href="#d-chat-bubble" transform="translate(69 127) rotate(7) scale(.85)" />
 		<use href="#d-cup" transform="translate(129 120) rotate(20) scale(.85)" />
@@ -86,7 +86,7 @@
 		<use href="#d-lightning" transform="translate(197 176) rotate(-20) scale(.85)" />
 		<use href="#d-leaf" transform="translate(256 170) rotate(5) scale(.85)" />
 		<use href="#d-paper-plane" transform="translate(294 177) rotate(-11) scale(.85)" />
-		<use href="#d-paper-plane" transform="translate(594 177) rotate(-11) scale(.85)" />
+		<use href="#d-paper-plane" transform="translate(-6 177) rotate(-11) scale(.85)" />
 		<use href="#d-flower" transform="translate(27 223) rotate(27) scale(.85)" />
 		<use href="#d-cloud" transform="translate(80 230) rotate(-25) scale(.85)" />
 		<use href="#d-sun" transform="translate(121 219) rotate(12) scale(.85)" />
@@ -99,6 +99,6 @@
 		<use href="#d-camera" transform="translate(199 278) rotate(9) scale(.85)" />
 		<use href="#d-umbrella" transform="translate(255 274) rotate(22) scale(.85)" />
 		<use href="#d-balloon" transform="translate(297 279) rotate(-7) scale(.85)" />
-		<use href="#d-balloon" transform="translate(597 279) rotate(-7) scale(.85)" />
+		<use href="#d-balloon" transform="translate(-3 279) rotate(-7) scale(.85)" />
 	</g>
 </svg>
