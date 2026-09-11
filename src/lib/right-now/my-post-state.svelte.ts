@@ -40,7 +40,7 @@ class MyRightNowPostState {
 	remaining = $state(0);
 
 	#post = $state<RightNowOwnPost | null>(null);
-	#loaded = false;
+	#loaded = $state(false);
 	#preferences: AccountPreferences | null = null;
 	/** The post `lapse` has already refetched for, so it refetches once. */
 	#refetchedFor: number | null = null;
