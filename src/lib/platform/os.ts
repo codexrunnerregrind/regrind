@@ -16,3 +16,7 @@ export function isIosPlatform(): boolean {
 export function isLinuxPlatform(): boolean {
 	return isTauri() && platform() === "linux";
 }
+
+export function isMacosPlatform(): boolean {
+	return isTauri() && platform() === "macos";
+}

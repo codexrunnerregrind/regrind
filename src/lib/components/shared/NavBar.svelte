@@ -92,7 +92,7 @@
 		class={[
 			"relative flex w-full items-stretch",
 			{
-				"glass-capsule glass-normal pointer-events-auto h-14 max-w-104 rounded-full px-1.5":
+				"glass-capsule pointer-events-auto h-14 max-w-104 rounded-full px-1.5 glass-normal":
 					glass,
 			},
 		]}

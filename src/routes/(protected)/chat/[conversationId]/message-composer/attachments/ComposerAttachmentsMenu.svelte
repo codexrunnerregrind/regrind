@@ -350,7 +350,7 @@
 				     opaque plate and hairline come off so the material is the
 				     surface. -->
 				<Tabs.List
-					class="glass-capsule glass-normal relative bg-transparent p-1.5 ring-0"
+					class="glass-capsule relative bg-transparent p-1.5 ring-0 glass-normal"
 				>
 					<!-- One pill, moved, rather than a fill per tab. Width is an
 					     exact third because every trigger below is the same

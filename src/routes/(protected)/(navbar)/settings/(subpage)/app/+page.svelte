@@ -7,9 +7,11 @@
 	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
 	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
 	import { desktopEntryAvailable } from "$lib/platform/desktop-entry.svelte";
+	import { hapticsAvailable } from "$lib/platform/haptics";
 	import { updatesSelfManaged } from "$lib/updates/capability.svelte";
 	import AppsMenuEntrySetting from "./AppsMenuEntrySetting.svelte";
 	import AutomaticUpdatesSetting from "./AutomaticUpdatesSetting.svelte";
+	import HapticFeedbackSetting from "./HapticFeedbackSetting.svelte";
 	import NotificationSettings from "./NotificationSettings.svelte";
 	import RevealMessageReadSetting from "./RevealMessageReadSetting.svelte";
 	import RevealProfileViewSetting from "./RevealProfileViewSetting.svelte";
@@ -26,6 +28,9 @@
 <SectionHeader>Display</SectionHeader>
 <SettingsGroup divider="full">
 	<UnitsSetting />
+	{#if hapticsAvailable()}
+		<HapticFeedbackSetting />
+	{/if}
 	{#if desktopEntryAvailable()}
 		<AppsMenuEntrySetting />
 	{/if}
