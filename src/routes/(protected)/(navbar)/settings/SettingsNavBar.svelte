@@ -24,6 +24,14 @@
 			title: "Credits & Licenses",
 			back: "/settings/app",
 		},
+		[`${base}/app/favorites/export`]: {
+			title: "Export favorites",
+			back: "/settings/app",
+		},
+		[`${base}/app/favorites/import`]: {
+			title: "Import favorites",
+			back: "/settings/app",
+		},
 		[`${base}/appearance`]: { title: "Appearance", back: "/settings" },
 		[`${base}/profile`]: { title: "Edit Profile", back: "/settings" },
 	};

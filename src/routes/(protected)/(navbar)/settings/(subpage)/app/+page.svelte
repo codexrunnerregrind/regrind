@@ -1,5 +1,11 @@
 <script lang="ts">
-	import { DeviceMobileIcon, HeartIcon, LockKeyIcon } from "phosphor-svelte";
+	import {
+		DeviceMobileIcon,
+		ExportIcon,
+		HeartIcon,
+		LockKeyIcon,
+		TrayArrowDownIcon,
+	} from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
 	import ToastUnimplemented from "$lib/components/feedback/ToastUnimplemented.svelte";
@@ -66,6 +72,28 @@
 	>
 		{#snippet icon()}
 			<LockKeyIcon weight="fill" />
+		{/snippet}
+	</SettingsRow>
+</SettingsGroup>
+
+<SectionHeader>Advanced</SectionHeader>
+<SettingsGroup divider="full">
+	<SettingsRow
+		title="Export favorites"
+		description="Save your favorites and their notes to a file."
+		href="/settings/app/favorites/export"
+	>
+		{#snippet icon()}
+			<ExportIcon weight="fill" />
+		{/snippet}
+	</SettingsRow>
+	<SettingsRow
+		title="Import favorites"
+		description="Restore favorites and notes from an exported file."
+		href="/settings/app/favorites/import"
+	>
+		{#snippet icon()}
+			<TrayArrowDownIcon weight="fill" />
 		{/snippet}
 	</SettingsRow>
 </SettingsGroup>
