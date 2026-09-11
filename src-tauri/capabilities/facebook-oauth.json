@@ -3,7 +3,7 @@
 	"identifier": "facebook-oauth",
 	"description": "The sign-in window renders an external origin and calls no Tauri API",
 	"windows": [
-		"facebook-oauth"
+		"facebook-oauth-*"
 	],
 	"permissions": []
 }

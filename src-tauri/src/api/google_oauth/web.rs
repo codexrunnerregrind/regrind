@@ -1,21 +1,24 @@
 use std::sync::Arc;
 
-use tauri::{AppHandle, Manager, Url, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Url, WebviewUrl, WebviewWindowBuilder};
 use tokio::sync::oneshot;
 
-use crate::api::oauth::{new_nonce, without_secrets, CANCELED};
+use crate::api::oauth::{
+	close_windows, is_cancel_url, new_nonce, next_window_label,
+	without_secrets, CANCELED,
+};
 use crate::error::AppError;
 
 use super::GoogleOauthBridge;
 
 const HELPER_URL: &str = "https://web.grindr.com/";
 const HELPER_HOST: &str = "web.grindr.com";
-const WINDOW_LABEL: &str = "google-oauth";
+const WINDOW_LABEL_PREFIX: &str = "google-oauth";
 
-#[cfg(desktop)]
+/// iOS asks for no size: a window built without one covers the screen, and the
+/// app is what shows around anything smaller.
+#[cfg(not(target_os = "ios"))]
 const WINDOW_INNER_SIZE: (f64, f64) = (800.0, 500.0);
-#[cfg(mobile)]
-const WINDOW_INNER_SIZE: (f64, f64) = (500.0, 720.0);
 
 const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) \
      AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15";
@@ -76,6 +79,10 @@ pub async fn fetch_access_token(
 	app: &AppHandle,
 	bridge: Arc<GoogleOauthBridge>,
 ) -> Result<String, AppError> {
+	// Before the slot is claimed: a stale window's own close handler would
+	// otherwise cancel the flow that is just starting.
+	close_windows(app, WINDOW_LABEL_PREFIX);
+
 	let rx = bridge.begin()?;
 	run_flow(app, &bridge, rx).await.inspect_err(|_| {
 		bridge.abort();
@@ -87,28 +94,27 @@ async fn run_flow(
 	bridge: &Arc<GoogleOauthBridge>,
 	rx: oneshot::Receiver<Result<String, String>>,
 ) -> Result<String, AppError> {
-	if let Some(existing) = app.get_webview_window(WINDOW_LABEL) {
-		let _ = existing.close();
-	}
-
 	let url = Url::parse(HELPER_URL)
 		.map_err(|e| AppError::Http(format!("invalid helper URL: {e}")))?;
 
 	let nonce = new_nonce();
-	let (window_width, window_height) = WINDOW_INNER_SIZE;
+	let label = next_window_label(WINDOW_LABEL_PREFIX);
 	let bridge_for_nav = bridge.clone();
 	let nonce_for_nav = nonce.clone();
 
 	#[allow(unused_mut)]
 	let mut builder =
-		WebviewWindowBuilder::new(app, WINDOW_LABEL, WebviewUrl::External(url))
+		WebviewWindowBuilder::new(app, &label, WebviewUrl::External(url))
 			.title("Sign in with Google")
-			.inner_size(window_width, window_height)
 			.user_agent(USER_AGENT)
 			.initialization_script(init_script(&nonce))
 			.incognito(true)
 			.general_autofill_enabled(false)
 			.on_navigation(move |url| {
+				if is_cancel_url(url) {
+					bridge_for_nav.fulfill(Err(CANCELED.to_owned()));
+					return false;
+				}
 				if !is_allowed_target(url) {
 					tracing::warn!(
 						"[oauth] refused navigation to {}",
@@ -129,6 +135,18 @@ async fn run_flow(
 				false
 			});
 
+	#[cfg(not(target_os = "ios"))]
+	{
+		let (width, height) = WINDOW_INNER_SIZE;
+		builder = builder.inner_size(width, height);
+	}
+
+	#[cfg(target_os = "ios")]
+	{
+		builder = builder
+			.initialization_script(crate::api::oauth::close_button_script());
+	}
+
 	// `incognito` silently no-ops on WebView2 older than 101.0.1210.39
 	// https://docs.rs/wry/latest/src/wry/lib.rs.html#1440-1443
 	#[cfg(target_os = "windows")]
@@ -148,14 +166,13 @@ async fn run_flow(
 		}
 	});
 
-	let result = rx.await.map_err(|_| {
-		AppError::Auth("sign-in flow ended unexpectedly".into())
-	})?;
+	let result = rx
+		.await
+		.map_err(|_| AppError::Auth("sign-in flow ended unexpectedly".into()));
 
-	let _ = window.clear_all_browsing_data();
-	let _ = window.close();
+	close_windows(app, WINDOW_LABEL_PREFIX);
 
-	result.map_err(AppError::Auth)
+	result?.map_err(AppError::Auth)
 }
 
 #[cfg(test)]
@@ -193,6 +210,14 @@ mod tests {
 				"{url} must never load in the sign-in window"
 			);
 		}
+	}
+
+	#[test]
+	fn the_cancel_url_is_not_taken_for_a_result() {
+		let url = Url::parse("https://web.grindr.com/__regrind_oauth_cancel__")
+			.unwrap();
+		assert!(is_allowed_target(&url));
+		assert!(!is_result_url(&url));
 	}
 
 	#[test]

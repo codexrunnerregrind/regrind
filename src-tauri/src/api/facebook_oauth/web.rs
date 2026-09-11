@@ -1,11 +1,14 @@
 use std::sync::Arc;
 
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, WebviewUrl, WebviewWindowBuilder};
 use tokio::sync::oneshot;
 
 use crate::error::AppError;
 
-use crate::api::oauth::{new_nonce, without_secrets, CANCELED};
+use crate::api::oauth::{
+	close_windows, is_cancel_url, new_nonce, next_window_label,
+	without_secrets, CANCELED,
+};
 
 use super::dialog::{
 	dialog_url, is_allowed_target, is_redirect_url, result_from_redirect,
@@ -13,17 +16,19 @@ use super::dialog::{
 };
 use super::FacebookOauthBridge;
 
-const WINDOW_LABEL: &str = "facebook-oauth";
+const WINDOW_LABEL_PREFIX: &str = "facebook-oauth";
 
 const FLOW_TIMEOUT: std::time::Duration =
 	std::time::Duration::from_secs(10 * 60);
 
+/// iOS asks for no size: a window built without one covers the screen, and the
+/// app is what shows around anything smaller.
 #[cfg(desktop)]
 const WINDOW_INNER_SIZE: (f64, f64) = (600.0, 700.0);
-#[cfg(mobile)]
+#[cfg(target_os = "android")]
 const WINDOW_INNER_SIZE: (f64, f64) = (500.0, 720.0);
 
-#[cfg(not(target_os = "android"))]
+#[cfg(desktop)]
 const DESKTOP_USER_AGENT: &str =
 	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) \
 	 AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15";
@@ -32,6 +37,10 @@ pub async fn fetch_access_token(
 	app: &AppHandle,
 	bridge: Arc<FacebookOauthBridge>,
 ) -> Result<String, AppError> {
+	// Before the slot is claimed: a stale window's own close handler would
+	// otherwise cancel the flow that is just starting.
+	close_windows(app, WINDOW_LABEL_PREFIX);
+
 	let rx = bridge.begin()?;
 	run_flow(app, &bridge, rx).await.inspect_err(|_| {
 		bridge.abort();
@@ -43,26 +52,25 @@ async fn run_flow(
 	bridge: &Arc<FacebookOauthBridge>,
 	rx: oneshot::Receiver<Result<String, String>>,
 ) -> Result<String, AppError> {
-	if let Some(stale) = app.get_webview_window(WINDOW_LABEL) {
-		let _ = stale.close();
-	}
-
 	let state = new_nonce();
-	let (window_width, window_height) = WINDOW_INNER_SIZE;
+	let label = next_window_label(WINDOW_LABEL_PREFIX);
 	let bridge_for_nav = bridge.clone();
 	let state_for_nav = state.clone();
 
 	#[allow(unused_mut)]
 	let mut builder = WebviewWindowBuilder::new(
 		app,
-		WINDOW_LABEL,
+		&label,
 		WebviewUrl::External(dialog_url(&state)?),
 	)
 	.title("Sign in with Facebook")
-	.inner_size(window_width, window_height)
 	.incognito(true)
 	.general_autofill_enabled(false)
 	.on_navigation(move |url| {
+		if is_cancel_url(url) {
+			bridge_for_nav.fulfill(Err(CANCELED.to_owned()));
+			return false;
+		}
 		if !is_allowed_target(url) {
 			tracing::warn!("[fb-oauth] refused {}", without_secrets(url));
 			bridge_for_nav.fulfill(Err(HANDOFF_REFUSED.to_owned()));
@@ -78,9 +86,21 @@ async fn run_flow(
 		false
 	});
 
-	#[cfg(not(target_os = "android"))]
+	#[cfg(desktop)]
 	{
 		builder = builder.user_agent(DESKTOP_USER_AGENT);
+	}
+
+	#[cfg(not(target_os = "ios"))]
+	{
+		let (width, height) = WINDOW_INNER_SIZE;
+		builder = builder.inner_size(width, height);
+	}
+
+	#[cfg(target_os = "ios")]
+	{
+		builder = builder
+			.initialization_script(crate::api::oauth::close_button_script());
 	}
 
 	#[cfg(target_os = "android")]
@@ -128,10 +148,7 @@ async fn run_flow(
 }
 
 async fn dismiss_window(app: &AppHandle) {
-	if let Some(window) = app.get_webview_window(WINDOW_LABEL) {
-		let _ = window.clear_all_browsing_data();
-		let _ = window.close();
-	}
+	close_windows(app, WINDOW_LABEL_PREFIX);
 	#[cfg(target_os = "android")]
 	super::android::dismiss(app).await;
 }

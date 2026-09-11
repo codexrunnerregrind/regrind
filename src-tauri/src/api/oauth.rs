@@ -2,13 +2,17 @@ use std::marker::PhantomData;
 use std::sync::Mutex;
 
 use base64::Engine;
-use tauri::Url;
+use tauri::{AppHandle, Manager, Url};
 use tokio::sync::oneshot;
 
 use crate::error::AppError;
 
 /// Matched verbatim by the frontend, which stays silent for it.
 pub const CANCELED: &str = "Sign-in canceled";
+
+/// The mobile sign-in window has no chrome, so the injected close button asks
+/// for the cancel by navigating here; no page of the flow ever uses this path.
+pub const CANCEL_PATH: &str = "/__regrind_oauth_cancel__";
 
 pub trait OauthProvider: Send + Sync + 'static {
 	const NAME: &'static str;
@@ -57,6 +61,37 @@ impl<P: OauthProvider> OauthBridge<P> {
 
 	pub(crate) fn abort(&self) {
 		let _ = self.pending.lock().unwrap().take();
+	}
+}
+
+pub fn is_cancel_url(url: &Url) -> bool {
+	url.path() == CANCEL_PATH
+}
+
+/// The close button the mobile window needs, since it has no title bar.
+#[cfg(target_os = "ios")]
+pub fn close_button_script() -> String {
+	const SCRIPT: &str = include_str!("oauth_close_button.js");
+	format!("({SCRIPT})({});", serde_json::json!(CANCEL_PATH))
+}
+
+/// tao never emits `Destroyed` on iOS, so tauri never frees the label of a
+/// closed window: every attempt takes a label of its own instead.
+pub fn next_window_label(prefix: &str) -> String {
+	static ATTEMPT: std::sync::atomic::AtomicU64 =
+		std::sync::atomic::AtomicU64::new(0);
+	let attempt = ATTEMPT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+	format!("{prefix}-{attempt}")
+}
+
+/// Closes whatever earlier attempts left behind, labels included.
+pub fn close_windows(app: &AppHandle, prefix: &str) {
+	for (label, window) in app.webview_windows() {
+		if !label.starts_with(prefix) {
+			continue;
+		}
+		let _ = window.clear_all_browsing_data();
+		let _ = window.destroy();
 	}
 }
 
@@ -162,6 +197,28 @@ mod tests {
 			bridge.begin().is_ok(),
 			"a setup failure must not wedge sign-in for the whole session"
 		);
+	}
+
+	#[test]
+	fn the_cancel_url_is_recognised_on_any_host_of_the_flow() {
+		for url in [
+			"https://web.grindr.com/__regrind_oauth_cancel__",
+			"https://accounts.google.com/__regrind_oauth_cancel__",
+			"https://www.facebook.com/__regrind_oauth_cancel__",
+		] {
+			assert!(is_cancel_url(&Url::parse(url).unwrap()), "{url}");
+		}
+	}
+
+	#[test]
+	fn a_page_of_the_flow_is_not_mistaken_for_a_cancel() {
+		for url in [
+			"https://web.grindr.com/",
+			"https://web.grindr.com/__open_grind_oauth__?token=t0ken",
+			"https://www.facebook.com/v16.0/dialog/oauth",
+		] {
+			assert!(!is_cancel_url(&Url::parse(url).unwrap()), "{url}");
+		}
 	}
 
 	#[test]

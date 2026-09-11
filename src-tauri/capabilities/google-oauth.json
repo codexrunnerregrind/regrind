@@ -3,7 +3,7 @@
 	"identifier": "google-oauth",
 	"description": "The sign-in window renders an external origin and calls no Tauri API",
 	"windows": [
-		"google-oauth"
+		"google-oauth-*"
 	],
 	"permissions": []
 }
