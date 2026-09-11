@@ -85,9 +85,6 @@
 	const media = new AlbumMediaAdder({
 		id: () => albumId,
 		content: () => album?.content ?? [],
-		setContent: (content) => {
-			if (album !== null) album.content = content;
-		},
 		busy: () => busy,
 		reload: () => refresh(albumId),
 	});
@@ -136,7 +133,7 @@
 		if (polls >= PROCESSING_POLLS) return;
 		const timer = setTimeout(() => {
 			polls += 1;
-			void refresh(albumId).then(() => media.settleOrder(albumId));
+			void refresh(albumId);
 		}, 6000);
 		return () => clearTimeout(timer);
 	});

@@ -82,10 +82,8 @@
 			use:dragReorder={{ enabled: isMine && !busy, onReorder }}
 		>
 			{#if isMine}
-				<!-- First, as in the official app: the tile that adds is where
-				     the eye lands, and it is not a slot that can be dragged.
-				     The added item still lands at the end — see
-				     album-add-media.svelte.ts. -->
+				<!-- First, as in the official app, next to where an addition
+				     lands. Not a slot that can be dragged. -->
 				<button
 					type="button"
 					class="flex aspect-album-photo items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground disabled:opacity-50"
