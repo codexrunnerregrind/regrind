@@ -37,6 +37,7 @@ import { mergeIntoExisting, sortConversations } from "./inbox-entries";
 import { MessageCache } from "./message-cache";
 import { PendingDeletes } from "./pending-deletes";
 import { PendingFlags } from "./pending-flags";
+import { RememberedConversationFlags } from "./remembered-conversation-flags";
 import { SeenMessages } from "./seen-messages";
 import { TypingTracker } from "./typing.svelte";
 import { UnreadWhileMissing } from "./unread-while-missing";
@@ -56,6 +57,9 @@ export type IncomingMessageHandler = (incoming: {
 
 class ConversationsState {
 	entries = $state<Conversation[]>([]);
+	// A filtered page can come back gated, with every flag reading "off"; this
+	// puts back what the unfiltered list already knew.
+	#rememberedFlags = new RememberedConversationFlags();
 	nextPage = $state<number | null>(null);
 	refreshing = $state(false);
 	loading = $state(true);
@@ -260,6 +264,7 @@ class ConversationsState {
 			if (this.#fetches.isStale(fetchEpoch)) return;
 			this.nextPage = reachedEnd ? null : nextPage;
 
+			this.#rememberedFlags.applyTo(fetched.values());
 			for (const incoming of fetched.values()) {
 				const existing = this.#find(incoming.data.conversationId);
 				if (existing) {
@@ -339,6 +344,7 @@ class ConversationsState {
 				filters: inboxFilterRequest(this.filters.snapshot()),
 			});
 			if (this.#fetches.isStale(fetchEpoch)) return true;
+			this.#rememberedFlags.applyTo(result.entries);
 			for (const incoming of result.entries) {
 				const existing = this.#find(incoming.data.conversationId);
 				if (existing) {
@@ -369,6 +375,7 @@ class ConversationsState {
 			filters: inboxFilterRequest(this.filters.snapshot()),
 		});
 		if (this.#fetches.isStale(fetchEpoch)) return;
+		this.#rememberedFlags.applyTo(result.entries);
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- function-local lookup, never mutated after construction
 		const known = new Set(this.entries.map((e) => e.data.conversationId));
 		for (const entry of result.entries) {
