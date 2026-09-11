@@ -9,10 +9,6 @@ import z from "zod";
 
 import { getPreferences } from "$lib/app-data/preferences.svelte";
 import { peekConversationsState } from "$lib/chat/conversations-context.svelte";
-import {
-	previewFromMessage,
-	previewLabel,
-} from "$lib/model/messaging/message-preview";
 import { cacheNotificationImage } from "$lib/notifications/notification-image";
 import { isAndroidPlatform, isIosPlatform } from "$lib/platform/os";
 import { profileMediaUrl } from "$lib/util/media";
@@ -29,26 +25,39 @@ type PermissionState = "unknown" | "granted" | "denied" | "default";
 // stash the in-app route to open there.
 const notificationExtraSchema = z.object({ route: z.string().optional() });
 
-// A small icon in front of a media label reads faster in the shade than the
-// bare word. Text messages keep their own text, unadorned.
-const MEDIA_BODY_ICONS: Record<string, string> = {
-	Album: "🖼️",
-	Audio: "🎤",
-	Gaymoji: "😊",
-	Giphy: "🎞️",
-	Image: "📷",
-	Location: "📍",
-	Video: "🎥",
-	VideoCall: "📞",
+// A notification is a sentence about what someone did, not an inbox row's bare
+// label. Mirrors TYPE_BODIES in PushNotifier.kt, which says the same for
+// Android's pushes.
+const TYPE_BODIES: Partial<Record<ApiResponseMessage["type"], string>> = {
+	Album: "Shared an album with you",
+	AlbumContentReaction: "Liked your album picture",
+	AlbumContentReply: "Replied to your album picture",
+	Audio: "Sent you a voice message",
+	ExpiringAlbum: "Shared an expiring album with you",
+	ExpiringAlbumV2: "Shared an expiring album with you",
+	ExpiringImage: "Sent you an expiring picture",
+	Gaymoji: "Sent you a gaymoji",
+	Giphy: "Sent you a gif",
+	Image: "Sent you a picture",
+	Location: "Sent you their location",
+	NonExpiringVideo: "Sent you a video",
+	PrivateVideo: "Sent you a video",
+	ProfileLink: "Sent you a profile",
+	ProfilePhotoReply: "Replied to your profile picture",
+	RightNowRequest: "Sent you a Right Now request",
+	Unsent: "Unsent a message",
+	Video: "Sent you a video",
+	VideoCall: "Video called you",
 };
 
+const GENERIC_BODY = "Sent you a message";
+
 function notificationBody(message: ApiResponseMessage): string {
-	const preview = previewFromMessage(message);
-	const label = previewLabel(preview);
-	if (label === null) return "Sent you a message";
-	if (preview.type === "Text") return label;
-	const icon = MEDIA_BODY_ICONS[preview.type];
-	return icon ? `${icon} ${label}` : label;
+	// Only a text message speaks for itself; everything else is named. A text
+	// with nothing in it names itself too, rather than posting a blank banner.
+	if (message.type === "Text")
+		return message.body.text.trim() || GENERIC_BODY;
+	return TYPE_BODIES[message.type] ?? GENERIC_BODY;
 }
 
 // The image to show inline on platforms that support attachments, or null. Uses
@@ -176,16 +185,26 @@ class NotificationService {
 		return document.visibilityState === "visible" && document.hasFocus();
 	}
 
-	async #onMessage(message: ApiResponseMessage): Promise<void> {
-		if (this.#ourProfileId === null) return;
+	/**
+	 * Whether an event of this category should still become a banner. Permission
+	 * is deliberately left to the caller: it can prompt, and nothing should
+	 * prompt for a notification we are about to drop anyway (a muted chat).
+	 */
+	async #wantsNotification(
+		kind: "notifyMessages" | "notifyTaps",
+	): Promise<boolean> {
+		if (this.#ourProfileId === null) return false;
 		// Android delivers these through FCM (see push.svelte.ts), which fires
 		// even once the OS suspends us; posting here too would double up.
-		if (isAndroidPlatform()) return;
-		if (message.senderId === this.#ourProfileId) return; // our own echo
-		if (this.#appIsForeground()) return;
-
+		if (isAndroidPlatform()) return false;
+		if (this.#appIsForeground()) return false;
 		const prefs = await getPreferences().catch(() => null);
-		if (!prefs?.notifyMessages) return;
+		return prefs?.[kind] === true;
+	}
+
+	async #onMessage(message: ApiResponseMessage): Promise<void> {
+		if (message.senderId === this.#ourProfileId) return; // our own echo
+		if (!(await this.#wantsNotification("notifyMessages"))) return;
 
 		// Respect a muted conversation, but only if the chat store already exists —
 		// never construct one here (that would kick off a network load).
@@ -239,14 +258,8 @@ class NotificationService {
 		senderId: number;
 		senderDisplayName: string | null;
 	}): Promise<void> {
-		if (this.#ourProfileId === null) return;
-		if (isAndroidPlatform()) return; // delivered via FCM instead
 		if (tap.recipientId !== this.#ourProfileId) return;
-		if (this.#appIsForeground()) return;
-
-		const prefs = await getPreferences().catch(() => null);
-		if (!prefs?.notifyTaps) return;
-
+		if (!(await this.#wantsNotification("notifyTaps"))) return;
 		if (!(await this.#ensurePermission())) return;
 
 		const name = tap.senderDisplayName?.trim();

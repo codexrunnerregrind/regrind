@@ -28,6 +28,8 @@ object PushNotifier {
 	const val CHAT_CHANNEL_ID = "regrind_chat"
 	const val TAPS_CHANNEL_ID = "regrind_taps"
 	private const val TAG = "RegrindPush"
+	// What a message whose type we cannot name is called.
+	const val GENERIC_BODY = "Sent you a message"
 	private const val DEDUP_WINDOW_MS = 5 * 60_000L
 
 	private val recentIds = mutableMapOf<String, Long>()
@@ -58,7 +60,7 @@ object PushNotifier {
 	fun post(context: Context, payload: JSONObject) {
 		val isTap = payload.optBoolean("isTap", false)
 		val title = normalizeSenderName(payload.optString("senderName"))
-		val text = payload.optString("bodyText").ifBlank { "Sent you a message" }
+		val text = payload.optString("bodyText").ifBlank { GENERIC_BODY }
 		val conversationId = normalizeNullableString(payload.optString("conversationId"))
 
 		if (isTap && !PushHub.tapsEnabled) return
@@ -160,37 +162,36 @@ object PushNotifier {
 		}
 	}
 
-
-	// Mirrors TYPE_LABELS/MEDIA_BODY_ICONS in message-preview.ts and
-	// notifications.svelte.ts, so a push reads the same as the inbox row and the
-	// same as the notification iOS posts. Kotlin cannot share the TS map, so
+	// A notification is a sentence about what someone did, not an inbox row's
+	// bare label. Mirrors TYPE_BODIES in notifications.svelte.ts, so a push reads
+	// the same as the notification iOS posts. Kotlin cannot share the TS map, so
 	// changes there belong here too.
-	private val TYPE_LABELS = mapOf(
-		"Album" to "\uD83D\uDDBC\uFE0F Album",
-		"AlbumContentReaction" to "\uD83D\uDDBC\uFE0F Album",
-		"AlbumContentReply" to "\uD83D\uDDBC\uFE0F Album",
-		"Audio" to "\uD83C\uDFA4 Voice message",
-		"ExpiringAlbum" to "\uD83D\uDDBC\uFE0F Album",
-		"ExpiringAlbumV2" to "\uD83D\uDDBC\uFE0F Album",
-		"ExpiringImage" to "\uD83D\uDCF7 Expiring photo",
-		"Gaymoji" to "\uD83D\uDE0A Gaymoji",
-		"Giphy" to "\uD83C\uDF9E\uFE0F GIF",
-		"Image" to "\uD83D\uDCF7 Photo",
-		"Location" to "\uD83D\uDCCD Location",
-		"NonExpiringVideo" to "\uD83C\uDFA5 Video",
-		"PrivateVideo" to "\uD83C\uDFA5 Video",
-		"ProfileLink" to "Profile",
-		"ProfilePhotoReply" to "\uD83D\uDCF7 Photo",
-		"RightNowRequest" to "Right Now",
-		"Unsent" to "Unsent message",
-		"Video" to "\uD83C\uDFA5 Video",
-		"VideoCall" to "\uD83D\uDCDE Video call",
+	private val TYPE_BODIES = mapOf(
+		"Album" to "Shared an album with you",
+		"AlbumContentReaction" to "Liked your album picture",
+		"AlbumContentReply" to "Replied to your album picture",
+		"Audio" to "Sent you a voice message",
+		"ExpiringAlbum" to "Shared an expiring album with you",
+		"ExpiringAlbumV2" to "Shared an expiring album with you",
+		"ExpiringImage" to "Sent you an expiring picture",
+		"Gaymoji" to "Sent you a gaymoji",
+		"Giphy" to "Sent you a gif",
+		"Image" to "Sent you a picture",
+		"Location" to "Sent you their location",
+		"NonExpiringVideo" to "Sent you a video",
+		"PrivateVideo" to "Sent you a video",
+		"ProfileLink" to "Sent you a profile",
+		"ProfilePhotoReply" to "Replied to your profile picture",
+		"RightNowRequest" to "Sent you a Right Now request",
+		"Unsent" to "Unsent a message",
+		"Video" to "Sent you a video",
+		"VideoCall" to "Video called you",
 	)
 
-	/** The label for a message type, or null for one we do not name yet. */
-	fun typeLabel(type: String?): String? {
+	/** The notification body for a message type, or null for one we do not name yet. */
+	fun typeBody(type: String?): String? {
 		val name = normalizeNullableString(type) ?: return null
-		return TYPE_LABELS[name]
+		return TYPE_BODIES[name]
 	}
 
 	// The blob-less push variant names the type only inside its localisation
@@ -210,6 +211,7 @@ object PushNotifier {
 		"GIPHY" to "Giphy",
 		"GIF" to "Giphy",
 		"LOCATION" to "Location",
+		"PROFILE_PHOTO" to "ProfilePhotoReply",
 		"PICTURE" to "Image",
 		"PHOTO" to "Image",
 		"IMAGE" to "Image",
@@ -222,7 +224,6 @@ object PushNotifier {
 		val upper = key.uppercase()
 		return BODY_KEY_TYPES.firstOrNull { upper.contains(it.first) }?.second
 	}
-
 
 	/**
 	 * Grindr pushes marketing campaigns down the same channel as chat, tagged

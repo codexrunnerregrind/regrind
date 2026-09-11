@@ -39,7 +39,7 @@ class PushMessagingService : FirebaseMessagingService() {
 		val topBody = data["body"]
 
 		var isTap = false
-		var text = "Sent you a message"
+		var text = PushNotifier.GENERIC_BODY
 		var conversationId = PushNotifier.normalizeNullableString(data["conversationId"])
 		var previewImageUrl: String? = null
 
@@ -48,13 +48,13 @@ class PushMessagingService : FirebaseMessagingService() {
 			text = "Tapped you"
 		} else if (topBody != null && topBody.startsWith("CHAT_")) {
 			// A localisation key, not text. It still names the message type, and
-			// saying "Album" beats saying "Sent you a message" about one.
-			val labelled = PushNotifier.typeFromBodyKey(topBody)
-				?.let { PushNotifier.typeLabel(it) }
-			if (labelled != null) {
-				text = labelled
+			// "Shared an album with you" beats "Sent you a message" about one.
+			val named = PushNotifier.typeFromBodyKey(topBody)
+				?.let { PushNotifier.typeBody(it) }
+			if (named != null) {
+				text = named
 			} else {
-				text = "Sent you a message"
+				text = PushNotifier.GENERIC_BODY
 				Log.d("RegrindPush", "unmapped chat body key=$topBody")
 			}
 		} else if (!topBody.isNullOrBlank()) {
@@ -77,9 +77,9 @@ class PushMessagingService : FirebaseMessagingService() {
 					val direct = body?.optString("text")?.trim().orEmpty()
 					text = direct.ifEmpty { plain.takeIf { it.isNotBlank() && it != "{}" } ?: text }
 				} else {
-					val labelled = PushNotifier.typeLabel(type)
-					if (labelled != null) {
-						text = labelled
+					val named = PushNotifier.typeBody(type)
+					if (named != null) {
+						text = named
 					} else if (!type.isNullOrBlank()) {
 						Log.d("RegrindPush", "unmapped message type=$type")
 					}
@@ -99,7 +99,7 @@ class PushMessagingService : FirebaseMessagingService() {
 
 		return JSONObject().apply {
 			put("senderName", senderName)
-			put("bodyText", text.trim().ifBlank { "Sent you a message" })
+			put("bodyText", text.trim().ifBlank { PushNotifier.GENERIC_BODY })
 			put("isTap", isTap)
 			put("conversationId", conversationId ?: JSONObject.NULL)
 			put("senderAvatarUrl", PushNotifier.senderAvatarUrl(data) ?: JSONObject.NULL)
