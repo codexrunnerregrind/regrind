@@ -107,7 +107,7 @@ async fn run_flow(
 	{
 		builder = builder
 			.activity_name("FacebookOauthActivity")
-			.created_by_activity_name("MainActivity");
+			.created_by_activity_name(main_activity_name(app)?);
 	}
 
 	#[cfg(target_os = "windows")]
@@ -145,6 +145,23 @@ async fn run_flow(
 	dismiss_window(app).await;
 
 	result.map_err(AppError::Auth)
+}
+
+/// tao matches this against `Activity.getLocalClassName()`, which is the bare
+/// `MainActivity` only while the applicationId equals the Kotlin package: a
+/// debug build's `.dev` suffix makes it fully qualified instead. Asking the
+/// window itself spells it the way tao stored it, so both builds match; a miss
+/// is silent, since the failure reaches an unset `log` and the flow just hangs.
+#[cfg(target_os = "android")]
+fn main_activity_name(app: &AppHandle) -> Result<String, AppError> {
+	use tauri::Manager;
+
+	const MAIN_WINDOW_LABEL: &str = "main";
+
+	app.get_webview_window(MAIN_WINDOW_LABEL)
+		.ok_or_else(|| AppError::Http("the main window is gone".into()))?
+		.activity_name()
+		.map_err(|e| AppError::Http(format!("no activity name: {e}")))
 }
 
 async fn dismiss_window(app: &AppHandle) {
