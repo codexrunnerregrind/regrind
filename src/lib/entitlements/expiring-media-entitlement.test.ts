@@ -19,11 +19,13 @@ vi.mock("$lib/app-data/preferences.svelte", () => ({
 	getActiveGeohashSnapshot: getActiveGeohashSnapshotMock,
 }));
 
+import { decodeGeohash } from "$lib/model/geohash";
 import {
 	awaitEntitlementSeed,
 	seedExpiringMediaEntitlement,
 	startEntitlementMaintenance,
 } from "./expiring-media-entitlement";
+import { HONDURAS_INLAND_BOXES } from "./honduras";
 
 /** A stand-in real location, distinct from the granting region. */
 const HERE = "gcpvj0duq5s0";
@@ -58,6 +60,15 @@ beforeEach(() => {
 	});
 });
 
+const insideHonduras = ({ lat, lon }: { lat: number; lon: number }) =>
+	HONDURAS_INLAND_BOXES.some(
+		(box) =>
+			lat >= box.south &&
+			lat <= box.north &&
+			lon >= box.west &&
+			lon <= box.east,
+	);
+
 describe("seedExpiringMediaEntitlement", () => {
 	it("reports the granting region, re-establishes, then moves back", async () => {
 		const order: string[] = [];
@@ -79,12 +90,11 @@ describe("seedExpiringMediaEntitlement", () => {
 
 		await seedExpiringMediaEntitlement(1);
 
-		// Granting region reported, session re-established against it, then the
-		// real location reported back.
 		expect(order).toEqual(["cascade:grant", "refresh", "cascade:here"]);
-		expect(callMethodMock).toHaveBeenCalledWith("refresh_token", {
-			geohash: expect.stringMatching(/^[0-9b-hjkmnp-z]{12}$/),
-		});
+		const [, seeded] = callMethodMock.mock.calls.find(
+			([method]) => method === "refresh_token",
+		) as [string, { geohash: string }];
+		expect(insideHonduras(decodeGeohash(seeded.geohash))).toBe(true);
 	});
 
 	it("skips the move-back when there is no location yet", async () => {

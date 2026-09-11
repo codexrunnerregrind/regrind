@@ -1,47 +1,28 @@
 import { getCascadeV4 } from "$lib/api/browse/grid";
 import { callMethod } from "$lib/api/methods";
 import { getActiveGeohashSnapshot } from "$lib/app-data/preferences.svelte";
-import { encodeGeohash } from "$lib/model/geohash";
 import { ws } from "$lib/ws.svelte";
+import { randomHondurasGeohash } from "./honduras";
 
 /**
- * Grindr gates expiring photos and message unsend by region, and refuses them
- * elsewhere. The server tracks the account's location from the grid it asks for,
- * and settles the session's feature set — these two among it — when the session
- * is established, holding it until the session is established again.
+ * Grindr gates expiring photos and message unsend by region. The server takes
+ * the account's location from the grid it asks for and settles the session's
+ * feature set when the session is established, so asking for a granting
+ * region's grid, refreshing against it, then reporting the real location back
+ * is the automated equal of picking the spot, relaunching, and moving back.
  *
- * This spot's region grants both. Asking for its grid records it as our
- * location, a refresh re-establishes the session against it, then the real
- * location is reported back — the automated equal of picking the spot,
- * relaunching, and moving back. Reporting it back matters beyond the grid: the
- * server would otherwise place us in the granting region for tap distances too,
- * until something next cascaded.
- *
- * The catch is the "until established again": the session's own token expires,
- * and the plain refresh that renews it reports the real location and re-locks
- * the two. So {@link startEntitlementMaintenance} keeps renewing the token
- * ahead of that, seeded from here, so the plain refresh never gets to.
- *
- * Coordinates 14.6531715, -87.2532523.
+ * The grant lives on the token, so {@link startEntitlementMaintenance} renews
+ * it ahead of expiry — a plain refresh would report the real location and
+ * re-lock both.
  */
-const ENTITLEMENT_GEOHASH = encodeGeohash({
-	lat: 14.6531715,
-	lon: -87.2532523,
-});
 
-/** Renew this far ahead of the token's expiry, clear of the backend's own 60s
- * refresh buffer, so the seeded renewal always precedes the plain one. */
+/** Clear of the backend's own 60s refresh buffer, so ours goes first. */
 const EXPIRY_LEAD_MS = 120_000;
-/** When the token carries no expiry to schedule against. */
 const DEFAULT_INTERVAL_MS = 20 * 60_000;
-/** Floor on the gap between seeds — long enough that the reconnect our own
- * refresh may cause can't loop back into another seed. */
+/** Long enough that the reconnect our refresh causes cannot loop back here. */
 const MIN_INTERVAL_MS = 60_000;
 
-/** When each account was last seeded, for the cooldown above. */
 const lastSeedAt = new Map<number, number>();
-
-/** The seed in flight for each account, so the grid can wait on it. */
 const inFlight = new Map<number, Promise<void>>();
 
 function seed(profileId: number): Promise<void> {
@@ -49,15 +30,13 @@ function seed(profileId: number): Promise<void> {
 	if (existing) return existing;
 	const run = (async () => {
 		try {
-			// Report the granting region the way picking that location does.
-			await getCascadeV4({ nearbyGeoHash: ENTITLEMENT_GEOHASH });
-			// Re-establish the session against it, the equal of relaunching
-			// there, which settles the session's feature set and grants the two.
-			await callMethod("refresh_token", { geohash: ENTITLEMENT_GEOHASH });
+			// A fresh point each time, so every install does not report one.
+			const granting = randomHondurasGeohash();
+			await getCascadeV4({ nearbyGeoHash: granting });
+			await callMethod("refresh_token", { geohash: granting });
 			lastSeedAt.set(profileId, Date.now());
-			// Report the real location back — the "move back" step — so the
-			// server stops placing us in the granting region for everything else
-			// (tap and grid distances), while the grant, now on the token, holds.
+			// Move back, or the server keeps placing us there for tap and grid
+			// distances; the grant is on the token by now.
 			const here = getActiveGeohashSnapshot();
 			if (here !== null) await getCascadeV4({ nearbyGeoHash: here });
 		} catch (error) {
@@ -79,15 +58,9 @@ function seededRecently(profileId: number): boolean {
 }
 
 /**
- * Seeds the entitlements for `profileId` on establishment. Started (not awaited)
- * from the protected layout's load, so a switch lands on the new account at once
- * instead of hanging on this; {@link awaitEntitlementSeed} then holds the grid's
- * first request until it is done, moving the wait into the grid's own loading
- * state.
- *
- * Order matters: the granting region has to be the last one reported before the
- * session re-establishes, so the grid must not fetch its real-location grid in
- * between — which is what the gate guarantees. Best-effort and never throws.
+ * Started but not awaited from the protected layout's load, so switching
+ * account does not hang on it; {@link awaitEntitlementSeed} holds the grid
+ * instead, which must not report the real location mid-seed. Never throws.
  */
 export function seedExpiringMediaEntitlement(profileId: number): Promise<void> {
 	if (seededRecently(profileId)) {
@@ -96,11 +69,7 @@ export function seedExpiringMediaEntitlement(profileId: number): Promise<void> {
 	return seed(profileId);
 }
 
-/**
- * Resolves once any in-flight seed has finished, so the grid's cascade never
- * reports the real location before the seed's refresh has settled. Instant once
- * nothing is seeding, and never rejects.
- */
+/** Instant when nothing is seeding, and never rejects. */
 export function awaitEntitlementSeed(): Promise<void> {
 	return Promise.all(inFlight.values()).then(() => undefined);
 }
@@ -117,13 +86,8 @@ async function msUntilNextSeed(): Promise<number> {
 }
 
 /**
- * Keeps the grant alive for `profileId` while it is the active account.
- *
- * A seeded renewal lands before the token's own expiry, so the plain refresh
- * that would re-lock the features never runs; a reconnect (resume, network) that
- * skipped ahead of the timer re-asserts it too, guarded by the seed cooldown so
- * the renewal's own reconnect can't loop. Started per active account from the
- * protected layout; returns a stop function.
+ * Renews ahead of the token's expiry so the plain refresh never runs, and
+ * re-asserts after a reconnect that outran the timer. Returns a stop function.
  */
 export function startEntitlementMaintenance(profileId: number): () => void {
 	let stopped = false;
@@ -139,11 +103,10 @@ export function startEntitlementMaintenance(profileId: number): () => void {
 		timer = setTimeout(() => void cycle(true), delay);
 	};
 
-	// The layout's load already seeded on establishment; just schedule ahead.
+	// The layout's load already seeded; just schedule ahead.
 	void cycle(false);
 
-	// A reconnect the establishing seed itself provokes must not re-seed; the
-	// cooldown covers it, and the first connect is skipped outright.
+	// The establishing seed provokes the first connect — skip it.
 	let firstConnect = true;
 	const unlisten = ws.onConnected(() => {
 		if (firstConnect) {
