@@ -29,16 +29,23 @@
 
 				<ProfileLink id={data.ourProfileId} />
 
+				<!-- Albums sit with the profile card rather than under
+				     Preferences: they're the user's own content, not a setting. -->
+				<div class="mt-5">
+					<SettingsGroup>
+						<SettingsRow title="My Albums" href="/albums">
+							{#snippet icon()}
+								<ImagesSquareIcon weight="fill" />
+							{/snippet}
+						</SettingsRow>
+					</SettingsGroup>
+				</div>
+
 				<SectionHeader>Preferences</SectionHeader>
 				<SettingsGroup>
 					<SettingsRow title="Edit Profile" href="/settings/profile">
 						{#snippet icon()}
 							<IdentificationCardIcon weight="fill" />
-						{/snippet}
-					</SettingsRow>
-					<SettingsRow title="My Albums" href="/albums">
-						{#snippet icon()}
-							<ImagesSquareIcon weight="fill" />
 						{/snippet}
 					</SettingsRow>
 					<SettingsRow
