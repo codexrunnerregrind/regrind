@@ -1,5 +1,6 @@
 <script lang="ts">
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
+	import ScrollToTopButton from "$lib/components/shared/ScrollToTopButton.svelte";
 	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
 	import MyPostButton from "./MyPostButton.svelte";
 	import RightNowFeed from "./RightNowFeed.svelte";
@@ -51,4 +52,5 @@
 			onrefresh={() => void rightNowState.reload()}
 		/>
 	{/if}
+	<ScrollToTopButton container={feedContainer} class="bottom-nav-clear" />
 </main>

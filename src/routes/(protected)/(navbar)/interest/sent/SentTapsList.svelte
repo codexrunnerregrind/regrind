@@ -4,6 +4,7 @@
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import ListRowSkeleton from "$lib/components/feedback/ListRowSkeleton.svelte";
+	import ScrollToTopButton from "$lib/components/shared/ScrollToTopButton.svelte";
 	import { getSentTapsState } from "$lib/interest/sent-taps-state.svelte";
 	import { armProfileDeck } from "$lib/profile/profile-deck";
 	import { observeIntersection } from "$lib/util/observe-intersection";
@@ -86,4 +87,5 @@
 			onrefresh={() => void taps.refresh()}
 		/>
 	{/if}
+	<ScrollToTopButton {container} class="bottom-nav-clear" />
 </div>
