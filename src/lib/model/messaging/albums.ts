@@ -113,6 +113,31 @@ export const sharedAlbumSchema = z.object({
 
 export type SharedAlbum = z.infer<typeof sharedAlbumSchema>;
 
+/**
+ * What the account is allowed to keep in an album. The API answers a full album
+ * with a bare `400 unknown error`, so the cap is read before an upload rather
+ * than guessed at from the refusal.
+ *
+ * `nullish` — the spec marks it required, and a field the API drops is one
+ * limit not to enforce rather than a broken response. The body carries the clip
+ * limits too; nothing reads them while adding a clip is off.
+ */
+export const albumStorageLimitsSchema = z.object({
+	maxContentItemsPerAlbum: z.int().nullish(),
+});
+
+export type AlbumStorageLimits = z.infer<typeof albumStorageLimitsSchema>;
+
+/**
+ * The still frame the API makes for a clip. Its own endpoint because the
+ * `thumbUrl` an album read carries for a clip is a URL that 404s until the
+ * transcode has produced one.
+ */
+export const albumPosterSchema = z.object({
+	posterUrl: mediaUrlSchema.nullish(),
+	blurredPosterUrl: mediaUrlSchema.nullish(),
+});
+
 export const albumSharesSchema = z.object({
 	// Tolerated as absent: the spec marks nothing on this body as required.
 	profileIds: z.array(z.int()).nullish(),

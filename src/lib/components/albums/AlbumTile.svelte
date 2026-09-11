@@ -1,5 +1,5 @@
 <script lang="ts">
-	import ImageBrokenIcon from "phosphor-svelte/lib/ImageBrokenIcon";
+	import ImageIcon from "phosphor-svelte/lib/ImageIcon";
 
 	import LockIcon from "$lib/components/shared/LockIcon.svelte";
 	import { hapticImpact } from "$lib/platform/haptics";
@@ -67,9 +67,12 @@
 		/>
 	{:else}
 		<div
-			class="flex size-full items-center justify-center rounded-[inherit] bg-card-foreground/20"
+			class="flex size-full items-center justify-center rounded-[inherit] bg-media-placeholder"
 		>
-			<ImageBrokenIcon
+			<!-- The same glyph the album screen shows for a cover it cannot
+			     draw: a broken-image icon read as a failure, and an album whose
+			     cover is still being processed has not failed at anything. -->
+			<ImageIcon
 				weight="fill"
 				class="size-8"
 				color="var(--media-placeholder-foreground)"

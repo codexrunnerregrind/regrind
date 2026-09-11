@@ -75,6 +75,22 @@
 	}
 
 	void load();
+
+	/**
+	 * The album's cover, or nothing while the API is still transcoding one of
+	 * its items — a processing item's urls all 404.
+	 *
+	 * Any processing item hides the cover, not just the first one: `GET
+	 * /v1/albums` hands back an album's content in a different order from `GET
+	 * /v2/albums/{albumId}`, so this list's idea of "first" is not the album
+	 * screen's, and picking by index would show a photo here and a placeholder
+	 * there for the same album.
+	 */
+	function albumCoverUrl(album: MyAlbum): string | null {
+		if (album.content.some((item) => item.processing === true)) return null;
+		const first = album.content[0];
+		return first === undefined ? null : first.thumbUrl || first.coverUrl;
+	}
 </script>
 
 {#snippet newAlbumTile()}
@@ -117,8 +133,7 @@
 			{@render newAlbumTile()}
 			{#each albums as album (album.albumId)}
 				<AlbumTile
-					coverUrl={album.content[0]?.thumbUrl ||
-						album.content[0]?.coverUrl}
+					coverUrl={albumCoverUrl(album)}
 					title={album.albumName || "Untitled album"}
 					badge={album.sharedCount > 0 ? "Shared" : undefined}
 					onclick={() => void goto(`/albums/${album.albumId}`)}

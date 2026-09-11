@@ -36,8 +36,8 @@ import { myAlbum } from "./my-albums";
 // Thrown when an album has no viewable content — typically a locked or expired
 // shared album. Callers can catch this to show a friendlier message.
 export class AlbumLockedError extends Error {
-	constructor() {
-		super("This album is locked or has expired.");
+	constructor(message = "This album is locked or has expired.") {
+		super(message);
 		this.name = "AlbumLockedError";
 	}
 }
@@ -316,7 +316,7 @@ export async function resolveAlbumForViewing({
 // to it and react to it. Our own albums get the same header and progress, just
 // without a bar — there is nobody to reply to.
 export async function openAlbumLightbox(
-	album: LoadedAlbum,
+	input: LoadedAlbum,
 	options: {
 		startIndex?: number;
 		onClosed?: () => void;
@@ -330,12 +330,34 @@ export async function openAlbumLightbox(
 		fromPaywall?: boolean;
 	} = {},
 ): Promise<() => void> {
-	const { startIndex = 0, onClosed, sharer, fromPaywall = false } = options;
+	const {
+		startIndex: requestedIndex = 0,
+		onClosed,
+		sharer,
+		fromPaywall = false,
+	} = options;
+	// An item the API is still transcoding has no media to show — every url it
+	// carries 404s — so it is left out of the slides rather than opened as one
+	// that cannot load. Filtered here, so it holds for every way in: the album
+	// page, a chat bubble, the album grids.
+	const ready = input.content.filter((item) => item.processing !== true);
 	// Locked/expired albums come back with no viewable content. PhotoSwipe would
 	// crash trying to lay out zero slides, so surface a clear error instead.
-	if (album.content.length === 0) {
-		throw new AlbumLockedError();
+	if (ready.length === 0) {
+		throw new AlbumLockedError(
+			input.content.length > 0
+				? "Still processing — it will play once it is ready."
+				: undefined,
+		);
 	}
+	// The caller counted from the whole album, so the slide it asked for is
+	// found again in what is left rather than trusted as a position.
+	const asked = input.content[requestedIndex];
+	const startIndex = Math.max(
+		asked === undefined ? 0 : ready.indexOf(asked),
+		0,
+	);
+	const album: LoadedAlbum = { ...input, content: ready };
 	// Measuring the opening slide and fetching PhotoSwipe are both waits before
 	// anything can appear, so they run together. The core module is its own chunk
 	// that PhotoSwipe would otherwise only start fetching from `init`, by which

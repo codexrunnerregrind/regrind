@@ -8,8 +8,10 @@ import {
 	albumDetailsSchema,
 	type AlbumExpirationType,
 	albumMinSchema,
+	albumPosterSchema,
 	type AlbumShareRequest,
 	albumSharesSchema,
+	albumStorageLimitsSchema,
 	myAlbumsResponseSchema,
 	pressieAlbumsFeedResponseSchema,
 	pressieAlbumsPaywallResponseSchema,
@@ -139,6 +141,33 @@ export async function uploadAlbumContent({
 		data: toBase64(bytes),
 	});
 	return albumContentUploadSchema.parse(response);
+}
+
+/**
+ * The still frame the API made for a clip. An album read hands back a
+ * `thumbUrl` for a clip too, but that one 404s until the transcode is done,
+ * so a clip's tile is drawn from this instead.
+ */
+export async function getAlbumMediaPoster({
+	albumId,
+	contentId,
+}: {
+	albumId: number;
+	contentId: number;
+}) {
+	return await fetchRest(
+		`/v1/albums/${albumId}/content/${contentId}/poster`,
+	).then((res) => res.jsonParsed(albumPosterSchema));
+}
+
+/**
+ * The account's album limits. Read before a clip goes up: the upload endpoint
+ * answers a clip that breaks one of them with a bare `400 unknown error`.
+ */
+export async function getAlbumStorageLimits() {
+	return await fetchRest("/v1/albums/storage").then((res) =>
+		res.jsonParsed(albumStorageLimitsSchema),
+	);
 }
 
 /** The profiles an album is currently shared with. */

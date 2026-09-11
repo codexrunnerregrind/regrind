@@ -5,7 +5,6 @@
 		DownloadSimpleIcon,
 		ImageIcon,
 		PencilSimpleIcon,
-		PlusIcon,
 		TrashIcon,
 		UsersIcon,
 	} from "phosphor-svelte";
@@ -19,7 +18,6 @@
 		getAlbumContent,
 		renameAlbum,
 		reorderAlbumContent,
-		uploadAlbumContent,
 	} from "$lib/api/messaging/albums";
 	import { getAlbumGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
 	import {
@@ -27,10 +25,7 @@
 		openAlbumLightbox,
 		resolveAlbumForViewing,
 	} from "$lib/chat/album-viewer";
-	import { downloadAllMedia } from "$lib/chat/lightbox-download";
-	import { clearMyAlbumsCache } from "$lib/chat/my-albums";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import { PhotoEditQueue } from "$lib/components/media/photo-edit-queue.svelte";
 	import PhotoEditorDrawer from "$lib/components/media/PhotoEditorDrawer.svelte";
 	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
 	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
@@ -41,8 +36,9 @@
 		albumNameByteLength,
 	} from "$lib/model/messaging/albums";
 	import { hapticImpact } from "$lib/platform/haptics";
-	import { pickMultipleMedia } from "$lib/platform/media-picker";
-	import { dragReorder } from "$lib/util/drag-reorder";
+	import { AlbumMediaAdder } from "./album-add-media.svelte";
+	import { saveAlbumMedia } from "./album-save-all";
+	import AlbumContentGrid from "./AlbumContentGrid.svelte";
 	import AlbumDeleteDialog from "./AlbumDeleteDialog.svelte";
 	import AlbumRenameDialog from "./AlbumRenameDialog.svelte";
 	import AlbumShares from "./AlbumShares.svelte";
@@ -56,11 +52,21 @@
 	let busy = $state(false);
 	let opening = $state(false);
 
+	/** The API is still transcoding this item, so nothing it points at works. */
+	function isProcessing(item: AlbumContentResponse["content"][number]) {
+		return item.processing === true;
+	}
+
 	const isMine = $derived(
 		album !== null && album.profileId === data.ourProfileId,
 	);
+	const first = $derived(album?.content[0] ?? null);
+	// A processing item has no usable URL yet, so the summary shows the album's
+	// placeholder rather than a broken image.
 	const cover = $derived(
-		album?.content[0]?.coverUrl ?? album?.content[0]?.thumbUrl ?? null,
+		first === null || isProcessing(first)
+			? null
+			: (first.coverUrl ?? first.thumbUrl),
 	);
 	const updatedMs = $derived(
 		album === null ? null : new Date(album.updatedAt).getTime(),
@@ -74,13 +80,22 @@
 
 	let deleteAlbumOpen = $state(false);
 
-	let adding = $state(false);
-	const edits = new PhotoEditQueue();
 	let savingAll = $state(false);
+
+	const media = new AlbumMediaAdder({
+		id: () => albumId,
+		content: () => album?.content ?? [],
+		setContent: (content) => {
+			if (album !== null) album.content = content;
+		},
+		busy: () => busy,
+		reload: () => refresh(albumId),
+	});
 
 	async function load(id: number) {
 		album = null;
 		error = null;
+		polls = 0;
 		if (!Number.isFinite(id)) {
 			error = new Error("Invalid album");
 			return;
@@ -93,8 +108,37 @@
 		}
 	}
 
+	/** A re-read that leaves the screen up, for a poll or an add. */
+	async function refresh(id: number) {
+		try {
+			album = await getAlbumContent(id);
+		} catch (err) {
+			console.error(err);
+		}
+	}
+
 	$effect(() => {
 		void load(albumId);
+	});
+
+	// Bounded because an item can sit in `processing` indefinitely — a clip the
+	// API never finishes with stays that way — and polling for it forever costs
+	// the battery for nothing. Reopening the album starts the count again.
+	const PROCESSING_POLLS = 10;
+	let polls = $state(0);
+
+	// A clip is transcoded on Grindr's side after the upload, and until that is
+	// done the API serves no poster, no playable media, and refuses to delete or
+	// reorder it. The album read says which items are in that state, so it is
+	// re-read until none are.
+	$effect(() => {
+		if (album === null || !album.content.some(isProcessing)) return;
+		if (polls >= PROCESSING_POLLS) return;
+		const timer = setTimeout(() => {
+			polls += 1;
+			void refresh(albumId).then(() => media.settleOrder(albumId));
+		}, 6000);
+		return () => clearTimeout(timer);
 	});
 
 	function openRename() {
@@ -136,6 +180,11 @@
 
 	async function view(index: number) {
 		if (opening) return;
+		const item = album?.content[index];
+		if (item !== undefined && isProcessing(item)) {
+			toast.info("Still processing — it will play once it is ready.");
+			return;
+		}
 		opening = true;
 		hapticImpact("light");
 		try {
@@ -176,14 +225,8 @@
 	async function saveAll() {
 		if (album === null || savingAll || album.content.length === 0) return;
 		savingAll = true;
-		hapticImpact("light");
 		try {
-			await downloadAllMedia(
-				album.content.map((item) => ({
-					url: item.url,
-					mimeType: item.contentType,
-				})),
-			);
+			await saveAlbumMedia(album.content);
 		} finally {
 			savingAll = false;
 		}
@@ -192,14 +235,25 @@
 	async function removeContent(contentId: number) {
 		if (album === null || busy) return;
 		const previous = album.content;
+		const item = previous.find((one) => one.contentId === contentId);
 		busy = true;
-		album.content = previous.filter((item) => item.contentId !== contentId);
+		album.content = previous.filter((one) => one.contentId !== contentId);
 		try {
 			await deleteAlbumContent({ albumId, contentId });
 		} catch (err) {
 			console.error(err);
 			if (album !== null) album.content = previous;
-			showErrorToast({ label: "Failed to delete media", error: err });
+			// The API has refused to delete an item it was still transcoding,
+			// with the same bare 400 it refuses everything else with. It is
+			// asked anyway — a guess about why is not worth losing the only way
+			// to be rid of an item — but the refusal is worth explaining.
+			showErrorToast({
+				label:
+					item !== undefined && isProcessing(item)
+						? "Couldn't delete it — still processing on Grindr's side."
+						: "Failed to delete media",
+				error: err,
+			});
 		} finally {
 			busy = false;
 		}
@@ -226,45 +280,17 @@
 		} catch (err) {
 			console.error(err);
 			if (album !== null) album.content = previous;
-			showErrorToast({ label: "Failed to reorder media", error: err });
+			// Ordering is refused outright while any item is being transcoded,
+			// so the item being moved is not necessarily the one at fault.
+			showErrorToast({
+				label: previous.some(isProcessing)
+					? "Couldn't reorder — an item is still processing on Grindr's side."
+					: "Failed to reorder media",
+				error: err,
+			});
 		} finally {
 			busy = false;
 		}
-	}
-
-	async function addPhotos() {
-		if (album === null || adding || busy || edits.current !== null) return;
-		const picked = await pickMultipleMedia("image");
-		if (picked.length === 0) return;
-
-		let added = 0;
-		try {
-			// Each photo is framed before it goes up, and the one after it only
-			// opens once this one has landed.
-			for await (const photo of edits.edit(picked)) {
-				adding = true;
-				// One request per photo — the endpoint takes a single part, and
-				// uploading in turn keeps the album's order the order they were
-				// picked in.
-				await uploadAlbumContent({ albumId, ...photo });
-				added += 1;
-				adding = false;
-			}
-		} catch (err) {
-			console.error(err);
-			showErrorToast({ label: "Failed to add photos", error: err });
-		} finally {
-			adding = false;
-		}
-
-		if (added === 0) return;
-		// The upload answers with the new content id alone, not with the
-		// thumbnail the grid draws, so the album is re-read rather than patched.
-		// The bubbles that shared it read their cover from our own album list,
-		// which is now a photo behind.
-		clearMyAlbumsCache();
-		await load(albumId);
-		toast.success(added === 1 ? "Photo added" : `${added} photos added`);
 	}
 
 	function scrollToShares() {
@@ -421,102 +447,18 @@
 						</div>
 					</div>
 
-					<!-- Content grid -->
-					<div class="flex flex-col gap-2.5">
-						<div class="flex items-center justify-between gap-2">
-							<span class="section-label">Photos</span>
-							{#if isMine}
-								<div class="flex items-center gap-3">
-									{#if album.content.length > 1}
-										<span class="text-2xs text-ink3"
-											>Hold a photo to reorder</span
-										>
-									{/if}
-									<Button
-										variant="secondary"
-										size="sm"
-										class="w-fit gap-2 rounded-full"
-										disabled={adding || busy}
-										onclick={() => void addPhotos()}
-									>
-										<PlusIcon
-											weight="bold"
-											class="size-4"
-										/>
-										{adding ? "Adding…" : "Add photos"}
-									</Button>
-								</div>
-							{/if}
-						</div>
-						{#if album.content.length > 0}
-							<div
-								class="object-grid reorder-grid"
-								data-grid-columns={getAlbumGridColumnsSnapshot()}
-								use:dragReorder={{
-									enabled: isMine && !busy,
-									onReorder: (from, to) =>
-										void moveContent(from, to),
-								}}
-							>
-								{#each album.content as item, index (item.contentId)}
-									<div
-										class="relative aspect-album-photo"
-										data-reorder-item
-									>
-										<button
-											type="button"
-											class="size-full overflow-hidden rounded-lg"
-											aria-label="View media"
-											disabled={opening}
-											onclick={() => void view(index)}
-										>
-											<img
-												src={item.thumbUrl}
-												alt=""
-												class="size-full bg-media-placeholder object-cover"
-												draggable="false"
-											/>
-										</button>
-										{#if isMine}
-											<button
-												type="button"
-												class="absolute top-1.5 right-1.5 flex size-6.5 items-center justify-center rounded-full bg-plate-strong text-plate-foreground disabled:opacity-50"
-												aria-label="Delete media"
-												disabled={busy}
-												onclick={() =>
-													void removeContent(
-														item.contentId,
-													)}
-											>
-												<TrashIcon class="size-3.5" />
-											</button>
-											<!-- The first photo is the album's cover everywhere else,
-											     so the grid says which one that is. Fill only, no
-											     backdrop blur — see AlbumTile.svelte. -->
-											{#if index === 0}
-												<span
-													class="pointer-events-none absolute bottom-1.5 left-1.5 rounded-plate bg-plate-strong px-1.75 py-0.75 text-3xs font-semibold text-plate-foreground"
-												>
-													Cover
-												</span>
-											{/if}
-										{/if}
-									</div>
-								{/each}
-							</div>
-						{:else}
-							<button
-								type="button"
-								class="w-full rounded-xl border border-dashed border-border py-10 text-center text-sm text-muted-foreground disabled:opacity-50"
-								disabled={!isMine || adding || busy}
-								onclick={() => void addPhotos()}
-							>
-								{isMine
-									? "No photos yet — add some"
-									: "No media yet"}
-							</button>
-						{/if}
-					</div>
+					<AlbumContentGrid
+						{albumId}
+						content={album.content}
+						{isMine}
+						{busy}
+						adding={media.adding}
+						{opening}
+						onView={(index) => void view(index)}
+						onRemove={(contentId) => void removeContent(contentId)}
+						onReorder={(from, to) => void moveContent(from, to)}
+						onAdd={() => void media.add()}
+					/>
 
 					{#if isMine}
 						<div id="album-shares" class="scroll-mt-20">
@@ -558,8 +500,8 @@
 />
 
 <PhotoEditorDrawer
-	queue={edits}
+	queue={media.edits}
 	title="Add to album"
 	confirmLabel="Add to album"
-	busy={adding}
+	busy={media.adding}
 />

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import FolderOpenIcon from "phosphor-svelte/lib/FolderOpenIcon";
+	import ImageIcon from "phosphor-svelte/lib/ImageIcon";
 	import ImagesIcon from "phosphor-svelte/lib/ImagesIcon";
 	import LockSimpleIcon from "phosphor-svelte/lib/LockSimpleIcon";
 	import VideoIcon from "phosphor-svelte/lib/VideoIcon";
@@ -273,12 +274,30 @@
 					disabled={!album.isShareable}
 					onclick={() => toggleSelected(album.albumId)}
 				>
-					<MediaImage
-						src={proxyMediaUrl(album.content[0]?.thumbUrl)}
-						loading="lazy"
-						class="absolute inset-0 size-full rounded-[inherit]"
-						imgClass="bg-card-foreground/10"
-					/>
+					{#if album.content.some((item) => item.processing === true)}
+						<!-- Nothing to draw: an item the API is still
+						     transcoding 404s at every url it carries, and a
+						     broken glyph would read as a failure. Any
+						     processing item hides the cover — see
+						     MyAlbumsGrid.svelte — so this plate is the one the
+						     album screen shows for the same album. -->
+						<div
+							class="absolute inset-0 flex size-full items-center justify-center rounded-[inherit] bg-media-placeholder"
+						>
+							<ImageIcon
+								weight="fill"
+								class="size-8"
+								color="var(--media-placeholder-foreground)"
+							/>
+						</div>
+					{:else}
+						<MediaImage
+							src={proxyMediaUrl(album.content[0]?.thumbUrl)}
+							loading="lazy"
+							class="absolute inset-0 size-full rounded-[inherit]"
+							imgClass="bg-card-foreground/10"
+						/>
+					{/if}
 					<div class="z-1 flex w-full items-center p-1.5">
 						<Badge
 							variant="outline"
