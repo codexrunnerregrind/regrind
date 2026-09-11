@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { DropIcon } from "phosphor-svelte";
-
 	import { showErrorToast } from "$lib/api/error-toast";
 	import {
 		getPreferencesSnapshot,
@@ -19,7 +17,6 @@
 		backdropBlurTrialPending,
 		settledBackdropBlurQuality,
 	} from "$lib/blur/quality.svelte";
-	import IconTile from "$lib/components/settings/IconTile.svelte";
 	import { Slider } from "$lib/components/ui/slider";
 
 	const supported = $derived(backdropBlurRenderable());
@@ -53,19 +50,9 @@
 </script>
 
 <div class="flex flex-col gap-3 p-4">
-	<div class="flex items-center gap-3.5">
-		<IconTile>
-			<DropIcon weight="fill" />
-		</IconTile>
-		<div class="flex min-w-0 flex-1 flex-col gap-0.5">
-			<span class="truncate font-heading text-body font-medium">
-				Background blur
-			</span>
-			<span class="text-caption leading-snug text-muted-foreground">
-				{BACKDROP_BLUR_QUALITY_DESCRIPTIONS[quality]}
-			</span>
-		</div>
-	</div>
+	<span class="text-caption leading-snug text-muted-foreground">
+		{BACKDROP_BLUR_QUALITY_DESCRIPTIONS[quality]}
+	</span>
 	<Slider
 		type="single"
 		class="w-full"

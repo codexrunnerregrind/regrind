@@ -40,6 +40,7 @@
 	import SettingsSegmented from "$lib/components/settings/SettingsSegmented.svelte";
 	import SettingsSwitchRow from "$lib/components/settings/SettingsSwitchRow.svelte";
 	import { hapticSelection } from "$lib/platform/haptics";
+	import BackdropBlurSetting from "./BackdropBlurSetting.svelte";
 	import GridColumnsSetting from "./GridColumnsSetting.svelte";
 
 	let mode = $state<ThemeMode>(getThemeModeSnapshot());
@@ -263,6 +264,15 @@
 <SectionFooter>
 	The tabs sit in a rounded bar that lifts off the bottom of the screen,
 	instead of one that spans it.
+</SectionFooter>
+
+<SectionHeader>Background blur</SectionHeader>
+<SettingsGroup divider="none">
+	<BackdropBlurSetting />
+</SettingsGroup>
+<SectionFooter>
+	How much the bars, menus and sheets blur what is behind them. Less blur
+	costs less to draw, which helps on older devices.
 </SectionFooter>
 
 <SectionHeader>Grid</SectionHeader>

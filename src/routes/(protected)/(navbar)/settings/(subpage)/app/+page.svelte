@@ -10,7 +10,6 @@
 	import { updatesSelfManaged } from "$lib/updates/capability.svelte";
 	import AppsMenuEntrySetting from "./AppsMenuEntrySetting.svelte";
 	import AutomaticUpdatesSetting from "./AutomaticUpdatesSetting.svelte";
-	import BackdropBlurSetting from "./BackdropBlurSetting.svelte";
 	import NotificationSettings from "./NotificationSettings.svelte";
 	import RevealMessageReadSetting from "./RevealMessageReadSetting.svelte";
 	import RevealProfileViewSetting from "./RevealProfileViewSetting.svelte";
@@ -27,7 +26,6 @@
 <SectionHeader>Display</SectionHeader>
 <SettingsGroup divider="full">
 	<UnitsSetting />
-	<BackdropBlurSetting />
 	{#if desktopEntryAvailable()}
 		<AppsMenuEntrySetting />
 	{/if}
