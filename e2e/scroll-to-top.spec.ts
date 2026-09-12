@@ -8,6 +8,7 @@ const PROFILE_LINK = 'a[href^="/profile/"]';
 const CONVERSATIONS_SCROLLER = '[data-slot="conversations-scroller"]';
 const GAP_ABOVE_NAVBAR_PX = 12;
 const TOP_SLOP_PX = 16;
+const NUDGE_UP_PX = 200;
 
 type Surface = {
 	name: string;
@@ -71,6 +72,15 @@ async function scrollToEnd(page: Page, selector: string) {
 	return scroller;
 }
 
+async function revealButton(page: Page, selector: string) {
+	const scroller = await scrollToEnd(page, selector);
+	await scroller.evaluate((el) => {
+		el.scrollTop -= NUDGE_UP_PX;
+	});
+	await expect(page.locator(BUTTON)).toBeVisible();
+	return scroller;
+}
+
 function geometry(page: Page, scroller: string) {
 	return page.evaluate(
 		({ button, pill, scroller }) => {
@@ -102,8 +112,7 @@ for (const surface of SURFACES) {
 		await open(page, surface);
 		await expect(page.locator(BUTTON)).toHaveCount(0);
 
-		const scroller = await scrollToEnd(page, surface.scroller);
-		await expect(page.locator(BUTTON)).toBeVisible();
+		const scroller = await revealButton(page, surface.scroller);
 		await flownIn(page, BUTTON);
 
 		const { gapAboveNavBar, offCenter } = await geometry(
@@ -134,8 +143,7 @@ test.describe("side by side with a conversation", () => {
 			.first()
 			.waitFor({ timeout: 60_000 });
 
-		await scrollToEnd(page, CONVERSATIONS_SCROLLER);
-		await expect(page.locator(BUTTON)).toBeVisible();
+		await revealButton(page, CONVERSATIONS_SCROLLER);
 		await flownIn(page, BUTTON);
 
 		const { gapAboveNavBar, offCenter, listWidth } = await geometry(
@@ -159,5 +167,29 @@ test("a list that fits on screen never offers the button", async ({ page }) => {
 		.locator('[data-slot="settings-scroller"]')
 		.evaluate((el) => el.scrollHeight - el.clientHeight);
 	expect(overflow).toBeLessThanOrEqual(TOP_SLOP_PX);
+	await expect(page.locator(BUTTON)).toHaveCount(0);
+});
+
+test("the button only rides along while the list is scrolling up", async ({
+	page,
+}) => {
+	await installTauriShim(page);
+	await page.goto("/chat");
+	await page
+		.locator("a[href^='/chat/']")
+		.first()
+		.waitFor({ timeout: 60_000 });
+
+	const scroller = await scrollToEnd(page, CONVERSATIONS_SCROLLER);
+	await expect(page.locator(BUTTON)).toHaveCount(0);
+
+	await scroller.evaluate((el, px) => {
+		el.scrollTop -= px;
+	}, NUDGE_UP_PX);
+	await expect(page.locator(BUTTON)).toBeVisible();
+
+	await scroller.evaluate((el, px) => {
+		el.scrollTop += px;
+	}, NUDGE_UP_PX);
 	await expect(page.locator(BUTTON)).toHaveCount(0);
 });

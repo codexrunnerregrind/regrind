@@ -13,9 +13,11 @@
 	} = $props();
 
 	const TOP_SLOP_PX = 16;
+	const DIRECTION_SLOP_PX = 4;
 	const GLIDE_TIMEOUT_MS = 1500;
 
-	let atTop = $state(true);
+	let visible = $state(false);
+	let lastTop = 0;
 	let gliding = false;
 	let glideTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -24,9 +26,8 @@
 		clearTimeout(glideTimer);
 	}
 
-	function settle() {
-		releaseGlide();
-		atTop = (container?.scrollTop ?? 0) <= TOP_SLOP_PX;
+	function atTop(el: HTMLElement) {
+		return el.scrollTop <= TOP_SLOP_PX;
 	}
 
 	$effect(() => {
@@ -34,17 +35,41 @@
 		if (!el) return;
 
 		const onScroll = () => {
-			if (!gliding || el.scrollTop <= 1) settle();
+			const top = el.scrollTop;
+			const delta = top - lastTop;
+
+			if (gliding) {
+				if (top <= 1) {
+					releaseGlide();
+					visible = false;
+					lastTop = top;
+				}
+				return;
+			}
+
+			if (atTop(el)) visible = false;
+			else if (delta <= -DIRECTION_SLOP_PX) visible = true;
+			else if (delta >= DIRECTION_SLOP_PX) visible = false;
+			else return;
+
+			lastTop = top;
 		};
 
-		settle();
+		const onScrollEnd = () => {
+			releaseGlide();
+			if (atTop(el)) visible = false;
+			lastTop = el.scrollTop;
+		};
+
+		lastTop = el.scrollTop;
+		if (atTop(el)) visible = false;
 		el.addEventListener("scroll", onScroll, { passive: true });
-		el.addEventListener("scrollend", settle, { passive: true });
+		el.addEventListener("scrollend", onScrollEnd, { passive: true });
 		el.addEventListener("wheel", releaseGlide, { passive: true });
 		el.addEventListener("touchstart", releaseGlide, { passive: true });
 		return () => {
 			el.removeEventListener("scroll", onScroll);
-			el.removeEventListener("scrollend", settle);
+			el.removeEventListener("scrollend", onScrollEnd);
 			el.removeEventListener("wheel", releaseGlide);
 			el.removeEventListener("touchstart", releaseGlide);
 			releaseGlide();
@@ -54,16 +79,20 @@
 	function scrollToTop() {
 		const el = container;
 		if (!el) return;
-		atTop = true;
+		visible = false;
 		gliding = true;
 		clearTimeout(glideTimer);
-		glideTimer = setTimeout(settle, GLIDE_TIMEOUT_MS);
+		glideTimer = setTimeout(() => {
+			releaseGlide();
+			lastTop = el.scrollTop;
+		}, GLIDE_TIMEOUT_MS);
 		el.scrollTop = Math.min(el.scrollTop, el.clientHeight);
+		lastTop = el.scrollTop;
 		el.scroll({ top: 0, behavior: "smooth" });
 	}
 </script>
 
-{#if !atTop}
+{#if visible}
 	<ScrollJumpButton
 		label="Scroll to top"
 		class={cn("absolute inset-x-0 z-10 mx-auto w-fit", className)}
