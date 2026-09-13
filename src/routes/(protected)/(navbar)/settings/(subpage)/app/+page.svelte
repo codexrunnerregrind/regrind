@@ -18,6 +18,7 @@
 	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
 	import { desktopEntryAvailable } from "$lib/platform/desktop-entry.svelte";
 	import { hapticsAvailable } from "$lib/platform/haptics";
+	import { addonInstallerAvailable } from "$lib/updates/addon.svelte";
 	import {
 		updatesSelfManaged,
 		updatesUnsupportedReason,
@@ -134,7 +135,7 @@
 	</SettingsRow>
 </SettingsGroup>
 
-{#if updatesSelfManaged() || updatesUnsupportedReason() !== null}
+{#if updatesSelfManaged() || updatesUnsupportedReason() !== null || addonInstallerAvailable()}
 	<SectionHeader>Updates</SectionHeader>
 	<SettingsGroup>
 		<AutomaticUpdatesSetting />

@@ -1,9 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getPreferencesMock, setPreferencesMock } = vi.hoisted(() => ({
-	getPreferencesMock: vi.fn(),
-	setPreferencesMock: vi.fn(() => Promise.resolve()),
-}));
+const { getPreferencesMock, setPreferencesMock, getTagsMock } = vi.hoisted(
+	() => ({
+		getPreferencesMock: vi.fn(),
+		setPreferencesMock: vi.fn(() => Promise.resolve()),
+		getTagsMock: vi.fn(),
+	}),
+);
+
+vi.mock("$lib/api/users/tags", () => ({ getTags: getTagsMock }));
 
 vi.mock("$lib/app-data/preferences.svelte", () => ({
 	getPreferences: getPreferencesMock,
@@ -12,6 +17,19 @@ vi.mock("$lib/app-data/preferences.svelte", () => ({
 
 import { GridSearchFiltersState } from "$lib/grid/grid-search-filters-state.svelte";
 import { defaultFilters } from "$lib/model/browse/grid/filters";
+
+const languages = [
+	{
+		language: "en",
+		categoryCollection: [
+			{
+				text: "Interests",
+				possessiveText: null,
+				tags: [{ tagId: 1, key: "hiking", text: "Hiking" }],
+			},
+		],
+	},
+];
 
 async function loadedState(onQueryChange = vi.fn()) {
 	const state = new GridSearchFiltersState({ onQueryChange });
@@ -22,6 +40,8 @@ async function loadedState(onQueryChange = vi.fn()) {
 beforeEach(() => {
 	getPreferencesMock.mockReset();
 	setPreferencesMock.mockClear();
+	getTagsMock.mockReset();
+	getTagsMock.mockResolvedValue(languages);
 	getPreferencesMock.mockResolvedValue({
 		gridSearchFilters: { ...defaultFilters, genders: [1, 2] },
 	});
@@ -70,5 +90,99 @@ describe("set", () => {
 		state.set({ isFavorite: !defaultFilters.isFavorite });
 
 		expect(onQueryChange).toHaveBeenCalledOnce();
+	});
+});
+
+describe("resetFilters", () => {
+	it("saves the defaults and queries again", async () => {
+		const { state, onQueryChange } = await loadedState();
+
+		state.resetFilters();
+
+		expect(state.value).toEqual(defaultFilters);
+		expect(setPreferencesMock).toHaveBeenCalledOnce();
+		expect(onQueryChange).toHaveBeenCalledOnce();
+	});
+});
+
+describe("resolveTagKeys", () => {
+	const savedTags = (tags: string[], tagsEnabled = true) =>
+		getPreferencesMock.mockResolvedValue({
+			gridSearchFilters: { ...defaultFilters, tagsEnabled, tags },
+		});
+
+	it("replaces saved tag texts with their keys", async () => {
+		savedTags(["Hiking", "unknown"]);
+		const { state, onQueryChange } = await loadedState();
+
+		await state.resolveTagKeys();
+
+		expect(state.value?.tags).toEqual(["hiking", "unknown"]);
+		expect(setPreferencesMock).toHaveBeenCalledOnce();
+		expect(onQueryChange).not.toHaveBeenCalled();
+	});
+
+	it("skips the tags request when the tags filter sends nothing", async () => {
+		savedTags(["Hiking"], false);
+		const { state } = await loadedState();
+
+		await state.resolveTagKeys();
+
+		expect(getTagsMock).not.toHaveBeenCalled();
+		expect(state.value?.tags).toEqual(["Hiking"]);
+	});
+
+	it("replaces texts that arrive after an earlier run", async () => {
+		savedTags(["hiking"]);
+		const { state } = await loadedState();
+		await state.resolveTagKeys();
+
+		state.set({ tags: ["Hiking", "Hiking"] });
+		await state.resolveTagKeys();
+
+		expect(state.value?.tags).toEqual(["hiking"]);
+	});
+
+	it("keeps tags the user changed while the tag list was loading", async () => {
+		savedTags(["Hiking"]);
+		const { promise, resolve } = Promise.withResolvers<unknown[]>();
+		getTagsMock.mockReturnValueOnce(promise);
+		const { state } = await loadedState();
+
+		const resolving = state.resolveTagKeys();
+		state.set({ tags: ["gaming"] });
+		resolve(languages);
+		await resolving;
+
+		expect(state.value?.tags).toEqual(["gaming"]);
+		expect(setPreferencesMock).toHaveBeenCalledOnce();
+	});
+
+	it("gives up on a tag list that never loads", async () => {
+		savedTags(["Hiking"]);
+		getTagsMock.mockReturnValueOnce(new Promise(() => {}));
+		vi.spyOn(console, "error").mockImplementation(() => {});
+		vi.useFakeTimers();
+		const { state } = await loadedState();
+
+		const resolving = state.resolveTagKeys();
+		await vi.advanceTimersByTimeAsync(5_000);
+		await resolving;
+		vi.useRealTimers();
+
+		expect(state.value?.tags).toEqual(["Hiking"]);
+	});
+
+	it("tries again after the tags request fails", async () => {
+		savedTags(["Hiking"]);
+		getTagsMock.mockRejectedValueOnce(new Error("offline"));
+		vi.spyOn(console, "error").mockImplementation(() => {});
+		const { state } = await loadedState();
+
+		await state.resolveTagKeys();
+		expect(state.value?.tags).toEqual(["Hiking"]);
+
+		await state.resolveTagKeys();
+		expect(state.value?.tags).toEqual(["hiking"]);
 	});
 });

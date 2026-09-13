@@ -1,21 +1,22 @@
 use serde::Serialize;
 use tauri::{AppHandle, Manager};
 
+use super::baseline::InstallKind;
+use super::component;
 use super::error::UpdateError;
 use super::install::{self, Capability};
 use super::release::Candidate;
 use super::schedule::Trigger;
 use super::session::Session;
 use super::{
-	client, current_version, release, schedule, storage, verify, Progress,
-	UpdateState,
+	client, release, schedule, storage, verify, Progress, UpdateState,
 };
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CheckResult {
 	pub available: bool,
-	pub current_version: String,
+	pub current_version: Option<String>,
 	pub release: Option<Candidate>,
 }
 
@@ -30,11 +31,13 @@ pub enum Readiness {
 	Ready {
 		tag: String,
 		version: String,
+		kind: InstallKind,
 		can_install_now: bool,
 	},
 	Resumable {
 		tag: String,
 		version: String,
+		kind: InstallKind,
 	},
 	NothingStaged,
 	Unsupported(install::Unsupported),
@@ -51,14 +54,14 @@ impl From<schedule::Ledger> for Settings {
 	fn from(ledger: schedule::Ledger) -> Self {
 		Self {
 			auto_check: ledger.auto_check,
-			next_check_at: ledger.next_check_at,
+			next_check_at: ledger.due_at(&component::APP).unwrap_or_default(),
 		}
 	}
 }
 
 #[tauri::command]
 pub fn update_capability(app: AppHandle) -> Capability {
-	install::capability(&app)
+	install::capability_for(&app, &component::APP)
 }
 
 #[tauri::command]
@@ -77,47 +80,61 @@ pub fn update_set_auto_check(
 #[tauri::command]
 pub async fn update_check(
 	app: AppHandle,
+	component: String,
 	trigger: Trigger,
 ) -> Result<CheckResult, UpdateError> {
-	let Session {
-		current,
-		payload_suffix,
-		..
-	} = Session::open(&app)?;
-	let mut ledger = schedule::load(&app)?;
-	schedule::admit(&ledger, trigger, schedule::now_secs())?;
+	let component = component::by_key(&component)?;
+	let admission = schedule::admit_check(&app, component, trigger)?;
+	let session = Session::open(&app, component)?;
+	if !admission.worth_checking(&session.baseline) {
+		admission.record(&app)?;
+		app.state::<UpdateState>().withdraw_updates(component.key);
+		return Ok(CheckResult {
+			available: false,
+			current_version: session.baseline.installed_version(),
+			release: None,
+		});
+	}
 
-	let index = release::fetch_index(&current).await?;
-	schedule::record_check(&app, &mut ledger)?;
+	let index = release::fetch_index(component, session.channel).await?;
+	admission.record(&app)?;
 
-	let candidate = release::newest_upgrade(&index, &current, &payload_suffix)?;
+	let candidate = session.newest_upgrade(&index)?;
 	let state = app.state::<UpdateState>();
-	state.downloads.retain_only(candidate.as_ref());
-	*state.latest.lock().unwrap() = candidate.clone();
+	state
+		.downloads
+		.retain_only(component.key, candidate.as_ref());
+	state.offer(component.key, candidate.clone());
 
 	Ok(CheckResult {
 		available: candidate.is_some(),
-		current_version: current.to_string(),
+		current_version: session.baseline.installed_version(),
 		release: candidate,
 	})
 }
 
 #[tauri::command]
-pub async fn update_download(app: AppHandle) -> Result<Progress, UpdateError> {
-	let Session {
-		root,
-		current,
-		payload_suffix,
-	} = Session::open(&app)?;
+pub async fn update_download(
+	app: AppHandle,
+	component: String,
+) -> Result<Progress, UpdateError> {
+	let session = Session::open(&app, component::by_key(&component)?)?;
+	let component = session.component;
 
 	let state = app.state::<UpdateState>();
-	let known = state.latest.lock().unwrap().clone();
-	let candidate = match known.or_else(|| state.downloads.retained_candidate())
-	{
+	let candidate = match state.reusable(component.key, &session.baseline) {
 		Some(candidate) => candidate,
-		None if storage::resumable(&root, &current).is_some() => {
-			let index = release::fetch_index(&current).await?;
-			release::newest_upgrade(&index, &current, &payload_suffix)?
+		None if storage::resumable(
+			component,
+			&session.root,
+			&session.baseline,
+		)
+		.is_some() =>
+		{
+			let index =
+				release::fetch_index(component, session.channel).await?;
+			session
+				.newest_upgrade(&index)?
 				.ok_or(UpdateError::NothingStaged)?
 		}
 		None => return Err(UpdateError::NothingStaged),
@@ -126,15 +143,28 @@ pub async fn update_download(app: AppHandle) -> Result<Progress, UpdateError> {
 	let client = client::build()?;
 	let state = app.state::<UpdateState>();
 	let downloads = &state.inner().downloads;
-	downloads.cancel_others_and_join(&candidate).await;
-	storage::purge(&root, &current, Some(&candidate.tag));
-	Ok(downloads.start(&app, root, client, candidate).await)
+	let starting = candidate.clone();
+	downloads
+		.start(&app, session.root.clone(), client, candidate, || {
+			storage::purge(
+				component,
+				&session.root,
+				&session.baseline,
+				Some(&starting),
+			)
+		})
+		.await
 }
 
 #[tauri::command]
-pub async fn update_cancel_download(app: AppHandle) {
+pub async fn update_cancel_download(
+	app: AppHandle,
+	component: String,
+) -> Result<(), UpdateError> {
+	let component = component::by_key(&component)?;
 	let downloads = &app.state::<UpdateState>().inner().downloads;
-	downloads.cancel().await;
+	downloads.cancel(component.key).await;
+	Ok(())
 }
 
 #[tauri::command]
@@ -143,39 +173,53 @@ pub fn update_progress(app: AppHandle) -> Option<Progress> {
 }
 
 #[tauri::command]
-pub fn update_readiness(app: AppHandle) -> Result<Readiness, UpdateError> {
-	let can_install_now = match install::capability(&app) {
-		Capability::Supported {
-			can_install_now, ..
-		} => can_install_now,
-		Capability::Unsupported(reason) => {
+pub fn update_readiness(
+	app: AppHandle,
+	component: String,
+) -> Result<Readiness, UpdateError> {
+	let Session {
+		component,
+		root,
+		baseline,
+		can_install_now,
+		..
+	} = match Session::open(&app, component::by_key(&component)?) {
+		Err(UpdateError::Unsupported(reason)) => {
 			return Ok(Readiness::Unsupported(reason))
 		}
+		opened => opened?,
 	};
-
-	let root = storage::root(&app)?;
-	let current = current_version(&app)?;
-	if let Some((_, staged)) = storage::verified(&root, &current) {
+	if let Some((_, staged)) = storage::verified(component, &root, &baseline) {
 		return Ok(Readiness::Ready {
 			tag: staged.tag,
 			version: staged.version,
+			kind: baseline.kind(),
 			can_install_now,
 		});
 	}
-	Ok(match storage::resumable(&root, &current) {
+	Ok(match storage::resumable(component, &root, &baseline) {
 		Some(candidate) => Readiness::Resumable {
 			tag: candidate.tag,
 			version: candidate.version,
+			kind: baseline.kind(),
 		},
 		None => Readiness::NothingStaged,
 	})
 }
 
 #[tauri::command]
-pub async fn update_install(app: AppHandle) -> Result<(), UpdateError> {
-	let Session { root, current, .. } = Session::open(&app)?;
-	let (stage, staged) =
-		storage::verified(&root, &current).ok_or(UpdateError::NothingStaged)?;
+pub async fn update_install(
+	app: AppHandle,
+	component: String,
+) -> Result<(), UpdateError> {
+	let Session {
+		component,
+		root,
+		baseline,
+		..
+	} = Session::open(&app, component::by_key(&component)?)?;
+	let (stage, staged) = storage::verified(component, &root, &baseline)
+		.ok_or(UpdateError::NothingStaged)?;
 
 	let recorded = staged.payload_digest.ok_or(UpdateError::NothingStaged)?;
 	let checked = stage.clone();
@@ -185,7 +229,7 @@ pub async fn update_install(app: AppHandle) -> Result<(), UpdateError> {
 	.await
 	.map_err(|e| UpdateError::Storage(e.to_string()))??;
 
-	install::install(&app, &stage.payload()).await
+	install::install(&app, &stage.payload(), component.install_target()).await
 }
 
 fn unchanged_since_verification(
@@ -202,6 +246,20 @@ fn unchanged_since_verification(
 }
 
 #[tauri::command]
+pub fn update_install_pending(app: AppHandle) -> bool {
+	install::install_pending(&app)
+}
+
+#[tauri::command]
+pub fn update_installed_version(
+	app: AppHandle,
+	component: String,
+) -> Result<Option<String>, UpdateError> {
+	let component = component::by_key(&component)?;
+	Ok(install::probe(&app, component).installed_version())
+}
+
+#[tauri::command]
 pub fn update_take_install_outcome(app: AppHandle) -> Option<install::Outcome> {
 	install::take_outcome(&app)
 }
@@ -213,12 +271,16 @@ pub fn update_open_install_permission_settings(
 	install::open_install_permission_settings(&app)
 }
 #[tauri::command]
-pub async fn update_discard(app: AppHandle) -> Result<(), UpdateError> {
+pub async fn update_discard(
+	app: AppHandle,
+	component: String,
+) -> Result<(), UpdateError> {
+	let component = component::by_key(&component)?;
 	let state = app.state::<UpdateState>();
-	state.inner().downloads.cancel_and_join().await;
-	state.downloads.forget_retained();
-	*state.latest.lock().unwrap() = None;
-	let root = storage::root(&app)?;
+	state.inner().downloads.cancel_and_join(component.key).await;
+	state.downloads.forget_retained(component.key);
+	state.offer(component.key, None);
+	let root = storage::component_root(&app, component)?;
 	match std::fs::remove_dir_all(&root) {
 		Ok(()) => Ok(()),
 		Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
@@ -287,11 +349,12 @@ mod wire_tests {
 			json(&Readiness::Ready {
 				tag: "v0.2.0".into(),
 				version: "0.2.0".into(),
+				kind: InstallKind::Update,
 				can_install_now: false,
 			}),
 			serde_json::json!({
 				"state": "ready",
-				"detail": { "tag": "v0.2.0", "version": "0.2.0", "canInstallNow": false }
+				"detail": { "tag": "v0.2.0", "version": "0.2.0", "kind": "update", "canInstallNow": false }
 			})
 		);
 		assert_eq!(
@@ -302,10 +365,11 @@ mod wire_tests {
 			json(&Readiness::Resumable {
 				tag: "v0.2.0".into(),
 				version: "0.2.0".into(),
+				kind: InstallKind::Install,
 			}),
 			serde_json::json!({
 				"state": "resumable",
-				"detail": { "tag": "v0.2.0", "version": "0.2.0" }
+				"detail": { "tag": "v0.2.0", "version": "0.2.0", "kind": "install" }
 			})
 		);
 
@@ -330,6 +394,15 @@ mod wire_tests {
 				"detail": { "reason": "externallyManaged", "detail": { "installer": "org.fdroid.fdroid" } }
 			})
 		);
+		assert_eq!(
+			json(&Capability::Unsupported(
+				install::Unsupported::ForeignTarget
+			)),
+			serde_json::json!({
+				"state": "unsupported",
+				"detail": { "reason": "foreignTarget" }
+			})
+		);
 
 		assert_eq!(
 			json(&UpdateError::CheckTooSoon {
@@ -350,8 +423,51 @@ mod wire_tests {
 	}
 
 	#[test]
+	fn a_candidate_and_its_progress_both_name_their_component() {
+		let candidate = super::super::release::Candidate {
+			component: "google-oauth".into(),
+			kind: super::super::baseline::InstallKind::Install,
+			tag: "v1.1.0".into(),
+			version: "1.1.0".into(),
+			notes: None,
+			published_at: None,
+			payload: super::super::release::Artifact {
+				name: "open-grind-google-oauth-v1.1.0-arm64-v8a.apk".into(),
+				url: "https://git.opengrind.org/a.apk".into(),
+				uuid: "u".into(),
+				size: 4,
+			},
+			signature: super::super::release::Artifact {
+				name: "open-grind-google-oauth-v1.1.0-arm64-v8a.apk.minisig"
+					.into(),
+				url: "https://git.opengrind.org/a.apk.minisig".into(),
+				uuid: "s".into(),
+				size: 228,
+			},
+		};
+
+		let wire = json(&candidate);
+		assert_eq!(wire["component"], "google-oauth");
+		assert_eq!(wire["kind"], "install");
+
+		let progress = download::Progress::new(
+			&candidate,
+			0,
+			download::Phase::Downloading,
+		);
+		assert_eq!(json(&progress)["component"], "google-oauth");
+		assert_eq!(
+			json(&progress)["kind"],
+			"install",
+			"a download resumed after a reload must still know it is a first install"
+		);
+	}
+
+	#[test]
 	fn progress_reports_its_phase_as_flat_fields() {
 		let progress = Progress {
+			component: "google-oauth".into(),
+			kind: InstallKind::Update,
 			tag: "v0.2.0".into(),
 			version: "0.2.0".into(),
 			phase: download::Phase::Downloading,
@@ -361,6 +477,8 @@ mod wire_tests {
 		assert_eq!(
 			json(&progress),
 			serde_json::json!({
+				"component": "google-oauth",
+				"kind": "update",
 				"tag": "v0.2.0",
 				"version": "0.2.0",
 				"phase": "downloading",

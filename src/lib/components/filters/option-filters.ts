@@ -1,3 +1,4 @@
+import { isFilterableTribe } from "$lib/model/browse/grid/filters";
 import {
 	acceptNSFWPics,
 	bodyTypes,
@@ -15,7 +16,15 @@ export type OptionFilterDefinition = {
 };
 
 export const optionFilters = {
-	tribes: { id: "tribes", label: "Tribes", table: tribes },
+	tribes: {
+		id: "tribes",
+		label: "Tribes",
+		table: Object.fromEntries(
+			Object.entries(tribes).filter(([id]) =>
+				isFilterableTribe(Number(id)),
+			),
+		),
+	},
 	bodyTypes: { id: "body-type", label: "Body Type", table: bodyTypes },
 	relationshipStatuses: {
 		id: "relationship-status",

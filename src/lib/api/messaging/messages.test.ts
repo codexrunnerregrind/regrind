@@ -49,20 +49,21 @@ function response({
 	assertOkErrorMessage?: string;
 	body?: string;
 } = {}) {
+	const assertOk = () => {
+		if (status >= 200 && status < 300) return;
+		throw new Error(
+			assertOkErrorMessage ?? `API request failed with status ${status}`,
+		);
+	};
 	return {
 		status,
-		assertOk() {
-			if (status >= 200 && status < 300) return;
-			throw new Error(
-				assertOkErrorMessage ??
-					`API request failed with status ${status}`,
-			);
-		},
+		assertOk,
 		text: () => body ?? JSON.stringify(data ?? null),
 		json: () => data,
-		jsonParsed: vi.fn((schema: { parse(value: unknown): unknown }) =>
-			schema.parse(data),
-		),
+		jsonParsed: vi.fn((schema: { parse(value: unknown): unknown }) => {
+			assertOk();
+			return schema.parse(data);
+		}),
 	};
 }
 
@@ -134,7 +135,6 @@ describe("message API wrappers", () => {
 
 		expect(error).not.toBeInstanceOf(ConversationUnavailableError);
 		expect(error).toBeInstanceOf(Error);
-		expect(res.jsonParsed).not.toHaveBeenCalled();
 	});
 
 	it("keeps an unrelated 403 JSON body a transport failure", async () => {

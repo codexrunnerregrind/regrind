@@ -211,12 +211,18 @@ End-to-end tests are a separate tier:
 Local updater testing:
 
 ```sh
-bun run dev:updater-server   # generates a dev minisign key, signs a payload, prints two exports
+ARTIFACT=zip bun run dev:updater-server   # ARTIFACT is apk, deb, AppImage, exe or zip; generates a dev minisign key, signs a payload, prints two exports
 export OPEN_GRIND_UPDATE_ORIGIN=http://127.0.0.1:8787/
 export OPEN_GRIND_UPDATE_KEY=<printed key>
 ```
 
-Both variables are read only under `debug_assertions` ([dev.rs](./src-tauri/src/api/update/dev.rs)). Run `adb reverse tcp:8787 tcp:8787` to tunnel to an Android device. On Android the debug build instead reads the same two assignments from `/data/local/tmp/regrind-update.env` on the device — `e2e/updater/run.ts android` pushes it automatically, or `adb push` it when testing by hand. `cargo test --lib -- --ignored live_` runs the end-to-end check, download and signature tests against it.
+Both variables are read only under `debug_assertions` ([dev.rs](./src-tauri/src/api/update/dev.rs)). Run `adb reverse tcp:8787 tcp:8787` to tunnel to an Android device. On Android the debug build instead reads the same two assignments from `/data/local/tmp/regrind-update.env` on the device — `e2e/updater/run.ts android` pushes it automatically, or `adb push` it when testing by hand.
+
+The dev server also serves a Google OAuth app release when given `COMPANION_PAYLOAD=<apk>` (tag `COMPANION_TAG`, default `v99.0.0`; `COMPANION_ABI` one of `arm64-v8a`, `v7a`, `x86_64`, default `arm64-v8a`); without `PAYLOAD`, `APP_BUNDLE`, `ARTIFACT` or `SUFFIX` it serves only the companion.
+
+`cargo test --lib -- --ignored live_` runs the end-to-end check, download and signature tests against the dev server. It needs both releases: this machine's app artifact (`ARTIFACT=zip` on macOS) and `COMPANION_PAYLOAD` with the default `COMPANION_ABI`. When serving only the app, run `cargo test --lib -- --ignored live_published live_release_host` instead.
+
+`e2e/updater/run.ts android-addon` drives the guided companion runs on a device, with `ADDON` set to `install` (default) or `update`. `ADDON=install` uninstalls the companion and serves the published `COMPANION_RELEASE`, downloaded and verified against the minisign key in [KEYS.md](./KEYS.md). A local `COMPANION_APK` is not checked against that key and must be signed with the release keystore: a companion with another signer is never offered an update, and sign-in refuses it. `ADDON=update` installs it first and re-serves it under the next patch tag, or `COMPANION_TAG`. The companion ABI follows `ABI`.
 
 `bun ci` also installs a pre-commit hook ([lefthook](https://lefthook.dev/), configured in [lefthook.yml](./lefthook.yml)) that runs over staged files only:
 

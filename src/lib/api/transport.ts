@@ -71,6 +71,7 @@ function buildRestResponse({
 			}
 		},
 		jsonParsed<TSchema extends z.ZodType>(schema: TSchema) {
+			this.assertOk();
 			const data = this.json();
 			try {
 				return parseApiResponse({

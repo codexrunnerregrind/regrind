@@ -8,13 +8,32 @@ import android.os.Build
 import java.io.File
 import java.security.MessageDigest
 
+data class PackageState(
+	val versionName: String?,
+	val versionCode: Long,
+)
+
 object InstallProbe {
-	fun verdictFor(context: Context): InstallGate.Verdict = InstallGate.decide(
+	fun verdictFor(
+		context: Context,
+		target: String,
+	): InstallGate.Verdict = InstallGate.decide(
 		signerSha256 = soleSignerOf(installedSigningInfo(context)),
-		installer = installerOf(context),
-		updateOwner = updateOwnerOf(context),
+		target = target,
+		targetSigner = InstallGate.TargetSigner.of(
+			context.packageManager.checkSignatures(context.packageName, target),
+		),
+		installer = { installerOf(context, target) },
+		updateOwner = { updateOwnerOf(context, target) },
 		self = context.packageName,
 	)
+
+	fun stateOf(
+		context: Context,
+		packageName: String,
+	): PackageState? = infoOf(context, packageName)?.let { info ->
+		PackageState(versionName = info.versionName, versionCode = versionCodeOf(info))
+	}
 
 	fun canInstallNow(context: Context): Boolean =
 		context.packageManager.canRequestPackageInstalls()
@@ -39,8 +58,23 @@ object InstallProbe {
 		return sha256Hex(sole.toByteArray())
 	}
 
-	fun installedVersionCode(context: Context): Long =
-		versionCodeOf(context.packageManager.getPackageInfo(context.packageName, 0))
+	private fun infoOf(
+		context: Context,
+		packageName: String,
+		flags: Int = 0,
+	): PackageInfo? = try {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+			context.packageManager.getPackageInfo(
+				packageName,
+				PackageManager.PackageInfoFlags.of(flags.toLong()),
+			)
+		} else {
+			@Suppress("DEPRECATION")
+			context.packageManager.getPackageInfo(packageName, flags)
+		}
+	} catch (e: PackageManager.NameNotFoundException) {
+		null
+	}
 
 	fun versionCodeOf(info: PackageInfo): Long =
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
@@ -50,38 +84,37 @@ object InstallProbe {
 			info.versionCode.toLong()
 		}
 
-	private fun installedSigningInfo(context: Context): SigningInfo? {
-		val flags = PackageManager.GET_SIGNING_CERTIFICATES
-		val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-			context.packageManager.getPackageInfo(
-				context.packageName,
-				PackageManager.PackageInfoFlags.of(flags.toLong()),
-			)
-		} else {
-			@Suppress("DEPRECATION")
-			context.packageManager.getPackageInfo(context.packageName, flags)
-		}
-		return info.signingInfo
-	}
+	private fun installedSigningInfo(context: Context): SigningInfo? =
+		infoOf(context, context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)?.signingInfo
 
-	private fun installerOf(context: Context): String? = try {
+	private fun installerOf(
+		context: Context,
+		packageName: String,
+	): String? = try {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-			context.packageManager.getInstallSourceInfo(context.packageName).installingPackageName
+			context.packageManager.getInstallSourceInfo(packageName).installingPackageName
 		} else {
 			@Suppress("DEPRECATION")
-			context.packageManager.getInstallerPackageName(context.packageName)
+			context.packageManager.getInstallerPackageName(packageName)
 		}
 	} catch (e: PackageManager.NameNotFoundException) {
 		null
+	} catch (e: IllegalArgumentException) {
+		null
 	}
 
-	private fun updateOwnerOf(context: Context): String? = try {
+	private fun updateOwnerOf(
+		context: Context,
+		packageName: String,
+	): String? = try {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-			context.packageManager.getInstallSourceInfo(context.packageName).updateOwnerPackageName
+			context.packageManager.getInstallSourceInfo(packageName).updateOwnerPackageName
 		} else {
 			null
 		}
 	} catch (e: PackageManager.NameNotFoundException) {
+		null
+	} catch (e: IllegalArgumentException) {
 		null
 	}
 

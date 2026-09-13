@@ -30,7 +30,7 @@ class TransferService : Service() {
 			ServiceCompat.startForeground(
 				this,
 				NOTIFICATION_ID,
-				notification(),
+				notification(TransferTitle.named(intent?.getStringExtra(EXTRA_TITLE))),
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
 					ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
 				} else {
@@ -67,7 +67,7 @@ class TransferService : Service() {
 		}
 	}
 
-	private fun notification(): Notification {
+	private fun notification(title: TransferTitle): Notification {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
 			val channel = NotificationChannel(
 				CHANNEL_ID,
@@ -77,7 +77,7 @@ class TransferService : Service() {
 			getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
 		}
 		return NotificationCompat.Builder(this, CHANNEL_ID)
-			.setContentTitle(getString(R.string.update_transfer_title))
+			.setContentTitle(getString(titleText(title)))
 			.setSmallIcon(android.R.drawable.stat_sys_download)
 			.setPriority(NotificationCompat.PRIORITY_LOW)
 			.setOngoing(true)
@@ -86,14 +86,27 @@ class TransferService : Service() {
 			.build()
 	}
 
+	private fun titleText(title: TransferTitle): Int =
+		when (title) {
+			TransferTitle.AppUpdate -> R.string.update_transfer_title
+			TransferTitle.AddonInstall -> R.string.addon_install_transfer_title
+			TransferTitle.AddonUpdate -> R.string.addon_update_transfer_title
+		}
+
 	companion object {
+		private const val EXTRA_TITLE = "org.regrind.update.extra.TRANSFER_TITLE"
 		private const val CHANNEL_ID = "org.regrind.update.transfer"
 		private const val NOTIFICATION_ID = 4711
 		private const val WAKE_LOCK_TAG = "opengrind:update"
 		private const val WAKE_LOCK_TIMEOUT_MS = 30L * 60L * 1000L
 
-		fun start(context: Context) {
-			context.startForegroundService(Intent(context, TransferService::class.java))
+		fun start(
+			context: Context,
+			title: TransferTitle,
+		) {
+			context.startForegroundService(
+				Intent(context, TransferService::class.java).putExtra(EXTRA_TITLE, title.name),
+			)
 		}
 
 		fun stop(context: Context) {

@@ -6,6 +6,7 @@ const unsupportedSchema = z.discriminatedUnion("reason", [
 		detail: z.object({ installer: z.string() }),
 	}),
 	z.object({ reason: z.literal("foreignSigner") }),
+	z.object({ reason: z.literal("foreignTarget") }),
 	z.object({ reason: z.literal("undetermined") }),
 	z.object({
 		reason: z.literal("noReleaseArtifacts"),
@@ -46,6 +47,8 @@ const updateErrorSchema = z.union([
 			"install",
 			"checkTooSoon",
 			"autoChecksDisabled",
+			"unknownComponent",
+			"busy",
 		]),
 		detail: z.unknown().optional(),
 	}),
@@ -76,7 +79,11 @@ const artifactSchema = z.object({
 	size: z.number(),
 });
 
+const installKindSchema = z.enum(["install", "update"]);
+
 const releaseSchema = z.object({
+	component: z.string(),
+	kind: installKindSchema,
 	tag: z.string(),
 	version: z.string(),
 	notes: z.string().nullish(),
@@ -88,12 +95,14 @@ export type Release = z.infer<typeof releaseSchema>;
 
 export const checkResultSchema = z.object({
 	available: z.boolean(),
-	currentVersion: z.string(),
+	currentVersion: z.string().nullable(),
 	release: releaseSchema.nullish(),
 });
 export type CheckResult = z.infer<typeof checkResultSchema>;
 
 export const progressSchema = z.object({
+	component: z.string(),
+	kind: installKindSchema,
 	tag: z.string(),
 	version: z.string(),
 	phase: z.enum(["downloading", "verifying", "ready", "canceled", "failed"]),
@@ -109,12 +118,17 @@ export const readinessSchema = z.discriminatedUnion("state", [
 		detail: z.object({
 			tag: z.string(),
 			version: z.string(),
+			kind: installKindSchema,
 			canInstallNow: z.boolean(),
 		}),
 	}),
 	z.object({
 		state: z.literal("resumable"),
-		detail: z.object({ tag: z.string(), version: z.string() }),
+		detail: z.object({
+			tag: z.string(),
+			version: z.string(),
+			kind: installKindSchema,
+		}),
 	}),
 	z.object({ state: z.literal("nothingStaged") }),
 	z.object({ state: z.literal("unsupported"), detail: unsupportedSchema }),
@@ -128,6 +142,7 @@ export const settingsSchema = z.object({
 export type Settings = z.infer<typeof settingsSchema>;
 
 export const installOutcomeSchema = z.object({
+	packageName: z.string().nullable().optional(),
 	succeeded: z.boolean(),
 	canceled: z.boolean().default(false),
 	code: z.number().nullish(),

@@ -187,6 +187,8 @@ class GridState {
 		try {
 			await this.filters.ready;
 			if (token !== this.#fetchToken) return;
+			await this.filters.resolveTagKeys();
+			if (token !== this.#fetchToken) return;
 			const query = buildCascadeQuery({
 				geohash,
 				filters: this.filters.value,

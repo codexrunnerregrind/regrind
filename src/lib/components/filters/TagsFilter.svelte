@@ -6,7 +6,8 @@
 	import { Input } from "$lib/components/ui/input";
 	import { Spinner } from "$lib/components/ui/spinner";
 	import * as ToggleGroup from "$lib/components/ui/toggle-group";
-	import type { Tag } from "$lib/model/users/tags";
+	import { tagCatalog } from "$lib/model/browse/grid/filters";
+	import { deepEqual } from "$lib/util/deep-equal";
 	import FilterDropdown from "./FilterDropdown.svelte";
 
 	let {
@@ -27,31 +28,26 @@
 		return () => clearTimeout(timeout);
 	});
 
-	async function load() {
-		const langs = await getTags();
-		const flat: (Tag & { textLower: string })[] = [];
-		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- function-local dedupe helper, discarded when load() returns
-		const seenText = new Set<string>();
-		for (const lang of langs) {
-			for (const category of lang.categoryCollection) {
-				for (const tag of category.tags) {
-					const textLower = tag.text.toLowerCase();
-					if (!seenText.has(textLower)) {
-						seenText.add(textLower);
-						flat.push({ ...tag, textLower });
-					}
-				}
-			}
-		}
-		return {
-			categories: langs[0]?.categoryCollection ?? [],
-			flat: flat.sort((a, b) => a.text.localeCompare(b.text)),
-		};
-	}
+	let catalog: ReturnType<typeof tagCatalog> | null = $state.raw(null);
+	const tagsPromise = getTags().then((languages) => {
+		const loaded = tagCatalog(languages);
+		const keys = loaded.keysOf(value);
+		if (!deepEqual(keys, value)) value = keys;
+		catalog = loaded;
+		return loaded;
+	});
 
-	const tagsPromise = $derived(load());
+	type CatalogTag = ReturnType<typeof tagCatalog>["flat"][number];
 
-	const valueLabel = $derived(value.join(", "));
+	const containsQuery = (tag: CatalogTag) =>
+		tag.textsLower.some((text) => text.includes(query));
+
+	const startsWithQuery = (tag: CatalogTag) =>
+		tag.textsLower.some((text) => text.startsWith(query));
+
+	const valueLabel = $derived(
+		value.map((key) => catalog?.textOf(key) ?? key).join(", "),
+	);
 </script>
 
 <FilterDropdown
@@ -114,11 +110,11 @@
 		{:then { categories, flat }}
 			{@const filtered = query
 				? flat
-						.filter((t) => t.textLower.includes(query))
+						.filter(containsQuery)
 						.sort(
 							(a, b) =>
-								Number(b.textLower.startsWith(query)) -
-								Number(a.textLower.startsWith(query)),
+								Number(startsWithQuery(b)) -
+								Number(startsWithQuery(a)),
 						)
 				: []}
 			{@const shown = filtered.slice(0, MAX_SEARCH_RESULTS)}
@@ -139,8 +135,8 @@
 			>
 				{#if query}
 					{#if shown.length > 0}
-						{#each shown as tag (tag.tagId)}
-							<ToggleGroup.Item value={tag.text}>
+						{#each shown as tag (tag.key)}
+							<ToggleGroup.Item value={tag.key}>
 								{tag.text}
 							</ToggleGroup.Item>
 						{/each}
@@ -168,7 +164,7 @@
 								{category.text}
 							</div>
 							{#each category.tags as tag (tag.tagId)}
-								<ToggleGroup.Item value={tag.text}>
+								<ToggleGroup.Item value={tag.key}>
 									{tag.text}
 								</ToggleGroup.Item>
 							{/each}

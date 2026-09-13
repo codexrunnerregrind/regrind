@@ -7,6 +7,7 @@ fun InstallOutcome.toJson(): JSObject = JSObject().apply {
 	put("canceled", canceled)
 	put("code", code)
 	put("message", message)
+	put("packageName", packageName)
 }
 
 object InstallEvents {

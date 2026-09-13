@@ -30,6 +30,8 @@ pub enum UpdateError {
 	Install(String),
 	CheckTooSoon { retry_after_secs: u64 },
 	AutoChecksDisabled,
+	UnknownComponent(String),
+	Busy { component: String },
 }
 
 impl fmt::Display for UpdateError {

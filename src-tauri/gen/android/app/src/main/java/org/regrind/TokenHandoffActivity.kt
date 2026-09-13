@@ -40,7 +40,7 @@ class TokenHandoffActivity : Activity() {
 	}
 
 	private companion object {
-		const val COMPANION_PACKAGE = "org.regrind.google_oauth"
-		const val EXTRA_TOKEN = "org.regrind.google_oauth.extra.TOKEN"
+		const val COMPANION_PACKAGE = "org.opengrind.google_oauth"
+		const val EXTRA_TOKEN = "org.opengrind.google_oauth.extra.TOKEN"
 	}
 }

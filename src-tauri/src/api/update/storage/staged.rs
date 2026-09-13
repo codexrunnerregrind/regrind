@@ -3,14 +3,18 @@ use std::fs;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 
+use super::super::baseline::InstallKind;
 use super::super::release::{Artifact, Candidate};
 use super::{Stage, SCHEMA};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Staged {
 	pub schema: u32,
+	pub component: String,
+	pub kind: InstallKind,
 	pub tag: String,
 	pub version: String,
+	pub payload_name: String,
 	pub payload_uuid: String,
 	pub payload_size: u64,
 	pub payload_url: String,
@@ -26,8 +30,11 @@ impl Staged {
 	pub fn new(candidate: &Candidate) -> Self {
 		Self {
 			schema: SCHEMA,
+			component: candidate.component.clone(),
+			kind: candidate.kind,
 			tag: candidate.tag.clone(),
 			version: candidate.version.clone(),
+			payload_name: candidate.payload.name.clone(),
 			payload_uuid: candidate.payload.uuid.clone(),
 			payload_size: candidate.payload.size,
 			payload_url: candidate.payload.url.clone(),
@@ -41,6 +48,7 @@ impl Staged {
 
 	pub fn describes(&self, candidate: &Candidate) -> bool {
 		self.schema == SCHEMA
+			&& self.component == candidate.component
 			&& self.tag == candidate.tag
 			&& self.payload_uuid == candidate.payload.uuid
 			&& self.payload_size == candidate.payload.size
@@ -59,12 +67,14 @@ impl Staged {
 
 	pub fn candidate(self) -> Option<Candidate> {
 		Candidate {
+			component: self.component,
+			kind: self.kind,
 			tag: self.tag,
 			version: self.version,
 			notes: None,
 			published_at: None,
 			payload: Artifact {
-				name: String::new(),
+				name: self.payload_name,
 				url: self.payload_url,
 				uuid: self.payload_uuid,
 				size: self.payload_size,

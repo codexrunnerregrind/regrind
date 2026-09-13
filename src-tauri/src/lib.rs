@@ -237,6 +237,8 @@ pub fn run() {
             api::update::commands::update_progress,
             api::update::commands::update_readiness,
             api::update::commands::update_install,
+            api::update::commands::update_install_pending,
+            api::update::commands::update_installed_version,
             api::update::commands::update_take_install_outcome,
             api::update::commands::update_open_install_permission_settings,
             api::update::commands::update_discard,

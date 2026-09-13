@@ -3,16 +3,22 @@
 	import DownloadSimpleIcon from "phosphor-svelte/lib/DownloadSimpleIcon";
 
 	import { Progress } from "$lib/components/ui/progress";
-	import type { UpdateStage } from "./stage";
+	import { APP_COMPONENT, type ComponentKey } from "./components";
+	import type { InstallKind } from "./flow";
+	import { stageBody, stageTitle, type UpdateStage } from "./stage";
 	import ToastCard from "./ToastCard.svelte";
 
 	let {
+		component = APP_COMPONENT,
+		kind,
 		stage,
 		received,
 		total,
 		onActivate,
 		onCancel,
 	}: {
+		component?: ComponentKey;
+		kind: InstallKind;
 		stage: UpdateStage;
 		received: number;
 		total: number;
@@ -20,40 +26,17 @@
 		onCancel: () => void;
 	} = $props();
 
-	const copy = $derived(
-		{
-			available: {
-				icon: DownloadSimpleIcon,
-				title: "New update available",
-				body: "Tap to install, swipe to dismiss",
-			},
-			downloading: {
-				icon: DownloadSimpleIcon,
-				title: "Downloading update…",
-				body: undefined,
-			},
-			verifying: {
-				icon: ArrowsClockwiseIcon,
-				title: "Verifying the update…",
-				body: undefined,
-			},
-			paused: {
-				icon: DownloadSimpleIcon,
-				title: "Update is available",
-				body: "Tap to download",
-			},
-			ready: {
-				icon: ArrowsClockwiseIcon,
-				title: "Update is downloaded",
-				body: "Tap to install",
-			},
-			installing: {
-				icon: ArrowsClockwiseIcon,
-				title: "Installing…",
-				body: undefined,
-			},
-		}[stage],
-	);
+	const icons = {
+		available: DownloadSimpleIcon,
+		downloading: DownloadSimpleIcon,
+		verifying: ArrowsClockwiseIcon,
+		paused: DownloadSimpleIcon,
+		ready: ArrowsClockwiseIcon,
+		installing: ArrowsClockwiseIcon,
+	} satisfies Record<UpdateStage, unknown>;
+
+	const title = $derived(stageTitle({ component, kind, stage }));
+	const body = $derived(stageBody({ component, kind, stage }));
 	const indeterminate = $derived(
 		stage === "installing" || stage === "verifying",
 	);
@@ -67,10 +50,10 @@
 </script>
 
 <ToastCard
-	icon={copy.icon}
-	title={copy.title}
-	body={copy.body}
-	onActivate={copy.body === undefined ? undefined : onActivate}
+	icon={icons[stage]}
+	{title}
+	{body}
+	onActivate={body === undefined ? undefined : onActivate}
 	onCancel={stage === "downloading" ? onCancel : undefined}
 >
 	<Progress

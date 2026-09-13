@@ -27,8 +27,8 @@
 		<AlertDialog.Header>
 			<AlertDialog.Title>Switch Google account?</AlertDialog.Title>
 			<AlertDialog.Description class="text-wrap">
-				You have signed in to another Google account using the companion
-				app.
+				You have signed in to another Google account using the Google
+				OAuth app.
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>

@@ -5,11 +5,13 @@
 
 	import { callMethod } from "$lib/api/methods";
 	import {
+		companionDisabled,
 		companionUnavailable,
 		companionUntrusted,
+		disabledCompanionMessage,
 		finishSignIn,
 		reportSignInFailure,
-		untrustedCompanionMessage,
+		untrustedCompanionCopy,
 	} from "$lib/api/sign-in";
 	import { Button } from "$lib/components/ui/button";
 	import { Input } from "$lib/components/ui/input";
@@ -32,9 +34,11 @@
 			label: "Google",
 			failures: {
 				[companionUnavailable]: () => void goto("/auth/sign-in/google"),
+				[companionDisabled]: () =>
+					toast.error(disabledCompanionMessage),
 				[companionUntrusted]: () => {
-					toast.error(untrustedCompanionMessage);
-					void goto("/auth/sign-in/google");
+					toast.error(untrustedCompanionCopy());
+					void goto("/auth/sign-in/google?paste");
 				},
 			},
 		},
@@ -195,9 +199,10 @@
 				type="submit"
 				class="h-13 w-full rounded-xl text-base"
 				disabled={submitting !== false}
+				aria-busy={submitting === "password"}
 			>
 				{#if submitting === "password"}
-					<Spinner />
+					<Spinner aria-hidden="true" />
 				{/if}
 				Sign in
 			</Button>
@@ -213,10 +218,11 @@
 				variant="outline"
 				class="h-13 w-full gap-3 rounded-xl text-base"
 				disabled={submitting !== false}
+				aria-busy={submitting === "google"}
 				onclick={() => signInWith("google")}
 			>
 				{#if submitting === "google"}
-					<Spinner />
+					<Spinner aria-hidden="true" />
 				{:else}
 					<svg viewBox="0 0 48 48" class="size-5" aria-hidden="true">
 						<path
@@ -245,10 +251,11 @@
 				variant="outline"
 				class="h-13 w-full gap-3 rounded-xl text-base"
 				disabled={submitting !== false}
+				aria-busy={submitting === "facebook"}
 				onclick={() => signInWith("facebook")}
 			>
 				{#if submitting === "facebook"}
-					<Spinner />
+					<Spinner aria-hidden="true" />
 				{:else}
 					<svg viewBox="0 0 24 24" class="size-5" aria-hidden="true">
 						<path

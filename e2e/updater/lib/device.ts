@@ -32,18 +32,44 @@ export async function requireDevice(): Promise<string> {
 }
 
 export async function installApk(apk: string): Promise<void> {
-	await $`${adb} install -r -d ${apk}`.quiet();
+	const result = await $`${adb} install -r -d ${apk}`.quiet().nothrow();
+	if (result.exitCode !== 0) {
+		const reason = (
+			result.stderr.toString() || result.stdout.toString()
+		).trim();
+		throw new Error(`adb install ${apk} failed: ${reason}`);
+	}
 }
 
 export async function clearAppData(): Promise<void> {
 	await $`${adb} shell pm clear ${androidPackage}`.quiet().nothrow();
 }
 
-export async function installedVersion(): Promise<string> {
-	const dump = await $`${adb} shell dumpsys package ${androidPackage}`
+export async function uninstallPackage(packageName: string): Promise<void> {
+	await $`${adb} uninstall ${packageName}`.quiet().nothrow();
+}
+
+async function packageDump(packageName: string): Promise<string> {
+	return $`${adb} shell dumpsys package ${packageName}`
 		.text()
 		.catch(() => "");
-	const name = /versionName=(\S+)/.exec(dump)?.[1] ?? "none";
+}
+
+function versionNameIn(dump: string): string | null {
+	return /versionName=(\S+)/.exec(dump)?.[1] ?? null;
+}
+
+export async function packageVersionName(
+	packageName: string,
+): Promise<string | null> {
+	return versionNameIn(await packageDump(packageName));
+}
+
+export async function installedVersion(
+	packageName: string = androidPackage,
+): Promise<string> {
+	const dump = await packageDump(packageName);
+	const name = versionNameIn(dump) ?? "none";
 	const code = /versionCode=(\d+)/.exec(dump)?.[1] ?? "?";
 	return `${name} (${code})`;
 }

@@ -54,7 +54,6 @@ export async function getConversationMessages({
 	) {
 		throw new ConversationUnavailableError(conversationId);
 	}
-	res.assertOk();
 	return res.jsonParsed(conversationMessagesSchema);
 }
 

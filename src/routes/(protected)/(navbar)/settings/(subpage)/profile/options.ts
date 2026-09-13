@@ -11,10 +11,10 @@ import {
 	tribes,
 	vaccines as vaccineLabels,
 } from "$lib/model/users/profiles";
+import { type ProfileTagsResponse, tagTextByKey } from "$lib/model/users/tags";
 import { optionsFromMap } from "$lib/util/options";
 import type { Gender } from "$lib/model/users/genders";
 import type { Pronoun } from "$lib/model/users/pronouns";
-import type { ProfileTagsResponse } from "$lib/model/users/tags";
 
 export const fieldLimits = { displayName: 25, aboutMe: 255 } as const;
 
@@ -79,14 +79,7 @@ export function buildPronounOptions(pronouns: Pronoun[]) {
 }
 
 export function buildTagOptions(tags: ProfileTagsResponse) {
-	const textByKey = new Map<string, string>();
-	for (const language of tags) {
-		for (const category of language.categoryCollection) {
-			for (const tag of category.tags) {
-				if (!textByKey.has(tag.key)) textByKey.set(tag.key, tag.text);
-			}
-		}
-	}
+	const textByKey = tagTextByKey(tags);
 	return {
 		options: [...textByKey]
 			.map(([key, text]) => ({ value: key, label: text }))

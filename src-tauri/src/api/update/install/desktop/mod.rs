@@ -12,13 +12,17 @@ use std::path::{Path, PathBuf};
 
 use tauri::{AppHandle, Manager};
 
+use super::super::baseline::Baseline;
+use super::super::component::Component;
 use super::super::error::UpdateError;
-use super::{Capability, Outcome, Unsupported};
+use super::{Outcome, Unsupported};
 
 const INSTALLED_MARKER: &str = "update-installed";
 
-fn target() -> String {
-	format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH)
+pub fn probe_package(_app: &AppHandle, _package: &str) -> Baseline {
+	Baseline::Unreadable {
+		why: "addons exist only on Android".to_owned(),
+	}
 }
 
 pub fn reason() -> Unsupported {
@@ -33,26 +37,26 @@ pub fn reason() -> Unsupported {
 				path: path.display().to_string(),
 			}
 		}
-		_ => Unsupported::NoReleaseArtifacts { target: target() },
+		_ => Unsupported::NoReleaseArtifacts {
+			target: super::target(),
+		},
 	}
 }
 
-pub fn capability(_app: &AppHandle) -> Capability {
-	if sandbox().is_some() {
-		return Capability::Unsupported(reason());
+pub fn verdict(
+	_app: &AppHandle,
+	_component: &Component,
+) -> Result<bool, Unsupported> {
+	if sandbox().is_some() || !installable() {
+		return Err(reason());
 	}
-	match super::release_asset_suffix().filter(|_| installable()) {
-		Some(payload_suffix) => Capability::Supported {
-			payload_suffix,
-			can_install_now: true,
-		},
-		None => Capability::Unsupported(reason()),
-	}
+	Ok(true)
 }
 
 pub async fn install(
 	app: &AppHandle,
 	payload: &Path,
+	_package_name: &str,
 ) -> Result<(), UpdateError> {
 	#[cfg(target_os = "macos")]
 	bundle::install(payload)?;
@@ -86,7 +90,17 @@ pub async fn install(
 	}
 }
 
-pub fn hold_process<R: tauri::Runtime>(_app: &AppHandle<R>, _active: bool) {}
+pub fn begin_transfer<R: tauri::Runtime>(
+	_app: &AppHandle<R>,
+	_candidate: &super::super::release::Candidate,
+) {
+}
+
+pub fn end_transfer<R: tauri::Runtime>(_app: &AppHandle<R>) {}
+
+pub fn install_pending(_app: &AppHandle) -> bool {
+	false
+}
 
 pub fn watch_install(
 	_app: &AppHandle,
@@ -126,6 +140,7 @@ pub fn take_outcome(app: &AppHandle) -> Option<Outcome> {
 fn outcome_of(replaced: &str, current: &str) -> Outcome {
 	let succeeded = replaced != current;
 	Outcome {
+		package_name: None,
 		succeeded,
 		canceled: false,
 		code: None,

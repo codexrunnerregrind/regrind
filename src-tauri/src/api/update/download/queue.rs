@@ -6,6 +6,7 @@ use tauri::{AppHandle, Emitter, Runtime};
 use tokio::sync::watch;
 use wreq::Client;
 
+use super::super::baseline::InstallKind;
 use super::super::error::UpdateError;
 use super::super::release::Candidate;
 use super::retained::Retained;
@@ -13,6 +14,8 @@ use super::run::run;
 use super::{Phase, Progress, PROGRESS_EVENT};
 
 struct Active {
+	component: String,
+	kind: InstallKind,
 	tag: String,
 	uuid: String,
 	cancel: Arc<AtomicBool>,
@@ -33,8 +36,16 @@ pub struct Downloads {
 	slots: Arc<Slots>,
 }
 
+enum Claim {
+	Join(Progress),
+	Busy(String),
+	Replace(Option<Active>),
+}
+
 fn joins_existing(active: &Active, finished: bool, wanted: &Candidate) -> bool {
-	active.tag == wanted.tag
+	active.component == wanted.component
+		&& active.kind == wanted.kind
+		&& active.tag == wanted.tag
 		&& active.uuid == wanted.payload.uuid
 		&& !finished
 		&& !active.cancel.load(Ordering::SeqCst)
@@ -50,45 +61,52 @@ impl Downloads {
 		self.slots.last.lock().unwrap().clone()
 	}
 
-	pub fn forget_retained(&self) {
-		self.slots.retained.forget();
+	pub fn forget_retained(&self, component: &str) {
+		self.slots.retained.forget(component);
 	}
 
-	pub fn retain_only(&self, candidate: Option<&Candidate>) {
-		self.slots.retained.retain_only(candidate);
+	pub fn forget_retained_update(&self, component: &str) {
+		self.slots
+			.retained
+			.forget_if_kind(component, InstallKind::Update);
 	}
 
-	pub fn retained_candidate(&self) -> Option<Candidate> {
-		self.slots.retained.candidate()
+	pub fn retain_only(&self, component: &str, candidate: Option<&Candidate>) {
+		self.slots.retained.retain_only(component, candidate);
 	}
 
-	pub async fn cancel(&self) {
+	#[cfg(test)]
+	pub(in super::super) fn hold(
+		&self,
+		stage: &super::super::storage::Stage,
+		staged: &super::super::storage::Staged,
+	) -> Result<(), UpdateError> {
+		self.slots.retained.keep(
+			stage,
+			staged,
+			super::super::verify::Prehash::default(),
+		)
+	}
+
+	pub fn retained_candidate(&self, component: &str) -> Option<Candidate> {
+		self.slots.retained.candidate(component)
+	}
+
+	pub async fn cancel(&self, component: &str) {
 		let _serialized = self.starting.lock().await;
 		if let Some(active) = self.slots.active.lock().unwrap().as_ref() {
-			active.cancel.store(true, Ordering::SeqCst);
+			if active.component == component {
+				active.cancel.store(true, Ordering::SeqCst);
+			}
 		}
 	}
 
-	pub async fn cancel_and_join(&self) {
-		let _serialized = self.starting.lock().await;
-		let running = self.slots.active.lock().unwrap().take();
-		if let Some(previous) = running {
-			previous.cancel.store(true, Ordering::SeqCst);
-			let _ = previous.task.await;
-		}
-	}
-
-	pub async fn cancel_others_and_join(&self, candidate: &Candidate) {
+	pub async fn cancel_and_join(&self, component: &str) {
 		let _serialized = self.starting.lock().await;
 		let running = {
 			let mut slot = self.slots.active.lock().unwrap();
 			match slot.as_ref() {
-				Some(active)
-					if active.tag != candidate.tag
-						|| active.uuid != candidate.payload.uuid =>
-				{
-					slot.take()
-				}
+				Some(active) if active.component == component => slot.take(),
 				_ => None,
 			}
 		};
@@ -98,34 +116,46 @@ impl Downloads {
 		}
 	}
 
+	fn claim(&self, candidate: &Candidate) -> Claim {
+		let mut slot = self.slots.active.lock().unwrap();
+		match slot.as_ref() {
+			Some(active)
+				if joins_existing(
+					active,
+					active.task.inner().is_finished(),
+					candidate,
+				) =>
+			{
+				Claim::Join(active.progress.borrow().clone())
+			}
+			Some(active) if busy_elsewhere(active, candidate) => {
+				Claim::Busy(active.component.clone())
+			}
+			_ => Claim::Replace(slot.take()),
+		}
+	}
+
 	pub async fn start<R: Runtime>(
 		&self,
 		app: &AppHandle<R>,
 		root: PathBuf,
 		client: Client,
 		candidate: Candidate,
-	) -> Progress {
+		clear_stale_stages: impl FnOnce(),
+	) -> Result<Progress, UpdateError> {
 		let _serialized = self.starting.lock().await;
-		let running = {
-			let mut slot = self.slots.active.lock().unwrap();
-			match slot.as_ref() {
-				Some(active)
-					if joins_existing(
-						active,
-						active.task.inner().is_finished(),
-						&candidate,
-					) =>
-				{
-					return active.progress.borrow().clone();
-				}
-				Some(_) => slot.take(),
-				None => None,
+		let previous = match self.claim(&candidate) {
+			Claim::Join(progress) => return Ok(progress),
+			Claim::Busy(component) => {
+				return Err(UpdateError::Busy { component })
 			}
+			Claim::Replace(previous) => previous,
 		};
-		if let Some(previous) = running {
+		if let Some(previous) = previous {
 			previous.cancel.store(true, Ordering::SeqCst);
 			let _ = previous.task.await;
 		}
+		clear_stale_stages();
 
 		let cancel = Arc::new(AtomicBool::new(false));
 		let initial = Progress::new(&candidate, 0, Phase::Downloading);
@@ -170,14 +200,22 @@ impl Downloads {
 		};
 
 		*self.slots.active.lock().unwrap() = Some(Active {
+			component: candidate.component.clone(),
+			kind: candidate.kind,
 			tag: candidate.tag.clone(),
 			uuid: candidate.payload.uuid.clone(),
 			cancel,
 			progress: receiver,
 			task,
 		});
-		initial
+		Ok(initial)
 	}
+}
+
+fn busy_elsewhere(active: &Active, wanted: &Candidate) -> bool {
+	active.component != wanted.component
+		&& !active.task.inner().is_finished()
+		&& !active.cancel.load(Ordering::SeqCst)
 }
 
 #[cfg(test)]
@@ -188,6 +226,8 @@ mod tests {
 
 	fn progress() -> Progress {
 		Progress {
+			component: "app".into(),
+			kind: InstallKind::Update,
 			tag: "v1".into(),
 			version: "0.2.0".into(),
 			phase: Phase::Downloading,
@@ -196,7 +236,7 @@ mod tests {
 		}
 	}
 
-	fn active_that_stops_when_cancelled(
+	pub(super) fn active_that_stops_when_cancelled(
 		stopped: Arc<AtomicBool>,
 	) -> (Active, Arc<AtomicBool>) {
 		let cancel = Arc::new(AtomicBool::new(false));
@@ -214,6 +254,8 @@ mod tests {
 		};
 		(
 			Active {
+				component: "app".into(),
+				kind: InstallKind::Update,
 				tag: "v1".into(),
 				uuid: "uuid".into(),
 				cancel: cancel.clone(),
@@ -228,6 +270,8 @@ mod tests {
 		use crate::api::update::release::Artifact;
 
 		Candidate {
+			component: "app".into(),
+			kind: InstallKind::Update,
 			tag: tag.into(),
 			version: "0.2.0".into(),
 			notes: None,
@@ -245,6 +289,104 @@ mod tests {
 				size: 228,
 			},
 		}
+	}
+
+	fn offered_for(component: &str, tag: &str, uuid: &str) -> Candidate {
+		Candidate {
+			component: component.into(),
+			..offered(tag, uuid)
+		}
+	}
+
+	#[tokio::test]
+	async fn a_transfer_never_joins_one_belonging_to_another_component() {
+		let stopped = Arc::new(AtomicBool::new(false));
+		let (active, _) = active_that_stops_when_cancelled(stopped);
+
+		assert!(joins_existing(&active, false, &offered("v1", "uuid")));
+		assert!(
+			!joins_existing(
+				&active,
+				false,
+				&offered_for("google-oauth", "v1", "uuid")
+			),
+			"two components can publish the same tag and asset uuid"
+		);
+		active.cancel.store(true, Ordering::SeqCst);
+	}
+
+	#[tokio::test]
+	async fn cancelling_one_component_leaves_anothers_transfer_alone() {
+		let downloads = Downloads::default();
+		let stopped = Arc::new(AtomicBool::new(false));
+		let (active, cancel) =
+			active_that_stops_when_cancelled(stopped.clone());
+		*downloads.slots.active.lock().unwrap() = Some(active);
+
+		downloads.cancel("google-oauth").await;
+		assert!(
+			!cancel.load(Ordering::SeqCst),
+			"a cancel aimed at another component must not stop this transfer"
+		);
+
+		downloads.cancel_and_join("google-oauth").await;
+		assert!(
+			downloads.slots.active.lock().unwrap().is_some(),
+			"a discard for another component must not take the slot"
+		);
+
+		downloads.cancel("app").await;
+		assert!(cancel.load(Ordering::SeqCst));
+		downloads.cancel_and_join("app").await;
+	}
+
+	#[tokio::test]
+	async fn a_second_component_is_refused_rather_than_served_by_cancelling() {
+		let downloads = Downloads::default();
+		let stopped = Arc::new(AtomicBool::new(false));
+		let (active, cancel) =
+			active_that_stops_when_cancelled(stopped.clone());
+		*downloads.slots.active.lock().unwrap() = Some(active);
+
+		let refused =
+			downloads.claim(&offered_for("google-oauth", "v9", "other"));
+
+		assert!(
+			matches!(refused, Claim::Busy(ref component) if component == "app"),
+			"expected Busy naming the running component"
+		);
+		assert!(
+			!cancel.load(Ordering::SeqCst),
+			"the running download must not be cancelled by the refusal"
+		);
+		assert!(
+			downloads.slots.active.lock().unwrap().is_some(),
+			"the running download must still hold the slot"
+		);
+
+		cancel.store(true, Ordering::SeqCst);
+		downloads.cancel_and_join("app").await;
+	}
+
+	#[tokio::test]
+	async fn a_finished_transfer_does_not_block_another_component() {
+		let downloads = Downloads::default();
+		let stopped = Arc::new(AtomicBool::new(false));
+		let (active, cancel) =
+			active_that_stops_when_cancelled(stopped.clone());
+		*downloads.slots.active.lock().unwrap() = Some(active);
+		cancel.store(true, Ordering::SeqCst);
+		while !stopped.load(Ordering::SeqCst) {
+			tokio::task::yield_now().await;
+		}
+
+		assert!(
+			matches!(
+				downloads.claim(&offered_for("google-oauth", "v9", "other")),
+				Claim::Replace(Some(_))
+			),
+			"a cancelled or finished transfer must not hold the lane"
+		);
 	}
 
 	#[tokio::test]
@@ -265,17 +407,36 @@ mod tests {
 	}
 
 	#[tokio::test]
-	async fn cancelling_others_leaves_the_transfer_for_the_same_asset_running()
-	{
+	async fn a_first_install_never_joins_an_update_of_the_same_asset() {
+		let stopped = Arc::new(AtomicBool::new(false));
+		let (active, _) = active_that_stops_when_cancelled(stopped);
+
+		assert!(
+			!joins_existing(
+				&active,
+				false,
+				&Candidate {
+					kind: InstallKind::Install,
+					..offered("v1", "uuid")
+				}
+			),
+			"a joined update would finish with a label the removed target refuses"
+		);
+		active.cancel.store(true, Ordering::SeqCst);
+	}
+
+	#[tokio::test]
+	async fn claiming_the_same_asset_joins_the_transfer_already_running() {
 		let downloads = Downloads::default();
 		let stopped = Arc::new(AtomicBool::new(false));
 		let (active, cancel) =
 			active_that_stops_when_cancelled(stopped.clone());
 		*downloads.slots.active.lock().unwrap() = Some(active);
 
-		downloads
-			.cancel_others_and_join(&offered("v1", "uuid"))
-			.await;
+		assert!(matches!(
+			downloads.claim(&offered("v1", "uuid")),
+			Claim::Join(ref progress) if progress.tag == "v1"
+		));
 
 		assert!(!cancel.load(Ordering::SeqCst));
 		assert!(downloads.slots.active.lock().unwrap().is_some());
@@ -283,23 +444,21 @@ mod tests {
 	}
 
 	#[tokio::test]
-	async fn cancelling_others_stops_a_transfer_for_a_different_asset() {
+	async fn claiming_a_different_asset_takes_the_slot_to_replace_it() {
 		let downloads = Downloads::default();
-		let stopped = Arc::new(AtomicBool::new(false));
-		let (active, cancel) =
-			active_that_stops_when_cancelled(stopped.clone());
+		let (active, _) =
+			active_that_stops_when_cancelled(Arc::new(AtomicBool::new(false)));
 		*downloads.slots.active.lock().unwrap() = Some(active);
 
-		downloads
-			.cancel_others_and_join(&offered("v2", "other"))
-			.await;
+		let Claim::Replace(Some(previous)) =
+			downloads.claim(&offered("v2", "other"))
+		else {
+			panic!("a different asset must replace the running transfer");
+		};
 
-		assert!(cancel.load(Ordering::SeqCst));
-		assert!(
-			stopped.load(Ordering::SeqCst),
-			"purging the stage before the old transfer stopped is what broke the handover"
-		);
 		assert!(downloads.slots.active.lock().unwrap().is_none());
+		previous.cancel.store(true, Ordering::SeqCst);
+		let _ = previous.task.await;
 	}
 
 	#[tokio::test]
@@ -310,7 +469,7 @@ mod tests {
 			active_that_stops_when_cancelled(stopped.clone());
 		*downloads.slots.active.lock().unwrap() = Some(active);
 
-		downloads.cancel_and_join().await;
+		downloads.cancel_and_join("app").await;
 
 		assert!(
 			cancel.load(Ordering::SeqCst),
@@ -325,7 +484,7 @@ mod tests {
 
 	#[tokio::test]
 	async fn cancel_and_join_with_nothing_running_is_a_no_op() {
-		Downloads::default().cancel_and_join().await;
+		Downloads::default().cancel_and_join("app").await;
 	}
 }
 
@@ -357,6 +516,8 @@ mod end_to_end {
 
 	fn candidate(url: &str, size: u64) -> Candidate {
 		Candidate {
+			component: "app".into(),
+			kind: InstallKind::Update,
 			tag: "v99".into(),
 			version: "99.0.0".into(),
 			notes: None,
@@ -382,6 +543,323 @@ mod end_to_end {
 			.expect("mock app")
 	}
 
+	fn running_app_transfer(
+		downloads: &Downloads,
+	) -> (Arc<AtomicBool>, Arc<AtomicBool>) {
+		let stopped = Arc::new(AtomicBool::new(false));
+		let (active, cancel) =
+			super::tests::active_that_stops_when_cancelled(stopped.clone());
+		*downloads.slots.active.lock().unwrap() = Some(active);
+		(stopped, cancel)
+	}
+
+	#[tokio::test]
+	async fn a_second_start_for_the_running_asset_leaves_its_stage_alone() {
+		let server = testserver::spawn(Plan {
+			body: vec![7; 10],
+			etag: Some("\"uuid\"".into()),
+			..Plan::default()
+		})
+		.await;
+		let app = app();
+		let root = root("join-keeps-stage");
+		let downloads = Downloads::default();
+		let (_, cancel) = running_app_transfer(&downloads);
+		let unsaved_stage = root.0.join("v1");
+		std::fs::create_dir_all(&unsaved_stage).unwrap();
+		let cleared = AtomicBool::new(false);
+		let running = Candidate {
+			tag: "v1".into(),
+			..candidate(&server.url(), 10)
+		};
+
+		let joined = downloads
+			.start(
+				app.handle(),
+				root.0.clone(),
+				Client::builder().build().expect("client"),
+				running.clone(),
+				|| {
+					cleared.store(true, Ordering::SeqCst);
+					crate::api::update::storage::purge(
+						&crate::api::update::component::APP,
+						&root.0,
+						&crate::api::update::baseline::Baseline::of_version(
+							semver::Version::new(0, 1, 0),
+						),
+						Some(&running),
+					);
+				},
+			)
+			.await
+			.unwrap();
+
+		assert_eq!(joined.tag, "v1");
+		assert!(
+			!cleared.load(Ordering::SeqCst),
+			"joining a transfer must never clear stages"
+		);
+		assert!(
+			unsaved_stage.exists(),
+			"a stage whose sidecar is not written yet belongs to the running transfer"
+		);
+		cancel.store(true, Ordering::SeqCst);
+		downloads.cancel_and_join("app").await;
+	}
+
+	#[tokio::test]
+	async fn a_verified_update_is_installed_from_disk_after_its_target_was_removed(
+	) {
+		use crate::api::update::baseline::Baseline;
+		use crate::api::update::component::GOOGLE_OAUTH;
+		use crate::api::update::storage::{self, Staged};
+
+		let server = testserver::spawn(Plan {
+			body: b"apk!".to_vec(),
+			etag: Some("\"uuid\"".into()),
+			signature_status: Some(404),
+			..Plan::default()
+		})
+		.await;
+		let app = app();
+		let root = root("verified-update-reinstalled");
+		let update = Candidate {
+			component: GOOGLE_OAUTH.key.into(),
+			..candidate(&server.url(), 4)
+		};
+		let stage = storage::stage(&root.0, &update.tag).unwrap();
+		stage.create().unwrap();
+		std::fs::write(stage.payload(), b"apk!").unwrap();
+		stage
+			.save(&Staged {
+				downloaded: 4,
+				verified: true,
+				payload_digest: Some("digest".into()),
+				..Staged::new(&update)
+			})
+			.unwrap();
+		let first_install = Candidate {
+			kind: InstallKind::Install,
+			..update
+		};
+		let downloads = Downloads::default();
+
+		downloads
+			.start(
+				app.handle(),
+				root.0.clone(),
+				Client::builder().build().expect("client"),
+				first_install.clone(),
+				|| {
+					storage::purge(
+						&GOOGLE_OAUTH,
+						&root.0,
+						&Baseline::Absent,
+						Some(&first_install),
+					)
+				},
+			)
+			.await
+			.unwrap();
+
+		let mut settled = None;
+		for _ in 0..400 {
+			match downloads.snapshot().map(|progress| progress.phase) {
+				Some(Phase::Downloading) | None => {
+					tokio::time::sleep(Duration::from_millis(5)).await;
+				}
+				phase => {
+					settled = phase;
+					break;
+				}
+			}
+		}
+		downloads.cancel_and_join(GOOGLE_OAUTH.key).await;
+
+		assert!(
+			matches!(settled, Some(Phase::Ready)),
+			"the verified bytes on disk must be reused, got {settled:?}"
+		);
+		let (_, reused) =
+			storage::verified(&GOOGLE_OAUTH, &root.0, &Baseline::Absent)
+				.expect(
+					"the reused stage must be installable as a first install",
+				);
+		assert_eq!(reused.kind, InstallKind::Install);
+	}
+
+	#[tokio::test]
+	async fn a_first_install_takes_over_a_running_update_and_resumes_its_bytes()
+	{
+		use crate::api::update::component::GOOGLE_OAUTH;
+		use crate::api::update::storage;
+
+		let large: Vec<u8> =
+			(0..8 * 1024 * 1024u32).map(|i| (i % 251) as u8).collect();
+		let server = testserver::spawn(Plan {
+			body: large.clone(),
+			etag: Some("\"uuid\"".into()),
+			pause_every_64k: Some(Duration::from_millis(5)),
+			..Plan::default()
+		})
+		.await;
+		let app = app();
+		let root = root("install-takes-over-update");
+		let downloads = Downloads::default();
+		let client = Client::builder().build().expect("client");
+		let update = Candidate {
+			component: GOOGLE_OAUTH.key.into(),
+			..candidate(&server.url(), large.len() as u64)
+		};
+		let first_install = Candidate {
+			kind: InstallKind::Install,
+			..update.clone()
+		};
+
+		downloads
+			.start(app.handle(), root.0.clone(), client.clone(), update, || ())
+			.await
+			.unwrap();
+		let stage = storage::stage(&root.0, &first_install.tag).unwrap();
+		for _ in 0..400 {
+			if std::fs::metadata(stage.part()).is_ok_and(|m| m.len() > 0) {
+				break;
+			}
+			tokio::time::sleep(Duration::from_millis(5)).await;
+		}
+		assert!(
+			std::fs::metadata(stage.part()).is_ok_and(|m| m.len() > 0),
+			"the update transfer never started writing"
+		);
+
+		let cleared = AtomicBool::new(false);
+		downloads
+			.start(app.handle(), root.0.clone(), client, first_install, || {
+				cleared.store(true, Ordering::SeqCst)
+			})
+			.await
+			.unwrap();
+
+		assert!(
+			cleared.load(Ordering::SeqCst),
+			"a first install joined the running update, so it would finish labelled as an update"
+		);
+		let replaced = downloads
+			.slots
+			.last
+			.lock()
+			.unwrap()
+			.clone()
+			.expect("the update transfer reported how it ended");
+		assert!(
+			matches!(replaced.phase, Phase::Canceled),
+			"the update transfer must be cancelled, got {:?}",
+			replaced.phase
+		);
+		let kept = replaced.received;
+		assert!(kept > 0, "the test needs bytes to have landed");
+
+		let mut range = None;
+		let mut relabelled = None;
+		for _ in 0..400 {
+			range = server.last_range.lock().unwrap().clone();
+			relabelled = stage.load().map(|staged| staged.kind);
+			if range.is_some() && relabelled.is_some() {
+				break;
+			}
+			tokio::time::sleep(Duration::from_millis(5)).await;
+		}
+		downloads.cancel_and_join(GOOGLE_OAUTH.key).await;
+
+		assert_eq!(
+			range,
+			Some(format!("bytes={kept}-")),
+			"the first install must resume the bytes the update kept"
+		);
+		assert_eq!(
+			relabelled,
+			Some(InstallKind::Install),
+			"the resumed stage must be labelled as a first install"
+		);
+	}
+
+	#[tokio::test]
+	async fn a_replacing_start_clears_stages_only_after_the_old_transfer_stopped(
+	) {
+		let server = testserver::spawn(Plan {
+			body: vec![7; 10],
+			etag: Some("\"uuid\"".into()),
+			..Plan::default()
+		})
+		.await;
+		let app = app();
+		let root = root("replace-after-stop");
+		let downloads = Downloads::default();
+		let (stopped, _) = running_app_transfer(&downloads);
+		let cleared = AtomicBool::new(false);
+		let cleared_after_stop = AtomicBool::new(false);
+
+		downloads
+			.start(
+				app.handle(),
+				root.0.clone(),
+				Client::builder().build().expect("client"),
+				candidate(&server.url(), 10),
+				|| {
+					cleared.store(true, Ordering::SeqCst);
+					cleared_after_stop.store(
+						stopped.load(Ordering::SeqCst),
+						Ordering::SeqCst,
+					);
+				},
+			)
+			.await
+			.unwrap();
+		downloads.cancel_and_join("app").await;
+
+		assert!(cleared.load(Ordering::SeqCst));
+		assert!(
+			cleared_after_stop.load(Ordering::SeqCst),
+			"clearing stages before the old transfer stopped is what broke the handover"
+		);
+	}
+
+	#[tokio::test]
+	async fn a_start_refused_as_busy_leaves_every_stage_alone() {
+		let server = testserver::spawn(Plan {
+			body: vec![7; 10],
+			etag: Some("\"uuid\"".into()),
+			..Plan::default()
+		})
+		.await;
+		let app = app();
+		let root = root("busy-keeps-stages");
+		let downloads = Downloads::default();
+		let (_, cancel) = running_app_transfer(&downloads);
+		let cleared = AtomicBool::new(false);
+
+		let refused = downloads
+			.start(
+				app.handle(),
+				root.0.clone(),
+				Client::builder().build().expect("client"),
+				Candidate {
+					component: "google-oauth".into(),
+					..candidate(&server.url(), 10)
+				},
+				|| cleared.store(true, Ordering::SeqCst),
+			)
+			.await;
+
+		assert!(
+			matches!(refused, Err(UpdateError::Busy { ref component }) if component == "app"),
+			"expected Busy, got {refused:?}"
+		);
+		assert!(!cleared.load(Ordering::SeqCst));
+		cancel.store(true, Ordering::SeqCst);
+		downloads.cancel_and_join("app").await;
+	}
+
 	#[tokio::test]
 	async fn discarding_a_live_download_cancels_it_and_frees_the_stage() {
 		let large: Vec<u8> =
@@ -403,8 +881,10 @@ mod end_to_end {
 				root.0.clone(),
 				client,
 				candidate(&server.url(), large.len() as u64),
+				|| (),
 			)
-			.await;
+			.await
+			.unwrap();
 
 		let stage = crate::api::update::storage::stage(&root.0, "v99").unwrap();
 		for _ in 0..400 {
@@ -418,7 +898,7 @@ mod end_to_end {
 			"the transfer never started writing"
 		);
 
-		downloads.cancel_and_join().await;
+		downloads.cancel_and_join("app").await;
 		std::fs::remove_dir_all(&root.0)
 			.expect("discard must be able to delete the stage");
 
@@ -451,8 +931,10 @@ mod end_to_end {
 				root.0.clone(),
 				client,
 				candidate(&server.url(), large.len() as u64),
+				|| (),
 			)
-			.await;
+			.await
+			.unwrap();
 
 		let mut settled = None;
 		for _ in 0..4000 {
@@ -466,7 +948,7 @@ mod end_to_end {
 				}
 			}
 		}
-		downloads.cancel_and_join().await;
+		downloads.cancel_and_join("app").await;
 
 		assert!(
 			matches!(settled, Some(Phase::Failed(_))),
@@ -496,8 +978,10 @@ mod end_to_end {
 				root.0.clone(),
 				client,
 				candidate(&server.url(), large.len() as u64),
+				|| (),
 			)
-			.await;
+			.await
+			.unwrap();
 
 		let stage = crate::api::update::storage::stage(&root.0, "v99").unwrap();
 		for _ in 0..2000 {
@@ -513,7 +997,7 @@ mod end_to_end {
 		let reached = std::fs::metadata(stage.part())
 			.map(|meta| meta.len())
 			.unwrap_or(large.len() as u64);
-		downloads.cancel_and_join().await;
+		downloads.cancel_and_join("app").await;
 		assert!(
 			reached >= large.len() as u64,
 			"a cut every megabyte must not spend a fixed attempt budget: stopped at {reached} of {}",
@@ -545,8 +1029,10 @@ mod end_to_end {
 				root.0.clone(),
 				client.clone(),
 				candidate.clone(),
+				|| (),
 			)
-			.await;
+			.await
+			.unwrap();
 
 		let stage = crate::api::update::storage::stage(&root.0, "v99").unwrap();
 		for _ in 0..400 {
@@ -555,7 +1041,7 @@ mod end_to_end {
 			}
 			tokio::time::sleep(Duration::from_millis(5)).await;
 		}
-		downloads.cancel_and_join().await;
+		downloads.cancel_and_join("app").await;
 
 		let final_progress = downloads.snapshot().expect("a final progress");
 		assert!(
@@ -572,13 +1058,21 @@ mod end_to_end {
 		);
 		let current = semver::Version::parse("0.1.0").unwrap();
 		assert!(
-			crate::api::update::storage::resumable(&root.0, &current).is_none(),
+			crate::api::update::storage::resumable(
+				&crate::api::update::component::APP,
+				&root.0,
+				&crate::api::update::baseline::Baseline::of_version(
+					current.clone()
+				),
+			)
+			.is_none(),
 			"nothing on disk means nothing to resume from disk"
 		);
 
 		downloads
-			.start(app.handle(), root.0.clone(), client, candidate)
-			.await;
+			.start(app.handle(), root.0.clone(), client, candidate, || ())
+			.await
+			.unwrap();
 		for _ in 0..400 {
 			if server.last_range.lock().unwrap().is_some() {
 				break;
@@ -586,7 +1080,7 @@ mod end_to_end {
 			tokio::time::sleep(Duration::from_millis(5)).await;
 		}
 		let range = server.last_range.lock().unwrap().clone();
-		downloads.cancel_and_join().await;
+		downloads.cancel_and_join("app").await;
 
 		assert_eq!(
 			range,
@@ -617,8 +1111,10 @@ mod end_to_end {
 				root.0.clone(),
 				client,
 				candidate(&server.url(), large.len() as u64),
+				|| (),
 			)
-			.await;
+			.await
+			.unwrap();
 
 		let mut phase = None;
 		for _ in 0..400 {

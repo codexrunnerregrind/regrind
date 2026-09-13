@@ -14,26 +14,39 @@ class InstallRefused(val marker: String) : Exception(marker)
 object ApkInstaller {
 	private const val ENTRY = "base.apk"
 	private const val BUFFER = 1 shl 16
+	const val EXTRA_INSTALL_TARGET = "org.opengrind.update.extra.INSTALL_TARGET"
 
 	private val live = LiveSession()
 
 	fun isLive(sessionId: Int): Boolean = live.isLive(sessionId)
 
+	fun installPending(context: Context): Boolean {
+		val sessionId = live.current() ?: return false
+		return context.packageManager.packageInstaller.getSessionInfo(sessionId) != null
+	}
+
 	fun install(
 		context: Context,
 		apk: File,
+		target: String,
 	) {
 		if (!apk.isFile || apk.length() == 0L) throw InstallRefused("missing")
-		when (InstallProbe.verdictFor(context)) {
+		val staged = context.cacheDir.canonicalFile
+		if (!apk.canonicalFile.toPath().startsWith(staged.toPath())) {
+			throw InstallRefused("foreign-path")
+		}
+		when (InstallProbe.verdictFor(context, target)) {
 			is InstallGate.Verdict.Supported -> {}
 			is InstallGate.Verdict.ExternallyManaged -> throw InstallRefused("externally-managed")
 			is InstallGate.Verdict.ForeignSigner -> throw InstallRefused("foreign-signer")
+			is InstallGate.Verdict.ForeignTarget -> throw InstallRefused("foreign-target")
 		}
 		if (!InstallProbe.canInstallNow(context)) throw InstallRefused("unknown-sources")
 
 		val archive = InstallProbe.readArchive(context, apk) ?: throw InstallRefused("unreadable")
-		if (archive.packageName != context.packageName) throw InstallRefused("package-mismatch")
-		if (!InstallGate.mayReplace(InstallProbe.installedVersionCode(context), InstallProbe.versionCodeOf(archive))) {
+		if (archive.packageName != target) throw InstallRefused("package-mismatch")
+		val installedCode = InstallProbe.stateOf(context, target)?.versionCode
+		if (!InstallGate.mayReplace(installedCode, InstallProbe.versionCodeOf(archive))) {
 			throw InstallRefused("downgrade")
 		}
 
@@ -43,7 +56,7 @@ object ApkInstaller {
 		val total = apk.length()
 		val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL)
 			.apply {
-				setAppPackageName(context.packageName)
+				setAppPackageName(target)
 				setSize(total)
 				setInstallReason(PackageManager.INSTALL_REASON_USER)
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -59,8 +72,8 @@ object ApkInstaller {
 					apk.inputStream().use { input -> input.copyTo(output, BUFFER) }
 					session.fsync(output)
 				}
-				UpdateLedger.forgetOutcome(context)
-				session.commit(statusSender(context, sessionId))
+				if (replacesThisApp(context, target)) UpdateLedger.forgetOutcome(context)
+				session.commit(statusSender(context, sessionId, target))
 			}
 		} catch (e: Throwable) {
 			live.release()
@@ -68,6 +81,11 @@ object ApkInstaller {
 			throw e
 		}
 	}
+
+	fun replacesThisApp(
+		context: Context,
+		target: String,
+	): Boolean = target == context.packageName
 
 	fun abandonAll(context: Context) {
 		live.release()
@@ -81,8 +99,10 @@ object ApkInstaller {
 	private fun statusSender(
 		context: Context,
 		sessionId: Int,
+		target: String,
 	): IntentSender {
 		val intent = Intent(context, InstallResultReceiver::class.java)
+			.putExtra(EXTRA_INSTALL_TARGET, target)
 		var flags = PendingIntent.FLAG_UPDATE_CURRENT
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
 			flags = flags or PendingIntent.FLAG_MUTABLE

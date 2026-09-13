@@ -1,0 +1,10 @@
+- Sign in with Facebook
+- Filter the inbox, and jump to the top of any list
+- Add a photo to an album straight from the grid
+- Export and import your favorites
+- A "new" badge on profiles, and a back button
+- Adjustable background blur, better tuned on Linux
+- Licenses and credits page
+- Clearer notification text and offline errors
+- Linux AppImage builds
+- Other fixes

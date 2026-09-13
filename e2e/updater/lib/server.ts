@@ -13,7 +13,7 @@ const tick = 100;
 export type Harness = {
 	origin: string;
 	publicKey: string;
-	asset: string;
+	assets: string[];
 	stop: () => Promise<void>;
 };
 
@@ -22,18 +22,24 @@ export type Payload =
 	| { bundle: string }
 	| { invent: number };
 
-export type ServerOptions = {
+export type Release = {
+	repo?: string;
+	stem?: string;
 	payload: Payload;
 	tag: string;
-	home: string;
-	port: number;
 	suffix: string;
 	uuid?: string;
+	prerelease?: boolean;
+	notes?: string;
+};
+
+export type ServerOptions = {
+	releases: Release[];
+	home: string;
+	port: number;
 	rate?: number;
 	failMode?: string;
 	journal?: string;
-	prerelease?: boolean;
-	notes?: string;
 };
 
 async function releaseKey(home: string): Promise<string> {
@@ -126,33 +132,17 @@ function paced(
 }
 
 export async function startServer({
-	payload,
-	tag,
+	releases,
 	home,
 	port,
-	suffix,
-	uuid = "demo-payload",
 	rate = 0,
 	failMode = "",
 	journal: journalPath,
-	prerelease = false,
-	notes = "Local end-to-end demo release.",
 }: ServerOptions): Promise<Harness> {
-	const etag = `"${uuid}"`;
 	const publicKey = await releaseKey(home);
-	const asset = `regrind-${tag}${suffix}`;
-	const { body, signature } = await signedPayload({
-		source: payload,
-		name: asset,
-		home,
-	});
 	const origin = `http://127.0.0.1:${port}/`;
 	if (journalPath) await $`rm -f ${journalPath}`;
 	const journal = journalPath ? Bun.file(journalPath).writer() : null;
-
-	const served = failMode === "signature" ? corrupted(body) : body;
-	const advertised =
-		failMode === "oversize" ? served.byteLength - 1024 : served.byteLength;
 
 	const note = (request: Request) => {
 		if (!journal) return;
@@ -168,84 +158,127 @@ export async function startServer({
 		journal.flush();
 	};
 
-	const release = {
-		tag_name: tag,
-		draft: false,
-		prerelease,
-		body: notes,
-		published_at: new Date(0).toISOString(),
-		assets: [
-			{
-				name: asset,
-				size: advertised,
-				uuid,
-				browser_download_url: `${origin}download/${asset}`,
-			},
-			...(failMode === "unsigned"
-				? []
-				: [
-						{
-							name: `${asset}.minisig`,
-							size: signature.byteLength,
-							uuid: `${uuid}-signature`,
-							browser_download_url: `${origin}download/${asset}.minisig`,
-						},
-					]),
-		],
-	};
+	const routes: Record<string, (request: Request) => Response> = {};
+	const assets: string[] = [];
+	const indexes = new Map<
+		string,
+		{ release: object; prerelease: boolean }[]
+	>();
 
-	const resumeFrom = (request: Request) => {
-		const range = request.headers.get("range");
-		const ifRange = request.headers.get("if-range");
-		if (!range || (ifRange !== null && ifRange !== etag)) return null;
-		const start = Number(/bytes=(\d+)-/.exec(range)?.[1]);
-		return Number.isFinite(start) && start < served.byteLength
-			? start
-			: null;
-	};
+	for (const {
+		repo = "open-grind",
+		stem = "open-grind",
+		payload,
+		tag,
+		suffix,
+		uuid,
+		prerelease = false,
+		notes = "Local end-to-end demo release.",
+	} of releases) {
+		const asset = `${stem}-${tag}${suffix}`;
+		const assetId = uuid ?? asset;
+		const etag = `"${assetId}"`;
+		assets.push(asset);
+		const { body, signature } = await signedPayload({
+			source: payload,
+			name: asset,
+			home,
+		});
+
+		const served = failMode === "signature" ? corrupted(body) : body;
+		const advertised =
+			failMode === "oversize"
+				? served.byteLength - 1024
+				: served.byteLength;
+
+		const release = {
+			tag_name: tag,
+			draft: false,
+			prerelease,
+			body: notes,
+			published_at: new Date(0).toISOString(),
+			assets: [
+				{
+					name: asset,
+					size: advertised,
+					uuid: assetId,
+					browser_download_url: `${origin}download/${asset}`,
+				},
+				...(failMode === "unsigned"
+					? []
+					: [
+							{
+								name: `${asset}.minisig`,
+								size: signature.byteLength,
+								uuid: `${assetId}-signature`,
+								browser_download_url: `${origin}download/${asset}.minisig`,
+							},
+						]),
+			],
+		};
+
+		const resumeFrom = (request: Request) => {
+			const range = request.headers.get("range");
+			const ifRange = request.headers.get("if-range");
+			if (!range || (ifRange !== null && ifRange !== etag)) return null;
+			const start = Number(/bytes=(\d+)-/.exec(range)?.[1]);
+			return Number.isFinite(start) && start < served.byteLength
+				? start
+				: null;
+		};
+
+		indexes.set(repo, [
+			...(indexes.get(repo) ?? []),
+			{ release, prerelease },
+		]);
+		routes[`/download/${asset}`] = (request) => {
+			note(request);
+			const start = resumeFrom(request);
+			const chunk = start === null ? served : served.subarray(start);
+			return new Response(paced(chunk, { rate, failMode }), {
+				status: start === null ? 200 : 206,
+				headers: {
+					ETag: etag,
+					"Accept-Ranges": "bytes",
+					"Content-Length": String(chunk.byteLength),
+					...(start !== null && {
+						"Content-Range": `bytes ${start}-${served.byteLength - 1}/${served.byteLength}`,
+					}),
+				},
+			});
+		};
+		routes[`/download/${asset}.minisig`] = (request) => {
+			note(request);
+			return new Response(signature);
+		};
+	}
+
+	for (const [repo, entries] of indexes) {
+		routes[`/api/v1/repos/open-grind/${repo}/releases`] = (request) => {
+			note(request);
+			if (failMode === "server") {
+				return new Response("upstream is unwell", { status: 500 });
+			}
+			const stableOnly =
+				new URL(request.url).searchParams.get("pre-release") ===
+				"false";
+			return Response.json(
+				entries
+					.filter((entry) => !stableOnly || !entry.prerelease)
+					.map((entry) => entry.release),
+			);
+		};
+	}
 
 	const server = Bun.serve({
 		port,
 		hostname: "127.0.0.1",
-		routes: {
-			"/api/v1/repos/*": (request) => {
-				note(request);
-				if (failMode === "server") {
-					return new Response("upstream is unwell", { status: 500 });
-				}
-				const stableOnly =
-					new URL(request.url).searchParams.get("pre-release") ===
-					"false";
-				return Response.json(
-					stableOnly && release.prerelease ? [] : [release],
-				);
-			},
-			[`/download/${asset}`]: (request: Request) => {
-				note(request);
-				const start = resumeFrom(request);
-				const chunk = start === null ? served : served.subarray(start);
-				return new Response(paced(chunk, { rate, failMode }), {
-					status: start === null ? 200 : 206,
-					headers: {
-						ETag: etag,
-						"Accept-Ranges": "bytes",
-						"Content-Length": String(chunk.byteLength),
-						...(start !== null && {
-							"Content-Range": `bytes ${start}-${served.byteLength - 1}/${served.byteLength}`,
-						}),
-					},
-				});
-			},
-			[`/download/${asset}.minisig`]: (request: Request) => {
-				note(request);
-				return new Response(signature);
-			},
-		},
+		routes,
 		fetch: (request) => {
 			note(request);
 			return new Response("not found", { status: 404 });
 		},
 	});
 
-	return { origin, publicKey, asset, stop: () => server.stop(true) };
+	return { origin, publicKey, assets, stop: () => server.stop(true) };
 }

@@ -170,6 +170,7 @@ pub(super) async fn fetch_signature(
 
 #[cfg(test)]
 mod tests {
+	use super::super::super::baseline::InstallKind;
 	use std::fs;
 
 	use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
@@ -203,6 +204,8 @@ mod tests {
 		stage.create().unwrap();
 
 		let candidate = Candidate {
+			component: "app".into(),
+			kind: InstallKind::Update,
 			tag: "v1".into(),
 			version: "0.2.0".into(),
 			notes: None,

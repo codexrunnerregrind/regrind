@@ -7,7 +7,8 @@ mod desktop;
 
 use serde::{Deserialize, Serialize};
 
-use super::error::UpdateError;
+use super::baseline::Baseline;
+use super::component::Component;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(
@@ -19,10 +20,28 @@ use super::error::UpdateError;
 pub enum Unsupported {
 	ExternallyManaged { installer: String },
 	ForeignSigner,
+	ForeignTarget,
 	Undetermined,
 	NoReleaseArtifacts { target: String },
 	Sandboxed { runtime: String },
 	LocationNotWritable { path: String },
+}
+
+impl Unsupported {
+	#[cfg_attr(not(target_os = "android"), allow(dead_code))]
+	fn from_gate_marker(
+		marker: &str,
+		installer: Option<String>,
+	) -> Option<Self> {
+		match marker {
+			"externally-managed" => Some(Self::ExternallyManaged {
+				installer: installer.unwrap_or_else(|| "another store".into()),
+			}),
+			"foreign-signer" => Some(Self::ForeignSigner),
+			"foreign-target" => Some(Self::ForeignTarget),
+			_ => None,
+		}
+	}
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -40,20 +59,11 @@ pub enum Capability {
 	Unsupported(Unsupported),
 }
 
-impl Capability {
-	pub fn require(self) -> Result<String, UpdateError> {
-		match self {
-			Capability::Supported { payload_suffix, .. } => Ok(payload_suffix),
-			Capability::Unsupported(reason) => {
-				Err(UpdateError::Unsupported(reason))
-			}
-		}
-	}
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Outcome {
+	#[serde(default)]
+	pub package_name: Option<String>,
 	pub succeeded: bool,
 	#[serde(default)]
 	pub canceled: bool,
@@ -83,20 +93,52 @@ pub fn release_asset_suffix() -> Option<String> {
 	suffix_for(os, std::env::consts::ARCH)
 }
 
+fn target() -> String {
+	format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH)
+}
+
+pub fn capability_for(
+	app: &tauri::AppHandle,
+	component: &Component,
+) -> Capability {
+	let can_install_now = match platform::verdict(app, component) {
+		Ok(can_install_now) => can_install_now,
+		Err(reason) => return Capability::Unsupported(reason),
+	};
+	match (component.asset_suffix)() {
+		Some(payload_suffix) => Capability::Supported {
+			payload_suffix,
+			can_install_now,
+		},
+		None => Capability::Unsupported(Unsupported::NoReleaseArtifacts {
+			target: target(),
+		}),
+	}
+}
+
+pub fn probe(app: &tauri::AppHandle, component: &Component) -> Baseline {
+	match component.package() {
+		None => Baseline::of_version(app.package_info().version.clone()),
+		Some(package) => platform::probe_package(app, package),
+	}
+}
+
 #[cfg(target_os = "android")]
 use android as platform;
 #[cfg(not(target_os = "android"))]
 use desktop as platform;
 
 pub use platform::{
-	capability, enforce_home, hold_process, install,
+	begin_transfer, end_transfer, enforce_home, install, install_pending,
 	open_install_permission_settings, sweep_replaced, take_outcome,
 	watch_install,
 };
 
 #[cfg(test)]
 mod pins {
-	use super::suffix_for;
+	use std::ops::Range;
+
+	use super::{suffix_for, Unsupported};
 
 	const KEYS: &str = include_str!("../../../../../KEYS.md");
 	const LINUX_BUILD: &str = include_str!("../../../../../ci/linux/build.sh");
@@ -109,6 +151,677 @@ mod pins {
 
 	fn hex64(line: &str) -> bool {
 		line.len() == 64 && line.chars().all(|c| c.is_ascii_hexdigit())
+	}
+
+	const PLUGIN: &str = include_str!(
+		"../../../../gen/android/app/src/main/java/org/regrind/update/UpdatePlugin.kt"
+	);
+
+	const ANDROID_BRIDGE: &str = include_str!("android.rs");
+
+	const INSTALL_MODULE: &str = include_str!("mod.rs");
+
+	const COMPONENTS_TS: &str =
+		include_str!("../../../../../src/lib/updates/components.ts");
+
+	const INSTALLER: &str = include_str!(
+		"../../../../gen/android/app/src/main/java/org/regrind/update/ApkInstaller.kt"
+	);
+
+	const PROBE: &str = include_str!(
+		"../../../../gen/android/app/src/main/java/org/regrind/update/InstallProbe.kt"
+	);
+
+	const SIGN_IN_PLUGIN: &str = include_str!(
+		"../../../../gen/android/app/src/main/java/org/regrind/googleoauth/GoogleOauthPlugin.kt"
+	);
+
+	const TOKEN_HANDOFF: &str = include_str!(
+		"../../../../gen/android/app/src/main/java/org/regrind/TokenHandoffActivity.kt"
+	);
+
+	const REQUEST_TOKEN_PERMISSION: &str =
+		"org.opengrind.google_oauth.permission.REQUEST_TOKEN";
+	const REQUEST_TOKEN_ACTION: &str =
+		"org.opengrind.google_oauth.action.REQUEST_TOKEN";
+	const RECEIVE_TOKEN_PERMISSION: &str =
+		"org.opengrind.permission.RECEIVE_GOOGLE_TOKEN";
+	const TOKEN_EXTRA: &str = "org.opengrind.google_oauth.extra.TOKEN";
+
+	fn squashed(source: &str) -> String {
+		source.split_whitespace().collect()
+	}
+
+	fn kotlin_constant<'a>(source: &'a str, file: &str, name: &str) -> &'a str {
+		let start = spaced_match(source, &format!("const val {name} = \""))
+			.unwrap_or_else(|| panic!("{file} no longer declares {name}"))
+			.end;
+		let length = source[start..]
+			.find('"')
+			.unwrap_or_else(|| panic!("{file} {name} is not a string literal"));
+		&source[start..start + length]
+	}
+
+	fn bridge_function(name: &str) -> &'static str {
+		let start = ANDROID_BRIDGE
+			.find(&format!("fn {name}("))
+			.unwrap_or_else(|| panic!("android.rs no longer defines {name}"));
+		let length =
+			ANDROID_BRIDGE[start..].find("\n}\n").unwrap_or_else(|| {
+				panic!("android.rs {name} has no closing brace")
+			});
+		&ANDROID_BRIDGE[start..start + length]
+	}
+
+	fn manifest_element(tag: &str, name: &str) -> &'static str {
+		let opening = format!("<{tag}");
+		let named = format!("android:name=\"{name}\"");
+		MANIFEST
+			.match_indices(&opening)
+			.map(|(at, _)| {
+				let end =
+					MANIFEST[at..].find('>').map_or(MANIFEST.len(), |i| at + i);
+				&MANIFEST[at..end]
+			})
+			.find(|element| element.contains(&named))
+			.unwrap_or_else(|| {
+				panic!("the manifest has no <{tag}> named {name}")
+			})
+	}
+
+	fn source_tokens(source: &str) -> Vec<&str> {
+		let mut tokens = Vec::new();
+		let mut word_start = None;
+		for (at, character) in source.char_indices() {
+			match (is_identifier(character), word_start) {
+				(true, None) => word_start = Some(at),
+				(false, Some(start)) => {
+					tokens.push(&source[start..at]);
+					word_start = None;
+				}
+				_ => {}
+			}
+			if !is_identifier(character) && !character.is_whitespace() {
+				tokens.push(&source[at..at + character.len_utf8()]);
+			}
+		}
+		if let Some(start) = word_start {
+			tokens.push(&source[start..]);
+		}
+		tokens
+	}
+
+	fn spaced_match(source: &str, header: &str) -> Option<Range<usize>> {
+		let tokens = source_tokens(header);
+		let first = *tokens.first()?;
+		source.match_indices(first).find_map(|(start, _)| {
+			if first.starts_with(is_identifier)
+				&& source[..start].ends_with(is_identifier)
+			{
+				return None;
+			}
+			let mut end = start;
+			for token in &tokens {
+				let rest = &source[end..];
+				let token_start = end + rest.len() - rest.trim_start().len();
+				if !source[token_start..].starts_with(token) {
+					return None;
+				}
+				end = token_start + token.len();
+				if token.starts_with(is_identifier)
+					&& source[end..].starts_with(is_identifier)
+				{
+					return None;
+				}
+			}
+			Some(start..end)
+		})
+	}
+
+	#[test]
+	fn a_spaced_match_ignores_layout_but_not_names() {
+		let source = "fun installPending(invoke: Invoke) {}\n\tfun install (\n\t\tinvoke : Invoke\n\t) {}";
+		let found = spaced_match(source, "fun install(invoke: Invoke)")
+			.expect("a reformatted declaration is still the declaration");
+		assert!(source[found].starts_with("fun install ("));
+		assert_eq!(spaced_match(source, "fun instal(invoke: Invoke)"), None);
+		assert_eq!(
+			spaced_match("funinstall(invoke: Invoke)", "fun install("),
+			None
+		);
+		assert_eq!(
+			spaced_match("class InstallArgsX", "class InstallArgs"),
+			None
+		);
+		assert_eq!(
+			spaced_match("internalclass InstallArgs", "class InstallArgs"),
+			None
+		);
+	}
+
+	fn braced_block<'a>(source: &'a str, file: &str, header: &str) -> &'a str {
+		let open = spaced_match(source, header)
+			.and_then(|found| {
+				source[found.end..].find('{').map(|brace| found.end + brace)
+			})
+			.unwrap_or_else(|| panic!("{file} no longer declares {header}"));
+		let mut depth = 0;
+		for (offset, character) in source[open..].char_indices() {
+			match character {
+				'{' => depth += 1,
+				'}' => {
+					depth -= 1;
+					if depth == 0 {
+						return &source[open + 1..open + offset];
+					}
+				}
+				_ => {}
+			}
+		}
+		panic!("{file} {header} has no closing brace")
+	}
+
+	fn gate_verdicts() -> Vec<String> {
+		let header = ["sealed interface Verdict", "sealed class Verdict"]
+			.into_iter()
+			.find(|header| spaced_match(GATE, header).is_some())
+			.expect("InstallGate.kt no longer declares a sealed Verdict");
+		let body = braced_block(GATE, "InstallGate.kt", header);
+		let mut verdicts = Vec::new();
+		let mut depth = 0;
+		let mut previous = "";
+		let mut declaring = false;
+		for token in source_tokens(body) {
+			match token {
+				"{" | "(" => depth += 1,
+				"}" | ")" => depth -= 1,
+				"object" | "class" if depth == 0 && previous != "companion" => {
+					declaring = true;
+				}
+				name if declaring => {
+					verdicts.push(name.to_owned());
+					declaring = false;
+				}
+				_ => {}
+			}
+			previous = token;
+		}
+		verdicts
+	}
+
+	fn marker_of<'a>(branches: &'a str, verdict: &str) -> Option<&'a str> {
+		let arm = format!("InstallGate.Verdict.{verdict}->");
+		let start = branches.find(&arm)? + arm.len();
+		let rest = &branches[start..];
+		let arm_end = rest.find("InstallGate.Verdict.").unwrap_or(rest.len());
+		let reason = "put(\"reason\",\"";
+		let marker_start = rest[..arm_end].find(reason)? + reason.len();
+		let marker = &rest[marker_start..arm_end];
+		marker.find('"').map(|end| &marker[..end])
+	}
+
+	#[test]
+	fn every_gate_refusal_the_kotlin_side_sends_maps_to_its_reason() {
+		let verdicts = gate_verdicts();
+		assert!(
+			verdicts.iter().any(|verdict| verdict == "Supported"),
+			"InstallGate.Verdict was not parsed: {verdicts:?}"
+		);
+		let refusals: Vec<&String> = verdicts
+			.iter()
+			.filter(|verdict| *verdict != "Supported")
+			.collect();
+		assert!(
+			!refusals.is_empty(),
+			"InstallGate.Verdict declares no refusal: {verdicts:?}"
+		);
+		let plugin = squashed(PLUGIN);
+		let installer = squashed(INSTALLER);
+		for verdict in ["Supported"]
+			.iter()
+			.copied()
+			.chain(refusals.iter().map(|verdict| verdict.as_str()))
+		{
+			let arm = format!("InstallGate.Verdict.{verdict}->");
+			assert!(
+				plugin.contains(&arm),
+				"UpdatePlugin.capability has no branch for {verdict}"
+			);
+			assert!(
+				installer.contains(&arm),
+				"ApkInstaller.install has no branch for {verdict}"
+			);
+		}
+		for verdict in refusals {
+			let marker = marker_of(&plugin, verdict).unwrap_or_else(|| {
+				panic!("UpdatePlugin.capability sends no reason for {verdict}")
+			});
+			assert!(
+				installer.contains(&format!(
+					"InstallGate.Verdict.{verdict}->throwInstallRefused(\"{marker}\")"
+				)),
+				"ApkInstaller.install does not refuse {verdict} as {marker}"
+			);
+			assert!(
+				Unsupported::from_gate_marker(marker, None).is_some(),
+				"the bridge does not map {verdict}'s marker {marker}"
+			);
+		}
+		for (marker, expected) in [
+			(
+				"externally-managed",
+				Unsupported::ExternallyManaged {
+					installer: "another store".into(),
+				},
+			),
+			("foreign-signer", Unsupported::ForeignSigner),
+			("foreign-target", Unsupported::ForeignTarget),
+		] {
+			assert_eq!(
+				Unsupported::from_gate_marker(marker, None),
+				Some(expected),
+				"the bridge maps {marker} to the wrong reason"
+			);
+		}
+		assert_eq!(
+			Unsupported::from_gate_marker(
+				"externally-managed",
+				Some("org.fdroid.fdroid".into())
+			),
+			Some(Unsupported::ExternallyManaged {
+				installer: "org.fdroid.fdroid".into()
+			})
+		);
+		assert_eq!(Unsupported::from_gate_marker("downgrade", None), None);
+	}
+
+	#[test]
+	fn the_android_bridge_reads_gate_refusals_through_the_shared_mapping() {
+		assert!(
+			bridge_function("verdict").contains(
+				"Unsupported::from_gate_marker(reason, response.installer)"
+			),
+			"android.rs verdict no longer maps capability reasons through from_gate_marker"
+		);
+		let refusal = bridge_function("map_plugin_error");
+		assert!(
+			refusal.contains("Unsupported::from_gate_marker(marker, None)")
+				&& refusal.contains("return UpdateError::Unsupported(unsupported);"),
+			"android.rs map_plugin_error no longer maps install refusals through from_gate_marker"
+		);
+		assert!(
+			bridge_function("install").contains(".map_err(map_plugin_error)"),
+			"android.rs install no longer maps plugin errors"
+		);
+	}
+
+	#[test]
+	fn the_install_probe_judges_the_target_by_one_signature_check() {
+		assert!(
+			squashed(PROBE).contains(&squashed(
+				"targetSigner = InstallGate.TargetSigner.of(context.packageManager.checkSignatures(context.packageName, target)"
+			)),
+			"InstallProbe.verdictFor no longer maps a single checkSignatures result through TargetSigner.of"
+		);
+	}
+
+	#[test]
+	fn the_sign_in_handoff_matches_the_companion_contract() {
+		use super::super::component;
+
+		let companion = component::GOOGLE_OAUTH.install_target();
+		assert!(
+			MANIFEST.contains(&format!(
+				"<uses-permission android:name=\"{REQUEST_TOKEN_PERMISSION}\" />"
+			)),
+			"the manifest no longer asks for {REQUEST_TOKEN_PERMISSION}, so the companion refuses the token request"
+		);
+		assert!(
+			REQUEST_TOKEN_PERMISSION.starts_with(&format!("{companion}.")),
+			"the component table package {companion} no longer owns {REQUEST_TOKEN_PERMISSION}"
+		);
+
+		assert!(
+			manifest_element("permission", RECEIVE_TOKEN_PERMISSION)
+				.contains("android:protectionLevel=\"signature\""),
+			"{RECEIVE_TOKEN_PERMISSION} is no longer a signature permission, so any app could hand over a token"
+		);
+		assert!(
+			manifest_element("activity", ".TokenHandoffActivity").contains(
+				&format!("android:permission=\"{RECEIVE_TOKEN_PERMISSION}\"")
+			),
+			"TokenHandoffActivity is no longer guarded by {RECEIVE_TOKEN_PERMISSION}"
+		);
+
+		assert!(
+			MANIFEST
+				.contains(&format!("<package android:name=\"{companion}\" />")),
+			"the manifest <queries> no longer names the companion {companion}"
+		);
+		for (file, source) in [
+			("GoogleOauthPlugin.kt", SIGN_IN_PLUGIN),
+			("TokenHandoffActivity.kt", TOKEN_HANDOFF),
+		] {
+			assert_eq!(
+				kotlin_constant(source, file, "COMPANION_PACKAGE"),
+				companion,
+				"{file} COMPANION_PACKAGE drifted from the component table"
+			);
+			assert_eq!(
+				kotlin_constant(source, file, "EXTRA_TOKEN"),
+				TOKEN_EXTRA,
+				"{file} EXTRA_TOKEN drifted from the companion's published extra"
+			);
+		}
+		assert_eq!(
+			kotlin_constant(
+				SIGN_IN_PLUGIN,
+				"GoogleOauthPlugin.kt",
+				"REQUEST_TOKEN_ACTION"
+			),
+			REQUEST_TOKEN_ACTION,
+			"GoogleOauthPlugin.kt REQUEST_TOKEN_ACTION drifted from the companion's published action"
+		);
+	}
+
+	#[test]
+	fn every_literal_plugin_command_the_bridge_invokes_exists_in_kotlin() {
+		let invoked: Vec<&str> = ANDROID_BRIDGE
+			.split("run_mobile_plugin")
+			.skip(1)
+			.filter_map(|call| {
+				let arguments = call[call.find('(')? + 1..].trim_start();
+				arguments.strip_prefix('"')?.split('"').next()
+			})
+			.collect();
+		assert!(
+			invoked.contains(&"installPending"),
+			"the bridge no longer asks the plugin whether an install is pending"
+		);
+		for command in invoked {
+			assert!(
+				spaced_match(
+					PLUGIN,
+					&format!("@Command fun {command}(invoke: Invoke)")
+				)
+				.is_some(),
+				"UpdatePlugin has no @Command named {command}"
+			);
+		}
+	}
+
+	fn is_identifier(character: char) -> bool {
+		character.is_alphanumeric() || character == '_'
+	}
+
+	fn declaration_at(source: &str, file: &str, header: &str) -> usize {
+		spaced_match(source, header)
+			.unwrap_or_else(|| panic!("{file} no longer declares {header}"))
+			.start
+	}
+
+	fn declaration_block<'a>(
+		source: &'a str,
+		file: &str,
+		header: &str,
+	) -> &'a str {
+		let at = declaration_at(source, file, header);
+		braced_block(&source[at..], file, header)
+	}
+
+	fn camel_case(snake: &str) -> String {
+		let mut parts = snake.split('_');
+		let mut camel = parts.next().unwrap_or_default().to_owned();
+		for part in parts {
+			let mut characters = part.chars();
+			if let Some(first) = characters.next() {
+				camel.extend(first.to_uppercase());
+				camel.push_str(characters.as_str());
+			}
+		}
+		camel
+	}
+
+	fn bridge_requests() -> Vec<(&'static str, &'static str)> {
+		ANDROID_BRIDGE
+			.split("run_mobile_plugin")
+			.skip(1)
+			.filter_map(|call| {
+				let arguments = call[call.find('(')? + 1..].trim_start();
+				let (command, rest) =
+					arguments.strip_prefix('"')?.split_once('"')?;
+				let request = rest.trim_start().strip_prefix(',')?.trim_start();
+				let length = request.find(|c: char| !is_identifier(c))?;
+				let name = &request[..length];
+				let constructed = name.starts_with(char::is_uppercase)
+					&& request[length..].trim_start().starts_with('{');
+				constructed.then_some((command, name))
+			})
+			.collect()
+	}
+
+	fn rust_wire_fields(name: &str) -> Vec<String> {
+		let header = format!("struct {name}");
+		let at = declaration_at(ANDROID_BRIDGE, "android.rs", &header);
+		let attributes = ANDROID_BRIDGE[..at]
+			.rsplit_once("\n\n")
+			.map_or(&ANDROID_BRIDGE[..at], |(_, attributes)| attributes);
+		let camel = squashed(attributes).contains("rename_all=\"camelCase\"");
+		let body = declaration_block(ANDROID_BRIDGE, "android.rs", &header);
+		let mut renamed = None;
+		let mut fields = Vec::new();
+		for line in body.lines().map(str::trim).filter(|line| !line.is_empty())
+		{
+			if line.starts_with("#[") {
+				renamed = renamed.or_else(|| {
+					squashed(line).split_once("rename=\"").and_then(
+						|(_, rest)| rest.split('"').next().map(str::to_owned),
+					)
+				});
+				continue;
+			}
+			let Some((field, _)) = line.split_once(':') else {
+				continue;
+			};
+			let field = field.trim().trim_start_matches("pub ").trim();
+			fields.push(renamed.take().unwrap_or_else(|| {
+				if camel {
+					camel_case(field)
+				} else {
+					field.to_owned()
+				}
+			}));
+		}
+		fields.sort();
+		fields
+	}
+
+	fn kotlin_arg_fields(class: &str) -> Vec<String> {
+		let body = declaration_block(
+			PLUGIN,
+			"UpdatePlugin.kt",
+			&format!("class {class}"),
+		);
+		let mut fields: Vec<String> = body
+			.lines()
+			.map(|line| {
+				line.trim().trim_start_matches("lateinit ").trim_start()
+			})
+			.filter_map(|line| {
+				line.strip_prefix("var ")
+					.or_else(|| line.strip_prefix("val "))
+			})
+			.filter_map(|line| line.split(':').next())
+			.map(|field| field.trim().to_owned())
+			.collect();
+		fields.sort();
+		fields
+	}
+
+	fn parsed_arg_class(command: &str) -> Option<&'static str> {
+		let body = braced_block(
+			PLUGIN,
+			"UpdatePlugin.kt",
+			&format!("fun {command}(invoke: Invoke)"),
+		);
+		let class = body[spaced_match(body, "parseArgs(")?.end..].trim_start();
+		let length = class.find(|character| !is_identifier(character))?;
+		(length > 0).then(|| &class[..length])
+	}
+
+	#[test]
+	fn every_request_the_bridge_sends_carries_the_fields_kotlin_parses() {
+		let requests = bridge_requests();
+		for expected in
+			["install", "capability", "packageState", "watchInstall"]
+		{
+			assert!(
+				requests.iter().any(|(command, _)| *command == expected),
+				"the bridge no longer sends a request struct to {expected}: {requests:?}"
+			);
+		}
+		for (command, request) in &requests {
+			let class =
+				parsed_arg_class(command).unwrap_or_else(|| {
+					panic!("UpdatePlugin.{command} ignores the {request} it is sent")
+				});
+			let sent = rust_wire_fields(request);
+			assert!(
+				!sent.is_empty(),
+				"{request} was parsed as having no fields"
+			);
+			assert_eq!(
+				sent,
+				kotlin_arg_fields(class),
+				"{request} and the {class} that UpdatePlugin.{command} parses disagree on field names"
+			);
+		}
+
+		let parsing: Vec<&str> = PLUGIN
+			.split("@Command")
+			.skip(1)
+			.filter_map(|command| {
+				let start = command.find("fun ")? + "fun ".len();
+				let name = command[start..].split('(').next()?.trim();
+				parsed_arg_class(name).map(|_| name)
+			})
+			.collect();
+		for command in parsing {
+			assert!(
+				requests.iter().any(|(sent, _)| *sent == command),
+				"UpdatePlugin.{command} parses arguments the bridge never sends"
+			);
+		}
+	}
+
+	#[test]
+	fn the_frontend_component_table_matches_the_rust_one() {
+		use super::super::component;
+
+		let source = squashed(COMPONENTS_TS);
+		let constant = |name: &str| {
+			let declaration = format!("exportconst{name}=\"");
+			let start = source.find(&declaration).unwrap_or_else(|| {
+				panic!("components.ts no longer declares {name} as a string")
+			}) + declaration.len();
+			source[start..]
+				.split('"')
+				.next()
+				.unwrap_or_default()
+				.to_owned()
+		};
+		let table_start = source
+			.find("COMPONENT_PACKAGE={")
+			.expect("components.ts no longer declares COMPONENT_PACKAGE")
+			+ "COMPONENT_PACKAGE={".len();
+		let table = &source[table_start..];
+		let table =
+			&table[..table.find('}').expect("COMPONENT_PACKAGE is not closed")];
+
+		let mut declared: Vec<(String, String)> = table
+			.split(',')
+			.filter(|entry| !entry.is_empty())
+			.map(|entry| {
+				let (key, package) =
+					entry.split_once(':').unwrap_or_else(|| {
+						panic!("COMPONENT_PACKAGE entry {entry} is not key: package")
+					});
+				let key = match key
+					.strip_prefix('[')
+					.and_then(|name| name.strip_suffix(']'))
+				{
+					Some(name) => constant(name),
+					None => key.trim_matches(['"', '\'']).to_owned(),
+				};
+				(key, package.trim_matches(['"', '\'']).to_owned())
+			})
+			.collect();
+		declared.sort();
+
+		let mut expected: Vec<(String, String)> = component::ALL
+			.iter()
+			.map(|component| {
+				(
+					component.key.to_owned(),
+					component.install_target().to_owned(),
+				)
+			})
+			.collect();
+		expected.sort();
+
+		assert_eq!(
+			declared, expected,
+			"install outcomes are routed by COMPONENT_PACKAGE, so it must name every component's install target"
+		);
+	}
+
+	#[test]
+	fn the_app_baseline_is_always_an_orderable_version() {
+		assert!(
+			squashed(braced_block(INSTALL_MODULE, "install/mod.rs", "pub fn probe("))
+				.contains("None=>Baseline::of_version(app.package_info().version.clone())"),
+			"an opaque app baseline would make the startup purge delete a staged self-update"
+		);
+	}
+
+	#[test]
+	fn the_kotlin_install_allowlist_matches_the_component_table() {
+		use super::super::component;
+
+		let start = PLUGIN
+			.find("const val GOOGLE_OAUTH")
+			.expect("UpdatePlugin pins the addon package id");
+		let pinned = PLUGIN[start..]
+			.split('"')
+			.nth(1)
+			.expect("the pin holds a string literal");
+		assert_eq!(pinned, component::GOOGLE_OAUTH.install_target());
+
+		let allowlisted: Vec<&str> = component::ALL
+			.iter()
+			.map(|c| c.install_target())
+			.filter(|target| *target != component::SELF_PACKAGE)
+			.collect();
+		assert_eq!(
+			allowlisted,
+			vec![pinned],
+			"every non-self component must appear in the Kotlin allowlist"
+		);
+		assert!(
+			PLUGIN.contains("packageName == activity.packageName"),
+			"the allowlist must still admit this app itself"
+		);
+		assert!(
+			PLUGIN.contains("packageName == GOOGLE_OAUTH"),
+			"isInstallableTarget must admit the addon package"
+		);
+		for target in &allowlisted {
+			assert!(
+				MANIFEST
+					.contains(&format!("<package android:name=\"{target}\" />")),
+				"{target} needs a <queries> entry or the package probe reports it absent"
+			);
+		}
 	}
 
 	#[test]

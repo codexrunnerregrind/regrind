@@ -14,6 +14,8 @@ class LiveSession {
 
 	fun isLive(sessionId: Int): Boolean = sessionId != NONE && sessionId == live
 
+	fun current(): Int? = live.takeIf { it != NONE }
+
 	private companion object {
 		const val NONE = -1
 	}

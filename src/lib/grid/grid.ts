@@ -87,7 +87,6 @@ export async function getGrid(query: Parameters<typeof getCascadeV4>[0]) {
 		if (
 			item.type === "full_profile_v1" ||
 			item.type === "partial_profile_v1" ||
-			item.type === "hidden_profile_v1" ||
 			item.type === "smart_boost_profile_v1"
 		) {
 			items.push(gridProfile(item.data));

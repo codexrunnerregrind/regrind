@@ -18,6 +18,23 @@ import java.util.concurrent.atomic.AtomicBoolean
 @InvokeArg
 internal class InstallArgs {
 	lateinit var path: String
+	lateinit var packageName: String
+}
+
+@InvokeArg
+internal class CapabilityArgs {
+	var packageName: String? = null
+}
+
+@InvokeArg
+internal class PackageArgs {
+	lateinit var packageName: String
+}
+
+@InvokeArg
+internal class TransferArgs {
+	lateinit var packageName: String
+	lateinit var kind: String
 }
 
 @InvokeArg
@@ -29,9 +46,39 @@ internal class WatchArgs {
 class UpdatePlugin(private val activity: Activity) : Plugin(activity) {
 	private val installing = AtomicBoolean(false)
 
+	private fun isInstallableTarget(packageName: String): Boolean =
+		packageName == activity.packageName || packageName == GOOGLE_OAUTH
+
+	@Command
+	fun packageState(invoke: Invoke) {
+		val packageName = try {
+			invoke.parseArgs(PackageArgs::class.java).packageName
+		} catch (e: Exception) {
+			invoke.reject("missing")
+			return
+		}
+		if (!isInstallableTarget(packageName)) {
+			invoke.reject("unknown-target")
+			return
+		}
+		val state = InstallProbe.stateOf(activity, packageName)
+		invoke.resolve(
+			JSObject().apply {
+				put("installed", state != null)
+				put("versionName", state?.versionName)
+			},
+		)
+	}
+
 	@Command
 	fun capability(invoke: Invoke) {
-		val verdict = InstallProbe.verdictFor(activity)
+		val target = runCatching { invoke.parseArgs(CapabilityArgs::class.java).packageName }
+			.getOrNull() ?: activity.packageName
+		if (!isInstallableTarget(target)) {
+			invoke.reject("unknown-target")
+			return
+		}
+		val verdict = InstallProbe.verdictFor(activity, target)
 		val response = JSObject().apply {
 			put("supported", verdict is InstallGate.Verdict.Supported)
 			put("canInstallNow", InstallProbe.canInstallNow(activity))
@@ -42,6 +89,7 @@ class UpdatePlugin(private val activity: Activity) : Plugin(activity) {
 				}
 
 				is InstallGate.Verdict.ForeignSigner -> put("reason", "foreign-signer")
+				is InstallGate.Verdict.ForeignTarget -> put("reason", "foreign-target")
 				is InstallGate.Verdict.Supported -> {}
 			}
 		}
@@ -60,10 +108,14 @@ class UpdatePlugin(private val activity: Activity) : Plugin(activity) {
 
 	@Command
 	fun install(invoke: Invoke) {
-		val path = try {
-			invoke.parseArgs(InstallArgs::class.java).path
+		val (path, target) = try {
+			invoke.parseArgs(InstallArgs::class.java).let { it.path to it.packageName }
 		} catch (e: Exception) {
 			invoke.reject("missing")
+			return
+		}
+		if (!isInstallableTarget(target)) {
+			invoke.reject("unknown-target")
 			return
 		}
 
@@ -81,6 +133,7 @@ class UpdatePlugin(private val activity: Activity) : Plugin(activity) {
 							InstallStatus.outcomeOf(
 								InstallStatus.FAILURE,
 								message = failure.message,
+								packageName = target,
 							),
 						)
 						ApkInstaller.abandonAll(activity)
@@ -91,7 +144,7 @@ class UpdatePlugin(private val activity: Activity) : Plugin(activity) {
 		try {
 			Thread({
 				try {
-					ApkInstaller.install(activity, File(path))
+					ApkInstaller.install(activity, File(path), target)
 					invoke.resolve()
 				} catch (e: Throwable) {
 					PendingConfirmation.forget()
@@ -106,6 +159,11 @@ class UpdatePlugin(private val activity: Activity) : Plugin(activity) {
 			installing.set(false)
 			invoke.reject(e.message ?: "install-failed")
 		}
+	}
+
+	@Command
+	fun installPending(invoke: Invoke) {
+		invoke.resolve(JSObject().apply { put("pending", ApkInstaller.installPending(activity)) })
 	}
 
 	@Command
@@ -129,7 +187,12 @@ class UpdatePlugin(private val activity: Activity) : Plugin(activity) {
 
 	@Command
 	fun beginTransfer(invoke: Invoke) {
-		runCatching { TransferService.start(activity) }
+		val args = runCatching { invoke.parseArgs(TransferArgs::class.java) }.getOrNull()
+		val title = TransferTitle.of(
+			updatesThisApp = args == null || args.packageName == activity.packageName,
+			kind = args?.kind,
+		)
+		runCatching { TransferService.start(context = activity, title = title) }
 		invoke.resolve()
 	}
 
@@ -137,5 +200,9 @@ class UpdatePlugin(private val activity: Activity) : Plugin(activity) {
 	fun endTransfer(invoke: Invoke) {
 		runCatching { TransferService.stop(activity) }
 		invoke.resolve()
+	}
+
+	private companion object {
+		const val GOOGLE_OAUTH = "org.opengrind.google_oauth"
 	}
 }

@@ -1,14 +1,17 @@
 <script lang="ts">
+	import { page } from "$app/state";
 	import { toast } from "svelte-sonner";
 
 	import { googleHandbackState } from "$lib/api/google-handback-state.svelte";
 	import { callMethod } from "$lib/api/methods";
 	import {
+		companionDisabled,
 		companionUnavailable,
 		companionUntrusted,
+		disabledCompanionMessage,
 		finishSignIn,
 		reportSignInFailure,
-		untrustedCompanionMessage,
+		untrustedCompanionCopy,
 	} from "$lib/api/sign-in";
 	import { Button } from "$lib/components/ui/button";
 	import * as Card from "$lib/components/ui/card";
@@ -16,16 +19,91 @@
 	import Link from "$lib/components/ui/link/Link.svelte";
 	import { Spinner } from "$lib/components/ui/spinner";
 	import { Textarea } from "$lib/components/ui/textarea";
+	import { openExternalLink } from "$lib/platform/link-opener";
+	import { isAndroidPlatform } from "$lib/platform/os";
+	import { getInstalledVersion, GOOGLE_OAUTH_COMPONENT } from "$lib/updates";
+	import {
+		addonActivity,
+		addonInstallerAvailable,
+		addonPublishedHere,
+		addonUpdates,
+	} from "$lib/updates/addon.svelte";
+	import {
+		googleSignInView,
+		installButton,
+		stageAwaitsUser,
+	} from "./google-sign-in-view";
+
+	const COMPANION_RELEASES =
+		"https://git.opengrind.org/open-grind/open-grind-google-oauth-android-app/releases#install";
+	const automated = isAndroidPlatform();
 
 	let token = $state("");
 	let submitting = $state(false);
-	let retrying = $state(false);
+	let continuing = $state(false);
+	let starting = $state(false);
+	let pasting = $state(page.url.searchParams.has("paste"));
+	let installed = $state(false);
+	let launchFailed = $state(false);
+	let probes = 0;
+	let answered = 0;
 
-	let manualInput = $state(false);
+	const view = $derived(
+		googleSignInView({
+			automated,
+			pasting,
+			installed: installed && !launchFailed,
+		}),
+	);
+	const install = $derived(
+		installButton({ stage: addonActivity.stage, starting }),
+	);
 
-	async function retry() {
-		if (retrying) return;
-		retrying = true;
+	$effect(() => {
+		void addonActivity.installs;
+		launchFailed = false;
+		void probeInstalled();
+	});
+
+	async function probeInstalled(): Promise<boolean> {
+		if (!automated) return false;
+		const probe = ++probes;
+		const presence = await getInstalledVersion(GOOGLE_OAUTH_COMPONENT).then(
+			(version) => (version === null ? "absent" : "present"),
+			() => "unknown",
+		);
+		if (probe > answered) {
+			answered = probe;
+			installed = presence === "present";
+			if (presence === "absent" && stageAwaitsUser(addonActivity.stage)) {
+				await addonUpdates.withdrawUpdate();
+			}
+		}
+		return installed;
+	}
+
+	async function installCompanion() {
+		if (starting) return;
+		starting = true;
+		try {
+			if (!launchFailed && (await probeInstalled())) {
+				void continueInCompanion();
+			} else if (
+				addonInstallerAvailable() &&
+				(await addonPublishedHere())
+			) {
+				await addonUpdates.installNow();
+			} else {
+				openExternalLink(COMPANION_RELEASES);
+			}
+		} finally {
+			starting = false;
+		}
+	}
+
+	async function continueInCompanion() {
+		if (continuing) return;
+		continuing = true;
 		try {
 			await finishSignIn(await callMethod("login_with_google"));
 		} catch (error) {
@@ -33,31 +111,53 @@
 				error,
 				onAuthFailure: (message) => {
 					if (message === companionUnavailable) {
+						launchFailed = true;
 						toast.error(
-							'Couldn\'t find the Open Grind Google OAuth app on your device. Install it first, then tap "Retry". Alternatively, try pasting the OAuth token manually.',
+							"Couldn't find the Open Grind Google OAuth app on your device. Install it first, or paste the OAuth token manually.",
 						);
 						return true;
 					}
+					if (message === companionDisabled) {
+						toast.error(disabledCompanionMessage);
+						return true;
+					}
 					if (message === companionUntrusted) {
-						toast.error(untrustedCompanionMessage);
-						manualInput = true;
+						toast.error(untrustedCompanionCopy());
+						pasting = true;
 						return true;
 					}
 					return false;
 				},
 			});
 		} finally {
-			retrying = false;
+			continuing = false;
 		}
 	}
 </script>
+
+<svelte:document
+	onvisibilitychange={() => {
+		if (document.visibilityState !== "visible") return;
+		launchFailed = false;
+		void probeInstalled();
+	}}
+/>
+
+{#snippet companionLink()}
+	<Link
+		href={COMPANION_RELEASES}
+		class="font-medium text-primary underline underline-offset-2"
+	>
+		Open Grind Google OAuth app
+	</Link>
+{/snippet}
 
 {#if googleHandbackState.phase === "signingIn"}
 	<Card.Root class="m-auto w-full max-w-sm gap-2">
 		<Card.Header>
 			<Card.Title>Signing you in</Card.Title>
 			<Card.Description>
-				Finishing the Google sign-in from the companion app.
+				Finishing the sign-in from the Google OAuth app.
 			</Card.Description>
 		</Card.Header>
 		<Card.Content class="flex justify-center py-4">
@@ -65,109 +165,134 @@
 		</Card.Content>
 	</Card.Root>
 {:else}
-	<form
-		onsubmit={async (event) => {
-			event.preventDefault();
-			try {
-				submitting = true;
-				await finishSignIn(
-					await callMethod("google_sign_in", { token: token.trim() }),
-				);
-			} catch (error) {
-				reportSignInFailure({ error });
-			} finally {
-				submitting = false;
-			}
-		}}
-		class="contents"
-	>
-		<Card.Root class="m-auto w-full max-w-sm gap-2">
-			<Card.Header>
-				<Card.Title>Sign in with Google</Card.Title>
-				<Card.Description>
-					<ol class="ms-5 list-decimal">
-						<li>
-							Install <Link
-								href="https://git.opengrind.org/open-grind/open-grind-google-oauth-android-app/releases#install"
-								class="font-medium text-primary underline underline-offset-2"
-							>
-								Open Grind companion app
-							</Link>
-						</li>
-						{#if !manualInput}
-							<li>On this screen, tap the "Retry" button</li>
+	<div class="m-auto flex w-full max-w-sm flex-col gap-3">
+		<form
+			onsubmit={async (event) => {
+				event.preventDefault();
+				try {
+					submitting = true;
+					await finishSignIn(
+						await callMethod("google_sign_in", {
+							token: token.trim(),
+						}),
+					);
+				} catch (error) {
+					reportSignInFailure({ error });
+				} finally {
+					submitting = false;
+				}
+			}}
+			class="contents"
+		>
+			<Card.Root class="gap-4">
+				<Card.Header>
+					<Card.Title>Sign in with Google</Card.Title>
+					<Card.Description>
+						{#if view === "install"}
+							Download and install the {@render companionLink()} to
+							sign in with Google
+						{:else if view === "continue"}
+							Continue in the {@render companionLink()} to sign in with
+							Google
 						{:else}
-							<li>
-								Sign in with Google in the companion app and
-								copy the token
-							</li>
-							<li>
-								Return to this screen, paste it and tap "Sign
-								in"
-							</li>
+							<ol class="ms-5 list-decimal">
+								<li>Install the {@render companionLink()}</li>
+								<li>
+									Sign in with Google in the Open Grind Google
+									OAuth app and copy the token
+								</li>
+								<li>
+									Return to this screen, paste it and tap
+									"Sign in"
+								</li>
+							</ol>
 						{/if}
-					</ol>
-					{#if !manualInput}
-						<div class="my-2 block text-center">
-							or <Button
-								variant="secondary"
-								size="xs"
-								disabled={retrying}
-								onclick={() => (manualInput = true)}
-							>
-								paste the OAuth token manually
-							</Button>
+					</Card.Description>
+				</Card.Header>
+				{#if view === "paste"}
+					<Card.Content>
+						<div class="mt-2 grid gap-2">
+							<Label for="token">Token</Label>
+							<Textarea
+								id="token"
+								placeholder="Paste your token here"
+								required
+								rows={5}
+								bind:value={token}
+								disabled={submitting}
+								class="rounded-lg font-mono text-sm"
+							/>
 						</div>
+					</Card.Content>
+				{/if}
+				<Card.Footer class="flex-col gap-2">
+					{#if view === "install"}
+						<Button
+							class="w-full"
+							disabled={install.busy}
+							aria-busy={install.busy}
+							onclick={installCompanion}
+						>
+							{#if install.busy}
+								<Spinner aria-hidden="true" />
+							{/if}
+							{install.label}
+						</Button>
+					{:else if view === "continue"}
+						<Button
+							class="w-full"
+							disabled={continuing}
+							aria-busy={continuing}
+							onclick={continueInCompanion}
+						>
+							{#if continuing}
+								<Spinner aria-hidden="true" />
+							{/if}
+							Continue
+						</Button>
+					{:else}
+						<Button
+							type="submit"
+							class="w-full"
+							disabled={submitting || token.trim().length === 0}
+						>
+							Sign in
+						</Button>
 					{/if}
-				</Card.Description>
-			</Card.Header>
-			{#if manualInput}
-				<Card.Content>
-					<div class="mt-2 grid gap-2">
-						<Label for="token">Token</Label>
-						<Textarea
-							id="token"
-							placeholder="Paste your token here"
-							required
-							rows={5}
-							bind:value={token}
-							disabled={submitting}
-							class="rounded-lg font-mono text-sm"
-						/>
-					</div>
-				</Card.Content>
-			{/if}
-			<Card.Footer class="flex-col gap-2">
-				{#if manualInput}
 					<Button
-						type="submit"
+						variant="outline"
 						class="w-full"
-						disabled={submitting || token.trim().length === 0}
+						href="/auth/sign-in"
+						disabled={submitting || continuing}
 					>
-						Sign in
+						Go back
+					</Button>
+				</Card.Footer>
+			</Card.Root>
+		</form>
+		{#if automated}
+			<p class="text-center text-sm text-muted-foreground">
+				or
+				{#if view === "paste"}
+					<Button
+						variant="link"
+						class="h-auto p-0"
+						disabled={submitting}
+						onclick={() => (pasting = false)}
+					>
+						use the Open Grind Google OAuth app
 					</Button>
 				{:else}
 					<Button
-						type="button"
-						class="w-full"
-						disabled={retrying}
-						onclick={retry}
+						variant="link"
+						class="h-auto p-0"
+						disabled={continuing}
+						onclick={() => (pasting = true)}
 					>
-						{#if retrying}
-							<Spinner />
-						{/if}
-						Retry
+						paste the OAuth token manually
 					</Button>
 				{/if}
-				<Button
-					variant="outline"
-					class="w-full"
-					href="/auth/sign-in"
-					disabled={submitting || retrying}
-				>
-					Go back
-				</Button>
-			</Card.Footer>
-		</Card.Root>
-	</form>
+			</p>
+		{/if}
+	</div>
 {/if}

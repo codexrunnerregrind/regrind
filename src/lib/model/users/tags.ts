@@ -34,3 +34,16 @@ export const profileTagsResponseSchema = arrayOfParsableEntries({
 });
 
 export type ProfileTagsResponse = z.infer<typeof profileTagsResponseSchema>;
+
+export const tagsOf = (languages: ProfileTagsResponse) =>
+	languages.flatMap((language) =>
+		language.categoryCollection.flatMap((category) => category.tags),
+	);
+
+export function tagTextByKey(languages: ProfileTagsResponse) {
+	const textByKey = new Map<string, string>();
+	for (const { key, text } of tagsOf(languages)) {
+		if (!textByKey.has(key)) textByKey.set(key, text);
+	}
+	return textByKey;
+}

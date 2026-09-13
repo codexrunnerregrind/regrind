@@ -1,5 +1,7 @@
+use std::collections::BTreeMap;
 use std::sync::Mutex;
 
+use super::super::baseline::InstallKind;
 use super::super::error::UpdateError;
 use super::super::release::Candidate;
 use super::super::storage::{Stage, Staged};
@@ -13,7 +15,7 @@ struct Held {
 }
 
 #[derive(Default)]
-pub(super) struct Retained(Mutex<Option<Held>>);
+pub(super) struct Retained(Mutex<BTreeMap<String, Held>>);
 
 impl Retained {
 	pub(super) fn keep(
@@ -23,15 +25,18 @@ impl Retained {
 		digest: Prehash,
 	) -> Result<(), UpdateError> {
 		match Body::take(&stage.part())? {
-			None => self.forget(),
+			None => self.forget(&staged.component),
 			Some(body) => {
 				let mut staged = staged.clone();
 				staged.downloaded = body.length();
-				*self.0.lock().unwrap() = Some(Held {
-					staged,
-					body,
-					digest,
-				});
+				self.0.lock().unwrap().insert(
+					staged.component.clone(),
+					Held {
+						staged,
+						body,
+						digest,
+					},
+				);
 			}
 		}
 		stage.discard()
@@ -45,13 +50,13 @@ impl Retained {
 		digest: &mut Prehash,
 	) -> Result<(), UpdateError> {
 		let mut held = {
-			let mut slot = self.0.lock().unwrap();
-			match slot.as_ref() {
+			let mut slots = self.0.lock().unwrap();
+			match slots.get(&candidate.component) {
 				Some(held) if held.staged.describes(candidate) => {
-					slot.take().unwrap()
+					slots.remove(&candidate.component).unwrap()
 				}
 				Some(_) => {
-					*slot = None;
+					slots.remove(&candidate.component);
 					return Ok(());
 				}
 				None => return Ok(()),
@@ -62,32 +67,52 @@ impl Retained {
 			.create()
 			.and_then(|()| held.body.write_back(&stage.part()));
 		if let Err(error) = written {
-			*self.0.lock().unwrap() = Some(held);
+			self.0
+				.lock()
+				.unwrap()
+				.insert(candidate.component.clone(), held);
 			return Err(error);
 		}
-		*staged = held.staged;
+		*staged = Staged {
+			kind: candidate.kind,
+			..held.staged
+		};
 		stage.save(staged)?;
 		*digest = held.digest;
 		Ok(())
 	}
 
-	pub(super) fn candidate(&self) -> Option<Candidate> {
-		let held = self.0.lock().unwrap();
-		held.as_ref()?.staged.clone().candidate()
+	pub(super) fn candidate(&self, component: &str) -> Option<Candidate> {
+		let slots = self.0.lock().unwrap();
+		slots.get(component)?.staged.clone().candidate()
 	}
 
-	pub(super) fn forget(&self) {
-		*self.0.lock().unwrap() = None;
+	pub(super) fn forget(&self, component: &str) {
+		self.0.lock().unwrap().remove(component);
 	}
 
-	pub(super) fn retain_only(&self, candidate: Option<&Candidate>) {
-		let mut slot = self.0.lock().unwrap();
-		let kept = slot
-			.as_ref()
+	pub(super) fn forget_if_kind(&self, component: &str, kind: InstallKind) {
+		let mut slots = self.0.lock().unwrap();
+		if slots
+			.get(component)
+			.is_some_and(|held| held.staged.kind == kind)
+		{
+			slots.remove(component);
+		}
+	}
+
+	pub(super) fn retain_only(
+		&self,
+		component: &str,
+		candidate: Option<&Candidate>,
+	) {
+		let mut slots = self.0.lock().unwrap();
+		let kept = slots
+			.get(component)
 			.zip(candidate)
 			.is_some_and(|(held, wanted)| held.staged.describes(wanted));
 		if !kept {
-			*slot = None;
+			slots.remove(component);
 		}
 	}
 }
@@ -114,6 +139,8 @@ mod tests {
 
 	fn asset(uuid: &str) -> Candidate {
 		Candidate {
+			component: "app".into(),
+			kind: InstallKind::Update,
 			tag: "v0.2.0".into(),
 			version: "0.2.0".into(),
 			notes: None,
@@ -138,6 +165,73 @@ mod tests {
 		staged.downloaded = downloaded;
 		staged.validator = Some("\"etag\"".into());
 		staged
+	}
+
+	fn asset_of(component: &str, uuid: &str) -> Candidate {
+		Candidate {
+			component: component.into(),
+			..asset(uuid)
+		}
+	}
+
+	#[test]
+	fn one_components_hold_is_untouched_by_another_components_activity() {
+		let root = root("two-components");
+		let stage = storage::stage(&root, "v0.2.0").unwrap();
+		stage.create().unwrap();
+		fs::write(stage.part(), b"half").unwrap();
+
+		let mine = asset_of("app", "uuid");
+		let retained = Retained::default();
+		retained
+			.keep(&stage, &staged_for(&mine, 4), Prehash::default())
+			.unwrap();
+		assert!(retained.candidate("app").is_some());
+
+		let theirs = asset_of("google-oauth", "other-uuid");
+		retained.retain_only("google-oauth", Some(&theirs));
+		retained.forget("google-oauth");
+
+		let mut restored = Staged::new(&theirs);
+		let mut digest = Prehash::default();
+		let other_stage = storage::stage(&root, "v9.9.9").unwrap();
+		retained
+			.restore(&other_stage, &theirs, &mut restored, &mut digest)
+			.unwrap();
+
+		assert!(
+			retained.candidate("app").is_some(),
+			"another component must not be able to drop my retained bytes"
+		);
+		let _ = fs::remove_dir_all(&root);
+	}
+
+	#[test]
+	fn a_hold_is_only_restored_into_its_own_component() {
+		let root = root("wrong-component");
+		let stage = storage::stage(&root, "v0.2.0").unwrap();
+		stage.create().unwrap();
+		fs::write(stage.part(), b"half").unwrap();
+
+		let mine = asset_of("app", "uuid");
+		let retained = Retained::default();
+		retained
+			.keep(&stage, &staged_for(&mine, 4), Prehash::default())
+			.unwrap();
+
+		let impostor = asset_of("google-oauth", "uuid");
+		let mut restored = Staged::new(&impostor);
+		let mut digest = Prehash::default();
+		retained
+			.restore(&stage, &impostor, &mut restored, &mut digest)
+			.unwrap();
+
+		assert!(
+			!stage.part().exists(),
+			"the bytes must not be written back for a different component"
+		);
+		assert!(retained.candidate("app").is_some());
+		let _ = fs::remove_dir_all(&root);
 	}
 
 	#[test]
@@ -198,7 +292,7 @@ mod tests {
 			.keep(&stage, &staged_for(&candidate, 4), Prehash::default())
 			.unwrap();
 
-		let named = retained.candidate().expect(
+		let named = retained.candidate("app").expect(
 			"a cancelled download stays startable without a fresh check",
 		);
 		assert_eq!(named.tag, candidate.tag);
@@ -261,9 +355,9 @@ mod tests {
 		retained
 			.keep(&stage, &staged_for(&candidate, 4), Prehash::default())
 			.unwrap();
-		retained.forget();
+		retained.forget("app");
 
-		assert!(retained.candidate().is_none());
+		assert!(retained.candidate("app").is_none());
 		let mut restored = Staged::new(&candidate);
 		let mut digest = Prehash::default();
 		retained
@@ -294,14 +388,90 @@ mod tests {
 			published_at: Some("2026-08-16T00:00:00Z".into()),
 			..candidate.clone()
 		};
-		retained.retain_only(Some(&edited));
+		retained.retain_only("app", Some(&edited));
 		assert!(
-			retained.candidate().is_some(),
+			retained.candidate("app").is_some(),
 			"only the asset identity may invalidate a hold"
 		);
 
-		retained.retain_only(Some(&asset("another-uuid")));
-		assert!(retained.candidate().is_none());
+		retained.retain_only("app", Some(&asset("another-uuid")));
+		assert!(retained.candidate("app").is_none());
+		let _ = fs::remove_dir_all(&root);
+	}
+
+	#[test]
+	fn a_hold_restored_for_a_first_install_is_relabelled_as_an_install() {
+		let root = root("relabel");
+		let stage = storage::stage(&root, "v0.2.0").unwrap();
+		stage.create().unwrap();
+		fs::write(stage.part(), b"half").unwrap();
+		let paused_update = asset("uuid");
+
+		let retained = Retained::default();
+		retained
+			.keep(&stage, &staged_for(&paused_update, 4), Prehash::default())
+			.unwrap();
+
+		let first_install = Candidate {
+			kind: InstallKind::Install,
+			..asset("uuid")
+		};
+		retained.retain_only("app", Some(&first_install));
+		let mut restored = Staged::new(&first_install);
+		let mut digest = Prehash::default();
+		retained
+			.restore(&stage, &first_install, &mut restored, &mut digest)
+			.unwrap();
+
+		assert_eq!(restored.downloaded, 4, "the kept bytes must be reused");
+		assert_eq!(restored.kind, InstallKind::Install);
+		assert_eq!(
+			stage.load().unwrap().kind,
+			InstallKind::Install,
+			"an update label on a removed target makes the stage uninstallable"
+		);
+		let _ = fs::remove_dir_all(&root);
+	}
+
+	#[test]
+	fn withdrawing_updates_keeps_a_paused_first_install() {
+		let root = root("withdraw");
+		let stage = storage::stage(&root, "v0.2.0").unwrap();
+		stage.create().unwrap();
+		fs::write(stage.part(), b"half").unwrap();
+		let first_install = Candidate {
+			kind: InstallKind::Install,
+			..asset_of("google-oauth", "uuid")
+		};
+
+		let retained = Retained::default();
+		retained
+			.keep(&stage, &staged_for(&first_install, 4), Prehash::default())
+			.unwrap();
+		retained.forget_if_kind("google-oauth", InstallKind::Update);
+
+		assert!(
+			retained.candidate("google-oauth").is_some(),
+			"an unattended tick must not discard bytes the user asked for"
+		);
+		let _ = fs::remove_dir_all(&root);
+	}
+
+	#[test]
+	fn withdrawing_updates_drops_a_paused_update() {
+		let root = root("withdraw-update");
+		let stage = storage::stage(&root, "v0.2.0").unwrap();
+		stage.create().unwrap();
+		fs::write(stage.part(), b"half").unwrap();
+		let paused_update = asset_of("google-oauth", "uuid");
+
+		let retained = Retained::default();
+		retained
+			.keep(&stage, &staged_for(&paused_update, 4), Prehash::default())
+			.unwrap();
+		retained.forget_if_kind("google-oauth", InstallKind::Update);
+
+		assert!(retained.candidate("google-oauth").is_none());
 		let _ = fs::remove_dir_all(&root);
 	}
 

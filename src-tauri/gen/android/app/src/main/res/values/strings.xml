@@ -4,8 +4,10 @@
 	<string name="webview_warning_title">Android WebView may be too old</string>
 	<string name="webview_warning_update">Update WebView</string>
 	<string name="webview_warning_continue">Continue anyway</string>
-	<string name="update_channel_name">Update download</string>
+	<string name="update_channel_name">Downloads</string>
 	<string name="update_transfer_title">Downloading update</string>
+	<string name="addon_install_transfer_title">Downloading the Google OAuth app</string>
+	<string name="addon_update_transfer_title">Downloading the Google OAuth app update</string>
 
 	<!-- Firebase Cloud Messaging credentials. These are Grindr's own official
 	     values: FCM only delivers to a client that registers as the real app

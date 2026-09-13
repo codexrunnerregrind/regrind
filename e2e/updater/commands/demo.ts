@@ -10,6 +10,7 @@ import {
 	appLog,
 	cachedBundle,
 	failMode,
+	harnessOptions,
 	newVersion,
 	oldVersion,
 	repo,
@@ -17,7 +18,6 @@ import {
 } from "../lib/config";
 import { assetSuffix } from "../../../scripts/lib/asset-suffix";
 import { startServer, type Harness } from "../lib/server";
-import { harnessOptions } from "../run";
 
 async function fixtures({ force }: { force: boolean }): Promise<void> {
 	await ensureState();
@@ -29,9 +29,13 @@ async function fixtures({ force }: { force: boolean }): Promise<void> {
 async function serve(): Promise<Harness> {
 	const harness = await startServer({
 		...harnessOptions,
-		payload: { bundle: cachedBundle(newVersion) },
-		tag: `v${newVersion}`,
-		suffix: assetSuffix("zip"),
+		releases: [
+			{
+				payload: { bundle: cachedBundle(newVersion) },
+				tag: `v${newVersion}`,
+				suffix: assetSuffix("zip"),
+			},
+		],
 	});
 	await setLaunchEnv({ origin: harness.origin, key: harness.publicKey });
 
@@ -57,7 +61,7 @@ export async function demo({ force }: { force: boolean }): Promise<void> {
 	launch({ origin: harness.origin, key: harness.publicKey });
 
 	console.log(`
-serving ${harness.asset} on ${harness.origin}
+serving ${harness.assets.join(", ")} on ${harness.origin}
 running  v${oldVersion}   offering  v${newVersion}${failMode ? `   FAILING: ${failMode}` : ""}
 app log  ${appLog}
 

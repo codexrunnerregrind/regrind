@@ -24,6 +24,14 @@ export function updatesSelfManaged(): boolean {
 	return capability?.state === "supported";
 }
 
+export function buildSignedByOpenGrind(): boolean {
+	if (capability === null) return false;
+	return (
+		capability.state === "supported" ||
+		capability.detail.reason !== "foreignSigner"
+	);
+}
+
 export function updatesUnsupportedReason(): string | null {
 	if (!updatesAvailableHere() || capability?.state !== "unsupported") {
 		return null;

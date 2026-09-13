@@ -9,8 +9,8 @@ use tokio::sync::watch;
 use wreq::Client;
 
 use super::super::error::UpdateError;
-use super::super::release::{self, Candidate};
-use super::super::storage::{self, Staged};
+use super::super::release::Candidate;
+use super::super::storage::{self, Stage, Staged};
 use super::super::verify;
 use super::stage::accept;
 use super::transfer;
@@ -23,15 +23,15 @@ const MAX_ATTEMPTS: u32 = 60;
 struct ProcessHold<'a, R: Runtime>(&'a AppHandle<R>);
 
 impl<'a, R: Runtime> ProcessHold<'a, R> {
-	fn new(app: &'a AppHandle<R>) -> Self {
-		super::super::install::hold_process(app, true);
+	fn new(app: &'a AppHandle<R>, candidate: &Candidate) -> Self {
+		super::super::install::begin_transfer(app, candidate);
 		Self(app)
 	}
 }
 
 impl<R: Runtime> Drop for ProcessHold<'_, R> {
 	fn drop(&mut self) {
-		super::super::install::hold_process(self.0, false);
+		super::super::install::end_transfer(self.0);
 	}
 }
 
@@ -48,17 +48,10 @@ pub(super) async fn run<R: Runtime>(
 	stage.create()?;
 	stage.sweep_strays()?;
 
-	let mut staged = match stage.load() {
-		Some(staged) if staged.describes(candidate) => staged,
-		_ => {
-			let _ = fs::remove_file(stage.part());
-			let _ = fs::remove_file(stage.payload());
-			Staged::new(candidate)
-		}
-	};
+	let mut staged = adopt_or_reset(&stage, candidate)?;
 
 	if staged.verified && staged.payload_on_disk(&stage) {
-		retained.forget();
+		retained.forget(&candidate.component);
 		return Ok(staged.payload_size);
 	}
 	staged.verified = false;
@@ -66,7 +59,7 @@ pub(super) async fn run<R: Runtime>(
 	let mut digest = verify::Prehash::default();
 	retained.restore(&stage, candidate, &mut staged, &mut digest)?;
 
-	let _hold = ProcessHold::new(app);
+	let _hold = ProcessHold::new(app, candidate);
 	let signature_abort = Arc::new(AtomicBool::new(false));
 	let signature = {
 		let client = client.clone();
@@ -141,11 +134,11 @@ pub(super) async fn run<R: Runtime>(
 			Progress::new(candidate, staged.downloaded, Phase::Verifying),
 		);
 
-		let suffix = super::super::install::release_asset_suffix()
-			.ok_or(UpdateError::NoArtifact)?;
-		let expected = release::payload_name(&candidate.tag, &suffix);
-		let verified =
-			verify::verify_digest(&signature, &digest.finish(), &expected);
+		let verified = verify::verify_digest(
+			&signature,
+			&digest.finish(),
+			&candidate.payload.name,
+		);
 		accept(&stage, &mut staged, verified, cancel.load(Ordering::SeqCst))?;
 		Ok(staged.payload_size)
 	}
@@ -157,6 +150,30 @@ pub(super) async fn run<R: Runtime>(
 		}
 	}
 	settled
+}
+
+fn adopt_or_reset(
+	stage: &Stage,
+	candidate: &Candidate,
+) -> Result<Staged, UpdateError> {
+	match stage.load() {
+		Some(staged) if staged.describes(candidate) => {
+			if staged.kind == candidate.kind {
+				return Ok(staged);
+			}
+			let relabelled = Staged {
+				kind: candidate.kind,
+				..staged
+			};
+			stage.save(&relabelled)?;
+			Ok(relabelled)
+		}
+		_ => {
+			let _ = fs::remove_file(stage.part());
+			let _ = fs::remove_file(stage.payload());
+			Ok(Staged::new(candidate))
+		}
+	}
 }
 
 pub(super) fn is_transient(error: &UpdateError) -> bool {

@@ -66,6 +66,7 @@ pub(super) fn accept(
 
 #[cfg(test)]
 mod tests {
+	use super::super::super::baseline::InstallKind;
 	use crate::api::update::storage;
 	use crate::api::update::verify;
 
@@ -81,8 +82,11 @@ mod tests {
 
 		let mut staged = Staged {
 			schema: storage::SCHEMA,
+			component: "app".into(),
+			kind: InstallKind::Update,
 			tag: "v1".into(),
 			version: "0.1.0".into(),
+			payload_name: "a.apk".into(),
 			payload_uuid: "uuid".into(),
 			payload_size: 13,
 			payload_url: "https://git.opengrind.org/a.apk".into(),

@@ -3,7 +3,7 @@ use tauri::plugin::mobile::PluginInvokeError;
 use tauri::plugin::PluginHandle;
 use tauri::{AppHandle, Manager, Wry};
 
-use crate::api::oauth::{CANCELED, COMPANION_UNAVAILABLE, COMPANION_UNTRUSTED};
+use crate::api::oauth::companion_failure;
 use crate::error::AppError;
 
 pub struct AndroidGoogleOauth {
@@ -27,21 +27,12 @@ pub async fn fetch_companion_token(
 }
 
 fn map_plugin_error(error: PluginInvokeError) -> AppError {
-	if let PluginInvokeError::InvokeRejected(response) = &error {
-		match response.message.as_deref() {
-			Some(COMPANION_UNAVAILABLE) => {
-				return AppError::Auth(COMPANION_UNAVAILABLE.into());
-			}
-			Some(COMPANION_UNTRUSTED) => {
-				return AppError::Auth(COMPANION_UNTRUSTED.into());
-			}
-			Some("cancelled") => {
-				return AppError::Auth(CANCELED.into());
-			}
-			_ => {}
+	companion_failure(match &error {
+		PluginInvokeError::InvokeRejected(response) => {
+			response.message.as_deref()
 		}
-	}
-	AppError::Auth("Google sign-in failed".into())
+		_ => None,
+	})
 }
 
 #[derive(serde::Deserialize)]

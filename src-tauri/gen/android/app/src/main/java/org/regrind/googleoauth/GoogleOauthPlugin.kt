@@ -3,6 +3,7 @@ package org.regrind.googleoauth
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.SystemClock
 import androidx.activity.result.ActivityResult
 import app.tauri.annotation.ActivityCallback
@@ -26,22 +27,38 @@ class GoogleOauthPlugin(private val activity: Activity) : Plugin(activity) {
     fun getToken(invoke: Invoke) {
         try {
             val intent = Intent(REQUEST_TOKEN_ACTION).setPackage(COMPANION_PACKAGE)
-            if (intent.resolveActivity(activity.packageManager) == null) {
-                invoke.reject(ERROR_UNAVAILABLE)
-                return
+            val verdict = CompanionGate.decide(
+                resolves = intent.resolveActivity(activity.packageManager) != null,
+                presence = companionPresence(),
+                signatureMatches =
+                    activity.packageManager.checkSignatures(activity.packageName, COMPANION_PACKAGE) ==
+                        PackageManager.SIGNATURE_MATCH,
+            )
+            when (verdict) {
+                CompanionGate.Verdict.Launch -> startActivityForResult(invoke, intent, "tokenResult")
+                CompanionGate.Verdict.Unavailable -> invoke.reject(ERROR_UNAVAILABLE)
+                CompanionGate.Verdict.Disabled -> invoke.reject(ERROR_DISABLED)
+                CompanionGate.Verdict.Untrusted -> invoke.reject(ERROR_UNTRUSTED)
             }
-            if (
-                activity.packageManager.checkSignatures(activity.packageName, COMPANION_PACKAGE) !=
-                    PackageManager.SIGNATURE_MATCH
-            ) {
-                invoke.reject(ERROR_UNTRUSTED)
-                return
-            }
-            startActivityForResult(invoke, intent, "tokenResult")
         } catch (e: Exception) {
             // Companion missing or refused the launch (e.g. signature mismatch).
             invoke.reject(ERROR_UNAVAILABLE)
         }
+    }
+
+    private fun companionPresence(): CompanionGate.Presence = try {
+        val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            activity.packageManager.getApplicationInfo(
+                COMPANION_PACKAGE,
+                PackageManager.ApplicationInfoFlags.of(0L),
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            activity.packageManager.getApplicationInfo(COMPANION_PACKAGE, 0)
+        }
+        if (info.enabled) CompanionGate.Presence.Enabled else CompanionGate.Presence.Disabled
+    } catch (e: PackageManager.NameNotFoundException) {
+        CompanionGate.Presence.Absent
     }
 
     @Command
@@ -96,6 +113,7 @@ class GoogleOauthPlugin(private val activity: Activity) : Plugin(activity) {
 
         const val ERROR_UNAVAILABLE = "companion-unavailable"
         const val ERROR_UNTRUSTED = "companion-untrusted"
+        const val ERROR_DISABLED = "companion-disabled"
         const val ERROR_CANCELLED = "cancelled"
         const val ERROR_NO_TOKEN = "no-token"
     }

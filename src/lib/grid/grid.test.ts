@@ -116,7 +116,6 @@ describe("getGrid", () => {
 	it.each([
 		"full_profile_v1",
 		"partial_profile_v1",
-		"hidden_profile_v1",
 		"smart_boost_profile_v1",
 	])("renders a v4 %s without resolving it", async (type) => {
 		const { items } = await cascade([{ type, data: v4Profile(1) }]);
@@ -165,14 +164,27 @@ describe("getGrid", () => {
 		]);
 	});
 
-	it.each(["hidden_profile_v1", "full_profile_v1"])(
-		"falls back to lazy resolution for a base-shaped %s",
-		async (type) => {
-			const { items } = await cascade([{ type, data: baseProfile(7) }]);
+	it("falls back to lazy resolution for a base-shaped profile", async () => {
+		const { items } = await cascade([
+			{ type: "full_profile_v1", data: baseProfile(7) },
+		]);
 
-			expect(items).toEqual([
-				{ type: "lazy", id: 7, unread: 2, isVisiting: true },
+		expect(items).toEqual([
+			{ type: "lazy", id: 7, unread: 2, isVisiting: true },
+		]);
+	});
+
+	it.each([
+		{ shape: "v4", data: v4Profile(8) },
+		{ shape: "base", data: baseProfile(8) },
+	])(
+		"drops a $shape-shaped hidden profile like the official grid",
+		async ({ data }) => {
+			const { items } = await cascade([
+				{ type: "hidden_profile_v1", data },
 			]);
+
+			expect(items).toEqual([]);
 		},
 	);
 

@@ -5,6 +5,7 @@ data class InstallOutcome(
 	val canceled: Boolean,
 	val code: Int?,
 	val message: String?,
+	val packageName: String? = null,
 )
 
 /** Mirrors PackageInstaller.STATUS_*; MirroredStatusTest pins it to the platform. */
@@ -23,11 +24,13 @@ object InstallStatus {
 		status: Int,
 		packageManagerStatus: Int = 0,
 		message: String? = null,
+		packageName: String? = null,
 	): InstallOutcome = InstallOutcome(
 		succeeded = status == SUCCESS,
 		canceled = status == FAILURE_ABORTED,
 		code = if (packageManagerStatus != 0) packageManagerStatus else status,
 		message = message ?: describe(status),
+		packageName = packageName,
 	)
 
 	fun describe(status: Int): String = when (status) {

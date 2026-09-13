@@ -103,16 +103,21 @@ export async function ensureGridLocation(page: Page): Promise<void> {
 	const allFilters = page.locator(GRID_READY_SELECTOR);
 	if ((await allFilters.count()) === 0) {
 		// tinykeys reads navigator.platform, so the CI runner wants Control
-		await page.keyboard.press("ControlOrMeta+k");
-		const palette = page.getByRole("combobox");
-		await palette.waitFor();
-		await palette.fill(`@${DEMO_GEOHASH}`);
-		await page
-			.locator(`[role="option"][data-value="@${DEMO_GEOHASH}"]`)
-			.waitFor();
-		await page.keyboard.press("Enter");
+		await runPaletteCommand(page, `@${DEMO_GEOHASH}`);
 	}
 	await allFilters.waitFor({ timeout: 60_000 });
+}
+
+export async function runPaletteCommand(
+	page: Page,
+	command: string,
+): Promise<void> {
+	await page.keyboard.press("ControlOrMeta+k");
+	const palette = page.getByRole("combobox");
+	await palette.waitFor();
+	await palette.fill(command);
+	await page.locator(`[role="option"][data-value="${command}"]`).waitFor();
+	await page.keyboard.press("Enter");
 }
 
 // The platform decides which wheel path the app takes: "macos" (the

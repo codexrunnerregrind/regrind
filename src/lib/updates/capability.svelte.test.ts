@@ -116,6 +116,48 @@ describe("the update capability probe", () => {
 		expect(updatesUnsupportedReason()).toBeNull();
 	});
 
+	it("vouches for the build's signer only once the probe has answered", async () => {
+		let answer: (capability: unknown) => void = () => {};
+		api.getUpdateCapability.mockReturnValue(
+			new Promise((resolve) => {
+				answer = resolve;
+			}),
+		);
+		const { hydrateUpdateCapability, buildSignedByOpenGrind } =
+			await import("./capability.svelte");
+
+		const hydrating = hydrateUpdateCapability();
+		expect(buildSignedByOpenGrind()).toBe(false);
+
+		answer({
+			state: "supported",
+			detail: { payloadSuffix: "-android.apk", canInstallNow: true },
+		});
+		await hydrating;
+		expect(buildSignedByOpenGrind()).toBe(true);
+	});
+
+	it.each([
+		["externallyManaged", { installer: "org.fdroid.fdroid" }, true],
+		["undetermined", undefined, true],
+		["foreignTarget", undefined, true],
+		["foreignSigner", undefined, false],
+	])(
+		"tells whether Open Grind signed the build when %s decides updates",
+		async (reason, detail, signed) => {
+			api.getUpdateCapability.mockResolvedValue({
+				state: "unsupported",
+				detail: detail === undefined ? { reason } : { reason, detail },
+			});
+			const { hydrateUpdateCapability, buildSignedByOpenGrind } =
+				await import("./capability.svelte");
+
+			await hydrateUpdateCapability();
+
+			expect(buildSignedByOpenGrind()).toBe(signed);
+		},
+	);
+
 	it.each([
 		["externallyManaged", { installer: "org.fdroid.fdroid" }],
 		["sandboxed", { runtime: "Flatpak" }],
