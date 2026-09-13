@@ -1,10 +1,14 @@
 <script lang="ts">
 	import {
+		BroadcastIcon,
+		ChecksIcon,
 		DeviceMobileIcon,
 		ExportIcon,
+		EyeIcon,
 		HeartIcon,
 		LockKeyIcon,
 		TrayArrowDownIcon,
+		VibrateIcon,
 	} from "phosphor-svelte";
 	import { toast } from "svelte-sonner";
 
@@ -14,14 +18,14 @@
 	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
 	import { desktopEntryAvailable } from "$lib/platform/desktop-entry.svelte";
 	import { hapticsAvailable } from "$lib/platform/haptics";
-	import { updatesSelfManaged } from "$lib/updates/capability.svelte";
+	import {
+		updatesSelfManaged,
+		updatesUnsupportedReason,
+	} from "$lib/updates/capability.svelte";
 	import AppsMenuEntrySetting from "./AppsMenuEntrySetting.svelte";
 	import AutomaticUpdatesSetting from "./AutomaticUpdatesSetting.svelte";
-	import HapticFeedbackSetting from "./HapticFeedbackSetting.svelte";
 	import NotificationSettings from "./NotificationSettings.svelte";
-	import RevealMessageReadSetting from "./RevealMessageReadSetting.svelte";
-	import RevealProfileViewSetting from "./RevealProfileViewSetting.svelte";
-	import StayOnlineSetting from "./StayOnlineSetting.svelte";
+	import PreferenceSwitchSetting from "./PreferenceSwitchSetting.svelte";
 	import UnitsSetting from "./UnitsSetting.svelte";
 
 	function unimplemented(feature: string, issue: number) {
@@ -35,7 +39,15 @@
 <SettingsGroup divider="full">
 	<UnitsSetting />
 	{#if hapticsAvailable()}
-		<HapticFeedbackSetting />
+		<PreferenceSwitchSetting
+			preference="hapticFeedback"
+			title="Haptic feedback"
+			description="Short taps as you swipe to reply, switch tabs and pull to refresh."
+		>
+			{#snippet icon()}
+				<VibrateIcon weight="fill" />
+			{/snippet}
+		</PreferenceSwitchSetting>
 	{/if}
 	{#if desktopEntryAvailable()}
 		<AppsMenuEntrySetting />
@@ -49,9 +61,33 @@
 
 <SectionHeader>Privacy</SectionHeader>
 <SettingsGroup divider="full">
-	<StayOnlineSetting />
-	<RevealMessageReadSetting />
-	<RevealProfileViewSetting />
+	<PreferenceSwitchSetting
+		preference="stayOnline"
+		title="Stay online while the app is open"
+		description="Refresh your online status in the background automatically, while the app is open."
+	>
+		{#snippet icon()}
+			<BroadcastIcon weight="fill" />
+		{/snippet}
+	</PreferenceSwitchSetting>
+	<PreferenceSwitchSetting
+		preference="revealMessageRead"
+		title="Reveal message read status"
+		description="Let others know when you've read their messages. Your read receipts remain unaffected."
+	>
+		{#snippet icon()}
+			<ChecksIcon weight="fill" />
+		{/snippet}
+	</PreferenceSwitchSetting>
+	<PreferenceSwitchSetting
+		preference="revealProfileViews"
+		title="Reveal profile views"
+		description="Let others know when you've viewed their profile. Your profile view history remains unaffected."
+	>
+		{#snippet icon()}
+			<EyeIcon weight="fill" />
+		{/snippet}
+	</PreferenceSwitchSetting>
 </SettingsGroup>
 
 <SectionHeader>Security</SectionHeader>
@@ -98,7 +134,7 @@
 	</SettingsRow>
 </SettingsGroup>
 
-{#if updatesSelfManaged()}
+{#if updatesSelfManaged() || updatesUnsupportedReason() !== null}
 	<SectionHeader>Updates</SectionHeader>
 	<SettingsGroup>
 		<AutomaticUpdatesSetting />

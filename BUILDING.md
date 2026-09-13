@@ -134,8 +134,8 @@ cp /path/to/regrind/contrib/keystore.properties.example ~/.config/regrind/keysto
 3. Sign the apk:
 
 ```bash
-OPEN_GRIND_KEYSTORE_PROPERTIES=~/.config/regrind/keystore.properties
-bun /path/to/regrind/ci/sign.ts /path/to/regrind.apk /out/path/to/regrind-signed.apk
+OPEN_GRIND_KEYSTORE_PROPERTIES=~/.config/regrind/keystore.properties \
+  bun /path/to/regrind/ci/sign.ts /path/to/regrind.apk /out/path/to/regrind-signed.apk
 ```
 
 When `keystore.properties` is copied into `src-tauri/gen/android` before the
@@ -418,12 +418,19 @@ Nix runs the full `tauri build --bundles nsis`. On first use cargo-xwin download
 
 ```bash
 # x86_64:
-nix develop .#windows-x64
-cargo xwin check --manifest-path src-tauri/Cargo.toml --lib --target x86_64-pc-windows-msvc
+nix run .#build-windows-x64
 
 # arm64:
-nix develop .#windows-arm64
-cargo xwin check --manifest-path src-tauri/Cargo.toml --lib --target aarch64-pc-windows-msvc
+nix run .#build-windows-arm64
+```
+
+The result is `src-tauri/target/<triple>/release/bundle/nsis/*-setup.exe`. Releases carry the published name instead, because [ci/windows/build.sh](./ci/windows/build.sh) renames it to `open-grind-v<version>-windows-<arch>.exe`.
+
+To type-check the Rust library without bundling an installer:
+
+```bash
+nix develop .#windows-x64
+cargo xwin check --manifest-path src-tauri/Cargo.toml --lib --target x86_64-pc-windows-msvc
 ```
 
 ### Sign Windows build

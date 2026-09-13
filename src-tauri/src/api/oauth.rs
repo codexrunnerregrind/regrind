@@ -13,6 +13,8 @@ pub const CANCELED: &str = "Sign-in canceled";
 /// The mobile sign-in window has no chrome, so the injected close button asks
 /// for the cancel by navigating here; no page of the flow ever uses this path.
 pub const CANCEL_PATH: &str = "/__regrind_oauth_cancel__";
+pub const COMPANION_UNAVAILABLE: &str = "companion-unavailable";
+pub const COMPANION_UNTRUSTED: &str = "companion-untrusted";
 
 pub trait OauthProvider: Send + Sync + 'static {
 	const NAME: &'static str;
@@ -161,6 +163,25 @@ mod tests {
 
 	fn bridge() -> OauthBridge<TestProvider> {
 		OauthBridge::new()
+	}
+
+	#[test]
+	fn companion_markers_match_the_android_plugin_and_the_frontend() {
+		let plugin = include_str!(
+			"../../gen/android/app/src/main/java/org/regrind/googleoauth/GoogleOauthPlugin.kt"
+		);
+		let frontend = include_str!("../../../src/lib/api/sign-in.ts");
+		for (kotlin, typescript, marker) in [
+			(
+				"ERROR_UNAVAILABLE",
+				"companionUnavailable",
+				COMPANION_UNAVAILABLE,
+			),
+			("ERROR_UNTRUSTED", "companionUntrusted", COMPANION_UNTRUSTED),
+		] {
+			assert!(plugin.contains(&format!("{kotlin} = \"{marker}\"")));
+			assert!(frontend.contains(&format!("{typescript} = \"{marker}\"")));
+		}
 	}
 
 	#[test]

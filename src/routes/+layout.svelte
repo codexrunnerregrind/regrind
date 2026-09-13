@@ -9,10 +9,11 @@
 	import { onMount } from "svelte";
 	import { toast, Toaster } from "svelte-sonner";
 
+	import { startGoogleHandbackWatch } from "$lib/api/google-handback";
 	import {
-		getPreferencesSnapshot,
 		hydratePreferences,
 		preferencesLoaded,
+		preferencesSnapshot,
 	} from "$lib/app-data/preferences.svelte";
 	import { initTheme } from "$lib/app-data/theme.svelte";
 	import { abortBackdropBlurTrialGesture } from "$lib/blur/calibration/trial.svelte";
@@ -83,6 +84,7 @@
 	import faviconPng from "$lib/assets/favicon.png";
 	import AccountStatusAlert from "$lib/components/feedback/AccountStatusAlert.svelte";
 	import CopyErrorConfirmAlert from "$lib/components/feedback/CopyErrorConfirmAlert.svelte";
+	import GoogleHandbackConfirmAlert from "$lib/components/feedback/GoogleHandbackConfirmAlert.svelte";
 	import RequestBlockedAlert from "$lib/components/feedback/RequestBlockedAlert.svelte";
 	import SessionErrorAlert from "$lib/components/feedback/SessionErrorAlert.svelte";
 	import faviconSvg from "../../contrib/logo/regrind.svg";
@@ -90,7 +92,7 @@
 	let { children }: { children?: import("svelte").Snippet } = $props();
 
 	const onboarded = $derived(
-		preferencesLoaded() && getPreferencesSnapshot().onboardingComplete,
+		preferencesLoaded() && preferencesSnapshot().onboardingComplete,
 	);
 
 	beforeNavigate(() => abortBackdropBlurTrialGesture());
@@ -103,6 +105,14 @@
 		if (!onboarded) return;
 		if (!updatesSelfManaged()) return;
 		void startUpdateWatch();
+	});
+
+	$effect(() => {
+		if (!onboarded) return;
+		const watch = startGoogleHandbackWatch();
+		return () => {
+			void watch.then((stop) => stop());
+		};
 	});
 
 	const hasBottomNavBar = $derived(
@@ -155,4 +165,5 @@
 	<SessionErrorAlert />
 	<AccountStatusAlert />
 	<CopyErrorConfirmAlert />
+	<GoogleHandbackConfirmAlert />
 </IconContext>

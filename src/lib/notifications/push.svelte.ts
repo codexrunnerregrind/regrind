@@ -1,7 +1,7 @@
 import { goto } from "$app/navigation";
 
 import { fetchRest } from "$lib/api/transport";
-import { getPreferencesSnapshot } from "$lib/app-data/preferences.svelte";
+import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
 import { isAndroidPlatform } from "$lib/platform/os";
 
 // Android-only Firebase Cloud Messaging registration. The native side (see
@@ -61,7 +61,7 @@ class PushService {
 		// backgrounded push respects a disabled category.
 		this.#stopPrefs = $effect.root(() => {
 			$effect(() => {
-				const prefs = getPreferencesSnapshot();
+				const prefs = preferencesSnapshot();
 				window.__RegrindPush?.setPrefs(
 					prefs.notifyMessages,
 					prefs.notifyTaps,

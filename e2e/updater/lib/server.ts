@@ -1,6 +1,5 @@
 import { $ } from "bun";
 
-import { hostAssetSuffix } from "../../../scripts/lib/asset-suffix";
 import {
 	decodeSecretKey,
 	encodeSecretKey,
@@ -28,7 +27,7 @@ export type ServerOptions = {
 	tag: string;
 	home: string;
 	port: number;
-	suffix?: string;
+	suffix: string;
 	uuid?: string;
 	rate?: number;
 	failMode?: string;
@@ -131,7 +130,7 @@ export async function startServer({
 	tag,
 	home,
 	port,
-	suffix = hostAssetSuffix(),
+	suffix,
 	uuid = "demo-payload",
 	rate = 0,
 	failMode = "",

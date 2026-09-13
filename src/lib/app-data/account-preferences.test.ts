@@ -10,7 +10,7 @@ import {
 } from "$lib/app-data";
 import {
 	clearAccountPreferences,
-	getPreferencesSnapshot,
+	preferencesSnapshot,
 	setPreferences,
 	usePreferencesForAccount,
 } from "./preferences.svelte";
@@ -41,11 +41,11 @@ describe("preferences split between the app and each account", () => {
 		await setPreferences({ geohash: "ezjmgt0hnbcd" });
 
 		await usePreferencesForAccount(2);
-		expect(getPreferencesSnapshot().geohash).toBeNull();
+		expect(preferencesSnapshot().geohash).toBeNull();
 		await setPreferences({ geohash: "gcpvj0duqcjt" });
 
 		await usePreferencesForAccount(1);
-		expect(getPreferencesSnapshot().geohash).toBe("ezjmgt0hnbcd");
+		expect(preferencesSnapshot().geohash).toBe("ezjmgt0hnbcd");
 		expect(await stored(MINE)).toMatchObject({ geohash: "ezjmgt0hnbcd" });
 		expect(await stored(THEIRS)).toMatchObject({ geohash: "gcpvj0duqcjt" });
 	});
@@ -56,8 +56,8 @@ describe("preferences split between the app and each account", () => {
 
 		await usePreferencesForAccount(2);
 
-		expect(getPreferencesSnapshot().accentColor).toBe("purple");
-		expect(getPreferencesSnapshot().themeMode).toBe("light");
+		expect(preferencesSnapshot().accentColor).toBe("purple");
+		expect(preferencesSnapshot().themeMode).toBe("light");
 		expect(await stored(GLOBAL)).toMatchObject({ accentColor: "purple" });
 	});
 
@@ -67,7 +67,7 @@ describe("preferences split between the app and each account", () => {
 
 		await usePreferencesForAccount(2);
 
-		expect(getPreferencesSnapshot().stayOnline).toBe(true);
+		expect(preferencesSnapshot().stayOnline).toBe(true);
 	});
 
 	it("adopts the values the single-account app left in the shared file", async () => {
@@ -79,9 +79,9 @@ describe("preferences split between the app and each account", () => {
 
 		await usePreferencesForAccount(1);
 
-		expect(getPreferencesSnapshot().geohash).toBe("ezjmgt0hnbcd");
-		expect(getPreferencesSnapshot().accentColor).toBe("purple");
-		expect(getPreferencesSnapshot().stayOnline).toBe(false);
+		expect(preferencesSnapshot().geohash).toBe("ezjmgt0hnbcd");
+		expect(preferencesSnapshot().accentColor).toBe("purple");
+		expect(preferencesSnapshot().stayOnline).toBe(false);
 		// Moved, not copied: left behind, they would be inherited by the next
 		// account to sign in.
 		expect(await stored(GLOBAL)).not.toHaveProperty("geohash");
@@ -94,7 +94,7 @@ describe("preferences split between the app and each account", () => {
 
 		await usePreferencesForAccount(2);
 
-		expect(getPreferencesSnapshot().geohash).toBeNull();
+		expect(preferencesSnapshot().geohash).toBeNull();
 	});
 
 	it("forgets one account's preferences without touching the others", async () => {

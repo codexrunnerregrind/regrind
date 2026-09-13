@@ -164,7 +164,9 @@ describe("ConversationsState realtime inbox signals", () => {
 		});
 		expect(state.typing.isTyping("a:1")).toBe(true);
 
-		emitMessageSent(incomingMessage("a:1", 2000, PEER_ID));
+		emitMessageSent(
+			incomingMessage("a:1", { timestamp: 2000, senderId: PEER_ID }),
+		);
 		await microtasks();
 
 		expect(state.typing.isTyping("a:1")).toBe(false);

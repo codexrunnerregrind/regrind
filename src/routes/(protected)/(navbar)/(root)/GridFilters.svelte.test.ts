@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("$lib/app-data/preferences.svelte", () => ({
 	getPreferences: vi.fn(() => Promise.resolve({})),
 	setPreferences: vi.fn(() => Promise.resolve()),
-	getPreferencesSnapshot: vi.fn(() => ({ units: "metric" })),
+	preferencesSnapshot: vi.fn(() => ({ units: "metric" })),
 }));
 
 vi.mock("$lib/api/users/genders", () => ({

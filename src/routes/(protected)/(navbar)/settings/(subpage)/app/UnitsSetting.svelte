@@ -3,7 +3,7 @@
 
 	import { showErrorToast } from "$lib/api/error-toast";
 	import {
-		getPreferencesSnapshot,
+		preferencesSnapshot,
 		setPreferences,
 	} from "$lib/app-data/preferences.svelte";
 	import IconTile from "$lib/components/settings/IconTile.svelte";
@@ -11,7 +11,7 @@
 	import type { UnitSystem } from "$lib/util/units";
 
 	let pending = $state<UnitSystem | null>(null);
-	const value = $derived(pending ?? getPreferencesSnapshot().units);
+	const value = $derived(pending ?? preferencesSnapshot().units);
 
 	const options: { value: UnitSystem; label: string }[] = [
 		{ value: "metric", label: "Metric" },

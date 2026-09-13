@@ -101,6 +101,12 @@ const preferencesSchema = z.object({
 
 type Preferences = z.infer<typeof preferencesSchema>;
 
+export type BooleanPreference = {
+	[Key in keyof Preferences]-?: Preferences[Key] extends boolean
+		? Key
+		: never;
+}[keyof Preferences];
+
 /**
  * The preferences that belong to one account rather than to the app.
  *
@@ -246,7 +252,7 @@ export async function getPreferences(): Promise<Preferences> {
 	return structuredClone(await hydrating);
 }
 
-export function getPreferencesSnapshot(): Preferences {
+export function preferencesSnapshot(): Preferences {
 	return snapshot;
 }
 

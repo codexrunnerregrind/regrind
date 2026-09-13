@@ -54,8 +54,7 @@ export function conversation(
 
 export function incomingMessage(
 	conversationId: string,
-	timestamp: number,
-	senderId: number,
+	{ timestamp, senderId }: { timestamp: number; senderId: number },
 ) {
 	return {
 		messageId: `m-${conversationId}-${timestamp}`,
@@ -67,6 +66,10 @@ export function incomingMessage(
 		type: "Text",
 		body: { text: "hi" },
 	};
+}
+
+export function fromPeer(conversationId: string, timestamp: number) {
+	return incomingMessage(conversationId, { timestamp, senderId: PEER_ID });
 }
 
 export function entryFor(state: ConversationsState, conversationId: string) {

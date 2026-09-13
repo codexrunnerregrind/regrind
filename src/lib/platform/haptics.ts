@@ -1,7 +1,7 @@
 import { isTauri } from "@tauri-apps/api/core";
 import { platform } from "@tauri-apps/plugin-os";
 
-import { getPreferencesSnapshot } from "$lib/app-data/preferences.svelte";
+import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
 
 /**
  * Thin, safe wrapper around @tauri-apps/plugin-haptics. The plugin is only
@@ -26,7 +26,7 @@ export function hapticsAvailable(): boolean {
 // Every entry point goes through this, so the preference governs the whole app
 // rather than one gesture.
 function enabled(): boolean {
-	return hapticsAvailable() && getPreferencesSnapshot().hapticFeedback;
+	return hapticsAvailable() && preferencesSnapshot().hapticFeedback;
 }
 
 /** A light "tick" — ideal for discrete UI changes like switching tabs. */

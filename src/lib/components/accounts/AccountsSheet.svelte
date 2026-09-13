@@ -11,7 +11,7 @@
 		switchAccount,
 		watchAccounts,
 	} from "$lib/api/accounts.svelte";
-	import { getPreferencesSnapshot } from "$lib/app-data/preferences.svelte";
+	import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import * as Drawer from "$lib/components/ui/drawer";
@@ -55,7 +55,7 @@
 	 * account is disconnected, so only this one can be online at all — and it
 	 * is not, if it has been told to stay hidden.
 	 */
-	const activeIsOnline = $derived(getPreferencesSnapshot().stayOnline);
+	const activeIsOnline = $derived(preferencesSnapshot().stayOnline);
 
 	function status(account: AccountSummary): string {
 		if (!account.active) return "Offline";
