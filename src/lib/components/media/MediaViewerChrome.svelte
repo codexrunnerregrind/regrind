@@ -446,7 +446,10 @@
 						onpointerup={() => hold.end()}
 						onpointercancel={() => hold.cancel()}
 						onpointerleave={() => hold.cancel()}
-						oncontextmenu={(event) => event.preventDefault()}
+						oncontextmenu={(event) => {
+							event.preventDefault();
+							hold.press();
+						}}
 						aria-busy={savingAll}
 						aria-label={actions.onSaveAll === undefined
 							? "Save to your device"

@@ -72,6 +72,45 @@ describe("HoldGesture", () => {
 		expect(hold.claimedClick()).toBe(false);
 	});
 
+	// Android's WebView long-press: a `contextmenu` at the same moment as the
+	// timer would have armed, and the `pointerup` it ends the touch with.
+	it("arms on the platform's own long-press", () => {
+		const hold = gesture();
+
+		hold.start();
+		vi.advanceTimersByTime(HOLD_MS - 50);
+		hold.press();
+		expect(hold.holding).toBe(true);
+
+		hold.end();
+		expect(run).toHaveBeenCalledTimes(1);
+		expect(hold.claimedClick()).toBe(true);
+	});
+
+	it("ignores a long-press on a control that has no hold action", () => {
+		enabled = false;
+		const hold = gesture();
+
+		hold.start();
+		hold.press();
+		hold.end();
+
+		expect(run).not.toHaveBeenCalled();
+		expect(hold.holding).toBe(false);
+	});
+
+	// The gesture is over: a stray one must not arm a press that is not running.
+	it("ignores a long-press after the press ended", () => {
+		const hold = gesture();
+
+		hold.start();
+		hold.end();
+		hold.press();
+
+		expect(hold.holding).toBe(false);
+		expect(run).not.toHaveBeenCalled();
+	});
+
 	it("stays a plain button while the hold action is unavailable", () => {
 		enabled = false;
 		const hold = gesture();

@@ -23,20 +23,35 @@ export class HoldGesture {
 		this.#enabled = enabled;
 	}
 
+	/**
+	 * The platform's own long-press, which on Android arrives as a `contextmenu`
+	 * that also ends the touch: the `pointerup` behind it lands before our timer
+	 * would have armed, so without this a hold never fires there.
+	 */
+	press(): void {
+		if (this.#armed || this.#timer === undefined) return;
+		clearTimeout(this.#timer);
+		this.#arm();
+	}
+
 	start(): void {
 		this.cancel();
 		// A claim the click never came to collect must not outlive this press.
 		this.#held = false;
 		if (!this.#enabled()) return;
-		this.#timer = setTimeout(() => {
-			this.#armed = true;
-			this.holding = true;
-			hapticImpact("medium");
-		}, HOLD_MS);
+		this.#timer = setTimeout(() => this.#arm(), HOLD_MS);
+	}
+
+	#arm(): void {
+		this.#timer = undefined;
+		this.#armed = true;
+		this.holding = true;
+		hapticImpact("medium");
 	}
 
 	end(): void {
 		clearTimeout(this.#timer);
+		this.#timer = undefined;
 		this.holding = false;
 		if (!this.#armed) return;
 		this.#armed = false;
@@ -46,6 +61,7 @@ export class HoldGesture {
 
 	cancel(): void {
 		clearTimeout(this.#timer);
+		this.#timer = undefined;
 		this.#armed = false;
 		this.holding = false;
 	}
