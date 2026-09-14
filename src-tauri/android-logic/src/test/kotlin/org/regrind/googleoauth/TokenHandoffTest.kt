@@ -1,4 +1,4 @@
-package org.opengrind.googleoauth
+package org.regrind.googleoauth
 
 import org.junit.After
 import org.junit.Assert.assertEquals

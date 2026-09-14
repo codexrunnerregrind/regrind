@@ -1,4 +1,4 @@
-package org.opengrind.googleoauth
+package org.regrind.googleoauth
 
 import java.util.concurrent.atomic.AtomicReference
 
