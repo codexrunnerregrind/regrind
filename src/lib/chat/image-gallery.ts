@@ -5,6 +5,7 @@ import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 import {
+	downloadAllMedia,
 	downloadMedia,
 	registerLightboxDownloadButton,
 } from "./lightbox-download";
@@ -97,6 +98,15 @@ export async function openImageGalleryLightbox(
 						const image = images[index];
 						if (image) downloadMedia({ url: image.url });
 					},
+					// Only where there is more than one to save.
+					...(images.length > 1
+						? {
+								onSaveAll: () =>
+									downloadAllMedia(
+										images.map(({ url }) => ({ url })),
+									),
+							}
+						: {}),
 				};
 	const [{ default: PhotoSwipeLightboxCtor }, sizes] = await Promise.all([
 		import("photoswipe/lightbox"),
