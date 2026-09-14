@@ -35,13 +35,13 @@
 			],
 			"versions": [
 				{
-					"version": "0.1.0.13",
-					"buildVersion": "0.1.0.13",
-					"date": "2026-09-07",
-					"localizedDescription": "- Redesigned sign-in screen\n- Grid filters redesigned\n- Crop and straighten a photo before it goes to an album, your profile or Right Now\n- Several fixes for push notifications on Android\n- Right Now posts now appear on the profile\n- Expiring pics and unsend stay unlocked\n- The Android updater now tracks this fork's own releases\n- Other fixes",
-					"downloadURL": "https://git.opengrind.org/codexrunner/regrind/releases/download/v0.1.0-beta.13/regrind-v0.1.0-beta.13.ipa",
-					"size": 45685676,
-					"sha256": "eb54c8ea01010c9c91cabccf02993ce668131bf0ee4921fc02b59524c063fd24",
+					"version": "0.1.0.14",
+					"buildVersion": "0.1.0.14",
+					"date": "2026-09-14",
+					"localizedDescription": "- Sign in with Facebook\n- Filter the inbox, and jump to the top of any list\n- Add a photo to an album straight from the grid\n- Export and import your favorites\n- A \"new\" badge on profiles, and a back button\n- Adjustable background blur, better tuned on Linux\n- Licenses and credits page\n- Clearer notification text and offline errors\n- Linux AppImage builds\n- Other fixes",
+					"downloadURL": "https://git.opengrind.org/codexrunner/regrind/releases/download/v0.1.0-beta.14/regrind-v0.1.0-beta.14.ipa",
+					"size": 40279509,
+					"sha256": "f51c9e184be32b12b1d27c0e03d5df4187b41848ec36a3ddf21c0ae61b2faf7a",
 					"minOSVersion": "14.0"
 				}
 			]
