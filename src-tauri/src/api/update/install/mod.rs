@@ -198,7 +198,7 @@ mod pins {
 	const REQUEST_TOKEN_ACTION: &str =
 		"org.opengrind.google_oauth.action.REQUEST_TOKEN";
 	const RECEIVE_TOKEN_PERMISSION: &str =
-		"org.opengrind.permission.RECEIVE_GOOGLE_TOKEN";
+		"${applicationId}.permission.RECEIVE_GOOGLE_TOKEN";
 	const TOKEN_EXTRA: &str = "org.opengrind.google_oauth.extra.TOKEN";
 
 	fn squashed(source: &str) -> String {

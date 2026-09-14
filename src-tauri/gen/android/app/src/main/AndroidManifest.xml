@@ -10,7 +10,7 @@
 	<uses-permission android:name="org.opengrind.recaptcha.permission.MINT_TOKEN" />
 
 	<permission
-		android:name="org.opengrind.permission.RECEIVE_GOOGLE_TOKEN"
+		android:name="${applicationId}.permission.RECEIVE_GOOGLE_TOKEN"
 		android:protectionLevel="signature" />
 
 	<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
@@ -68,7 +68,7 @@
 		<activity
 			android:name=".TokenHandoffActivity"
 			android:exported="true"
-			android:permission="org.opengrind.permission.RECEIVE_GOOGLE_TOKEN"
+			android:permission="${applicationId}.permission.RECEIVE_GOOGLE_TOKEN"
 			android:excludeFromRecents="true"
 			android:persistableMode="persistNever"
 			android:taskAffinity=""
