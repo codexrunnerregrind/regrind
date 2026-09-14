@@ -1,5 +1,6 @@
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use serde::Serialize;
+use tauri::AppHandle;
 
 use crate::error::AppError;
 
@@ -17,31 +18,28 @@ pub struct DownloadedMedia {
 /// Fetches a chat media URL (image, video or voice note) and returns its bytes. Done in Rust
 /// rather than the webview so the request isn't subject to the webview's CORS
 /// policy, which the media CDN does not satisfy.
+///
+/// Through the same client as the `ogmedia` proxy: a client of our own would
+/// carry the wrong headers, and on Android its TLS verifier panics unless the
+/// platform initialises it.
 #[tauri::command]
-pub async fn download_media(url: String) -> Result<DownloadedMedia, AppError> {
-	let response = reqwest::get(&url)
-		.await
-		.map_err(|e| AppError::Http(format!("Failed to fetch media: {e}")))?;
+pub async fn download_media(
+	app: AppHandle,
+	url: String,
+) -> Result<DownloadedMedia, AppError> {
+	let fetched = crate::media::fetch_for_download(&app, &url).await.map_err(
+		|detail| AppError::Http(format!("Failed to fetch media: {detail}")),
+	)?;
 
-	if !response.status().is_success() {
+	if !(200..300).contains(&fetched.status) {
 		return Err(AppError::Http(format!(
 			"Failed to fetch media: HTTP {}",
-			response.status()
+			fetched.status
 		)));
 	}
 
-	let content_type = response
-		.headers()
-		.get(reqwest::header::CONTENT_TYPE)
-		.and_then(|value| value.to_str().ok())
-		.map(|value| value.to_string());
-
-	let bytes = response.bytes().await.map_err(|e| {
-		AppError::Http(format!("Failed to read media body: {e}"))
-	})?;
-
 	Ok(DownloadedMedia {
-		content_type,
-		data: STANDARD.encode(&bytes),
+		content_type: fetched.content_type,
+		data: STANDARD.encode(&fetched.body),
 	})
 }

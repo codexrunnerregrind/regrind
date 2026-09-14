@@ -31,6 +31,18 @@ pub const SCHEME: &str = "ogmedia";
 const MAX_MEDIA_BYTES: usize = 16 * 1024 * 1024;
 const OFFICIAL_APP_REQUESTS_PER_HOST: usize = 20;
 
+/// Fetches media for something other than the webview — a save to the device,
+/// a waveform, a notification image — with the proxy's client, headers and
+/// concurrency limit, but none of its caching.
+pub async fn fetch_for_download<R: Runtime>(
+	app: &AppHandle<R>,
+	url: &str,
+) -> Result<grindr::MediaResponse, String> {
+	fetch(app, url, grindr::MediaFetcher::ImageLoader, None)
+		.await
+		.map_err(|error| detail_of(&error))
+}
+
 pub struct MediaProxy {
 	cache: Mutex<MediaCache>,
 	windowed: Mutex<Windowed>,
