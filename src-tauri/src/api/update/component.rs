@@ -55,7 +55,16 @@ pub static GOOGLE_OAUTH: Component = Component {
 	target: Target::Package("org.opengrind.google_oauth"),
 };
 
-pub static ALL: &[&Component] = &[&APP, &GOOGLE_OAUTH];
+pub static RECAPTCHA: Component = Component {
+	key: "recaptcha",
+	index_path:
+		"api/v1/repos/open-grind/recaptcha-helper/releases?limit=3&draft=false",
+	asset_stem: "open-grind-recaptcha-helper",
+	asset_suffix: abi_asset_suffix,
+	target: Target::Package("org.opengrind.recaptcha"),
+};
+
+pub static ALL: &[&Component] = &[&APP, &GOOGLE_OAUTH, &RECAPTCHA];
 
 fn abi_asset_suffix() -> Option<String> {
 	abi_token(std::env::consts::OS, std::env::consts::ARCH).map(str::to_owned)
@@ -205,6 +214,23 @@ mod tests {
 			assert_eq!(abi_token(os, "x86_64"), None);
 			assert_eq!(abi_token(os, "aarch64"), None);
 		}
+	}
+
+	#[test]
+	fn the_recaptcha_addon_is_its_own_package_and_release_track() {
+		assert!(!RECAPTCHA.is_self());
+		assert_eq!(RECAPTCHA.install_target(), "org.opengrind.recaptcha");
+		assert_eq!(
+			RECAPTCHA.index_path,
+			"api/v1/repos/open-grind/recaptcha-helper/releases?limit=3&draft=false"
+		);
+		assert_eq!(
+			RECAPTCHA.payload_name(
+				"v1.0.0",
+				abi_token("android", "aarch64").unwrap()
+			),
+			"open-grind-recaptcha-helper-v1.0.0-arm64-v8a.apk"
+		);
 	}
 
 	#[test]

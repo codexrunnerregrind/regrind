@@ -5,6 +5,7 @@ import {
 	COMPONENT_PACKAGE,
 	type ComponentKey,
 	GOOGLE_OAUTH_COMPONENT,
+	RECAPTCHA_COMPONENT,
 } from "./components";
 import type { InstallKind, StagePresenter, UpdateFlow } from "./flow";
 import type * as UpdateApi from "./index";
@@ -124,6 +125,7 @@ export function updateApiFake() {
 	const readiness: Record<ComponentKey, Readiness> = {
 		[APP_COMPONENT]: { state: "nothingStaged" },
 		[GOOGLE_OAUTH_COMPONENT]: { state: "nothingStaged" },
+		[RECAPTCHA_COMPONENT]: { state: "nothingStaged" },
 	};
 	const api = {
 		cancelUpdateDownload: vi.fn<typeof UpdateApi.cancelUpdateDownload>(),
@@ -149,6 +151,7 @@ export function updateApiFake() {
 		outcomeListeners.length = 0;
 		readiness[APP_COMPONENT] = { state: "nothingStaged" };
 		readiness[GOOGLE_OAUTH_COMPONENT] = { state: "nothingStaged" };
+		readiness[RECAPTCHA_COMPONENT] = { state: "nothingStaged" };
 		api.cancelUpdateDownload.mockResolvedValue(undefined);
 		api.checkForUpdate.mockResolvedValue(upToDate);
 		api.discardStagedUpdate.mockResolvedValue(undefined);

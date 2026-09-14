@@ -2,6 +2,8 @@ use std::fmt;
 
 use serde::Serialize;
 
+use crate::api::recaptcha::RecaptchaError;
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BanInfo {
@@ -50,6 +52,7 @@ pub enum AppError {
 	NetworkBlocked,
 	NotInitialized,
 	SessionCleared,
+	Recaptcha(RecaptchaError),
 }
 
 impl AppError {
@@ -69,6 +72,7 @@ impl AppError {
 			AppError::NetworkBlocked => "NetworkBlocked",
 			AppError::NotInitialized => "NotInitialized",
 			AppError::SessionCleared => "SessionCleared",
+			AppError::Recaptcha(_) => "Recaptcha",
 		}
 	}
 }
@@ -106,6 +110,7 @@ impl fmt::Display for AppError {
 			AppError::NotInitialized => {
 				write!(f, "GrindrClient not initialized")
 			}
+			AppError::Recaptcha(error) => write!(f, "reCAPTCHA error: {error}"),
 		}
 	}
 }
@@ -204,6 +209,7 @@ mod tests {
 			AppError::NetworkBlocked,
 			AppError::NotInitialized,
 			AppError::SessionCleared,
+			AppError::Recaptcha(RecaptchaError::Failed),
 		];
 		for error in errors {
 			assert_eq!(

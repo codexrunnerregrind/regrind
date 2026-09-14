@@ -7,6 +7,7 @@
 	<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
 	<uses-permission android:name="org.opengrind.google_oauth.permission.REQUEST_TOKEN" />
+	<uses-permission android:name="org.opengrind.recaptcha.permission.MINT_TOKEN" />
 
 	<permission
 		android:name="org.opengrind.permission.RECEIVE_GOOGLE_TOKEN"
@@ -30,6 +31,7 @@
 
 	<queries>
 		<package android:name="org.opengrind.google_oauth" />
+		<package android:name="org.opengrind.recaptcha" />
 	</queries>
 
 	<!-- AndroidTV support -->

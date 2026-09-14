@@ -2,8 +2,6 @@ package org.regrind.googleoauth
 
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.SystemClock
 import androidx.activity.result.ActivityResult
 import app.tauri.annotation.ActivityCallback
@@ -14,6 +12,8 @@ import app.tauri.plugin.Channel
 import app.tauri.plugin.Invoke
 import app.tauri.plugin.JSObject
 import app.tauri.plugin.Plugin
+import org.opengrind.addon.AddonLaunchCheck
+import org.opengrind.addon.AddonGate
 
 @InvokeArg
 internal class WatchArgs {
@@ -27,38 +27,16 @@ class GoogleOauthPlugin(private val activity: Activity) : Plugin(activity) {
     fun getToken(invoke: Invoke) {
         try {
             val intent = Intent(REQUEST_TOKEN_ACTION).setPackage(COMPANION_PACKAGE)
-            val verdict = CompanionGate.decide(
-                resolves = intent.resolveActivity(activity.packageManager) != null,
-                presence = companionPresence(),
-                signatureMatches =
-                    activity.packageManager.checkSignatures(activity.packageName, COMPANION_PACKAGE) ==
-                        PackageManager.SIGNATURE_MATCH,
-            )
-            when (verdict) {
-                CompanionGate.Verdict.Launch -> startActivityForResult(invoke, intent, "tokenResult")
-                CompanionGate.Verdict.Unavailable -> invoke.reject(ERROR_UNAVAILABLE)
-                CompanionGate.Verdict.Disabled -> invoke.reject(ERROR_DISABLED)
-                CompanionGate.Verdict.Untrusted -> invoke.reject(ERROR_UNTRUSTED)
+            when (AddonLaunchCheck.decide(activity, intent, COMPANION_PACKAGE)) {
+                AddonGate.Verdict.Launch -> startActivityForResult(invoke, intent, "tokenResult")
+                AddonGate.Verdict.Unavailable -> invoke.reject(ERROR_UNAVAILABLE)
+                AddonGate.Verdict.Disabled -> invoke.reject(ERROR_DISABLED)
+                AddonGate.Verdict.Untrusted -> invoke.reject(ERROR_UNTRUSTED)
             }
         } catch (e: Exception) {
             // Companion missing or refused the launch (e.g. signature mismatch).
             invoke.reject(ERROR_UNAVAILABLE)
         }
-    }
-
-    private fun companionPresence(): CompanionGate.Presence = try {
-        val info = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            activity.packageManager.getApplicationInfo(
-                COMPANION_PACKAGE,
-                PackageManager.ApplicationInfoFlags.of(0L),
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            activity.packageManager.getApplicationInfo(COMPANION_PACKAGE, 0)
-        }
-        if (info.enabled) CompanionGate.Presence.Enabled else CompanionGate.Presence.Disabled
-    } catch (e: PackageManager.NameNotFoundException) {
-        CompanionGate.Presence.Absent
     }
 
     @Command

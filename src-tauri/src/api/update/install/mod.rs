@@ -180,6 +180,19 @@ mod pins {
 		"../../../../gen/android/app/src/main/java/org/regrind/TokenHandoffActivity.kt"
 	);
 
+	const ADDON_GATE: &str = include_str!(
+		"../../../../android-logic/src/main/kotlin/org/opengrind/addon/AddonGate.kt"
+	);
+
+	const RECAPTCHA_PLUGIN: &str = include_str!(
+		"../../../../gen/android/app/src/main/java/org/opengrind/recaptcha/RecaptchaPlugin.kt"
+	);
+
+	const RECAPTCHA_BRIDGE: &str = include_str!("../../recaptcha/android.rs");
+
+	const MINT_TOKEN_PERMISSION: &str =
+		"org.opengrind.recaptcha.permission.MINT_TOKEN";
+
 	const REQUEST_TOKEN_PERMISSION: &str =
 		"org.opengrind.google_oauth.permission.REQUEST_TOKEN";
 	const REQUEST_TOKEN_ACTION: &str =
@@ -582,136 +595,185 @@ mod pins {
 		camel
 	}
 
-	fn bridge_requests() -> Vec<(&'static str, &'static str)> {
-		ANDROID_BRIDGE
-			.split("run_mobile_plugin")
-			.skip(1)
-			.filter_map(|call| {
-				let arguments = call[call.find('(')? + 1..].trim_start();
-				let (command, rest) =
-					arguments.strip_prefix('"')?.split_once('"')?;
-				let request = rest.trim_start().strip_prefix(',')?.trim_start();
-				let length = request.find(|c: char| !is_identifier(c))?;
-				let name = &request[..length];
-				let constructed = name.starts_with(char::is_uppercase)
-					&& request[length..].trim_start().starts_with('{');
-				constructed.then_some((command, name))
-			})
-			.collect()
+	struct PluginPair {
+		bridge_file: &'static str,
+		bridge: &'static str,
+		plugin_file: &'static str,
+		plugin: &'static str,
 	}
 
-	fn rust_wire_fields(name: &str) -> Vec<String> {
-		let header = format!("struct {name}");
-		let at = declaration_at(ANDROID_BRIDGE, "android.rs", &header);
-		let attributes = ANDROID_BRIDGE[..at]
-			.rsplit_once("\n\n")
-			.map_or(&ANDROID_BRIDGE[..at], |(_, attributes)| attributes);
-		let camel = squashed(attributes).contains("rename_all=\"camelCase\"");
-		let body = declaration_block(ANDROID_BRIDGE, "android.rs", &header);
-		let mut renamed = None;
-		let mut fields = Vec::new();
-		for line in body.lines().map(str::trim).filter(|line| !line.is_empty())
-		{
-			if line.starts_with("#[") {
-				renamed = renamed.or_else(|| {
-					squashed(line).split_once("rename=\"").and_then(
-						|(_, rest)| rest.split('"').next().map(str::to_owned),
-					)
-				});
-				continue;
-			}
-			let Some((field, _)) = line.split_once(':') else {
-				continue;
-			};
-			let field = field.trim().trim_start_matches("pub ").trim();
-			fields.push(renamed.take().unwrap_or_else(|| {
-				if camel {
-					camel_case(field)
-				} else {
-					field.to_owned()
-				}
-			}));
+	const UPDATE_PAIR: PluginPair = PluginPair {
+		bridge_file: "install/android.rs",
+		bridge: ANDROID_BRIDGE,
+		plugin_file: "UpdatePlugin.kt",
+		plugin: PLUGIN,
+	};
+
+	const RECAPTCHA_PAIR: PluginPair = PluginPair {
+		bridge_file: "recaptcha/android.rs",
+		bridge: RECAPTCHA_BRIDGE,
+		plugin_file: "RecaptchaPlugin.kt",
+		plugin: RECAPTCHA_PLUGIN,
+	};
+
+	impl PluginPair {
+		fn requests(&self) -> Vec<(&'static str, &'static str)> {
+			self.bridge
+				.split("run_mobile_plugin")
+				.skip(1)
+				.filter_map(|call| {
+					let arguments = call[call.find('(')? + 1..].trim_start();
+					let (command, rest) =
+						arguments.strip_prefix('"')?.split_once('"')?;
+					let request =
+						rest.trim_start().strip_prefix(',')?.trim_start();
+					let length = request.find(|c: char| !is_identifier(c))?;
+					let name = &request[..length];
+					let constructed = name.starts_with(char::is_uppercase)
+						&& request[length..].trim_start().starts_with('{');
+					constructed.then_some((command, name))
+				})
+				.collect()
 		}
-		fields.sort();
-		fields
-	}
 
-	fn kotlin_arg_fields(class: &str) -> Vec<String> {
-		let body = declaration_block(
-			PLUGIN,
-			"UpdatePlugin.kt",
-			&format!("class {class}"),
-		);
-		let mut fields: Vec<String> = body
-			.lines()
-			.map(|line| {
-				line.trim().trim_start_matches("lateinit ").trim_start()
-			})
-			.filter_map(|line| {
-				line.strip_prefix("var ")
-					.or_else(|| line.strip_prefix("val "))
-			})
-			.filter_map(|line| line.split(':').next())
-			.map(|field| field.trim().to_owned())
-			.collect();
-		fields.sort();
-		fields
-	}
+		fn rust_wire_fields(&self, name: &str) -> Vec<String> {
+			let header = format!("struct {name}");
+			let at = declaration_at(self.bridge, self.bridge_file, &header);
+			let attributes = self.bridge[..at]
+				.rsplit_once("\n\n")
+				.map_or(&self.bridge[..at], |(_, attributes)| attributes);
+			let camel =
+				squashed(attributes).contains("rename_all=\"camelCase\"");
+			let body =
+				declaration_block(self.bridge, self.bridge_file, &header);
+			let mut renamed = None;
+			let mut fields = Vec::new();
+			for line in
+				body.lines().map(str::trim).filter(|line| !line.is_empty())
+			{
+				if line.starts_with("#[") {
+					renamed = renamed.or_else(|| {
+						squashed(line).split_once("rename=\"").and_then(
+							|(_, rest)| {
+								rest.split('"').next().map(str::to_owned)
+							},
+						)
+					});
+					continue;
+				}
+				let Some((field, _)) = line.split_once(':') else {
+					continue;
+				};
+				let field = field.trim().trim_start_matches("pub ").trim();
+				fields.push(renamed.take().unwrap_or_else(|| {
+					if camel {
+						camel_case(field)
+					} else {
+						field.to_owned()
+					}
+				}));
+			}
+			fields.sort();
+			fields
+		}
 
-	fn parsed_arg_class(command: &str) -> Option<&'static str> {
-		let body = braced_block(
-			PLUGIN,
-			"UpdatePlugin.kt",
-			&format!("fun {command}(invoke: Invoke)"),
-		);
-		let class = body[spaced_match(body, "parseArgs(")?.end..].trim_start();
-		let length = class.find(|character| !is_identifier(character))?;
-		(length > 0).then(|| &class[..length])
+		fn kotlin_arg_fields(&self, class: &str) -> Vec<String> {
+			let body = declaration_block(
+				self.plugin,
+				self.plugin_file,
+				&format!("class {class}"),
+			);
+			let mut fields: Vec<String> = body
+				.lines()
+				.map(|line| {
+					line.trim().trim_start_matches("lateinit ").trim_start()
+				})
+				.filter_map(|line| {
+					line.strip_prefix("var ")
+						.or_else(|| line.strip_prefix("val "))
+				})
+				.filter_map(|line| line.split(':').next())
+				.map(|field| field.trim().to_owned())
+				.collect();
+			fields.sort();
+			fields
+		}
+
+		fn parsed_arg_class(&self, command: &str) -> Option<&'static str> {
+			let body = braced_block(
+				self.plugin,
+				self.plugin_file,
+				&format!("fun {command}(invoke: Invoke)"),
+			);
+			let class =
+				body[spaced_match(body, "parseArgs(")?.end..].trim_start();
+			let length = class.find(|character| !is_identifier(character))?;
+			(length > 0).then(|| &class[..length])
+		}
+
+		fn assert_requests_carry_the_parsed_fields(&self, expected: &[&str]) {
+			let requests = self.requests();
+			for expected in expected {
+				assert!(
+					requests.iter().any(|(command, _)| command == expected),
+					"{} no longer sends a request struct to {expected}: {requests:?}",
+					self.bridge_file
+				);
+			}
+			for (command, request) in &requests {
+				let class =
+					self.parsed_arg_class(command).unwrap_or_else(|| {
+						panic!(
+							"{}.{command} ignores the {request} it is sent",
+							self.plugin_file
+						)
+					});
+				let sent = self.rust_wire_fields(request);
+				assert!(
+					!sent.is_empty(),
+					"{request} was parsed as having no fields"
+				);
+				assert_eq!(
+					sent,
+					self.kotlin_arg_fields(class),
+					"{request} and the {class} that {}.{command} parses disagree on field names",
+					self.plugin_file
+				);
+			}
+
+			let parsing: Vec<&str> = self
+				.plugin
+				.split("@Command")
+				.skip(1)
+				.filter_map(|command| {
+					let start = command.find("fun ")? + "fun ".len();
+					let name = command[start..].split('(').next()?.trim();
+					self.parsed_arg_class(name).map(|_| name)
+				})
+				.collect();
+			for command in parsing {
+				assert!(
+					requests.iter().any(|(sent, _)| *sent == command),
+					"{}.{command} parses arguments the bridge never sends",
+					self.plugin_file
+				);
+			}
+		}
 	}
 
 	#[test]
 	fn every_request_the_bridge_sends_carries_the_fields_kotlin_parses() {
-		let requests = bridge_requests();
-		for expected in
-			["install", "capability", "packageState", "watchInstall"]
-		{
-			assert!(
-				requests.iter().any(|(command, _)| *command == expected),
-				"the bridge no longer sends a request struct to {expected}: {requests:?}"
-			);
-		}
-		for (command, request) in &requests {
-			let class =
-				parsed_arg_class(command).unwrap_or_else(|| {
-					panic!("UpdatePlugin.{command} ignores the {request} it is sent")
-				});
-			let sent = rust_wire_fields(request);
-			assert!(
-				!sent.is_empty(),
-				"{request} was parsed as having no fields"
-			);
-			assert_eq!(
-				sent,
-				kotlin_arg_fields(class),
-				"{request} and the {class} that UpdatePlugin.{command} parses disagree on field names"
-			);
-		}
+		UPDATE_PAIR.assert_requests_carry_the_parsed_fields(&[
+			"install",
+			"capability",
+			"packageState",
+			"watchInstall",
+		]);
+	}
 
-		let parsing: Vec<&str> = PLUGIN
-			.split("@Command")
-			.skip(1)
-			.filter_map(|command| {
-				let start = command.find("fun ")? + "fun ".len();
-				let name = command[start..].split('(').next()?.trim();
-				parsed_arg_class(name).map(|_| name)
-			})
-			.collect();
-		for command in parsing {
-			assert!(
-				requests.iter().any(|(sent, _)| *sent == command),
-				"UpdatePlugin.{command} parses arguments the bridge never sends"
-			);
-		}
+	#[test]
+	fn the_recaptcha_request_carries_the_fields_kotlin_parses() {
+		RECAPTCHA_PAIR.assert_requests_carry_the_parsed_fields(&["mintToken"]);
 	}
 
 	#[test]
@@ -784,44 +846,208 @@ mod pins {
 		);
 	}
 
+	fn kotlin_allowlist() -> Vec<&'static str> {
+		let start = spaced_match(
+			PLUGIN,
+			"private fun isInstallableTarget(packageName: String): Boolean =",
+		)
+		.expect("UpdatePlugin no longer declares isInstallableTarget")
+		.end;
+		let expression =
+			squashed(PLUGIN[start..].split("@Command").next().unwrap_or(""));
+		assert!(
+			expression.starts_with("packageName==activity.packageName||"),
+			"the allowlist must still admit this app itself: {expression}"
+		);
+		expression
+			.split("||")
+			.skip(1)
+			.map(|term| {
+				let constant =
+					term.strip_prefix("packageName==").unwrap_or_else(|| {
+						panic!("isInstallableTarget term {term} is not a package comparison")
+					});
+				kotlin_constant(PLUGIN, "UpdatePlugin.kt", constant)
+			})
+			.collect()
+	}
+
 	#[test]
 	fn the_kotlin_install_allowlist_matches_the_component_table() {
 		use super::super::component;
 
-		let start = PLUGIN
-			.find("const val GOOGLE_OAUTH")
-			.expect("UpdatePlugin pins the addon package id");
-		let pinned = PLUGIN[start..]
-			.split('"')
-			.nth(1)
-			.expect("the pin holds a string literal");
-		assert_eq!(pinned, component::GOOGLE_OAUTH.install_target());
+		let mut allowlisted = kotlin_allowlist();
+		allowlisted.sort_unstable();
 
-		let allowlisted: Vec<&str> = component::ALL
+		let mut expected: Vec<&str> = component::ALL
 			.iter()
 			.map(|c| c.install_target())
 			.filter(|target| *target != component::SELF_PACKAGE)
 			.collect();
+		expected.sort_unstable();
+
 		assert_eq!(
-			allowlisted,
-			vec![pinned],
+			allowlisted, expected,
 			"every non-self component must appear in the Kotlin allowlist"
 		);
-		assert!(
-			PLUGIN.contains("packageName == activity.packageName"),
-			"the allowlist must still admit this app itself"
-		);
-		assert!(
-			PLUGIN.contains("packageName == GOOGLE_OAUTH"),
-			"isInstallableTarget must admit the addon package"
-		);
-		for target in &allowlisted {
+		for target in &expected {
 			assert!(
 				MANIFEST
 					.contains(&format!("<package android:name=\"{target}\" />")),
 				"{target} needs a <queries> entry or the package probe reports it absent"
 			);
 		}
+	}
+
+	fn gate_verdict_names() -> Vec<&'static str> {
+		braced_block(ADDON_GATE, "AddonGate.kt", "enum class Verdict")
+			.split(',')
+			.map(str::trim)
+			.filter(|name| !name.is_empty())
+			.collect()
+	}
+
+	#[test]
+	fn every_addon_plugin_answers_every_gate_verdict() {
+		let verdicts = gate_verdict_names();
+		assert!(
+			verdicts.contains(&"Launch") && verdicts.len() > 1,
+			"AddonGate.Verdict was not parsed: {verdicts:?}"
+		);
+		for (file, plugin) in [
+			("GoogleOauthPlugin.kt", SIGN_IN_PLUGIN),
+			("RecaptchaPlugin.kt", RECAPTCHA_PLUGIN),
+		] {
+			let plugin = squashed(plugin);
+			assert!(
+				plugin.contains("importorg.opengrind.addon.AddonGate"),
+				"{file} no longer uses the shared add-on gate"
+			);
+			for verdict in &verdicts {
+				assert!(
+					plugin.contains(&format!("AddonGate.Verdict.{verdict}->")),
+					"{file} has no branch for AddonGate.Verdict.{verdict}"
+				);
+			}
+		}
+	}
+
+	#[test]
+	fn every_recaptcha_plugin_refusal_classifies_to_its_reason() {
+		use crate::api::recaptcha::RecaptchaError;
+
+		let file = "RecaptchaPlugin.kt";
+		let plugin = squashed(RECAPTCHA_PLUGIN);
+		let refusals = gate_verdict_names()
+			.into_iter()
+			.filter(|verdict| *verdict != "Launch");
+		for verdict in refusals {
+			let (constant, expected) = match verdict {
+				"Unavailable" => {
+					("ERROR_UNAVAILABLE", RecaptchaError::AddonUnavailable)
+				}
+				"Disabled" => ("ERROR_DISABLED", RecaptchaError::AddonDisabled),
+				"Untrusted" => {
+					("ERROR_UNTRUSTED", RecaptchaError::AddonUntrusted)
+				}
+				unknown => panic!(
+					"AddonGate.Verdict.{unknown} has no reCAPTCHA reason"
+				),
+			};
+			assert!(
+				plugin.contains(&format!(
+					"AddonGate.Verdict.{verdict}->invoke.reject({constant})"
+				)),
+				"{file} no longer rejects {verdict} with {constant}"
+			);
+			let marker = kotlin_constant(RECAPTCHA_PLUGIN, file, constant);
+			assert_eq!(
+				RecaptchaError::from_rejection(Some(marker), None),
+				expected,
+				"{file} {constant} = {marker} is not classified as {expected:?}"
+			);
+		}
+		for (constant, expected) in [
+			("ERROR_CANCELLED", RecaptchaError::Cancelled),
+			("ERROR_NO_TOKEN", RecaptchaError::NoToken),
+		] {
+			assert!(
+				plugin.contains(&format!("invoke.reject({constant})")),
+				"{file} never rejects with {constant}"
+			);
+			let marker = kotlin_constant(RECAPTCHA_PLUGIN, file, constant);
+			assert_eq!(
+				RecaptchaError::from_rejection(Some(marker), None),
+				expected,
+				"{file} {constant} = {marker} is not classified as {expected:?}"
+			);
+		}
+		assert!(
+			plugin.contains(
+				"invoke.reject(refusal,data.getStringExtra(EXTRA_ERROR_DETAIL))"
+			),
+			"{file} no longer passes the add-on's error and its detail through"
+		);
+		assert!(
+			squashed(RECAPTCHA_BRIDGE).contains(
+				"RecaptchaError::from_rejection(response.message.as_deref(),response.code.as_deref(),)"
+			),
+			"recaptcha/android.rs no longer classifies the rejection marker with its detail"
+		);
+	}
+
+	#[test]
+	fn the_recaptcha_mint_matches_the_addon_contract() {
+		use super::super::component;
+
+		let file = "RecaptchaPlugin.kt";
+		let addon = component::RECAPTCHA.install_target();
+		assert_eq!(
+			kotlin_constant(RECAPTCHA_PLUGIN, file, "ADDON_PACKAGE"),
+			addon,
+			"{file} ADDON_PACKAGE drifted from the component table"
+		);
+		assert!(
+			MANIFEST.contains(&format!(
+				"<uses-permission android:name=\"{MINT_TOKEN_PERMISSION}\" />"
+			)),
+			"the manifest no longer asks for {MINT_TOKEN_PERMISSION}, so the add-on refuses to mint"
+		);
+		assert!(
+			MINT_TOKEN_PERMISSION.starts_with(&format!("{addon}.")),
+			"the component table package {addon} no longer owns {MINT_TOKEN_PERMISSION}"
+		);
+		for (constant, published) in [
+			(
+				"MINT_TOKEN_ACTION",
+				"org.opengrind.recaptcha.action.MINT_TOKEN",
+			),
+			("EXTRA_ACTION", "org.opengrind.recaptcha.extra.ACTION"),
+			("EXTRA_TOKEN", "org.opengrind.recaptcha.extra.TOKEN"),
+			("EXTRA_ERROR", "org.opengrind.recaptcha.extra.ERROR"),
+			(
+				"EXTRA_ERROR_DETAIL",
+				"org.opengrind.recaptcha.extra.ERROR_DETAIL",
+			),
+		] {
+			assert_eq!(
+				kotlin_constant(RECAPTCHA_PLUGIN, file, constant),
+				published,
+				"{file} {constant} drifted from the add-on's published contract"
+			);
+		}
+		let registered = squashed(RECAPTCHA_BRIDGE);
+		let package = RECAPTCHA_PLUGIN
+			.lines()
+			.find_map(|line| line.strip_prefix("package "))
+			.expect("RecaptchaPlugin.kt declares no package")
+			.trim();
+		assert!(
+			registered.contains(&format!(
+				"register_android_plugin(\"{package}\",\"RecaptchaPlugin\",)"
+			)) && spaced_match(RECAPTCHA_PLUGIN, "class RecaptchaPlugin(").is_some(),
+			"recaptcha/android.rs registers a plugin class that {file} does not declare"
+		);
 	}
 
 	#[test]

@@ -21,6 +21,22 @@ on:
       - .forgejo/workflows/credits.yml
   push:
     branches: [main]
+    paths:
+      - src/**
+      - scripts/credits/**
+      - scripts/gen-credits.ts
+      - package.json
+      - bun.lock
+      - patches/**
+      - scripts/patch-deps.ts
+      - svelte.config.js
+      - vite.config.mjs
+      - src-tauri/Cargo.toml
+      - src-tauri/Cargo.lock
+      - src-tauri/patches/**
+      - src-tauri/about.toml
+      - src-tauri/about.hbs
+      - .forgejo/workflows/credits.yml
   workflow_dispatch:
 
 concurrency:

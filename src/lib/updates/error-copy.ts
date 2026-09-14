@@ -4,6 +4,7 @@ import {
 	APP_COMPONENT,
 	type ComponentKey,
 	GOOGLE_OAUTH_COMPONENT,
+	RECAPTCHA_COMPONENT,
 } from "./components";
 import {
 	asUpdateError,
@@ -88,10 +89,16 @@ const busyCopy: Record<ComponentKey, string> = {
 	[APP_COMPONENT]: "Wait for the ReGrind update to finish downloading",
 	[GOOGLE_OAUTH_COMPONENT]:
 		"Wait for the Google OAuth app to finish downloading",
+	[RECAPTCHA_COMPONENT]:
+		"Wait for the reCAPTCHA helper to finish downloading",
 };
 
 const busyDetailSchema = z.object({
-	component: z.enum([APP_COMPONENT, GOOGLE_OAUTH_COMPONENT]),
+	component: z.enum([
+		APP_COMPONENT,
+		GOOGLE_OAUTH_COMPONENT,
+		RECAPTCHA_COMPONENT,
+	]),
 });
 
 const PACKAGE_MANAGER_INSTALL_FAILED_INSUFFICIENT_STORAGE = -4;

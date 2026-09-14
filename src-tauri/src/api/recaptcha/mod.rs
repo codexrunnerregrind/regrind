@@ -1,0 +1,112 @@
+#[cfg(target_os = "android")]
+mod android;
+mod error;
+
+#[cfg(target_os = "android")]
+pub use android::plugin;
+pub use error::RecaptchaError;
+
+use tauri::AppHandle;
+
+use crate::error::AppError;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RecaptchaAction {
+	SignUp,
+	Login,
+	ForgotPassword,
+	Report,
+	DecisionAppeal,
+	DeviceKeyRegistration,
+}
+
+impl RecaptchaAction {
+	pub fn as_str(self) -> &'static str {
+		match self {
+			Self::SignUp => "sign_up",
+			Self::Login => "login",
+			Self::ForgotPassword => "forgot_password",
+			Self::Report => "report",
+			Self::DecisionAppeal => "decision_appeal",
+			Self::DeviceKeyRegistration => "device_key_registration",
+		}
+	}
+}
+
+pub async fn mint_token(
+	app: &AppHandle,
+	action: RecaptchaAction,
+) -> Result<String, AppError> {
+	#[cfg(target_os = "android")]
+	let minted = android::mint_token(app, action).await;
+	#[cfg(not(target_os = "android"))]
+	let minted = {
+		let _ = (app, action);
+		Err(RecaptchaError::UnsupportedPlatform)
+	};
+	Ok(header_safe(minted?)?)
+}
+
+fn header_safe(token: String) -> Result<String, RecaptchaError> {
+	let printable = token.bytes().all(|byte| (0x21..=0x7E).contains(&byte));
+	if token.is_empty() || !printable {
+		return Err(RecaptchaError::MalformedToken);
+	}
+	Ok(token)
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn every_action_sends_the_wire_string_grindr_expects() {
+		for (action, wire) in [
+			(RecaptchaAction::SignUp, "sign_up"),
+			(RecaptchaAction::Login, "login"),
+			(RecaptchaAction::ForgotPassword, "forgot_password"),
+			(RecaptchaAction::Report, "report"),
+			(RecaptchaAction::DecisionAppeal, "decision_appeal"),
+			(
+				RecaptchaAction::DeviceKeyRegistration,
+				"device_key_registration",
+			),
+		] {
+			assert_eq!(action.as_str(), wire);
+		}
+	}
+
+	#[test]
+	fn a_printable_token_is_returned_unchanged() {
+		let token = format!("0cAFcWeA{}", "Ab-_9".repeat(700));
+		assert_eq!(header_safe(token.clone()), Ok(token));
+		assert_eq!(header_safe("!~".into()), Ok("!~".to_owned()));
+	}
+
+	#[test]
+	fn an_empty_token_is_malformed() {
+		assert_eq!(
+			header_safe(String::new()),
+			Err(RecaptchaError::MalformedToken)
+		);
+	}
+
+	#[test]
+	fn a_token_that_could_break_out_of_a_header_is_malformed() {
+		for token in [
+			"0cAFcWeA\r\nX-Injected: 1",
+			"0cAFcWeA\nabc",
+			"0cAFcWeA abc",
+			"0cAFcWeA\tabc",
+			"0cAFcWeA\0abc",
+			"0cAFcWeA\u{7f}",
+			"0cAFcWeAé",
+		] {
+			assert_eq!(
+				header_safe(token.to_owned()),
+				Err(RecaptchaError::MalformedToken),
+				"{token:?} was accepted"
+			);
+		}
+	}
+}

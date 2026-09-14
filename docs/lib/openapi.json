@@ -116,8 +116,7 @@
 			"x-wip": true
 		},
 		{
-			"name": "safety/reports",
-			"x-wip": true
+			"name": "safety/reports"
 		},
 		{
 			"name": "commerce/rewarded-ads"
@@ -1889,40 +1888,56 @@
 				"x-wip": true
 			}
 		},
-		"/v4/flags/{id}": {
+		"/v4/flags/{profileId}": {
 			"get": {
 				"tags": [
 					"safety/reports"
 				],
 				"operationId": "getReportV4",
+				"security": [
+					{
+						"Grindr3Auth": []
+					}
+				],
+				"summary": "Get submitted profile report (v4)",
+				"description": "Like [Get submitted profile report](/grindr-api/safety/reports#get-submitted-profile-report), chosen when the `right-now-moderation` [assignment](/grindr-api/analytics/assignments) is `on`.",
 				"parameters": [
 					{
-						"$ref": "#/components/parameters/GenericIdPath"
+						"$ref": "#/components/parameters/ProfileIdIntegerPath"
 					}
 				],
 				"responses": {
 					"200": {
+						"description": "OK",
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/UndocumentedObject",
-									"x-original-type": "ReportProfileResponse"
+									"$ref": "#/components/schemas/SubmittedReport"
 								}
 							}
-						},
-						"description": "OK"
+						}
+					},
+					"404": {
+						"description": "Not reported."
 					}
-				},
-				"x-wip": true
+				}
 			},
 			"post": {
 				"tags": [
 					"safety/reports"
 				],
 				"operationId": "submitReportV4",
+				"security": [
+					{
+						"Grindr3Auth": []
+					}
+				],
+				"summary": "Report profile (v4)",
+				"deprecated": true,
+				"description": "Removed in the official Android client between v25.20.0 and v26.8.2. Superseded by [Report profile (reCAPTCHA)](/grindr-api/safety/reports#report-profile-recaptcha).",
 				"parameters": [
 					{
-						"$ref": "#/components/parameters/GenericIdPath"
+						"$ref": "#/components/parameters/ProfileIdIntegerPath"
 					}
 				],
 				"requestBody": {
@@ -1930,12 +1945,7 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"allOf": [
-									{
-										"$ref": "#/components/schemas/UndocumentedObject"
-									}
-								],
-								"x-original-type": "ReportProfileRequest"
+								"$ref": "#/components/schemas/ProfileReportRequest"
 							}
 						}
 					}
@@ -1944,44 +1954,62 @@
 					"200": {
 						"description": "OK"
 					}
-				},
-				"x-wip": true
+				}
 			}
 		},
-		"/v3.1/flags/{id}": {
+		"/v3.1/flags/{profileId}": {
 			"get": {
 				"tags": [
 					"safety/reports"
 				],
 				"operationId": "getReportV31",
+				"security": [
+					{
+						"Grindr3Auth": []
+					}
+				],
+				"summary": "Get submitted profile report",
+				"description": "Returns your report on the profile. Used unless the `right-now-moderation` [assignment](/grindr-api/analytics/assignments) is `on`; with it on, use [Get submitted profile report (v4)](/grindr-api/safety/reports#get-submitted-profile-report-v4).",
 				"parameters": [
 					{
-						"$ref": "#/components/parameters/GenericIdPath"
+						"$ref": "#/components/parameters/ProfileIdIntegerPath"
 					}
 				],
 				"responses": {
 					"200": {
+						"description": "OK",
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/UndocumentedObject",
-									"x-original-type": "ReportProfileResponse"
+									"$ref": "#/components/schemas/SubmittedReport"
 								}
 							}
-						},
-						"description": "OK"
+						}
+					},
+					"404": {
+						"description": "Not reported."
 					}
-				},
-				"x-wip": true
+				}
 			},
 			"post": {
 				"tags": [
 					"safety/reports"
 				],
 				"operationId": "submitReportV31",
+				"security": [
+					{
+						"Grindr3Auth": []
+					}
+				],
+				"summary": "Report profile",
+				"description": "Reports a profile. `profileId` is the reported profile, also for album and Right Now reports. Used unless the `right-now-moderation` [assignment](/grindr-api/analytics/assignments) is `on`; with it on, use [Report profile (reCAPTCHA)](/grindr-api/safety/reports#report-profile-recaptcha).",
+				"x-notes": [
+					"For `SPAM`, send `comment: \"\"` and `locations: [\"CHAT_MESSAGE\"]`.",
+					"Album reports add `albumInfo`. Reports about a Right Now post add `rightNowInfo`."
+				],
 				"parameters": [
 					{
-						"$ref": "#/components/parameters/GenericIdPath"
+						"$ref": "#/components/parameters/ProfileIdIntegerPath"
 					}
 				],
 				"requestBody": {
@@ -1989,12 +2017,7 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"allOf": [
-									{
-										"$ref": "#/components/schemas/UndocumentedObject"
-									}
-								],
-								"x-original-type": "ReportProfileRequest"
+								"$ref": "#/components/schemas/ProfileReportRequest"
 							}
 						}
 					}
@@ -2003,8 +2026,7 @@
 					"200": {
 						"description": "OK"
 					}
-				},
-				"x-wip": true
+				}
 			}
 		},
 		"/v1/rewarded-ads/consumption": {
@@ -11055,7 +11077,7 @@
 				"summary": "Gets fresh albums shared with us"
 			}
 		},
-		"/v5/flags/{id}": {
+		"/v5/flags/{profileId}": {
 			"post": {
 				"tags": [
 					"safety/reports"
@@ -11066,9 +11088,14 @@
 						"Grindr3Auth": []
 					}
 				],
+				"summary": "Report profile (reCAPTCHA)",
+				"description": "Like [Report profile](/grindr-api/safety/reports#report-profile) but with a reCAPTCHA Enterprise `captchaToken`, chosen when the `right-now-moderation` [assignment](/grindr-api/analytics/assignments) is `on`.",
+				"x-notes": [
+					"The body rules of [Report profile](/grindr-api/safety/reports#report-profile) apply."
+				],
 				"parameters": [
 					{
-						"$ref": "#/components/parameters/GenericIdPath"
+						"$ref": "#/components/parameters/ProfileIdIntegerPath"
 					}
 				],
 				"requestBody": {
@@ -11076,12 +11103,7 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"allOf": [
-									{
-										"$ref": "#/components/schemas/UndocumentedObject"
-									}
-								],
-								"x-original-type": "ReportProfileRequest"
+								"$ref": "#/components/schemas/ProfileReportRequestV2"
 							}
 						}
 					}
@@ -11090,10 +11112,7 @@
 					"200": {
 						"description": "OK"
 					}
-				},
-				"summary": "Submit profile report",
-				"x-wip": true,
-				"description": "Current version of profile report submission (supersedes `POST /v3.1/flags/{id}`)."
+				}
 			}
 		},
 		"/v1/flags/right-now/{postId}": {
@@ -11107,6 +11126,8 @@
 						"Grindr3Auth": []
 					}
 				],
+				"summary": "Get submitted Right Now post report",
+				"description": "Returns your report on the post in `flagReport`, for a post whose author profile id is unknown; otherwise use [Get submitted profile report](/grindr-api/safety/reports#get-submitted-profile-report) or [Get submitted profile report (v4)](/grindr-api/safety/reports#get-submitted-profile-report-v4).",
 				"parameters": [
 					{
 						"name": "postId",
@@ -11120,19 +11141,19 @@
 				],
 				"responses": {
 					"200": {
+						"description": "OK",
 						"content": {
 							"application/json": {
 								"schema": {
-									"$ref": "#/components/schemas/UndocumentedObject",
-									"x-original-type": "ReportRightNowPostResponse"
+									"$ref": "#/components/schemas/RightNowPostSubmittedReportResponse"
 								}
 							}
-						},
-						"description": "OK"
+						}
+					},
+					"404": {
+						"description": "Not reported."
 					}
-				},
-				"summary": "Right Now post report form",
-				"x-wip": true
+				}
 			},
 			"post": {
 				"tags": [
@@ -11143,6 +11164,11 @@
 					{
 						"Grindr3Auth": []
 					}
+				],
+				"summary": "Report Right Now post",
+				"description": "Reports a Right Now post whose author profile id is unknown. Takes no `captchaToken`. When the author is known, use [Report profile](/grindr-api/safety/reports#report-profile) or [Report profile (reCAPTCHA)](/grindr-api/safety/reports#report-profile-recaptcha) with `rightNowInfo` instead.",
+				"x-notes": [
+					"Send `locations: [\"RIGHT_NOW_PHOTO\", \"RIGHT_NOW_TEXT\"]`, or `comment: \"\"` and `locations: [\"CHAT_MESSAGE\"]` for `SPAM`."
 				],
 				"parameters": [
 					{
@@ -11160,12 +11186,7 @@
 					"content": {
 						"application/json": {
 							"schema": {
-								"allOf": [
-									{
-										"$ref": "#/components/schemas/UndocumentedObject"
-									}
-								],
-								"x-original-type": "ReportRightNowPostRequest"
+								"$ref": "#/components/schemas/RightNowPostReportRequest"
 							}
 						}
 					}
@@ -11174,9 +11195,7 @@
 					"200": {
 						"description": "OK"
 					}
-				},
-				"summary": "Submit Right Now post report",
-				"x-wip": true
+				}
 			}
 		},
 		"/v1/rightnow/requests/inbox": {
@@ -19274,6 +19293,175 @@
 					}
 				},
 				"x-render-on-tag": "safety/appeals"
+			},
+			"ReportReason": {
+				"type": "string",
+				"enum": [
+					"SPAM",
+					"HARASSMENT_BULLYING",
+					"HATE_DISCRIMINATION",
+					"NUDITY_PORNOGRAPHY",
+					"UNDERAGE",
+					"IMPERSONATION",
+					"ILLEGAL_ACTIVITY",
+					"SEXUAL_SOLICITATION",
+					"SERIOUS_IN_PERSON_INCIDENT"
+				],
+				"description": "Report reason.",
+				"x-enum-labels": {
+					"SPAM": "Spam",
+					"HARASSMENT_BULLYING": "Harassment or Bullying",
+					"HATE_DISCRIMINATION": "Hate Speech/Discrimination",
+					"NUDITY_PORNOGRAPHY": "Nudity or Pornography",
+					"UNDERAGE": "Underage",
+					"IMPERSONATION": "Impersonation",
+					"ILLEGAL_ACTIVITY": "Illegal Activity",
+					"SEXUAL_SOLICITATION": "Sexual Solicitation",
+					"SERIOUS_IN_PERSON_INCIDENT": "Serious In Person Incident"
+				},
+				"x-render-on-tag": "safety/reports"
+			},
+			"ReportLocation": {
+				"type": "string",
+				"enum": [
+					"PROFILE_PHOTO",
+					"PROFILE_INFORMATION",
+					"CHAT_MESSAGE",
+					"ALBUM",
+					"RIGHT_NOW_PHOTO",
+					"RIGHT_NOW_TEXT"
+				],
+				"description": "Where the reported content was seen.",
+				"x-enum-labels": {
+					"PROFILE_PHOTO": "Profile Photo",
+					"PROFILE_INFORMATION": "Profile Information",
+					"CHAT_MESSAGE": "Chat Message",
+					"ALBUM": "Album",
+					"RIGHT_NOW_PHOTO": "Right Now Image",
+					"RIGHT_NOW_TEXT": "Right Now Text"
+				},
+				"x-render-on-tag": "safety/reports"
+			},
+			"ProfileReportRequest": {
+				"type": "object",
+				"required": [
+					"reason",
+					"comment",
+					"locations"
+				],
+				"properties": {
+					"reason": {
+						"$ref": "#/components/schemas/ReportReason"
+					},
+					"comment": {
+						"type": "string",
+						"description": "free-text details"
+					},
+					"locations": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/ReportLocation"
+						},
+						"description": "where it happened"
+					},
+					"albumInfo": {
+						"type": "object",
+						"description": "the reported album, for `ALBUM` reports",
+						"properties": {
+							"albumId": {
+								"type": "integer",
+								"format": "int64"
+							},
+							"contentId": {
+								"type": "integer",
+								"format": "int64",
+								"description": "the reported photo or video in the album"
+							},
+							"hasVideo": {
+								"type": "boolean",
+								"description": "whether `contentId` is a video"
+							}
+						}
+					},
+					"rightNowInfo": {
+						"type": "object",
+						"description": "the reported Right Now post",
+						"properties": {
+							"postId": {
+								"type": "integer",
+								"format": "int64"
+							}
+						}
+					}
+				},
+				"x-render-on-tag": "safety/reports"
+			},
+			"ProfileReportRequestV2": {
+				"allOf": [
+					{
+						"$ref": "#/components/schemas/ProfileReportRequest"
+					},
+					{
+						"type": "object",
+						"properties": {
+							"captchaToken": {
+								"type": "string",
+								"description": "reCAPTCHA Enterprise token, action `report`"
+							}
+						}
+					}
+				],
+				"x-render-on-tag": "safety/reports"
+			},
+			"RightNowPostReportRequest": {
+				"type": "object",
+				"required": [
+					"reason",
+					"comment",
+					"locations"
+				],
+				"properties": {
+					"reason": {
+						"$ref": "#/components/schemas/ReportReason"
+					},
+					"comment": {
+						"type": "string",
+						"description": "free-text details"
+					},
+					"locations": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/ReportLocation"
+						},
+						"description": "where it happened"
+					}
+				}
+			},
+			"SubmittedReport": {
+				"type": "object",
+				"properties": {
+					"status": {
+						"type": "string",
+						"description": "string, moderation status; values unknown"
+					},
+					"createTime": {
+						"$ref": "#/components/schemas/TimestampMs"
+					}
+				},
+				"x-render-on-tag": "safety/reports"
+			},
+			"RightNowPostSubmittedReportResponse": {
+				"type": "object",
+				"properties": {
+					"flagReport": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/SubmittedReport"
+							}
+						],
+						"description": "your report on the post"
+					}
+				}
 			},
 			"MediaUploadProblemResponse": {
 				"type": "object",

@@ -1,6 +1,6 @@
-package org.opengrind.googleoauth
+package org.opengrind.addon
 
-object CompanionGate {
+object AddonGate {
 	enum class Presence {
 		Absent,
 		Disabled,

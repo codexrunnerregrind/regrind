@@ -47,7 +47,9 @@ class UpdatePlugin(private val activity: Activity) : Plugin(activity) {
 	private val installing = AtomicBoolean(false)
 
 	private fun isInstallableTarget(packageName: String): Boolean =
-		packageName == activity.packageName || packageName == GOOGLE_OAUTH
+		packageName == activity.packageName ||
+			packageName == GOOGLE_OAUTH ||
+			packageName == RECAPTCHA
 
 	@Command
 	fun packageState(invoke: Invoke) {
@@ -204,5 +206,6 @@ class UpdatePlugin(private val activity: Activity) : Plugin(activity) {
 
 	private companion object {
 		const val GOOGLE_OAUTH = "org.opengrind.google_oauth"
+		const val RECAPTCHA = "org.opengrind.recaptcha"
 	}
 }
