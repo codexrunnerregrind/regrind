@@ -1,6 +1,7 @@
 import { type ComponentProps, mount, unmount } from "svelte";
 import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
+import LightboxBadge from "$lib/components/shared/LightboxBadge.svelte";
 import VideoPlayer from "$lib/components/shared/VideoPlayer.svelte";
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 import { openExternalLink } from "$lib/platform/link-opener";
@@ -150,6 +151,34 @@ export function applyPhotoSwipeVideo(
 		if (player === undefined) return;
 		players.delete(element);
 		void unmount(player);
+	});
+}
+
+export type PhotoSwipeBadge = { createdAt: number | null };
+
+export function applyPhotoSwipeBadge(
+	lightbox: PhotoSwipeLightbox,
+	badgeAt: (index: number) => PhotoSwipeBadge | null,
+): void {
+	let badge: Record<string, unknown> | null = null;
+	lightbox.on("uiRegister", () => {
+		const pswp = lightbox.pswp;
+		if (!pswp) return;
+		pswp.ui?.registerElement({
+			name: "taken-on-grindr",
+			appendTo: "root",
+			onInit: (element) => {
+				badge = mount(LightboxBadge, {
+					target: element,
+					props: { pswp, badgeAt },
+				});
+			},
+		});
+	});
+	lightbox.on("destroy", () => {
+		if (badge === null) return;
+		void unmount(badge);
+		badge = null;
 	});
 }
 

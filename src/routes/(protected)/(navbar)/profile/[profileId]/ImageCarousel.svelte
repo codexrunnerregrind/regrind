@@ -8,6 +8,7 @@
 	import { profileMediaUrl } from "$lib/util/media";
 	import {
 		applyPhotoSwipeBackGesture,
+		applyPhotoSwipeBadge,
 		applyPhotoSwipeErrorUi,
 		applyPhotoSwipeThumbDimensions,
 		applyPhotoSwipeViewportSync,
@@ -42,6 +43,11 @@
 				applyPhotoSwipeThumbDimensions(lightbox);
 				applyPhotoSwipeViewportSync(lightbox);
 				applyPhotoSwipeBackGesture(lightbox);
+				applyPhotoSwipeBadge(lightbox, (index) =>
+					medias[index]?.takenOnGrindr === true
+						? { createdAt: null }
+						: null,
+				);
 				lightbox.on("openingAnimationStart", () => {
 					gallery?.querySelectorAll(".item").forEach((item) => {
 						if (item instanceof HTMLElement) {
@@ -130,12 +136,13 @@
 						: 0);
 			}}
 		>
-			{#each medias as { mediaHash, createdAt }, index (mediaHash + index)}
+			{#each medias as { mediaHash, createdAt, takenOnGrindr }, index (mediaHash + index)}
 				{@const src = profileMediaUrl({ mediaHash, size: "full" })}
 				<ImageCarouselItem
 					{src}
 					thumb={src}
 					{createdAt}
+					{takenOnGrindr}
 					label="Profile photo {index + 1} of {medias.length}"
 				/>
 			{/each}

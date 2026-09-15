@@ -158,6 +158,24 @@ const demoConversationSeeds: DemoConversation[] = [
 ];
 
 const MESSAGE_GAP = 7 * MINUTE;
+
+const PHOTO_AGES = [
+	30 * SECOND,
+	25 * MINUTE,
+	3 * HOUR,
+	30 * HOUR,
+	3 * DAY,
+	9 * DAY,
+	15 * DAY,
+	22 * DAY,
+	30 * DAY,
+	45 * DAY,
+];
+
+function photoAge(index: number): number {
+	return PHOTO_AGES[index % PHOTO_AGES.length] ?? 0;
+}
+
 const MESSAGES_PER_PAGE = 8;
 const DEMO_IMAGE_URL = "https://picsum.photos/seed/opengrind-demo/600/800";
 const EXPIRING_IMAGE_DURATION_MS = 10 * SECOND;
@@ -231,8 +249,8 @@ function buildMessage({
 					height: 800,
 					url: DEMO_IMAGE_URL,
 					imageHash: hashFromSeed(`msg-${conv.withId}-${index}`),
-					takenOnGrindr: false,
-					createdAt: timestamp,
+					takenOnGrindr: index % 2 === 0,
+					createdAt: timestamp - photoAge(index),
 				},
 				...base,
 				unsent: false,
@@ -584,9 +602,9 @@ export function demoDrawerMedia(): DemoDrawerMedia[] {
 			id: 910_000 + index,
 			url: `https://picsum.photos/seed/opengrind-drawer-${index}/600/800`,
 			contentType: "image/jpeg",
-			createdTs: NOW - (index + 1) * HOUR,
+			createdTs: NOW - photoAge(index),
 			used: index % 3 === 0,
-			takenOnGrindr: false,
+			takenOnGrindr: index % 2 === 1,
 		})),
 	];
 }

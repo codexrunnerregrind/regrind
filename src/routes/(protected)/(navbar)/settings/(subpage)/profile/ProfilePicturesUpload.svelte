@@ -3,8 +3,9 @@
 
 	const MAX_PHOTOS = 6;
 
-	let { medias = $bindable() }: { medias: { mediaHash: string }[] } =
-		$props();
+	let {
+		medias = $bindable(),
+	}: { medias: { mediaHash: string; takenOnGrindr: boolean }[] } = $props();
 
 	const emptySlots = $derived(Math.max(0, MAX_PHOTOS - medias.length));
 
@@ -18,6 +19,7 @@
 		<ProfilePictureSlot
 			mediaHash={media.mediaHash}
 			position={i + 1}
+			takenOnGrindr={media.takenOnGrindr}
 			onDelete={() => removePhoto(media.mediaHash)}
 		/>
 	{/each}

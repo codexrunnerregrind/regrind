@@ -3,9 +3,11 @@
 	import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
 	import MediaImage from "$lib/components/shared/MediaImage.svelte";
+	import TakenOnGrindrBadge from "$lib/components/shared/TakenOnGrindrBadge.svelte";
 	import { proxyMediaUrl } from "$lib/util/media";
 	import {
 		applyPhotoSwipeBackGesture,
+		applyPhotoSwipeBadge,
 		applyPhotoSwipeErrorUi,
 		applyPhotoSwipeThumbDimensions,
 		applyPhotoSwipeViewportSync,
@@ -50,6 +52,11 @@
 				applyPhotoSwipeThumbDimensions(lightbox);
 				applyPhotoSwipeViewportSync(lightbox);
 				applyPhotoSwipeBackGesture(lightbox);
+				applyPhotoSwipeBadge(lightbox, () =>
+					message.takenOnGrindr
+						? { createdAt: message.createdAt }
+						: null,
+				);
 
 				const PHOTOSWIPE_PLACEHOLDER_WIDTH_PX = 250;
 
@@ -167,6 +174,12 @@
 			}}
 			bind:failedSrc
 		/>
+		{#if message.takenOnGrindr}
+			<TakenOnGrindrBadge
+				createdAt={message.createdAt}
+				class="absolute start-1.5 bottom-1.5"
+			/>
+		{/if}
 	</a>
 	{@render media.adornments?.()}
 </div>

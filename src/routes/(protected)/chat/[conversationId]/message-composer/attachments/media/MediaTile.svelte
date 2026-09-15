@@ -1,6 +1,7 @@
 <script lang="ts">
 	import MediaImage from "$lib/components/shared/MediaImage.svelte";
 	import SelectionOverlay from "$lib/components/shared/SelectionOverlay.svelte";
+	import TakenOnGrindrBadge from "$lib/components/shared/TakenOnGrindrBadge.svelte";
 	import { proxyMediaUrl } from "$lib/util/media";
 	import type { DrawerMedia } from "$lib/api/messaging/drawer";
 
@@ -35,6 +36,9 @@
 		class="size-full rounded-[inherit]"
 		imgClass="bg-card-foreground/10"
 	/>
+	{#if item.takenOnGrindr}
+		<TakenOnGrindrBadge compact class="absolute start-1 bottom-1" />
+	{/if}
 	{#if selected}
 		<SelectionOverlay />
 	{:else if item.used}
