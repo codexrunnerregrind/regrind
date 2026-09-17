@@ -86,7 +86,7 @@ const TYPE_LABELS: Record<string, string> = {
 	Audio: "Voice message",
 	ExpiringAlbum: "Album",
 	ExpiringAlbumV2: "Album",
-	ExpiringImage: "Expiring photo",
+	ExpiringImage: "Expiring image",
 	Gaymoji: "Gaymoji",
 	Giphy: "GIF",
 	Image: "Photo",

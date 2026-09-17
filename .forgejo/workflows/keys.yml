@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   verify:
-    runs-on: ["verify", "hetzner"]
+    runs-on: ["toolchain", "4c8g", "hetzner"]
     timeout-minutes: 10
     steps:
       - name: Checkout

@@ -23,7 +23,7 @@ Open Grind has no security team and no funding, so we cannot promise a response 
 
 In scope:
 
-- This repository and the components it ships with: [grindr.rs](https://git.opengrind.org/open-grind/grindr.rs), [Google OAuth WebExtension](https://git.opengrind.org/open-grind/grindr-google-oauth-webextension), [Google OAuth Android app](https://git.opengrind.org/open-grind/open-grind-google-oauth-android-app), release pipeline
+- This repository and the components it ships with: [grindr.rs](https://git.opengrind.org/open-grind/grindr.rs), [Google OAuth WebExtension](https://git.opengrind.org/open-grind/grindr-google-oauth-webextension), [Google OAuth Android app](https://git.opengrind.org/open-grind/google-oauth-app), release pipeline
 - Exposure of session tokens, device identity, or the media signing key, which Open Grind keeps in the platform credential store ([BUILDING.md](./BUILDING.md#credential-storage))
 - Exposure of messages, private albums, or a user's real location to another user, another app on the device, a network observer, or someone with the unlocked device in hand
 - Anything that sends user data to a third party: Open Grind ships no analytics and no trackers, and a regression there is a security bug, not a feature

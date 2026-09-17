@@ -210,6 +210,7 @@ pub fn run() {
             api::accounts::account_add_in_progress,
             api::accounts::account_remove,
             api::accounts::account_set_profile,
+            api::recaptcha::mint_recaptcha_token,
             storage::storage_backend,
             api::rest::request,
             api::media_upload::upload_chat_media,
@@ -402,5 +403,41 @@ mod webview_floor_pins {
 				.take(2)
 				.collect();
 		assert_eq!(rust, page);
+	}
+}
+
+#[cfg(test)]
+mod frontend_method_pins {
+	const THIS: &str = include_str!("lib.rs");
+	const METHODS: &str = include_str!("../../src/lib/api/methods.ts");
+
+	fn between<'a>(haystack: &'a str, open: &str, close: &str) -> &'a str {
+		let start = haystack.find(open).expect(open) + open.len();
+		let len = haystack[start..].find(close).expect(close);
+		&haystack[start..start + len]
+	}
+
+	#[test]
+	fn every_frontend_method_is_a_registered_command() {
+		let registered: Vec<&str> =
+			between(THIS, "tauri::generate_handler![", "])")
+				.split(',')
+				.filter_map(|entry| entry.trim().rsplit("::").next())
+				.collect();
+		let methods: Vec<&str> =
+			between(METHODS, "export const methods = {", "\n}")
+				.lines()
+				.filter_map(|line| line.strip_prefix('\t'))
+				.filter(|line| !line.starts_with(['\t', '}']))
+				.filter(|line| !line.starts_with("//"))
+				.map(|line| line.split_once(':').expect(line).0)
+				.collect();
+		assert!(!methods.is_empty());
+		for method in methods {
+			assert!(
+				registered.contains(&method),
+				"{method} is called by the frontend but not registered"
+			);
+		}
 	}
 }

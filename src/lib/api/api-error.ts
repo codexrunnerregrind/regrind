@@ -13,6 +13,7 @@ export const apiErrorKinds = [
 	"NetworkBlocked",
 	"NotInitialized",
 	"SessionCleared",
+	"Recaptcha",
 ] as const;
 
 export type ApiErrorKind = (typeof apiErrorKinds)[number];

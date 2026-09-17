@@ -1,0 +1,111 @@
+name: play
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to build the Google Play app bundle for
+        type: string
+        required: true
+
+concurrency:
+  group: regrind-play
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ forgejo.event.inputs.tag || forgejo.event.release.tag_name }}
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        provider: ["cherry", "vultr", "hetzner"]
+    runs-on: ["debian", "8c16g", "${{ matrix.provider }}"]
+    timeout-minutes: 55
+    env:
+      BUILD_ROOT: /work-play
+      HOME: /root
+      CARGO_HOME: /root/.cargo
+      OPEN_GRIND_GRADLE_USER_HOME: /root/.gradle-opengrind-play
+      TZ: UTC
+      LC_ALL: C
+    steps:
+      - name: Checkout
+        run: |
+          : "${BUILD_ROOT:?}" "${TAG:?}"
+          rm -rf "$BUILD_ROOT"
+          mkdir -p "$BUILD_ROOT"
+          cd "$BUILD_ROOT"
+          git init -q .
+          git remote add origin "$FORGEJO_SERVER_URL/$FORGEJO_REPOSITORY.git"
+          git fetch -q --depth 1 origin "refs/tags/$TAG"
+          git checkout -q FETCH_HEAD
+          git submodule update --init --recursive
+      - name: Check the version
+        run: cd "${BUILD_ROOT:?}" && sh ci/check-release-version.sh
+      - name: Set up the build environment
+        run: cd "${BUILD_ROOT:?}" && sh ci/setup-build.sh nix
+      - name: Build
+        run: cd "${BUILD_ROOT:?}" && OPEN_GRIND_STORE=play nix run .#build-android -- aab
+      - name: Collect the app bundle
+        run: |
+          : "${BUILD_ROOT:?}"
+          bundles=("$BUILD_ROOT"/src-tauri/gen/android/app/build/outputs/bundle/universalRelease/*.aab)
+          [ ${#bundles[@]} -eq 1 ]
+          mkdir -p out
+          cp "${bundles[0]}" out/
+      - name: Check the app bundle cannot install packages
+        run: |
+          : "${BUILD_ROOT:?}"
+          bundle=("$PWD"/out/*.aab)
+          extracted=$(mktemp -d)
+          permissions=$(cd "$BUILD_ROOT" && nix develop .#android --command sh -euc '
+            cd "$1"
+            jar xf "$2" base/manifest/AndroidManifest.xml
+            jar cfM manifest.apk -C base/manifest AndroidManifest.xml
+            aapt2 dump permissions manifest.apk
+          ' sh "$extracted" "${bundle[0]}")
+          if ! grep -Fxq "uses-permission: name='android.permission.INTERNET'" <<< "$permissions"; then
+            echo "aapt2 listed no INTERNET permission, so it did not read the bundle manifest:" >&2
+            echo "$permissions" >&2
+            exit 1
+          fi
+          if grep -F REQUEST_INSTALL_PACKAGES <<< "$permissions"; then
+            echo "the Play bundle must not request REQUEST_INSTALL_PACKAGES" >&2
+            exit 1
+          fi
+      - name: Upload
+        uses: https://code.forgejo.org/forgejo/upload-artifact@16871d9e8cfcf27ff31822cac382bbb5450f1e1e # v4
+        with:
+          name: regrind-unsigned-play-${{ matrix.provider }}
+          path: out/
+          retention-days: 1
+
+  compare:
+    needs: build
+    runs-on: ["toolchain", "4c8g", "hetzner"]
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        run: |
+          : "${TAG:?}"
+          git init -q .
+          git remote add origin "$FORGEJO_SERVER_URL/$FORGEJO_REPOSITORY.git"
+          git fetch -q --depth 1 origin "refs/tags/$TAG"
+          git checkout -q FETCH_HEAD
+      - name: Download the app bundles
+        uses: https://code.forgejo.org/forgejo/download-artifact@d8d0a99033603453ad2255e58720b460a0555e1e # v4
+        with:
+          path: dl
+      - name: Compare
+        env:
+          BOXES: '["cherry","vultr","hetzner"]'
+        run: bun ci/verify.ts dl verified
+      - name: Publish verified artifact
+        uses: https://code.forgejo.org/forgejo/upload-artifact@16871d9e8cfcf27ff31822cac382bbb5450f1e1e # v4
+        with:
+          name: regrind-unsigned-play
+          path: verified/

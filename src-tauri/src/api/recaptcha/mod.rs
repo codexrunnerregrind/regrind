@@ -6,11 +6,13 @@ mod error;
 pub use android::plugin;
 pub use error::RecaptchaError;
 
+use serde::Deserialize;
 use tauri::AppHandle;
 
 use crate::error::AppError;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum RecaptchaAction {
 	SignUp,
 	Login,
@@ -31,6 +33,14 @@ impl RecaptchaAction {
 			Self::DeviceKeyRegistration => "device_key_registration",
 		}
 	}
+}
+
+#[tauri::command]
+pub async fn mint_recaptcha_token(
+	app: AppHandle,
+	action: RecaptchaAction,
+) -> Result<String, AppError> {
+	mint_token(&app, action).await
 }
 
 pub async fn mint_token(
@@ -73,6 +83,37 @@ mod tests {
 			),
 		] {
 			assert_eq!(action.as_str(), wire);
+		}
+	}
+
+	#[test]
+	fn every_wire_action_deserializes_into_the_action_that_sends_it() {
+		let wires: Vec<String> =
+			serde_json::from_str(include_str!("actions.json")).unwrap();
+		assert_eq!(wires.len(), 6);
+		for wire in wires {
+			let action: RecaptchaAction =
+				serde_json::from_value(serde_json::json!(wire)).unwrap();
+			assert_eq!(action.as_str(), wire);
+		}
+	}
+
+	#[test]
+	fn an_action_outside_the_wire_vocabulary_is_rejected() {
+		for wire in [
+			serde_json::json!("Report"),
+			serde_json::json!("SignUp"),
+			serde_json::json!("sign-up"),
+			serde_json::json!("report "),
+			serde_json::json!(""),
+			serde_json::json!(null),
+			serde_json::json!(3),
+		] {
+			assert!(
+				serde_json::from_value::<RecaptchaAction>(wire.clone())
+					.is_err(),
+				"{wire} was accepted"
+			);
 		}
 	}
 

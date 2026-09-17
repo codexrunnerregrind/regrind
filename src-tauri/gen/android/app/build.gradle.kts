@@ -27,8 +27,16 @@ fun expandHome(path: String): String =
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 val hasKeystore = keystorePropertiesFile.exists()
 
+val store = providers.environmentVariable("OPEN_GRIND_STORE").getOrElse("")
+val storeManifestOverlay = when (store) {
+	"" -> null
+	"play" -> "src/play/AndroidManifest.xml"
+	else -> error("OPEN_GRIND_STORE must be unset or `play`, got `$store`.")
+}
+
 android {
 	sourceSets["main"].java.srcDir("../../../android-logic/src/main/kotlin")
+	storeManifestOverlay?.let { sourceSets["release"].manifest.srcFile(it) }
 
     compileSdk = prop("opengrind.android.compileSdk").toInt()
     buildToolsVersion = prop("opengrind.android.buildTools")

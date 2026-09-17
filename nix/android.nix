@@ -151,21 +151,20 @@ let
 
       echo
       if [ "$TARGET" = "aab" ]; then
-        echo "Produced app bundle(s) under: $base/bundle/"
+        reldir="$base/bundle/universalRelease"
+        src="$reldir/app-universal-release.aab"
       else
-        # Version-stamp the APK post-build (not in Gradle, which would desync
-        # Tauri's default-path lookup) so local/CI artifacts are identifiable.
         reldir="$base/apk/universal/release"
         src="$reldir/app-universal-release$sfx.apk"
-        version="$(sed -n 's/^tauri\.android\.versionName=//p' \
-          "$ROOT/src-tauri/gen/android/app/tauri.properties")"
-        apk="$reldir/regrind-v$version-android$sfx.apk"
-        if [ -f "$src" ]; then
-          mv -f "$src" "$apk"
-          printf 'Produced: %s (%s)\n' "$apk" "$(du -h "$apk" | cut -f1)"
-        else
-          printf 'Produced: %s (expected, not found)\n' "$src"
-        fi
+      fi
+      version="$(sed -n 's/^tauri\.android\.versionName=//p' \
+        "$ROOT/src-tauri/gen/android/app/tauri.properties")"
+      artifact="$reldir/regrind-v$version-android$sfx.$TARGET"
+      if [ -f "$src" ]; then
+        mv -f "$src" "$artifact"
+        printf 'Produced: %s (%s)\n' "$artifact" "$(du -h "$artifact" | cut -f1)"
+      else
+        printf 'Produced: %s (expected, not found)\n' "$src"
       fi
     '';
   };

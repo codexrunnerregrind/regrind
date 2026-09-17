@@ -69,18 +69,20 @@
 </script>
 
 <InlineField {label}>
-	<Input
-		type="text"
-		inputmode={allowsDecimal ? "decimal" : "numeric"}
-		bind:value={text}
-		oninput={handleInput}
-		onfocus={() => (focused = true)}
-		onblur={commit}
-		{placeholder}
-		aria-label={label}
-		class={[bareInputClass, "w-20"]}
-	/>
-	{#if unit}
-		<span class="shrink-0 text-body text-muted-foreground">{unit}</span>
-	{/if}
+	{#snippet control({ id })}
+		<Input
+			{id}
+			type="text"
+			inputmode={allowsDecimal ? "decimal" : "numeric"}
+			bind:value={text}
+			oninput={handleInput}
+			onfocus={() => (focused = true)}
+			onblur={commit}
+			{placeholder}
+			class={[bareInputClass, "w-20"]}
+		/>
+		{#if unit}
+			<span class="shrink-0 text-body text-muted-foreground">{unit}</span>
+		{/if}
+	{/snippet}
 </InlineField>

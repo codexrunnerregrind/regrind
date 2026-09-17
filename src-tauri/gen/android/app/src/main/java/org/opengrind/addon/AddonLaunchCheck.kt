@@ -9,11 +9,10 @@ object AddonLaunchCheck {
 	fun decide(context: Context, request: Intent, addonPackage: String): AddonGate.Verdict {
 		val packageManager = context.packageManager
 		return AddonGate.decide(
+			addonPackage = addonPackage,
 			resolves = request.resolveActivity(packageManager) != null,
 			presence = presenceOf(packageManager, addonPackage),
-			signatureMatches =
-				packageManager.checkSignatures(context.packageName, addonPackage) ==
-					PackageManager.SIGNATURE_MATCH,
+			certificates = packageManager.signingCertificates(),
 		)
 	}
 

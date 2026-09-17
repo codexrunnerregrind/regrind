@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   warm:
-    runs-on: ["warm", "hetzner"]
+    runs-on: ["toolchain", "8c16g", "hetzner"]
     timeout-minutes: 50
     steps:
       - name: Build the dependency graph from trusted code and publish the cache

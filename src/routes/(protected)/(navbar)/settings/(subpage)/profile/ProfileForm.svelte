@@ -24,6 +24,7 @@
 	import { WheelPicker } from "$lib/components/ui/carousel";
 	import { Spinner } from "$lib/components/ui/spinner";
 	import { type Profile } from "$lib/model/users/profiles";
+	import { bottomChrome } from "$lib/util/bottom-chrome.svelte";
 	import { deepEqual } from "$lib/util/deep-equal";
 	import type { Gender } from "$lib/model/users/genders";
 	import type { Pronoun } from "$lib/model/users/pronouns";
@@ -282,13 +283,16 @@
 		<SectionHeader>Stats</SectionHeader>
 		<SettingsGroup divider="full">
 			<Field label="Age">
-				<WheelPicker
-					bind:value={form.age}
-					min={ageRange.min}
-					max={ageRange.max}
-					label="years"
-					disabled={saving}
-				/>
+				{#snippet picker({ labelId })}
+					<WheelPicker
+						bind:value={form.age}
+						min={ageRange.min}
+						max={ageRange.max}
+						unit="years"
+						disabled={saving}
+						aria-labelledby={labelId}
+					/>
+				{/snippet}
 			</Field>
 			<SwitchRow label="Show my age" bind:checked={form.showAge} />
 			<SelectField
@@ -404,6 +408,7 @@
 		<div
 			class="sticky bottom-(--content-pb) z-10 -mx-4 mt-4"
 			transition:fly={{ y: 80, duration: 300, easing: expoOut }}
+			{@attach bottomChrome}
 		>
 			<ProgressiveBlur
 				direction="bottomToTop"

@@ -11,9 +11,7 @@ test("editing the profile arms the save button and saving disarms it", async ({
 	await installTauriShim(page);
 	await page.goto("/settings/profile");
 
-	const displayName = page.getByPlaceholder(
-		"Everyone will see this on the grid...",
-	);
+	const displayName = page.getByRole("textbox", { name: "Display name" });
 	await displayName.waitFor({ timeout: 60_000 });
 	await expect(page.getByRole("button", { name: SAVE })).toHaveCount(0);
 

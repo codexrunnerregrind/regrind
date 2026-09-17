@@ -1,29 +1,83 @@
 package org.opengrind.addon
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.opengrind.update.InstallGate
 
 class AddonGateTest {
+	private val releaseCert = InstallGate.RELEASE_CERT_SHA256
+	private val playAppSigningCert = "5A".repeat(32)
+	private val someoneElsesCert = "0F".repeat(32)
+	private val host = "org.opengrind"
+	private val addon = "org.opengrind.google_oauth"
+	private val otherAddon = "org.opengrind.recaptcha"
+
+	private fun device(
+		hostCert: String = releaseCert,
+		signers: Map<String, String> = mapOf(addon to releaseCert),
+	): AddonGate.SigningCertificates {
+		val installed = signers + (host to hostCert)
+		return AddonGate.SigningCertificates { packageName, sha256 ->
+			installed[packageName] == sha256.joinToString("") { byte -> "%02X".format(byte) }
+		}
+	}
+
+	private fun decide(
+		resolves: Boolean = true,
+		presence: AddonGate.Presence = AddonGate.Presence.Enabled,
+		certificates: AddonGate.SigningCertificates = device(),
+	): AddonGate.Verdict = AddonGate.decide(
+		addonPackage = addon,
+		resolves = resolves,
+		presence = presence,
+		certificates = certificates,
+	)
+
 	@Test
-	fun `a trusted add-on that answers the request is launched`() {
+	fun `a release-signed add-on that answers the request is launched`() {
+		assertEquals(AddonGate.Verdict.Launch, decide())
+	}
+
+	@Test
+	fun `a Play-signed host still trusts a release-signed add-on`() {
 		assertEquals(
 			AddonGate.Verdict.Launch,
-			AddonGate.decide(
-				resolves = true,
-				presence = AddonGate.Presence.Enabled,
-				signatureMatches = true,
-			),
+			decide(certificates = device(hostCert = playAppSigningCert)),
 		)
+	}
+
+	@Test
+	fun `an add-on that resolves is never launched without the release certificate, whoever signed the host and whatever its reported presence`() {
+		for (presence in AddonGate.Presence.entries) {
+			for (hostCert in listOf(releaseCert, playAppSigningCert, someoneElsesCert)) {
+				for (signers in listOf(
+					mapOf(addon to someoneElsesCert),
+					mapOf(addon to playAppSigningCert),
+					mapOf(otherAddon to releaseCert),
+					emptyMap(),
+				)) {
+					assertEquals(
+						AddonGate.Verdict.Untrusted,
+						decide(
+							presence = presence,
+							certificates = device(hostCert = hostCert, signers = signers),
+						),
+					)
+				}
+			}
+		}
 	}
 
 	@Test
 	fun `a missing add-on is unavailable`() {
 		assertEquals(
 			AddonGate.Verdict.Unavailable,
-			AddonGate.decide(
+			decide(
 				resolves = false,
 				presence = AddonGate.Presence.Absent,
-				signatureMatches = false,
+				certificates = device(signers = emptyMap()),
 			),
 		)
 	}
@@ -32,46 +86,22 @@ class AddonGateTest {
 	fun `a turned off add-on is reported as disabled rather than missing`() {
 		assertEquals(
 			AddonGate.Verdict.Disabled,
-			AddonGate.decide(
-				resolves = false,
-				presence = AddonGate.Presence.Disabled,
-				signatureMatches = true,
-			),
+			decide(resolves = false, presence = AddonGate.Presence.Disabled),
 		)
 	}
 
 	@Test
 	fun `an enabled add-on that does not answer the request is unavailable`() {
-		assertEquals(
-			AddonGate.Verdict.Unavailable,
-			AddonGate.decide(
-				resolves = false,
-				presence = AddonGate.Presence.Enabled,
-				signatureMatches = true,
-			),
-		)
+		assertEquals(AddonGate.Verdict.Unavailable, decide(resolves = false))
 	}
 
 	@Test
 	fun `an enabled add-on signed by someone else that does not answer is untrusted`() {
 		assertEquals(
 			AddonGate.Verdict.Untrusted,
-			AddonGate.decide(
+			decide(
 				resolves = false,
-				presence = AddonGate.Presence.Enabled,
-				signatureMatches = false,
-			),
-		)
-	}
-
-	@Test
-	fun `an add-on signed by someone else is untrusted`() {
-		assertEquals(
-			AddonGate.Verdict.Untrusted,
-			AddonGate.decide(
-				resolves = true,
-				presence = AddonGate.Presence.Enabled,
-				signatureMatches = false,
+				certificates = device(signers = mapOf(addon to someoneElsesCert)),
 			),
 		)
 	}
@@ -80,11 +110,58 @@ class AddonGateTest {
 	fun `a disabled add-on signed by someone else is untrusted, never a prompt to turn it on`() {
 		assertEquals(
 			AddonGate.Verdict.Untrusted,
-			AddonGate.decide(
+			decide(
 				resolves = false,
 				presence = AddonGate.Presence.Disabled,
-				signatureMatches = false,
+				certificates = device(signers = mapOf(addon to someoneElsesCert)),
 			),
 		)
+	}
+
+	@Test
+	fun `a caller that is the release-signed add-on is accepted whoever signed the host`() {
+		for (hostCert in listOf(releaseCert, playAppSigningCert)) {
+			assertTrue(
+				AddonGate.acceptsCaller(
+					callingPackage = addon,
+					addonPackage = addon,
+					certificates = device(hostCert = hostCert),
+				),
+			)
+		}
+	}
+
+	@Test
+	fun `a caller that is any other package is refused, even one signed with the release certificate`() {
+		val impostor = "org.example.google_oauth"
+		val certificates = device(
+			signers = mapOf(addon to releaseCert, otherAddon to releaseCert, impostor to releaseCert),
+		)
+
+		for (caller in listOf(impostor, otherAddon, host, null)) {
+			assertFalse(
+				AddonGate.acceptsCaller(
+					callingPackage = caller,
+					addonPackage = addon,
+					certificates = certificates,
+				),
+			)
+		}
+	}
+
+	@Test
+	fun `a caller that is the add-on signed with any other certificate is refused`() {
+		for (cert in listOf(someoneElsesCert, playAppSigningCert)) {
+			assertFalse(
+				AddonGate.acceptsCaller(
+					callingPackage = addon,
+					addonPackage = addon,
+					certificates = device(
+						hostCert = playAppSigningCert,
+						signers = mapOf(addon to cert),
+					),
+				),
+			)
+		}
 	}
 }

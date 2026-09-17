@@ -1,5 +1,6 @@
 package org.regrind.update
 
+import android.Manifest
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
@@ -36,7 +37,10 @@ object InstallProbe {
 	}
 
 	fun canInstallNow(context: Context): Boolean =
-		context.packageManager.canRequestPackageInstalls()
+		infoOf(context, context.packageName, PackageManager.GET_PERMISSIONS)
+			?.requestedPermissions
+			?.contains(Manifest.permission.REQUEST_INSTALL_PACKAGES) == true &&
+			context.packageManager.canRequestPackageInstalls()
 
 	fun readArchive(
 		context: Context,

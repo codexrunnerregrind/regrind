@@ -1,6 +1,7 @@
 import { addPluginListener } from "@tauri-apps/api/core";
 
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+import { remeasureBottomChrome } from "$lib/util/bottom-chrome.svelte";
 
 function readEnvInset(prop: string): number {
 	const el = document.createElement("div");
@@ -24,6 +25,7 @@ export function applyAndroidInsets() {
 			value,
 		);
 	}
+	remeasureBottomChrome();
 
 	window.__reapplyInsets = applyAndroidInsets;
 }

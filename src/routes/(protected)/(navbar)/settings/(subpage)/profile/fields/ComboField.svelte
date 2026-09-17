@@ -108,62 +108,67 @@
 </script>
 
 <Field {label} hint={effectiveHint}>
-	{#if selectedChips.length}
-		<div class="flex flex-wrap gap-1.5">
-			{#each selectedChips as chip (chip.id)}
-				<span
-					class="inline-flex items-center gap-1 rounded-full bg-secondary py-1 pr-1.5 pl-3 text-sm text-secondary-foreground"
-				>
-					{chip.label}
-					<button
-						type="button"
-						onclick={() => remove(chip.id)}
-						aria-label="Remove {chip.label}"
-						class="-my-1 grid size-5 place-items-center rounded-full transition-colors hover:bg-foreground/10"
+	{#snippet picker({ labelId })}
+		{#if selectedChips.length}
+			<div class="flex flex-wrap gap-1.5">
+				{#each selectedChips as chip (chip.id)}
+					<span
+						class="inline-flex items-center gap-1 rounded-full bg-secondary py-1 pr-1.5 pl-3 text-sm text-secondary-foreground"
 					>
-						<XIcon class="size-3.5" />
-					</button>
-				</span>
-			{/each}
-		</div>
-	{/if}
+						{chip.label}
+						<button
+							type="button"
+							onclick={() => remove(chip.id)}
+							aria-label="Remove {chip.label}"
+							class="-my-1 grid size-5 place-items-center rounded-full transition-colors hover:bg-foreground/10"
+						>
+							<XIcon class="size-3.5" />
+						</button>
+					</span>
+				{/each}
+			</div>
+		{/if}
 
-	<Combobox.Root
-		type="multiple"
-		bind:value={
-			() => values.map(String),
-			(newValue: string[]) =>
-				applySelection(
-					newValue.flatMap((value) => valueByString.get(value) ?? []),
-				)
-		}
-		bind:open
-		onOpenChange={(isOpen) => {
-			if (!isOpen) void clearTypedQuery();
-		}}
-	>
-		<div class="relative">
-			<Combobox.Input
-				bind:ref={inputEl}
-				oninput={(event) => (searchValue = event.currentTarget.value)}
-				onclick={() => (open = true)}
-				placeholder={searchPlaceholder}
-				aria-label={label}
-			/>
-			<Combobox.Trigger aria-label="Toggle list" />
-		</div>
+		<Combobox.Root
+			type="multiple"
+			bind:value={
+				() => values.map(String),
+				(newValue: string[]) =>
+					applySelection(
+						newValue.flatMap(
+							(value) => valueByString.get(value) ?? [],
+						),
+					)
+			}
+			bind:open
+			onOpenChange={(isOpen) => {
+				if (!isOpen) void clearTypedQuery();
+			}}
+		>
+			<div class="relative">
+				<Combobox.Input
+					bind:ref={inputEl}
+					oninput={(event) =>
+						(searchValue = event.currentTarget.value)}
+					onclick={() => (open = true)}
+					placeholder={searchPlaceholder}
+					aria-labelledby={labelId}
+				/>
+				<Combobox.Trigger aria-label="Toggle list" />
+			</div>
 
-		<Combobox.Content>
-			{#each filtered as option (option.value)}
-				<Combobox.Item
-					value={String(option.value)}
-					disabled={isDisabled(option.value)}
-				>
-					{option.label}
-				</Combobox.Item>
-			{:else}
-				<Combobox.Empty>No matches</Combobox.Empty>
-			{/each}
-		</Combobox.Content>
-	</Combobox.Root>
+			<Combobox.Content aria-labelledby={labelId}>
+				{#each filtered as option (option.value)}
+					<Combobox.Item
+						value={String(option.value)}
+						disabled={isDisabled(option.value)}
+					>
+						{option.label}
+					</Combobox.Item>
+				{:else}
+					<Combobox.Empty>No matches</Combobox.Empty>
+				{/each}
+			</Combobox.Content>
+		</Combobox.Root>
+	{/snippet}
 </Field>

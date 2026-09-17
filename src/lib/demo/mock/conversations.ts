@@ -11,7 +11,7 @@ import {
 	photoAge,
 	SECOND,
 } from "../config";
-import { albumCoverUrl } from "./albums";
+import { albumCoverUrl, demoAlbumContent } from "./albums";
 import { hashFromSeed } from "./avatars";
 import {
 	type DemoConversation,
@@ -182,6 +182,9 @@ function buildMessage({
 				unsent: false,
 			};
 		case "album": {
+			const { content } = demoAlbumContent(message.albumId);
+			const albumHolds = (kind: "image" | "video") =>
+				content.some((item) => item.contentType.startsWith(`${kind}/`));
 			const albumBody = {
 				albumId: message.albumId,
 				hasUnseenContent: message.unseen ?? false,
@@ -200,8 +203,8 @@ function buildMessage({
 							: albumCoverUrl(message.albumId),
 				ownerProfileId: message.fromMe ? demoMeProfileId : conv.withId,
 				isViewable: !message.locked,
-				hasVideo: false,
-				hasPhoto: true,
+				hasVideo: albumHolds("video"),
+				hasPhoto: albumHolds("image"),
 				viewableUntil: message.expiring ? timestamp + DAY : null,
 			};
 			if (message.expiring === "v2")

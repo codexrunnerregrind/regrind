@@ -13,6 +13,7 @@
 	} from "$lib/platform/desktop-entry.svelte";
 	import { setAutomaticUpdateChecks } from "$lib/updates";
 	import { updatesSelfManaged } from "$lib/updates/capability.svelte";
+	import { bottomChrome } from "$lib/util/bottom-chrome.svelte";
 	import icon from "../../../contrib/logo/regrind.svg";
 
 	let checkAutomatically = $state(true);
@@ -70,6 +71,7 @@
 
 	<div
 		class="sticky bottom-0 flex shrink-0 flex-col items-center gap-2 bg-background pt-2 pb-[calc(2rem+var(--safe-area-bottom))]"
+		{@attach bottomChrome}
 	>
 		{#if updatesSelfManaged()}
 			<Label class="flex items-center rounded-xl p-2 pb-3">

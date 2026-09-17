@@ -236,7 +236,7 @@ test("an unsent message offers no reply", async ({ page }) => {
 	await expect(unsent).toHaveCount(1);
 	await unsent.click({ button: "right" });
 
-	await expect(page.getByRole("button", { name: "Report" })).toBeVisible();
+	await expect(page.getByRole("button", { name: "Report" })).toHaveCount(0);
 	await expect(page.getByRole("button", { name: "Reply" })).toHaveCount(0);
 	await expect(
 		page.getByRole("button", { name: "React with fire" }),

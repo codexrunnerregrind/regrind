@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("$lib/app-data/preferences.svelte", () => ({
 	getPreferences: vi.fn(() => Promise.resolve({})),
 	setPreferences: vi.fn(() => Promise.resolve()),
+	preferencesAccount: vi.fn(() => null),
 }));
 
 vi.mock("$lib/grid/grid-state.svelte", async () => {

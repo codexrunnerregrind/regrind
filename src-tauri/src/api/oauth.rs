@@ -15,6 +15,7 @@ pub const CANCELED: &str = "Sign-in canceled";
 pub const CANCEL_PATH: &str = "/__regrind_oauth_cancel__";
 pub const COMPANION_UNAVAILABLE: &str = "companion-unavailable";
 pub const COMPANION_UNTRUSTED: &str = "companion-untrusted";
+pub const COMPANION_REFUSED: &str = "companion-refused";
 pub const COMPANION_DISABLED: &str = "companion-disabled";
 const COMPANION_CANCELLED: &str = "cancelled";
 const COMPANION_FAILED: &str = "Google sign-in failed";
@@ -106,6 +107,7 @@ pub fn companion_failure(rejection: Option<&str>) -> AppError {
 			Some(
 				marker @ (COMPANION_UNAVAILABLE
 				| COMPANION_UNTRUSTED
+				| COMPANION_REFUSED
 				| COMPANION_DISABLED),
 			) => marker,
 			Some(COMPANION_CANCELLED) => CANCELED,
@@ -242,6 +244,35 @@ mod tests {
 			);
 		}
 		assert!(
+			plugin
+				.contains(&format!("ERROR_REFUSED = \"{COMPANION_REFUSED}\"")),
+			"GoogleOauthPlugin.kt ERROR_REFUSED is not {COMPANION_REFUSED}"
+		);
+		assert!(
+			frontend.contains(&format!(
+				"companionRefused = \"{COMPANION_REFUSED}\""
+			)),
+			"sign-in.ts companionRefused is not {COMPANION_REFUSED}"
+		);
+		let squashed =
+			|source: &str| source.split_whitespace().collect::<String>();
+		assert!(
+			squashed(plugin).contains(&squashed(
+				"catch (e: SecurityException) { invoke.reject(ERROR_REFUSED) }"
+			)),
+			"GoogleOauthPlugin.kt no longer reports a companion that refuses this build as {COMPANION_REFUSED}"
+		);
+		assert!(
+			plugin.contains("const val RESULT_REFUSED = Activity.RESULT_FIRST_USER"),
+			"GoogleOauthPlugin.kt RESULT_REFUSED is no longer the result code the companion refuses a caller with"
+		);
+		assert!(
+			squashed(plugin).contains(&squashed(
+				"else if (result.resultCode == RESULT_REFUSED) { invoke.reject(ERROR_REFUSED) }"
+			)),
+			"GoogleOauthPlugin.tokenResult no longer reports the companion's refusal result as {COMPANION_REFUSED}"
+		);
+		assert!(
 			plugin.contains(&format!(
 				"ERROR_CANCELLED = \"{COMPANION_CANCELLED}\""
 			)),
@@ -270,6 +301,7 @@ mod tests {
 		for marker in [
 			COMPANION_UNAVAILABLE,
 			COMPANION_UNTRUSTED,
+			COMPANION_REFUSED,
 			COMPANION_DISABLED,
 		] {
 			assert_eq!(auth_message(companion_failure(Some(marker))), marker);

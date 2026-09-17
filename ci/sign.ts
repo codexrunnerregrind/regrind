@@ -10,6 +10,11 @@ import {
 } from "../scripts/lib/minisign";
 
 const TOOLING = {
+	aab: {
+		binaries: ["jarsigner", "keytool", "unzip"],
+		shell: "nix develop .#play",
+		rewrites: true,
+	},
 	apk: {
 		binaries: ["apksigner"],
 		shell: "nix develop .#android",
@@ -51,7 +56,8 @@ const output =
 const tooling = TOOLING[artifact];
 // Gradle signs the fork's release APK itself, so there is nothing to rewrite.
 const rewrites =
-	tooling.rewrites && !!process.env.OPEN_GRIND_KEYSTORE_PROPERTIES;
+	tooling.rewrites &&
+	(artifact !== "apk" || !!process.env.OPEN_GRIND_KEYSTORE_PROPERTIES);
 if (rewrites && output === input) {
 	console.error(
 		`signing rewrites ${path.basename(input)} in place, pass [out]`,
@@ -80,10 +86,10 @@ if (!releaseKey) {
 	throw new Error("KEYS.md publishes no minisign release key");
 }
 
-async function signApk(input: string, output: string) {
-	const propertiesPath = process.env.OPEN_GRIND_KEYSTORE_PROPERTIES;
+async function keystore(variable: string) {
+	const propertiesPath = process.env[variable];
 	if (!propertiesPath) {
-		throw new Error("OPEN_GRIND_KEYSTORE_PROPERTIES is not set");
+		throw new Error(`${variable} is not set`);
 	}
 	const properties = new Map(
 		await Bun.file(propertiesPath)
@@ -109,14 +115,20 @@ async function signApk(input: string, output: string) {
 			"keystore properties must include storeFile, keyAlias and password",
 		);
 	}
+	return { store: untilde(store), alias, password };
+}
 
+async function signApk(input: string, output: string) {
+	const { store, alias, password } = await keystore(
+		"OPEN_GRIND_KEYSTORE_PROPERTIES",
+	);
 	const signed = Bun.spawnSync(
 		[
 			"apksigner",
 			"sign",
 			"--alignment-preserved",
 			"--ks",
-			untilde(store),
+			store,
 			"--ks-key-alias",
 			alias,
 			"--ks-pass",
@@ -143,6 +155,72 @@ async function signApk(input: string, output: string) {
 	console.log(`signed: ${output}`);
 }
 
+async function bundleEntries(bundle: string) {
+	const listing = await $`unzip -v ${bundle}`.text();
+	return listing
+		.split("\n")
+		.map((line) =>
+			line.match(
+				/^\s*(\d+)\s+\S+\s+\d+\s+\S+\s+\S+\s+\S+\s+([0-9a-f]{8})\s+(.+)$/,
+			),
+		)
+		.filter((match) => match !== null)
+		.map(([, length, crc, name]) => `${name} ${length} ${crc}`)
+		.filter((entry) => !/^META-INF\/[^/]+\.(MF|SF|RSA|DSA|EC) /.test(entry))
+		.sort();
+}
+
+async function signAab(input: string, output: string) {
+	const { store, alias, password } = await keystore(
+		"OPEN_GRIND_PLAY_KEYSTORE_PROPERTIES",
+	);
+	const signed = Bun.spawnSync(
+		[
+			"jarsigner",
+			"-keystore",
+			store,
+			"-storepass:env",
+			"KEYSTORE_PASSWORD",
+			"-keypass:env",
+			"KEYSTORE_PASSWORD",
+			"-sigalg",
+			"SHA256withRSA",
+			"-digestalg",
+			"SHA-256",
+			"-signedjar",
+			output,
+			input,
+			alias,
+		],
+		{
+			env: { ...process.env, KEYSTORE_PASSWORD: password },
+			stdio: ["inherit", "inherit", "inherit"],
+		},
+	);
+	if (signed.exitCode !== 0) {
+		throw new Error(`jarsigner exited ${signed.exitCode}`);
+	}
+	const [unsigned, withSignature] = await Promise.all([
+		bundleEntries(input),
+		bundleEntries(output),
+	]);
+	if (
+		unsigned.length === 0 ||
+		unsigned.join("\n") !== withSignature.join("\n")
+	) {
+		throw new Error("signing changed the bundle beyond its signature");
+	}
+	const certificate = await $`keytool -printcert -jarfile ${output}`.text();
+	const fingerprint = certificate
+		.split("\n")
+		.find((line) => line.trim().startsWith("SHA256:"));
+	if (!fingerprint) {
+		throw new Error("no certificate fingerprint in keytool output");
+	}
+	console.log(fingerprint.trim());
+	console.log(`${unsigned.length} entries unchanged, signed: ${output}`);
+}
+
 async function minisign(file: string) {
 	const key = decodeSecretKey(await Bun.file(untilde(secretKeyPath)).text());
 	if (publicKeyLine(key) !== releaseKey) {
@@ -154,7 +232,11 @@ async function minisign(file: string) {
 	console.log(`signed: ${file}.minisig`);
 }
 
-if (rewrites) {
-	await signApk(input, output);
+if (artifact === "aab") {
+	await signAab(input, output);
+} else {
+	if (rewrites) {
+		await signApk(input, output);
+	}
+	await minisign(output);
 }
-await minisign(output);

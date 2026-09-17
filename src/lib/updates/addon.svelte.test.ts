@@ -157,7 +157,7 @@ describe("where the Google OAuth app can be installed from here", () => {
 		expect(addonInstallerAvailable()).toBe(true);
 	});
 
-	it("is not on a build someone else signed, which the Google OAuth app refuses", async () => {
+	it("is not on a build Open Grind didn't sign, such as a Google Play install", async () => {
 		await probedCapability({
 			state: "unsupported",
 			detail: { reason: "foreignSigner" },

@@ -49,7 +49,7 @@ jobs:
         provider: >-
           ${{ fromJson(inputs.x86_64_providers == 'all' && '["cherry","vultr","hetzner"]'
           || format('["{0}"]', inputs.x86_64_providers)) }}
-    runs-on: ["build", "${{ matrix.provider }}"]
+    runs-on: ["debian", "8c16g", "${{ matrix.provider }}"]
     timeout-minutes: 55
     env:
       BUILD_ROOT: /work
@@ -116,7 +116,7 @@ jobs:
         provider: >-
           ${{ fromJson(inputs.x86_64_providers == 'all' && '["cherry","vultr","hetzner"]'
           || format('["{0}"]', inputs.x86_64_providers)) }}
-    runs-on: ["build", "${{ matrix.provider }}"]
+    runs-on: ["debian", "8c16g", "${{ matrix.provider }}"]
     timeout-minutes: 30
     env:
       BUILD_ROOT: /work-linux
@@ -171,7 +171,7 @@ jobs:
         provider: >-
           ${{ fromJson(inputs.arm64_providers == 'all' && '["scaleway","gcore"]'
           || format('["{0}"]', inputs.arm64_providers)) }}
-    runs-on: ["build-arm64", "${{ matrix.provider }}"]
+    runs-on: ["debian", "arm-8c16g", "${{ matrix.provider }}"]
     timeout-minutes: 40
     env:
       BUILD_ROOT: /work-linux
@@ -226,7 +226,7 @@ jobs:
         provider: >-
           ${{ fromJson(inputs.x86_64_providers == 'all' && '["cherry","vultr","hetzner"]'
           || format('["{0}"]', inputs.x86_64_providers)) }}
-    runs-on: ["build", "${{ matrix.provider }}"]
+    runs-on: ["debian", "8c16g", "${{ matrix.provider }}"]
     timeout-minutes: 25
     env:
       BUILD_ROOT: /work-windows
@@ -278,7 +278,7 @@ jobs:
         provider: >-
           ${{ fromJson(inputs.x86_64_providers == 'all' && '["cherry","vultr","hetzner"]'
           || format('["{0}"]', inputs.x86_64_providers)) }}
-    runs-on: ["build", "${{ matrix.provider }}"]
+    runs-on: ["debian", "8c16g", "${{ matrix.provider }}"]
     timeout-minutes: 25
     env:
       BUILD_ROOT: /work-windows
@@ -337,7 +337,7 @@ jobs:
       && needs.build-linux-arm64.result != 'failure'
       && needs.build-windows-x64.result != 'failure'
       && needs.build-windows-arm64.result != 'failure'
-    runs-on: ["verify", "hetzner"]
+    runs-on: ["toolchain", "4c8g", "hetzner"]
     timeout-minutes: 10
     steps:
       - name: Checkout

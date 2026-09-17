@@ -139,6 +139,19 @@ export const methods = {
 		request: z.undefined(),
 		response: z.boolean(),
 	},
+	mint_recaptcha_token: {
+		request: z.object({
+			action: z.enum([
+				"sign_up",
+				"login",
+				"forgot_password",
+				"report",
+				"decision_appeal",
+				"device_key_registration",
+			]),
+		}),
+		response: z.string().min(1),
+	},
 	session_health: {
 		request: z.undefined(),
 		response: z.object({
@@ -209,6 +222,12 @@ export function asAppError(error: unknown) {
 			message: z
 				.string()
 				.or(z.object({ code: z.number(), message: z.string() }))
+				.or(
+					z.object({
+						reason: z.string(),
+						detail: z.string().nullish(),
+					}),
+				)
 				.optional(),
 		})
 		.safeParse(error);
@@ -218,7 +237,7 @@ export function asAppError(error: unknown) {
 			prettyMessage = connectionFailedMessage;
 		} else if (typeof data.message === "string") {
 			prettyMessage = summarizeServerMessage(data.message);
-		} else if (data.message) {
+		} else if (data.message && "code" in data.message) {
 			const { code, message } = data.message;
 			prettyMessage = `Error ${code}: ${summarizeServerMessage(message)}`;
 		} else {

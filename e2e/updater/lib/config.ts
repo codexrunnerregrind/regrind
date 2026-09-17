@@ -49,7 +49,7 @@ export const harnessOptions = {
 };
 
 export const companionPackage = "org.opengrind.google_oauth";
-export const companionRepo = "open-grind-google-oauth-android-app";
+export const companionRepo = "google-oauth-app";
 export const companionStem = "open-grind-google-oauth";
 export const companionRelease = Bun.env.COMPANION_RELEASE ?? "v1.1.0";
 const addonModes = ["install", "update"] as const;

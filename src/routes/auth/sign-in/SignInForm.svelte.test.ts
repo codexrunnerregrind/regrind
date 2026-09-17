@@ -5,16 +5,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { requestBlockedAlertState } from "$lib/api/request-blocked-state.svelte";
 import {
-	foreignBuildCompanionMessage,
+	refusedCompanionMessage,
 	untrustedCompanionMessage,
 } from "$lib/api/sign-in";
 import SignInForm from "./SignInForm.svelte";
 
-const { callMethodMock, gotoMock, toastMock, capability } = vi.hoisted(() => ({
+const { callMethodMock, gotoMock, toastMock } = vi.hoisted(() => ({
 	callMethodMock: vi.fn(),
 	gotoMock: vi.fn(),
 	toastMock: { success: vi.fn(), error: vi.fn(), dismiss: vi.fn() },
-	capability: { buildSignedByOpenGrind: vi.fn(() => true) },
 }));
 
 vi.mock("$app/navigation", () => ({ goto: gotoMock }));
@@ -23,7 +22,6 @@ vi.mock("$lib/api/methods", async (importOriginal) => ({
 	callMethod: callMethodMock,
 }));
 vi.mock("svelte-sonner", () => ({ toast: toastMock }));
-vi.mock("$lib/updates/capability.svelte", () => capability);
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -43,7 +41,6 @@ describe("SignInForm", () => {
 		callMethodMock.mockReset();
 		gotoMock.mockReset();
 		toastMock.error.mockReset();
-		capability.buildSignedByOpenGrind.mockReturnValue(true);
 		requestBlockedAlertState.open = false;
 		requestBlockedAlertState.disable = false;
 		requestBlockedAlertState.kind = "cloudflare";
@@ -197,11 +194,10 @@ describe("SignInForm", () => {
 		);
 	});
 
-	it("blames this build, not the Google OAuth app, when a build Open Grind didn't sign is refused", async () => {
-		capability.buildSignedByOpenGrind.mockReturnValue(false);
+	it("sends a Google OAuth app that refuses this build straight to the pasted token", async () => {
 		callMethodMock.mockRejectedValue({
 			kind: "Auth",
-			message: "companion-untrusted",
+			message: "companion-refused",
 		});
 		render(SignInForm);
 
@@ -211,7 +207,7 @@ describe("SignInForm", () => {
 		await settle();
 
 		expect(toastMock.error).toHaveBeenCalledExactlyOnceWith(
-			foreignBuildCompanionMessage,
+			refusedCompanionMessage,
 		);
 		expect(gotoMock).toHaveBeenCalledExactlyOnceWith(
 			"/auth/sign-in/google?paste",

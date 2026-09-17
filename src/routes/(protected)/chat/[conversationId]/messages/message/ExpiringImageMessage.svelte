@@ -156,7 +156,7 @@
 		{@attach media.attach}
 	>
 		<ImagesIcon size={24} weight="fill" />
-		<span>View expiring image</span>
+		<span>Expiring image</span>
 		{@render media.adornments?.()}
 	</button>
 {:else}

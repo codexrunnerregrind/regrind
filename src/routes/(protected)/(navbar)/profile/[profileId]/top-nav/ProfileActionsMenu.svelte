@@ -11,8 +11,8 @@
 
 	import { hideUser } from "$lib/api/browse/hides";
 	import { showErrorToast } from "$lib/api/error-toast";
-	import ToastUnimplemented from "$lib/components/feedback/ToastUnimplemented.svelte";
 	import BlockProfileDialog from "$lib/components/profile/BlockProfileDialog.svelte";
+	import ReportSheet from "$lib/components/report/ReportSheet.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
 	import {
@@ -38,6 +38,7 @@
 	let submitting = $state(false);
 	let locating = $state(false);
 	let blockOpen = $state(false);
+	let reportOpen = $state(false);
 
 	// "View on map" is a hidden power-user tool. A normal tap opens the menu
 	// without it; press-and-hold the dots button for this long to reveal it.
@@ -157,16 +158,7 @@
 					View on map
 				</DropdownMenu.Item>
 			{/if}
-			<DropdownMenu.Item
-				onSelect={() => {
-					toast(ToastUnimplemented, {
-						componentProps: {
-							feature: "Report profile",
-							issue: 41,
-						},
-					});
-				}}
-			>
+			<DropdownMenu.Item onSelect={() => (reportOpen = true)}>
 				<FlagIcon class="size-5" />
 				Report profile
 			</DropdownMenu.Item>
@@ -201,3 +193,4 @@
 </div>
 
 <BlockProfileDialog bind:open={blockOpen} {profileId} {name} {onBlocked} />
+<ReportSheet bind:open={reportOpen} {profileId} {onBlocked} />

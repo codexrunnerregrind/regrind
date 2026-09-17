@@ -148,6 +148,9 @@ mod pins {
 	const MANIFEST: &str = include_str!(
 		"../../../../gen/android/app/src/main/AndroidManifest.xml"
 	);
+	const PLAY_OVERLAY: &str = include_str!(
+		"../../../../gen/android/app/src/play/AndroidManifest.xml"
+	);
 
 	fn hex64(line: &str) -> bool {
 		line.len() == 64 && line.chars().all(|c| c.is_ascii_hexdigit())
@@ -193,12 +196,18 @@ mod pins {
 	const MINT_TOKEN_PERMISSION: &str =
 		"org.opengrind.recaptcha.permission.MINT_TOKEN";
 
+	const SIGNING_CERTIFICATES: &str = include_str!(
+		"../../../../gen/android/app/src/main/java/org/opengrind/addon/PackageSigningCertificates.kt"
+	);
+
+	const ADDON_LAUNCH_CHECK: &str = include_str!(
+		"../../../../gen/android/app/src/main/java/org/opengrind/addon/AddonLaunchCheck.kt"
+	);
+
 	const REQUEST_TOKEN_PERMISSION: &str =
 		"org.opengrind.google_oauth.permission.REQUEST_TOKEN";
 	const REQUEST_TOKEN_ACTION: &str =
 		"org.opengrind.google_oauth.action.REQUEST_TOKEN";
-	const RECEIVE_TOKEN_PERMISSION: &str =
-		"${applicationId}.permission.RECEIVE_GOOGLE_TOKEN";
 	const TOKEN_EXTRA: &str = "org.opengrind.google_oauth.extra.TOKEN";
 
 	fn squashed(source: &str) -> String {
@@ -224,6 +233,28 @@ mod pins {
 				panic!("android.rs {name} has no closing brace")
 			});
 		&ANDROID_BRIDGE[start..start + length]
+	}
+
+	fn xml_elements(source: &str) -> impl Iterator<Item = (&str, &str)> {
+		source.match_indices('<').filter_map(|(at, _)| {
+			let end = source[at..].find('>').map_or(source.len(), |i| at + i);
+			let element = &source[at + 1..end];
+			let tag = element
+				.split(|c: char| c.is_whitespace() || c == '/')
+				.next()?;
+			tag.starts_with(|c: char| c.is_ascii_alphabetic())
+				.then_some((tag, element))
+		})
+	}
+
+	fn xml_attribute<'a>(element: &'a str, name: &str) -> Option<&'a str> {
+		let assignment = format!("{name}=\"");
+		element.match_indices(&assignment).find_map(|(at, _)| {
+			let value = &element[at + assignment.len()..];
+			element[..at]
+				.ends_with(char::is_whitespace)
+				.then(|| value.split('"').next().unwrap_or_default())
+		})
 	}
 
 	fn manifest_element(tag: &str, name: &str) -> &'static str {
@@ -479,6 +510,18 @@ mod pins {
 	}
 
 	#[test]
+	fn the_install_permission_is_probed_only_where_the_manifest_requests_it() {
+		assert!(
+			spaced_match(
+				PROBE,
+				"fun canInstallNow(context: Context): Boolean = infoOf(context, context.packageName, PackageManager.GET_PERMISSIONS)?.requestedPermissions?.contains(Manifest.permission.REQUEST_INSTALL_PACKAGES) == true && context.packageManager.canRequestPackageInstalls()"
+			)
+			.is_some(),
+			"InstallProbe.canInstallNow calls canRequestPackageInstalls without checking the manifest requests REQUEST_INSTALL_PACKAGES, and Android throws a SecurityException where it does not"
+		);
+	}
+
+	#[test]
 	fn the_sign_in_handoff_matches_the_companion_contract() {
 		use super::super::component;
 
@@ -495,15 +538,15 @@ mod pins {
 		);
 
 		assert!(
-			manifest_element("permission", RECEIVE_TOKEN_PERMISSION)
-				.contains("android:protectionLevel=\"signature\""),
-			"{RECEIVE_TOKEN_PERMISSION} is no longer a signature permission, so any app could hand over a token"
+			!manifest_element("activity", ".TokenHandoffActivity")
+				.contains("android:permission="),
+			"TokenHandoffActivity requires a permission again, which a Play-signed install can never grant the companion"
 		);
 		assert!(
-			manifest_element("activity", ".TokenHandoffActivity").contains(
-				&format!("android:permission=\"{RECEIVE_TOKEN_PERMISSION}\"")
-			),
-			"TokenHandoffActivity is no longer guarded by {RECEIVE_TOKEN_PERMISSION}"
+			squashed(TOKEN_HANDOFF).contains(&squashed(
+				"AddonGate.acceptsCaller( callingPackage = callingPackage, addonPackage = COMPANION_PACKAGE, certificates = packageManager.signingCertificates(), )"
+			)),
+			"TokenHandoffActivity no longer checks its caller through AddonGate.acceptsCaller, yet any app may start it"
 		);
 
 		assert!(
@@ -908,6 +951,44 @@ mod pins {
 	}
 
 	#[test]
+	fn add_ons_are_trusted_by_their_pinned_release_certificate_whoever_signed_this_build(
+	) {
+		assert!(
+			squashed(ADDON_LAUNCH_CHECK).contains(&squashed(
+				"certificates = packageManager.signingCertificates(),"
+			)) && !ADDON_LAUNCH_CHECK.contains("checkSignatures"),
+			"AddonLaunchCheck.kt no longer trusts an add-on by its pinned certificate, so a Play-signed build refuses every official add-on"
+		);
+		assert!(
+			spaced_match(
+				SIGNING_CERTIFICATES,
+				"hasSigningCertificate(packageName, sha256, PackageManager.CERT_INPUT_SHA256)"
+			)
+			.is_some(),
+			"PackageSigningCertificates.kt no longer answers AddonGate from PackageManager.hasSigningCertificate"
+		);
+		assert!(
+			spaced_match(
+				ADDON_GATE,
+				"private val releaseCertSha256: ByteArray = InstallGate.RELEASE_CERT_SHA256"
+			)
+			.is_some(),
+			"AddonGate.kt no longer pins the add-on signer to InstallGate.RELEASE_CERT_SHA256"
+		);
+		for (file, plugin, package) in [
+			("GoogleOauthPlugin.kt", SIGN_IN_PLUGIN, "COMPANION_PACKAGE"),
+			("RecaptchaPlugin.kt", RECAPTCHA_PLUGIN, "ADDON_PACKAGE"),
+		] {
+			assert!(
+				squashed(plugin).contains(&squashed(&format!(
+					"when (AddonLaunchCheck.decide(activity, intent, {package}))"
+				))),
+				"{file} no longer checks {package} through AddonLaunchCheck before sending it the request"
+			);
+		}
+	}
+
+	#[test]
 	fn every_addon_plugin_answers_every_gate_verdict() {
 		let verdicts = gate_verdict_names();
 		assert!(
@@ -1114,6 +1195,67 @@ mod pins {
 			assert!(
 				element.contains("android:exported=\"false\""),
 				"{component} must not be exported"
+			);
+		}
+	}
+
+	#[test]
+	fn the_play_overlay_removes_the_updater_the_main_manifest_declares() {
+		use super::super::component::SELF_PACKAGE;
+
+		let qualified = |name: &str| match name.strip_prefix('.') {
+			Some(relative) => format!("{SELF_PACKAGE}.{relative}"),
+			None => name.to_owned(),
+		};
+		let declared = |source: &'static str| {
+			xml_elements(source).filter_map(move |(tag, element)| {
+				xml_attribute(element, "android:name")
+					.map(|name| (tag, qualified(name), element))
+			})
+		};
+		let removed: Vec<(&str, String)> = declared(PLAY_OVERLAY)
+			.filter(|(_, _, element)| {
+				xml_attribute(element, "tools:node") == Some("remove")
+			})
+			.map(|(tag, name, _)| (tag, name))
+			.collect();
+
+		for (tag, name) in &removed {
+			assert!(
+				declared(MANIFEST).any(|(main_tag, main_name, _)| {
+					main_tag == *tag && main_name == *name
+				}),
+				"the Play overlay removes <{tag}> {name}, which the main manifest does not declare, so whatever replaced it ships on Play"
+			);
+		}
+		assert!(
+			removed.contains(&(
+				"uses-permission",
+				"android.permission.REQUEST_INSTALL_PACKAGES".to_owned()
+			)),
+			"the Play overlay no longer removes REQUEST_INSTALL_PACKAGES"
+		);
+
+		let update_package = PLUGIN
+			.lines()
+			.find_map(|line| line.strip_prefix("package "))
+			.expect("UpdatePlugin.kt declares no package")
+			.trim();
+		let updater: Vec<(&str, String)> = declared(MANIFEST)
+			.filter(|(tag, name, _)| {
+				["activity", "service", "receiver", "provider"].contains(tag)
+					&& name.starts_with(&format!("{update_package}."))
+			})
+			.map(|(tag, name, _)| (tag, name))
+			.collect();
+		assert!(
+			!updater.is_empty(),
+			"the main manifest declares no component from {update_package}"
+		);
+		for (tag, name) in updater {
+			assert!(
+				removed.contains(&(tag, name.clone())),
+				"the Play overlay keeps the updater's <{tag}> {name}"
 			);
 		}
 	}

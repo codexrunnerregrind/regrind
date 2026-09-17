@@ -49,7 +49,8 @@ pub static APP: Component = Component {
 
 pub static GOOGLE_OAUTH: Component = Component {
 	key: "google-oauth",
-	index_path: "api/v1/repos/open-grind/open-grind-google-oauth-android-app/releases?limit=3&draft=false",
+	index_path:
+		"api/v1/repos/open-grind/google-oauth-app/releases?limit=3&draft=false",
 	asset_stem: "open-grind-google-oauth",
 	asset_suffix: abi_asset_suffix,
 	target: Target::Package("org.opengrind.google_oauth"),
@@ -60,7 +61,7 @@ pub static RECAPTCHA: Component = Component {
 	index_path:
 		"api/v1/repos/open-grind/recaptcha-helper/releases?limit=3&draft=false",
 	asset_stem: "open-grind-recaptcha-helper",
-	asset_suffix: abi_asset_suffix,
+	asset_suffix: universal_asset_suffix,
 	target: Target::Package("org.opengrind.recaptcha"),
 };
 
@@ -68,6 +69,10 @@ pub static ALL: &[&Component] = &[&APP, &GOOGLE_OAUTH, &RECAPTCHA];
 
 fn abi_asset_suffix() -> Option<String> {
 	abi_token(std::env::consts::OS, std::env::consts::ARCH).map(str::to_owned)
+}
+
+fn universal_asset_suffix() -> Option<String> {
+	universal_token(std::env::consts::OS).map(str::to_owned)
 }
 
 pub(super) fn abi_token(os: &str, arch: &str) -> Option<&'static str> {
@@ -80,6 +85,10 @@ pub(super) fn abi_token(os: &str, arch: &str) -> Option<&'static str> {
 		"x86_64" => Some("-x86_64.apk"),
 		_ => None,
 	}
+}
+
+pub(super) fn universal_token(os: &str) -> Option<&'static str> {
+	(os == "android").then_some("-android.apk")
 }
 
 pub fn by_key(key: &str) -> Result<&'static Component, UpdateError> {
@@ -180,7 +189,7 @@ mod tests {
 	}
 
 	#[test]
-	fn the_addon_targets_a_package_that_is_not_us() {
+	fn the_google_oauth_addon_targets_a_package_that_is_not_us() {
 		assert!(!GOOGLE_OAUTH.is_self());
 		assert_eq!(GOOGLE_OAUTH.package(), Some("org.opengrind.google_oauth"));
 		assert_ne!(GOOGLE_OAUTH.package(), APP.package());
@@ -196,20 +205,28 @@ mod tests {
 	}
 
 	#[test]
-	fn the_addon_abi_tokens_match_what_the_signer_publishes() {
+	fn the_google_oauth_abi_tokens_match_what_the_signer_publishes() {
 		assert_eq!(abi_token("android", "aarch64"), Some("-arm64-v8a.apk"));
 		assert_eq!(abi_token("android", "arm"), Some("-v7a.apk"));
 		assert_eq!(abi_token("android", "x86_64"), Some("-x86_64.apk"));
 	}
 
 	#[test]
-	fn an_abi_the_addon_does_not_publish_has_no_asset() {
+	fn an_abi_the_google_oauth_addon_does_not_publish_has_no_asset() {
 		assert_eq!(abi_token("android", "x86"), None);
 		assert_eq!(abi_token("android", "riscv64"), None);
 	}
 
 	#[test]
-	fn the_addon_is_android_only() {
+	fn the_recaptcha_helper_ships_one_apk_for_all_abis() {
+		assert_eq!(universal_token("android"), Some("-android.apk"));
+		for os in ["linux", "macos", "windows", "ios"] {
+			assert_eq!(universal_token(os), None);
+		}
+	}
+
+	#[test]
+	fn the_google_oauth_addon_is_android_only() {
 		for os in ["linux", "macos", "windows", "ios"] {
 			assert_eq!(abi_token(os, "x86_64"), None);
 			assert_eq!(abi_token(os, "aarch64"), None);
@@ -225,11 +242,9 @@ mod tests {
 			"api/v1/repos/open-grind/recaptcha-helper/releases?limit=3&draft=false"
 		);
 		assert_eq!(
-			RECAPTCHA.payload_name(
-				"v1.0.0",
-				abi_token("android", "aarch64").unwrap()
-			),
-			"open-grind-recaptcha-helper-v1.0.0-arm64-v8a.apk"
+			RECAPTCHA
+				.payload_name("v1.0.0", universal_token("android").unwrap()),
+			"open-grind-recaptcha-helper-v1.0.0-android.apk"
 		);
 	}
 

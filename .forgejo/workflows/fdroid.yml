@@ -9,7 +9,7 @@ concurrency:
 
 jobs:
   fdroid:
-    runs-on: ["fdroid", "hetzner"]
+    runs-on: ["debian", "8c16g", "hetzner"]
     timeout-minutes: 70
     steps:
       - name: Checkout

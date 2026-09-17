@@ -13,7 +13,6 @@
 	import type { ComponentProps } from "svelte";
 
 	import fireEmoji from "$lib/assets/emojis/fire/32px.png";
-	import ToastUnimplemented from "$lib/components/feedback/ToastUnimplemented.svelte";
 	import ContextMenu from "$lib/components/shared/ContextMenu.svelte";
 	import { Button } from "$lib/components/ui/button";
 
@@ -25,6 +24,7 @@
 		onUnshareAlbum,
 		onReply,
 		onCopyError,
+		onReport,
 		onReact,
 		...props
 	}: ComponentProps<typeof ContextMenu> & {
@@ -35,6 +35,7 @@
 		onUnshareAlbum?: () => void;
 		onReply?: () => void;
 		onCopyError?: () => void;
+		onReport?: () => void;
 		onReact?: (reactionId: number) => void;
 	} = $props();
 </script>
@@ -161,20 +162,17 @@
 					Unshare album
 				</Button>
 			{/if}
-			<Button
-				variant="ghost"
-				onclick={() => {
-					toast(ToastUnimplemented, {
-						componentProps: {
-							feature: "Report message",
-							issue: 41,
-						},
-					});
-					props.onClose();
-				}}
-			>
-				<FlagIcon /> Report
-			</Button>
+			{#if onReport}
+				<Button
+					variant="ghost"
+					onclick={() => {
+						props.onClose();
+						onReport();
+					}}
+				>
+					<FlagIcon /> Report
+				</Button>
+			{/if}
 		</div>
 	{/snippet}
 </ContextMenu>

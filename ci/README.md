@@ -14,16 +14,18 @@ Self-hosted Forgejo runners on rented ephemeral VMs.
 | `keys.yml`        | push                 | Checks the published keys against `KEYS.md` (`verify-keys.ts`)                                                                                      |
 | `warm.yml`        | push                 | Keeps the check workflow caches warm                                                                                                                |
 | `publish-apt.yml` | release              | Publishes the `.deb` to the Forgejo apt registry                                                                                                    |
+| `play.yml`        | release, manual      | Builds the Google Play app bundle on several providers, verifies reproducibility                                                                    |
 
 ## Scripts
 
-| Script                     | Used by                                                                                  |
-| -------------------------- | ---------------------------------------------------------------------------------------- |
-| `setup-build.sh`           | Build boxes, `podman` or `nix`; a job installs only what it runs                         |
-| `check-release-version.sh` | Refuse to build a `-dev` version unless the run allows it                                |
-| `linux/build.sh`           | Build, repack and name the `.deb`, then assemble the `.AppImage`, inside the Linux image |
-| `windows/build.sh`         | Cross-build and name one installer, `x64` or `arm64`                                     |
-| `verify.ts`                | Every artifact, one copy per box in `BOXES`/`ARM_BOXES`; either may be empty             |
-| `sign.ts`                  | Sign. APK: apksigner unless gradle already signed it; every artifact: minisign           |
-| `cache.ts`, `rust-env.sh`  | Check runner caches                                                                      |
-| `check-image.sh`           | The check runner image                                                                   |
+| Script                     | Used by                                                                                        |
+| -------------------------- | ---------------------------------------------------------------------------------------------- |
+| `setup-build.sh`           | Build boxes, `podman` or `nix`; a job installs only what it runs                               |
+| `check-release-version.sh` | Refuse to build a `-dev` version unless the run allows it                                      |
+| `linux/build.sh`           | Build, repack and name the `.deb`, then assemble the `.AppImage`, inside the Linux image       |
+| `windows/build.sh`         | Cross-build and name one installer, `x64` or `arm64`                                           |
+| `verify.ts`                | Every artifact, one copy per box in `BOXES`/`ARM_BOXES`; either may be empty                   |
+| `sign.ts`                  | Sign. APK: apksigner and minisign; AAB: jarsigner with the Play upload key; the rest: minisign |
+| `play-upload.sh`           | Upload a signed AAB, its release notes and the store listing to Google Play with fastlane      |
+| `cache.ts`, `rust-env.sh`  | Check runner caches                                                                            |
+| `check-image.sh`           | The check runner image                                                                         |

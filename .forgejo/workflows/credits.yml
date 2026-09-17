@@ -45,7 +45,7 @@ concurrency:
 
 jobs:
   credits:
-    runs-on: ["audit", "hetzner"]
+    runs-on: ["fork", "toolchain", "8c16g", "hetzner"]
     timeout-minutes: 30
     defaults:
       run:

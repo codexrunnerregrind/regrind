@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { isFloatingNav } from "$lib/platform/nav-style.svelte";
+	import { bottomChrome } from "$lib/util/bottom-chrome.svelte";
 	import type { TapType } from "$lib/model/interest/taps";
 	import OpenConversationButton from "./OpenConversationButton.svelte";
 	import TapProfileButton from "./TapProfileButton.svelte";
@@ -47,6 +48,7 @@
 					!floatingNav,
 			},
 		]}
+		{@attach bottomChrome}
 	>
 		<nav class="flex w-full flex-row items-center gap-2.5">
 			<OpenConversationButton {profileId} {ourProfileId} />

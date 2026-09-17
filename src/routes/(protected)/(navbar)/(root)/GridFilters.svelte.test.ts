@@ -8,6 +8,7 @@ vi.mock("$lib/app-data/preferences.svelte", () => ({
 	getPreferences: vi.fn(() => Promise.resolve({})),
 	setPreferences: vi.fn(() => Promise.resolve()),
 	preferencesSnapshot: vi.fn(() => ({ units: "metric" })),
+	preferencesAccount: vi.fn(() => null),
 }));
 
 vi.mock("$lib/api/users/genders", () => ({

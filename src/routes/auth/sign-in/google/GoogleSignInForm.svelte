@@ -6,12 +6,14 @@
 	import { callMethod } from "$lib/api/methods";
 	import {
 		companionDisabled,
+		companionRefused,
 		companionUnavailable,
 		companionUntrusted,
 		disabledCompanionMessage,
 		finishSignIn,
+		refusedCompanionMessage,
 		reportSignInFailure,
-		untrustedCompanionCopy,
+		untrustedCompanionMessage,
 	} from "$lib/api/sign-in";
 	import { Button } from "$lib/components/ui/button";
 	import * as Card from "$lib/components/ui/card";
@@ -35,7 +37,7 @@
 	} from "./google-sign-in-view";
 
 	const COMPANION_RELEASES =
-		"https://git.opengrind.org/open-grind/open-grind-google-oauth-android-app/releases#install";
+		"https://git.opengrind.org/open-grind/google-oauth-app/releases#install";
 	const automated = isAndroidPlatform();
 
 	let token = $state("");
@@ -122,7 +124,12 @@
 						return true;
 					}
 					if (message === companionUntrusted) {
-						toast.error(untrustedCompanionCopy());
+						toast.error(untrustedCompanionMessage);
+						pasting = true;
+						return true;
+					}
+					if (message === companionRefused) {
+						toast.error(refusedCompanionMessage);
 						pasting = true;
 						return true;
 					}

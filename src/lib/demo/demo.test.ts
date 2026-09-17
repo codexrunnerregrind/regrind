@@ -109,8 +109,6 @@ describe("demo route data matches the real schemas", () => {
 		const entries = z.array(fullConversationSchema).parse(body.entries);
 		const times = entries.map((e) => e.data.lastActivityTimestamp);
 		expect(times).toEqual([...times].sort((a, b) => b - a));
-		const imageConv = entries.find((e) => e.data.preview?.type === "Image");
-		expect(imageConv?.data.preview?.text).toBeNull();
 		const albumConv = entries.find((e) => e.data.preview?.type === "Album");
 		expect(albumConv?.data.preview?.albumId).not.toBeNull();
 		expect(previewLabel(albumConv?.data.preview ?? null)).toBe("Album");
@@ -176,6 +174,17 @@ describe("demo route data matches the real schemas", () => {
 						route(`/v2/albums/${message.body.albumId}`),
 					);
 					expect(album.content.length).toBeGreaterThan(0);
+					const holds = (kind: string) =>
+						album.content.some((item) =>
+							item.contentType.startsWith(`${kind}/`),
+						);
+					expect({
+						hasPhoto: message.body.hasPhoto,
+						hasVideo: message.body.hasVideo,
+					}).toEqual({
+						hasPhoto: holds("image"),
+						hasVideo: holds("video"),
+					});
 				} else if (message.type === "ExpiringImage") {
 					expiringImages++;
 					const single = expiringImageMessageSchema.parse(

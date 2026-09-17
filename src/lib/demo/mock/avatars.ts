@@ -46,6 +46,20 @@ export function picsum({
 	return `https://picsum.photos/seed/${encodeURIComponent(seed)}/${width}/${height}`;
 }
 
+export function unsplash({
+	photo,
+	width,
+	height,
+	blur,
+}: {
+	photo: string;
+	width: number;
+	height: number;
+	blur: number;
+}): string {
+	return `https://images.unsplash.com/photo-${photo}?w=${width}&h=${height}&fit=crop&blur=${blur}`;
+}
+
 export function hashFromSeed(seed: string): string {
 	let state = hashString(seed);
 	let out = "";

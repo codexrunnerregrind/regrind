@@ -9,7 +9,7 @@ import {
 } from "./support/media";
 
 const BROKEN = '[data-slot="broken-media"]';
-const IMAGE_CONVERSATION = "/chat/100006:123456000";
+const IMAGE_CONVERSATION = "/chat/100002:123456000";
 const FIRST_LOAD_TIMEOUT = 120_000;
 
 test.describe("broken images", () => {
@@ -149,7 +149,7 @@ test.describe("broken images", () => {
 		await expect(page.locator(".pswp")).toHaveCount(0);
 
 		await page
-			.getByRole("button", { name: "View expiring image" })
+			.getByRole("button", { name: "Expiring image", exact: true })
 			.last()
 			.click();
 		const errorSlide = page.locator(

@@ -9,6 +9,7 @@ Pick your platform, then a method within it. Everything below the platform secti
         - [Build apk manually (advanced)](#build-apk-manually-advanced)
         - [Sign Android build](#sign-android-build)
         - [Verify Android release](#verify-android-release)
+        - [Publish to Google Play](#publish-to-google-play)
     - [iOS (macOS only)](#ios-macos-only)
         - [iOS build configuration](#ios-build-configuration)
         - [Build the app](#build-the-app)
@@ -154,6 +155,26 @@ refuses it. `bun scripts/minisign.ts keygen` creates the release key once, at
 
 - [Verify minisign signature](#verify-minisign-signature) to prove the APK was built by Open Grind developers
 - [Reproduce the release](./REPRODUCIBILITY.md#android) to prove the APK was built from the open source code
+
+### Publish to Google Play
+
+The Play bundle removes the in-app updater, so it is built separately from the APK. Every release runs `play.yml`, which builds the bundle on several providers and publishes the verified `regrind-unsigned-play` artifact.
+
+1. Download the artifact from the `play` workflow run.
+
+2. Sign it with the Play upload key. The properties file has the same fields as [contrib/keystore.properties.example](./contrib/keystore.properties.example) and points at an RSA keystore:
+
+```bash
+OPEN_GRIND_PLAY_KEYSTORE_PROPERTIES=~/.config/regrind/play-upload.properties \
+  nix develop .#play --command bun ci/sign.ts /path/to/regrind-v<version>-android-unsigned.aab
+```
+
+3. Upload the bundle, its release notes and the store listing to the internal track from a checkout of the release tag, so the listing matches the bundle. Use `SUPPLY_RELEASE_STATUS=draft` until the app's first release leaves draft in the Play Console. fastlane cancels a review that is already running, so wait for it to finish first.
+
+```bash
+SUPPLY_JSON_KEY=~/.config/regrind/play-service-account.json \
+  nix develop .#play --command ci/play-upload.sh /path/to/regrind-v<version>-android.aab
+```
 
 ## iOS (macOS only)
 

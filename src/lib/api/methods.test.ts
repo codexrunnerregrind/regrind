@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -85,6 +86,18 @@ describe("asAppError", () => {
 		expect(asAppError({ kind: "NotInitialized" })?.prettyMessage).toBe(
 			"An unknown error occurred",
 		);
+	});
+
+	it.each([
+		{ reason: "unsupportedPlatform" },
+		{ reason: "mintFailed", detail: "NETWORK_ERROR" },
+		{ reason: "mintFailed", detail: null },
+	])("classifies a reCAPTCHA failure with its reason %o", (message) => {
+		const appError = asAppError({ kind: "Recaptcha", message });
+
+		expect(appError?.kind).toBe("Recaptcha");
+		expect(appError?.message).toEqual(message);
+		expect(appError?.prettyMessage).toBe("An unknown error occurred");
 	});
 
 	it("ignores unknown errors", () => {
@@ -264,6 +277,35 @@ describe("callMethod", () => {
 		await expect(
 			callMethod("login", { email: "a@b.co", password: "hunter2" }),
 		).resolves.toEqual({ profileId: 42, restriction: null });
+	});
+
+	it("asks the backend for a reCAPTCHA token for the named action", async () => {
+		invokeMock.mockResolvedValueOnce("0cAFcWeA-token");
+
+		await expect(
+			callMethod("mint_recaptcha_token", { action: "report" }),
+		).resolves.toBe("0cAFcWeA-token");
+		expect(invokeMock).toHaveBeenCalledWith("mint_recaptcha_token", {
+			action: "report",
+		});
+	});
+
+	it("offers exactly the reCAPTCHA actions the backend deserializes", () => {
+		const backendActions: unknown = JSON.parse(
+			readFileSync("src-tauri/src/api/recaptcha/actions.json", "utf8"),
+		);
+
+		expect(
+			methods.mint_recaptcha_token.request.shape.action.options,
+		).toEqual(backendActions);
+	});
+
+	it("rejects an empty reCAPTCHA token", async () => {
+		invokeMock.mockResolvedValueOnce("");
+
+		await expect(
+			callMethod("mint_recaptcha_token", { action: "report" }),
+		).rejects.toThrow();
 	});
 
 	it("resolves the unit response of a command that returns nothing", async () => {

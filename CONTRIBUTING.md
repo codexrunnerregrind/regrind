@@ -39,7 +39,7 @@ Projects reference:
 - **[grindr.rs](https://git.opengrind.org/open-grind/grindr.rs) Rust crate** — Grindr API transport layer, authentication, network calls
 - **[Grindr Google OAuth WebExtension](https://git.opengrind.org/open-grind/grindr-google-oauth-webextension)** — a web browser extension that extracts a Google OAuth token for Grindr (used for Sign in with Google)
 - **[Open Grind](https://git.opengrind.org/open-grind/open-grind)** — cross-platform Tauri application using **grindr.rs** and sharing code from **Grindr Google OAuth WebExtension** for non-Android Google OAuth flow
-- **[Open Grind Google OAuth Android App](https://git.opengrind.org/open-grind/open-grind-google-oauth-android-app)** — a companion Android-only app that renders Geckoview with **Grindr Google OAuth WebExtension** embedded, needed because Android system's WebView blocks the Google OAuth page
+- **[Open Grind Google OAuth Android App](https://git.opengrind.org/open-grind/google-oauth-app)** — a companion Android-only app that renders Geckoview with **Grindr Google OAuth WebExtension** embedded, needed because Android system's WebView blocks the Google OAuth page
 - **[Grindr Web Unlock](https://git.opengrind.org/open-grind/grindr-web-unlock)** — separate web browser extension that bypasses web.grindr.com client-side paywall
 - **[Grindr API developer tool](https://git.opengrind.org/open-grind/grindr-api-dev-tool)** — Desktop Tauri app that handles API authorization, security headers, request fingerprints for you and provides type hints for known fields
 

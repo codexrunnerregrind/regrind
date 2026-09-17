@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render } from "@testing-library/svelte";
+import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
 import { afterEach, describe, expect, it } from "vitest";
 
 import type { Option } from "$lib/util/options";
@@ -35,9 +35,9 @@ function hint(container: HTMLElement): string {
 }
 
 async function openList(): Promise<HTMLInputElement> {
-	const input = document.querySelector<HTMLInputElement>(
-		"input[aria-label='Tribes']",
-	)!;
+	const input = screen.getByRole<HTMLInputElement>("combobox", {
+		name: "Tribes",
+	});
 	await fireEvent.click(input);
 	await new Promise((resolve) => setTimeout(resolve, 0));
 	return input;

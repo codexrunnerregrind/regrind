@@ -2,9 +2,10 @@ package org.regrind
 
 import android.app.Activity
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.SystemClock
+import org.opengrind.addon.AddonGate
+import org.opengrind.addon.signingCertificates
 import org.regrind.googleoauth.HandoffEvents
 import org.regrind.googleoauth.TokenHandoff
 
@@ -12,7 +13,12 @@ class TokenHandoffActivity : Activity() {
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 
-		val token = if (isTrustedCaller()) {
+		val trusted = AddonGate.acceptsCaller(
+			callingPackage = callingPackage,
+			addonPackage = COMPANION_PACKAGE,
+			certificates = packageManager.signingCertificates(),
+		)
+		val token = if (trusted) {
 			intent?.getStringExtra(EXTRA_TOKEN).orEmpty()
 		} else {
 			""
@@ -30,13 +36,6 @@ class TokenHandoffActivity : Activity() {
 			Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
 		)
 		finish()
-	}
-
-	private fun isTrustedCaller(): Boolean {
-		val caller = callingPackage ?: return false
-		if (caller != COMPANION_PACKAGE) return false
-		return packageManager.checkSignatures(caller, packageName) ==
-			PackageManager.SIGNATURE_MATCH
 	}
 
 	private companion object {

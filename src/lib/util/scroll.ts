@@ -49,3 +49,41 @@ export function nearestScrollableAncestor(node: Element): Element | null {
 	}
 	return null;
 }
+
+/**
+ * Brings a field the software keyboard has covered into view.
+ *
+ * WebKit reveals a field the tap itself focused, but focus that arrives any
+ * other way — from its label, from a button — it leaves where it was, so the
+ * keys come up over it. The keyboard's viewport resize lands after the focus,
+ * so wait for it (or give up on a timer, since a keyboard already up never
+ * sends one), then scroll only when the field really is under the keys.
+ */
+export function revealFieldUnderKeyboard(el: HTMLElement): void {
+	const viewport = window.visualViewport;
+	const settle = () => {
+		clearTimeout(timer);
+		viewport?.removeEventListener("resize", settle);
+		const scroller = nearestScrollableAncestor(el);
+		if (!(scroller instanceof HTMLElement)) return;
+		const covered = viewport ? viewport.height : window.innerHeight;
+		const field = el.getBoundingClientRect();
+		if (field.bottom <= covered) return;
+		// Centre it in what the keyboard leaves of the scroller, not in the
+		// scroller: the scroller keeps its full height behind the keys.
+		const box = scroller.getBoundingClientRect();
+		const top = Math.max(box.top, 0);
+		const visible = Math.min(box.bottom, covered) - top;
+		scroller.scrollTo({
+			top: Math.max(
+				0,
+				scroller.scrollTop +
+					(field.top - top) -
+					(visible - el.offsetHeight) / 2,
+			),
+			behavior: "smooth",
+		});
+	};
+	const timer = setTimeout(settle, 400);
+	viewport?.addEventListener("resize", settle);
+}

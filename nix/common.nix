@@ -109,6 +109,16 @@ rec {
     }
   );
 
+  playShell = pkgs.mkShell {
+    packages = frontendInputs ++ [
+      pkgs.fastlane
+      pkgs.jdk21_headless
+      pkgs.unzip
+    ];
+    FASTLANE_HIDE_GITHUB_ISSUES = "1";
+    FASTLANE_OPT_OUT_USAGE = "1";
+  };
+
   webShell = pkgs.mkShell {
     packages = frontendInputs ++ [
       pkgs.git

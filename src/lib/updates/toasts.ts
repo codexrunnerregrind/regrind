@@ -19,7 +19,7 @@ const CARD_CLASS = "update-toast rounded-2xl";
 const RELEASES: Record<ComponentKey, string> = {
 	app: "https://git.opengrind.org/codexrunner/regrind/releases/tag",
 	"google-oauth":
-		"https://git.opengrind.org/open-grind/open-grind-google-oauth-android-app/releases/tag",
+		"https://git.opengrind.org/open-grind/google-oauth-app/releases/tag",
 	recaptcha:
 		"https://git.opengrind.org/open-grind/recaptcha-helper/releases/tag",
 };

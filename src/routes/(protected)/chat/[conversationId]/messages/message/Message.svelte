@@ -44,6 +44,7 @@
 		onReply,
 		onCopyError,
 		nextAudioMessageId,
+		onReport,
 	}: {
 		message: ApiResponseMessage;
 		isOut: boolean;
@@ -62,6 +63,7 @@
 		// Only voice notes use it: the id of the message right below this one,
 		// when that one is a voice note too.
 		nextAudioMessageId?: string;
+		onReport?: () => void;
 	} = $props();
 
 	const swipe = untrack(() =>
@@ -373,5 +375,7 @@
 		{onUnshareAlbum}
 		{onReply}
 		{onCopyError}
+		{onReport}
+		{onReact}
 	/>
 {/if}

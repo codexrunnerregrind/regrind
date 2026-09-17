@@ -75,6 +75,7 @@
 
           devShells = lib.mapAttrs (_: t: t.devShell) targets // {
             default = common.toolsShell;
+            play = common.playShell;
             web = common.webShell;
           };
 

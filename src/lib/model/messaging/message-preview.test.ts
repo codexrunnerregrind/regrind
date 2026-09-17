@@ -110,7 +110,7 @@ describe("previewFromMessage", () => {
 			albumId: null,
 			imageHash: null,
 		});
-		expect(previewLabel(preview)).toBe("Expiring photo");
+		expect(previewLabel(preview)).toBe("Expiring image");
 	});
 });
 
@@ -131,7 +131,7 @@ describe("quoteLabel", () => {
 	it.each([
 		["Unsent", "Unsent message"],
 		["Audio", "Voice message"],
-		["ExpiringImage", "Expiring photo"],
+		["ExpiringImage", "Expiring image"],
 		["Giphy", "GIF"],
 		["Gaymoji", "Gaymoji"],
 		["Location", "Location"],

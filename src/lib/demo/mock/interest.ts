@@ -1,8 +1,16 @@
+import { TapType } from "$lib/model/interest/taps";
 import { HOUR, MINUTE, NOW } from "../config";
 import { demoFavoriteOf } from "./favorites";
 import { lastOnlineOf, onlineUntilOf, photosOf, profileSeed } from "./profiles";
 
-const TAP_TYPES = [0, 1, 2] as const;
+const TAP_TYPE_PATTERN = [
+	TapType.Hot,
+	TapType.Hot,
+	TapType.Looking,
+	TapType.Friendly,
+	TapType.Hot,
+	TapType.Looking,
+];
 const tapSourceIds = [
 	100001, 100006, 100009, 100013, 100250, 100777, 100042, 100123, 100333,
 	100512, 100640, 100888, 100999, 101234,
@@ -25,7 +33,7 @@ export function demoReceivedTaps() {
 			displayName: seed.name,
 			onlineUntil: onlineUntilOf(seed),
 			timestamp: NOW - (i + 1) * 23 * MINUTE,
-			tapType: TAP_TYPES[i % TAP_TYPES.length],
+			tapType: TAP_TYPE_PATTERN[i % TAP_TYPE_PATTERN.length],
 			lastOnline: lastOnlineOf(seed),
 			isBoosting: false,
 			isMutual: i % 4 === 0,
@@ -47,7 +55,7 @@ export function demoSentTaps(ourProfileId: number) {
 	return sentTapTargetIds.map((id, i) => ({
 		senderId: ourProfileId,
 		receiverId: id,
-		tapType: TAP_TYPES[i % TAP_TYPES.length],
+		tapType: TAP_TYPE_PATTERN[i % TAP_TYPE_PATTERN.length],
 		sentOn: NOW - (i + 1) * 37 * MINUTE,
 		readOn: i % 3 === 0 ? NOW - (i + 1) * 30 * MINUTE : null,
 		// One taken back, so the list has something to filter.

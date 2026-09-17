@@ -4,7 +4,7 @@ import { installTauriShim } from "./support/app";
 import { DRAWER, MEDIA_TILE } from "./support/drawer";
 import { CHAT_MEDIA_HOST, serveImages } from "./support/media";
 
-const CONVERSATION = "/chat/100006:123456000";
+const CONVERSATION = "/chat/100002:123456000";
 const SCROLLER = '[data-slot="messages-scroller"]';
 const ROW = '[role="button"][tabindex="0"]';
 const PHOTO = 'a[aria-label="Photo"]';

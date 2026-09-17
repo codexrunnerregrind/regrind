@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   check:
-    runs-on: ["check", "hetzner"]
+    runs-on: ["fork", "toolchain", "8c16g", "hetzner"]
     timeout-minutes: 60
     defaults:
       run:

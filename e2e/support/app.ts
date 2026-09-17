@@ -116,7 +116,11 @@ export async function runPaletteCommand(
 	const palette = page.getByRole("combobox");
 	await palette.waitFor();
 	await palette.fill(command);
-	await page.locator(`[role="option"][data-value="${command}"]`).waitFor();
+	await page
+		.locator(
+			`[role="option"][data-value="${command}"][aria-selected="true"]`,
+		)
+		.waitFor();
 	await page.keyboard.press("Enter");
 }
 

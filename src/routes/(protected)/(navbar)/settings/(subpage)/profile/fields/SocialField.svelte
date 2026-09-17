@@ -24,18 +24,20 @@
 			<Icon class="size-4.5" />
 		{/if}
 	{/snippet}
-	<Input
-		bind:value={
-			() => value ?? "",
-			(newValue: string) =>
-				(value = newValue.trim() === "" ? null : newValue.trim())
-		}
-		maxlength={maxLength}
-		placeholder="username"
-		autocapitalize="off"
-		autocomplete="off"
-		spellcheck={false}
-		aria-label={label}
-		class={[bareInputClass, "w-36"]}
-	/>
+	{#snippet control({ id })}
+		<Input
+			{id}
+			bind:value={
+				() => value ?? "",
+				(newValue: string) =>
+					(value = newValue.trim() === "" ? null : newValue.trim())
+			}
+			maxlength={maxLength}
+			placeholder="username"
+			autocapitalize="off"
+			autocomplete="off"
+			spellcheck={false}
+			class={[bareInputClass, "w-36"]}
+		/>
+	{/snippet}
 </InlineField>

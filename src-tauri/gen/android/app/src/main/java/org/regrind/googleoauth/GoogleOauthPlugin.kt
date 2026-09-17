@@ -33,8 +33,9 @@ class GoogleOauthPlugin(private val activity: Activity) : Plugin(activity) {
                 AddonGate.Verdict.Disabled -> invoke.reject(ERROR_DISABLED)
                 AddonGate.Verdict.Untrusted -> invoke.reject(ERROR_UNTRUSTED)
             }
+        } catch (e: SecurityException) {
+            invoke.reject(ERROR_REFUSED)
         } catch (e: Exception) {
-            // Companion missing or refused the launch (e.g. signature mismatch).
             invoke.reject(ERROR_UNAVAILABLE)
         }
     }
@@ -79,6 +80,8 @@ class GoogleOauthPlugin(private val activity: Activity) : Plugin(activity) {
             } else {
                 invoke.resolve(JSObject().apply { put("token", token) })
             }
+        } else if (result.resultCode == RESULT_REFUSED) {
+            invoke.reject(ERROR_REFUSED)
         } else {
             invoke.reject(ERROR_CANCELLED)
         }
@@ -88,9 +91,11 @@ class GoogleOauthPlugin(private val activity: Activity) : Plugin(activity) {
         const val COMPANION_PACKAGE = "org.opengrind.google_oauth"
         const val REQUEST_TOKEN_ACTION = "org.opengrind.google_oauth.action.REQUEST_TOKEN"
         const val EXTRA_TOKEN = "org.opengrind.google_oauth.extra.TOKEN"
+        const val RESULT_REFUSED = Activity.RESULT_FIRST_USER
 
         const val ERROR_UNAVAILABLE = "companion-unavailable"
         const val ERROR_UNTRUSTED = "companion-untrusted"
+        const val ERROR_REFUSED = "companion-refused"
         const val ERROR_DISABLED = "companion-disabled"
         const val ERROR_CANCELLED = "cancelled"
         const val ERROR_NO_TOKEN = "no-token"

@@ -27,14 +27,16 @@
 </script>
 
 <InlineField {label}>
-	<Input
-		type="date"
-		max={today}
-		aria-label={label}
-		class={[bareInputClass, "w-auto"]}
-		bind:value={
-			() => toInput(value),
-			(newValue: string) => (value = fromInput(newValue))
-		}
-	/>
+	{#snippet control({ id })}
+		<Input
+			{id}
+			type="date"
+			max={today}
+			class={[bareInputClass, "w-auto"]}
+			bind:value={
+				() => toInput(value),
+				(newValue: string) => (value = fromInput(newValue))
+			}
+		/>
+	{/snippet}
 </InlineField>

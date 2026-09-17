@@ -93,11 +93,10 @@ export const demoConversationSeeds: DemoConversation[] = [
 		muted: false,
 		lastActivityAgo: 1,
 		messages: [
-			{ fromMe: false, text: "👀" },
-			{ fromMe: true, text: "Lorem ipsum?" },
+			{ fromMe: true, text: "Hi, how are you?" },
 			{ fromMe: true, kind: "expiringImage" },
 			{ fromMe: false, kind: "expiringImage", expired: true },
-			{ fromMe: false, text: "Did you catch it? 🔥" },
+			{ fromMe: false, text: "Did you catch it? 👀" },
 			{
 				fromMe: true,
 				text: "https://example.com/a/very/long/link/with/no/spaces/in/it/at/all?utm_source=demo&utm_campaign=wrapping",
@@ -175,6 +174,7 @@ export const demoConversationSeeds: DemoConversation[] = [
 		messages: [
 			{ fromMe: true, text: "Duis aute irure dolor." },
 			{ fromMe: false, kind: "expiringImage" },
+			{ fromMe: false, kind: "image" },
 			{ fromMe: false, text: "🐻 lorem ipsum", reactions: 2 },
 		],
 	},

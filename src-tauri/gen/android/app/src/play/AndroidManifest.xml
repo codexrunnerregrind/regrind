@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools">
+	<uses-permission
+		android:name="android.permission.REQUEST_INSTALL_PACKAGES"
+		tools:node="remove" />
+	<uses-permission
+		android:name="android.permission.FOREGROUND_SERVICE"
+		tools:node="remove" />
+	<uses-permission
+		android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"
+		tools:node="remove" />
+	<uses-permission
+		android:name="android.permission.WAKE_LOCK"
+		tools:node="remove" />
+
+	<application>
+		<service
+			android:name="org.regrind.update.TransferService"
+			tools:node="remove" />
+
+		<receiver
+			android:name="org.regrind.update.InstallResultReceiver"
+			tools:node="remove" />
+	</application>
+</manifest>

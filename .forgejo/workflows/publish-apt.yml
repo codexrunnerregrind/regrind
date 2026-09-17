@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   publish:
-    runs-on: ["publish", "hetzner"]
+    runs-on: ["debian", "2c4g", "hetzner"]
     timeout-minutes: 20
     env:
       TAG: ${{ forgejo.event.inputs.tag || forgejo.event.release.tag_name }}

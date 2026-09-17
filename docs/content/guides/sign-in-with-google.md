@@ -14,26 +14,15 @@ Just download the app and tap "Sign in with Google" on the login screen.
 
 ## Android
 
-Due to platform limitations enforced by Google, it's not possible to log in via the Open Grind app itself. Read the technical in-depth explanation below. **For Android specifically, Open Grind supports signing in with Google via the Google OAuth app or manual token paste.**
+Due to security checks by Google, you must [install a Google OAuth add-on (recommended)](#open-grind-google-oauth-app-recommended) or [paste the sign in token manually](#manually-paste-google-oauth-token).
 
 ### Open Grind Google OAuth app (recommended)
 
-1. Go to Open Grind sign in screen and tap "Sign in with Google"
-2. Tap "Install". Open Grind downloads the build matching your device and verifies its signature. The progress shows at the top of the screen and keeps going if you leave the screen
-3. The first time, Android asks you to allow Open Grind to install apps: turn the switch on and go back, and the install continues on its own
-4. Confirm Android's install prompt
-5. Tap "Continue"
-6. You should now have another screen opened with the same "Sign in with Google" button, tap it again and follow the instructions, no further setup needed
+1. Tap "Sign in with Google"
+2. On the sign in screen, tap "Install" and confirm Android's install prompt; alternatively, install [Google OAuth App manually](https://git.opengrind.org/open-grind/google-oauth-app/releases)
+3. Tap "Continue", then follow the instructions
 
-If you install the Google OAuth app another way while this screen is open, come back to Open Grind and the screen shows "Continue": tap it. If the install fails, the message at the top of the screen says what went wrong, and you can tap "Install" again. If it still does not work, tap "paste the OAuth token manually" under the card and follow [Manual Google OAuth copy-paste](#manual-google-oauth-copy-paste-advanced) below. To get back from the token form, tap "use the Open Grind Google OAuth app".
-
-If Open Grind says the Google OAuth app is turned off, turn it on in Android settings and try again. If it says the installed Google OAuth app isn't signed by Open Grind, uninstall that app and install the official one.
-
-Once the Google OAuth app is installed, you can check it for updates from Settings → App: automatically when "Check updates automatically" is on (on store-installed builds it reads "Check add-on updates automatically"), or anytime with "Check for updates".
-
-To install it yourself instead, download the build for your device's CPU architecture from the [Google OAuth app's Releases page](https://git.opengrind.org/open-grind/open-grind-google-oauth-android-app/releases) — 98% of devices today support arm64-v8a, so **try arm64-v8a.apk first**.
-
-### Manual Google OAuth copy-paste (advanced)
+### Manually paste Google OAuth token
 
 **If you already have Open Grind Google OAuth app installed,** try these steps to retrieve Google OAuth token and put it into Open Grind manually:
 
@@ -100,6 +89,6 @@ To solve these Google OAuth issues, we've built the [Grindr Google OAuth WebExte
 
 The whole app is basically a headless browser powered by [GeckoView](https://mozilla.github.io/geckoview/) embedding the extension. The reason is simply that most Android users don't have Firefox and use Google Chrome for Android instead, which does not support extensions.
 
-Also, the app features a programmatic intent, which allows the Open Grind app to call this app and get the token back automatically without copy-pasting. For security, this only works if both apps are signed by the same JKS.
+Also, the app features a programmatic intent, which allows the Open Grind app to call this app and get the token back automatically without copy-pasting. For security, this only works with official builds: Open Grind must be signed by Open Grind or installed from Google Play, and the Google OAuth app must be signed by Open Grind.
 
 If you're an *advanced user* and prefer to avoid installing an unnecessary app, consider using the browser extension directly and copy-pasting the token into Open Grind app.

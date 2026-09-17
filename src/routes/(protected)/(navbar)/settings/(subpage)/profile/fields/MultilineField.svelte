@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Label } from "$lib/components/ui/label";
 	import { Textarea } from "$lib/components/ui/textarea";
+	import { revealFieldUnderKeyboard } from "$lib/util/scroll";
 	import { stackedLabelClass, stackedRowClass } from "./row";
 
 	let {
@@ -15,13 +16,18 @@
 		placeholder?: string;
 	} = $props();
 
+	const id = $props.id();
+
 	const remaining = $derived(maxLength - value.length);
 	const over = $derived(remaining < 0);
 </script>
 
-<div class={stackedRowClass}>
+<div
+	class={stackedRowClass}
+	onfocusin={(event) => revealFieldUnderKeyboard(event.currentTarget)}
+>
 	<div class="flex items-baseline justify-between gap-3">
-		<Label class={stackedLabelClass}>{label}</Label>
+		<Label class={stackedLabelClass} for={id}>{label}</Label>
 		<span
 			class={[
 				"shrink-0 text-caption tabular-nums",
@@ -32,6 +38,7 @@
 		</span>
 	</div>
 	<Textarea
+		{id}
 		bind:value
 		{placeholder}
 		aria-invalid={over}

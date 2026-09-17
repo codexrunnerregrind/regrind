@@ -1,8 +1,13 @@
 <script lang="ts">
 	import emblaCarouselSvelte from "embla-carousel-svelte";
 	import type { EmblaCarouselType, EmblaOptionsType } from "embla-carousel";
+	import type { HTMLAttributes } from "svelte/elements";
 
-	import { cn, type WithElementRef } from "$lib/util/utils.js";
+	import {
+		cn,
+		type WithElementRef,
+		type WithoutChildren,
+	} from "$lib/util/utils.js";
 
 	let {
 		ref = $bindable(null),
@@ -10,18 +15,22 @@
 		min = 0,
 		max = 23,
 		loop = false,
-		label,
+		unit,
 		disabled = false,
 		class: className,
-	}: WithElementRef<{
-		value?: number;
-		min?: number;
-		max?: number;
-		loop?: boolean;
-		label?: string;
-		disabled?: boolean;
-		class?: string;
-	}> = $props();
+		...restProps
+	}: WithoutChildren<
+		WithElementRef<
+			HTMLAttributes<HTMLDivElement> & {
+				value?: number;
+				min?: number;
+				max?: number;
+				loop?: boolean;
+				unit?: string;
+				disabled?: boolean;
+			}
+		>
+	> = $props();
 
 	const CIRCLE_DEGREES = 360;
 	const WHEEL_ITEM_SIZE = 30;
@@ -160,13 +169,14 @@
 	aria-valuenow={value}
 	aria-valuemin={min}
 	aria-valuemax={max}
-	aria-label={label}
+	aria-valuetext={unit ? `${value} ${unit}` : undefined}
 	aria-disabled={disabled}
 	class={cn(
 		"relative mx-auto flex h-44 w-full touch-pan-x items-center justify-center overflow-hidden select-none",
 		disabled && "pointer-events-none opacity-50",
 		className,
 	)}
+	{...restProps}
 >
 	<div
 		class="h-8 w-full touch-pan-x overflow-visible overscroll-contain [-webkit-tap-highlight-color:transparent] perspective-[1000px]"
@@ -191,11 +201,11 @@
 		class="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[calc(50%-1rem)] border-t border-border bg-linear-to-b from-background/65 to-background"
 	></div>
 
-	{#if label}
+	{#if unit}
 		<span
 			class="pointer-events-none absolute top-1/2 left-1/2 z-10 translate-x-8 -translate-y-1/2 text-lg font-semibold text-muted-foreground"
 		>
-			{label}
+			{unit}
 		</span>
 	{/if}
 </div>

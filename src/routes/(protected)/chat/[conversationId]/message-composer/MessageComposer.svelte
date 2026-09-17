@@ -6,6 +6,8 @@
 	import { draftFromMessage } from "$lib/model/messaging/messages";
 	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
 	import { hapticImpact } from "$lib/platform/haptics";
+	import { bottomChrome } from "$lib/util/bottom-chrome.svelte";
+	import { below } from "$lib/util/breakpoints.svelte";
 	import type {
 		ApiResponseMessage,
 		MessageDraft,
@@ -42,6 +44,7 @@
 	} = $props();
 
 	const { drafts } = getConversations();
+	const mobile = below("split");
 
 	let textContent = $state(untrack(() => drafts.get(conversationId)));
 	let textInput: HTMLTextAreaElement | null = $state(null);
@@ -126,7 +129,9 @@
      until something else forced a resize. -->
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <form
+	data-slot="message-composer"
 	class="flex min-h-11 min-w-0 shrink-0 flex-col gap-2 border-t border-border bg-background px-4.5 pt-3 pb-3"
+	{@attach mobile.current && bottomChrome}
 	onpointerdown={keepKeyboardOnPadding}
 	onmousedown={keepKeyboardOnPadding}
 	onsubmit={(event) => {
