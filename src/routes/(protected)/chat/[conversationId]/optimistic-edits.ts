@@ -88,3 +88,28 @@ export function lockSharedAlbumInPlace({
 		},
 	};
 }
+
+/**
+ * Writes back what a single-message fetch reported about an expiring clip's
+ * remaining views. The conversation payload carries the count from when the
+ * message arrived, so a clip whose views are gone still reads as viewable and
+ * the bubble only learns otherwise by asking. Recording it here — and caching
+ * it — means it is asked at most once.
+ */
+export function recordMediaViewsInPlace({
+	messages,
+	messageId,
+	viewsRemaining,
+	sync,
+}: {
+	messages: OptimisticMessage[];
+	messageId: string;
+	viewsRemaining: number;
+	sync: () => void;
+}): void {
+	const message = messages.find((m) => m.messageId === messageId);
+	const body = message?.body as { viewsRemaining?: number | null } | null;
+	if (!body || body.viewsRemaining === viewsRemaining) return;
+	body.viewsRemaining = viewsRemaining;
+	sync();
+}

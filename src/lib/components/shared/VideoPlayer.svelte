@@ -17,11 +17,14 @@
 	let {
 		src,
 		poster,
+		loop = false,
 		onready,
 		onfail,
 	}: {
 		src: string;
 		poster: string | null;
+		/** Clips the API marks as looping restart on their own. */
+		loop?: boolean;
 		onready?: () => void;
 		onfail?: (failure: { undecodable: boolean; detail: string }) => void;
 	} = $props();
@@ -128,6 +131,7 @@
 		bind:buffered
 		{src}
 		poster={poster ?? undefined}
+		{loop}
 		playsinline
 		preload="metadata"
 		class="size-full object-contain"

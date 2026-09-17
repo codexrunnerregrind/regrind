@@ -31,7 +31,11 @@ import {
 	removeDuplicateMessages,
 } from "./merge-messages";
 import { getConversation } from "./messages";
-import { lockSharedAlbumInPlace, unsendInPlace } from "./optimistic-edits";
+import {
+	lockSharedAlbumInPlace,
+	recordMediaViewsInPlace,
+	unsendInPlace,
+} from "./optimistic-edits";
 import { ReadReceiptQueue } from "./read-receipts";
 
 export type { OptimisticMessage };
@@ -647,6 +651,18 @@ export class ConversationState {
 			messageId,
 			sync: () => this.#syncCache(),
 			refreshPreview: (message) => this.#updatePreview(message),
+		});
+	}
+
+	/** Records what a fetch said is left of an expiring clip's views. */
+	recordMediaViews(views: {
+		messageId: string;
+		viewsRemaining: number;
+	}): void {
+		recordMediaViewsInPlace({
+			...views,
+			messages: this.messages,
+			sync: () => this.#syncCache(),
 		});
 	}
 
