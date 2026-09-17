@@ -2,6 +2,7 @@ import { showErrorToast } from "$lib/api/error-toast";
 import { getTags } from "$lib/api/users/tags";
 import {
 	getPreferences,
+	preferencesAccount,
 	setPreferences,
 } from "$lib/app-data/preferences.svelte";
 import {
@@ -17,11 +18,31 @@ const TAG_LOOKUP_DEADLINE_MS = 5_000;
 export class GridSearchFiltersState {
 	value: GridSearchFilters | null = $state(null);
 	onQueryChange: () => void;
-	ready: Promise<void>;
+
+	#loading: Promise<void> | null = null;
+	#loadedFor: number | null = null;
 
 	constructor({ onQueryChange }: { onQueryChange: () => void }) {
 		this.onQueryChange = onQueryChange;
-		this.ready = this.#load();
+		void this.ready;
+	}
+
+	/**
+	 * Resolves once `value` holds the filters stored for the account in use.
+	 *
+	 * Reads again whenever there is nothing loaded or the load belongs to
+	 * another account, so a switch picks up the filters that account was
+	 * browsing with instead of keeping the previous one's in memory.
+	 */
+	get ready(): Promise<void> {
+		if (
+			this.#loading === null ||
+			this.#loadedFor !== preferencesAccount()
+		) {
+			this.#loadedFor = preferencesAccount();
+			this.#loading = this.#load();
+		}
+		return this.#loading;
 	}
 
 	snapshot(): GridSearchFilters {
@@ -30,7 +51,9 @@ export class GridSearchFiltersState {
 
 	set(gridSearchFilters: Partial<GridSearchFilters>) {
 		const oldValue = this.value;
-		const newValue = Object.assign({}, oldValue, gridSearchFilters);
+		// Patch onto the defaults while the stored filters are still loading, so
+		// a filter tapped early cannot save an object missing every other key.
+		const newValue = Object.assign(this.snapshot(), gridSearchFilters);
 		if (!deepEqual(oldValue, newValue)) {
 			this.value = newValue;
 			void this.#save();
@@ -42,8 +65,13 @@ export class GridSearchFiltersState {
 		this.set(defaultFilters);
 	}
 
+	/**
+	 * Drops the filters on the way out of an account. `ready` reads the next
+	 * account's own rather than leaving the defaults in place.
+	 */
 	reset() {
-		this.value = { ...defaultFilters };
+		this.value = null;
+		this.#loading = null;
 	}
 
 	async resolveTagKeys(): Promise<void> {
@@ -70,7 +98,9 @@ export class GridSearchFiltersState {
 
 	async #load() {
 		try {
+			const forAccount = preferencesAccount();
 			const { gridSearchFilters } = await getPreferences();
+			if (forAccount !== preferencesAccount()) return;
 			this.value = gridSearchFilters ?? defaultFilters;
 		} catch (error) {
 			console.error(error);

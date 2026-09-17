@@ -1,17 +1,22 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getPreferencesMock, setPreferencesMock, getTagsMock } = vi.hoisted(
-	() => ({
-		getPreferencesMock: vi.fn(),
-		setPreferencesMock: vi.fn(() => Promise.resolve()),
-		getTagsMock: vi.fn(),
-	}),
-);
+const {
+	getPreferencesMock,
+	setPreferencesMock,
+	getTagsMock,
+	preferencesAccountMock,
+} = vi.hoisted(() => ({
+	getPreferencesMock: vi.fn(),
+	setPreferencesMock: vi.fn(() => Promise.resolve()),
+	getTagsMock: vi.fn(),
+	preferencesAccountMock: vi.fn<() => number | null>(() => null),
+}));
 
 vi.mock("$lib/api/users/tags", () => ({ getTags: getTagsMock }));
 
 vi.mock("$lib/app-data/preferences.svelte", () => ({
 	getPreferences: getPreferencesMock,
+	preferencesAccount: preferencesAccountMock,
 	setPreferences: setPreferencesMock,
 }));
 
@@ -38,6 +43,8 @@ async function loadedState(onQueryChange = vi.fn()) {
 }
 
 beforeEach(() => {
+	preferencesAccountMock.mockReset();
+	preferencesAccountMock.mockReturnValue(null);
 	getPreferencesMock.mockReset();
 	setPreferencesMock.mockClear();
 	getTagsMock.mockReset();
@@ -102,6 +109,47 @@ describe("resetFilters", () => {
 		expect(state.value).toEqual(defaultFilters);
 		expect(setPreferencesMock).toHaveBeenCalledOnce();
 		expect(onQueryChange).toHaveBeenCalledOnce();
+	});
+});
+
+describe("reset", () => {
+	it("reads the next account's filters instead of the defaults", async () => {
+		preferencesAccountMock.mockReturnValue(1);
+		const { state } = await loadedState();
+		expect(state.value?.genders).toEqual([1, 2]);
+
+		state.reset();
+		preferencesAccountMock.mockReturnValue(2);
+		getPreferencesMock.mockResolvedValue({
+			gridSearchFilters: { ...defaultFilters, genders: [3] },
+		});
+		await state.ready;
+
+		expect(state.value?.genders).toEqual([3]);
+	});
+
+	it("re-reads for another account even without a reset", async () => {
+		preferencesAccountMock.mockReturnValue(1);
+		const { state } = await loadedState();
+
+		preferencesAccountMock.mockReturnValue(2);
+		getPreferencesMock.mockResolvedValue({});
+		await state.ready;
+
+		expect(state.value).toEqual(defaultFilters);
+	});
+
+	it("drops a load that lands after the account changed", async () => {
+		preferencesAccountMock.mockReturnValue(1);
+		const { promise, resolve } = Promise.withResolvers<object>();
+		getPreferencesMock.mockReturnValueOnce(promise);
+		const state = new GridSearchFiltersState({ onQueryChange: vi.fn() });
+
+		preferencesAccountMock.mockReturnValue(2);
+		resolve({ gridSearchFilters: { ...defaultFilters, genders: [1] } });
+		await promise;
+
+		expect(state.value).toBeNull();
 	});
 });
 
