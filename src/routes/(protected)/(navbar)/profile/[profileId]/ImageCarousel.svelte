@@ -100,7 +100,7 @@
 			onSave: (index) => {
 				const media = medias[index];
 				if (!media) return;
-				downloadMedia({ url: fullUrl(media.mediaHash) });
+				downloadMedia({ url: fullUrl(media.mediaHash), profileId });
 			},
 			// Holding saves every photo on the profile.
 			...(medias.length > 1
@@ -109,6 +109,7 @@
 							downloadAllMedia(
 								medias.map((media) => ({
 									url: fullUrl(media.mediaHash),
+									profileId,
 								})),
 							),
 					}

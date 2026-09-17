@@ -132,7 +132,7 @@
 		// controls live — the toolbar that used to carry it is hidden.
 		onSave: (index) => {
 			const image = media[index];
-			if (image) downloadMedia({ url: image.fullImageUrl });
+			if (image) downloadMedia({ url: image.fullImageUrl, profileId });
 		},
 	};
 

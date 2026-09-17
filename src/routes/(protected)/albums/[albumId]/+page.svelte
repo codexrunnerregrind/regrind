@@ -223,7 +223,7 @@
 		if (album === null || savingAll || album.content.length === 0) return;
 		savingAll = true;
 		try {
-			await saveAlbumMedia(album.content);
+			await saveAlbumMedia(album.content, album.profileId);
 		} finally {
 			savingAll = false;
 		}

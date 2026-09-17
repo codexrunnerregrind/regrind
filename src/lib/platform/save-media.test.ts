@@ -76,9 +76,30 @@ describe("saveAllMediaToDevice", () => {
 		const names = writeFileMock.mock.calls.map(([path]) =>
 			String(path).split("/").at(-1),
 		);
-		expect(names[0]).toMatch(/^opengrind_\d+_001\.jpg$/);
-		expect(names[1]).toMatch(/^opengrind_\d+_002\.jpg$/);
+		expect(names[0]).toMatch(/^regrind_\d+_001\.jpg$/);
+		expect(names[1]).toMatch(/^regrind_\d+_002\.jpg$/);
 		expect(names[0]?.split("_")[1]).toBe(names[1]?.split("_")[1]);
+	});
+
+	it("names the files after the profile they came from", async () => {
+		await saveAllMediaToDevice(
+			targets(2).map((target) => ({ ...target, profileId: 12345 })),
+		);
+
+		const names = writeFileMock.mock.calls.map(([path]) =>
+			String(path).split("/").at(-1),
+		);
+		expect(names[0]).toMatch(/^regrind_\d+_12345_001\.jpg$/);
+		expect(names[1]).toMatch(/^regrind_\d+_12345_002\.jpg$/);
+	});
+
+	it("leaves the profile out when there is none", async () => {
+		await saveAllMediaToDevice(
+			targets(1).map((target) => ({ ...target, profileId: 0 })),
+		);
+
+		const path = String(writeFileMock.mock.calls[0]?.[0]);
+		expect(path.split("/").at(-1)).toMatch(/^regrind_\d+_001\.jpg$/);
 	});
 
 	it("downloads nothing when the folder picker is dismissed", async () => {

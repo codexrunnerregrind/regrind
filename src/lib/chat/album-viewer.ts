@@ -383,7 +383,11 @@ export async function openAlbumLightbox(
 		onSave: (index) => {
 			const slide = album.content[index];
 			if (!slide) return;
-			downloadMedia({ url: slide.url, mimeType: slide.contentType });
+			downloadMedia({
+				url: slide.url,
+				mimeType: slide.contentType,
+				profileId: toUserId,
+			});
 		},
 		// Only where there is more than one to save.
 		...(album.content.length > 1
@@ -393,6 +397,7 @@ export async function openAlbumLightbox(
 							album.content.map((slide) => ({
 								url: slide.url,
 								mimeType: slide.contentType,
+								profileId: toUserId,
 							})),
 						),
 				}

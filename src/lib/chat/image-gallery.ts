@@ -87,6 +87,9 @@ export async function openImageGalleryLightbox(
 	if (images.length === 0) {
 		throw new Error("No images to display");
 	}
+	// Whose photos these are, so a save names them after their owner. The header
+	// already carries it, and leaves it out for our own.
+	const profileId = chrome?.header.profileId ?? null;
 	// Saving moves into the chrome's sender row wherever the chrome is mounted —
 	// it hides the toolbar the download button would otherwise sit on.
 	const actions: MediaViewerActions | undefined =
@@ -96,14 +99,17 @@ export async function openImageGalleryLightbox(
 					...chrome.actions,
 					onSave: (index) => {
 						const image = images[index];
-						if (image) downloadMedia({ url: image.url });
+						if (image) downloadMedia({ url: image.url, profileId });
 					},
 					// Only where there is more than one to save.
 					...(images.length > 1
 						? {
 								onSaveAll: () =>
 									downloadAllMedia(
-										images.map(({ url }) => ({ url })),
+										images.map(({ url }) => ({
+											url,
+											profileId,
+										})),
 									),
 							}
 						: {}),
@@ -136,7 +142,7 @@ export async function openImageGalleryLightbox(
 	if (actions === undefined) {
 		registerLightboxDownloadButton(lightbox, (index) => {
 			const image = images[index];
-			return image ? { url: image.url } : null;
+			return image ? { url: image.url, profileId } : null;
 		});
 	}
 	const onBackGesture = () => {

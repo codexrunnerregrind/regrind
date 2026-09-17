@@ -3,6 +3,7 @@ import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
 import { showErrorToast } from "$lib/api/error-toast";
 import {
+	type MediaToSave,
 	saveAllMediaToDevice,
 	saveMediaToDevice,
 	type SaveResult,
@@ -16,7 +17,7 @@ const DOWNLOAD_ICON = `
 	<path fill="#fff" d="M16 4a1 1 0 0 1 1 1v11.59l3.3-3.3a1 1 0 0 1 1.4 1.42l-5 5a1 1 0 0 1-1.4 0l-5-5a1 1 0 0 1 1.4-1.42l3.3 3.3V5a1 1 0 0 1 1-1Zm-9 17a1 1 0 0 1 1 1v3h16v-3a1 1 0 1 1 2 0v4a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1Z"/>
 </svg>`;
 
-export type DownloadTarget = { url: string; mimeType?: string };
+export type DownloadTarget = MediaToSave;
 
 // `shareFromGesture` is not a failure: the media is downloaded and only needs a
 // fresh tap, so it is offered as a button rather than reported as an error.
@@ -75,7 +76,7 @@ function reportSaveError(error: unknown, toastId: string | number): void {
  */
 export function downloadMedia(target: DownloadTarget): void {
 	const toastId = toast.loading("Downloading…");
-	saveMediaToDevice(target.url, target.mimeType)
+	saveMediaToDevice(target)
 		.then((result) => reportSave(result, toastId))
 		.catch((error: unknown) => reportSaveError(error, toastId));
 }

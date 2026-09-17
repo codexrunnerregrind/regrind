@@ -108,7 +108,9 @@
 						fallbackName: "Right Now",
 					},
 					progress: false,
-					actions: { onSave: () => downloadMedia({ url: photo }) },
+					actions: {
+						onSave: () => downloadMedia({ url: photo, profileId }),
+					},
 				});
 				lightbox.init();
 			})

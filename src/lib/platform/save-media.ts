@@ -89,26 +89,36 @@ function timestamp(): string {
 }
 
 // One batch shares a stamp and numbers by `index`, so its files sort together
-// in the album's order.
+// in the album's order. `profileId` names whose media it was, so a save still
+// says where it came from once it is out of the app.
 function buildFilename(
 	extension: string,
-	{ stamp = timestamp(), index }: { stamp?: string; index?: number } = {},
+	{
+		stamp = timestamp(),
+		index,
+		profileId,
+	}: { stamp?: string; index?: number; profileId?: number | null } = {},
 ): string {
+	// 0 stands for "unknown" in the API's profile ids.
+	const owner =
+		profileId === undefined || profileId === null || profileId <= 0
+			? ""
+			: `_${profileId}`;
 	const suffix =
 		index === undefined ? "" : `_${String(index + 1).padStart(3, "0")}`;
-	return `opengrind_${stamp}${suffix}.${extension}`;
+	return `regrind_${stamp}${owner}${suffix}.${extension}`;
 }
 
 // Saves a chat image or video to the device's gallery (Android) or a
 // user-chosen location (desktop), or triggers a browser download in the
-// demo/web build. `mimeType` is an optional hint used when the server response
-// carries no usable `Content-Type`.
+// demo/web build.
 export async function saveMediaToDevice(
-	url: string,
-	mimeType?: string,
+	target: MediaToSave,
 ): Promise<SaveResult> {
-	const media = await fetchMedia(url, mimeType);
-	const filename = buildFilename(media.extension);
+	const media = await fetchMedia(target.url, target.mimeType);
+	const filename = buildFilename(media.extension, {
+		profileId: target.profileId,
+	});
 
 	if (demoEnabled) {
 		saveViaBrowser(toFile(media, filename), filename);
@@ -141,8 +151,16 @@ export async function saveMediaToDevice(
 	return { saved: 1, failed: 0, cancelled: false };
 }
 
-/** One piece of media to save. `mimeType` is the same optional hint. */
-export type MediaToSave = { url: string; mimeType?: string };
+/**
+ * One piece of media to save. `mimeType` is an optional hint used when the
+ * server response carries no usable `Content-Type`; `profileId` is whose media
+ * it is, which the filename carries.
+ */
+export type MediaToSave = {
+	url: string;
+	mimeType?: string;
+	profileId?: number | null;
+};
 
 /** How a save ended. `cancelled` means the user backed out of a picker. */
 export type SaveResult = {
@@ -179,7 +197,11 @@ export async function saveAllMediaToDevice(
 	for (const [index, target] of targets.entries()) {
 		try {
 			const media = await fetchMedia(target.url, target.mimeType);
-			const filename = buildFilename(media.extension, { stamp, index });
+			const filename = buildFilename(media.extension, {
+				stamp,
+				index,
+				profileId: target.profileId,
+			});
 			if (onIos) {
 				collected.push(toFile(media, filename));
 			} else if (demoEnabled) {
