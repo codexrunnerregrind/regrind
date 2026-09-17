@@ -62,19 +62,6 @@ function maskAlphaAt({
 	return from.alpha + (to.alpha - from.alpha) * progress;
 }
 
-function risesThenFalls(steps: readonly number[]): boolean {
-	const peak = steps.indexOf(Math.max(...steps));
-	if (peak === 0 || peak === steps.length - 1) return false;
-	const before = steps.slice(0, peak + 1);
-	const after = steps.slice(peak);
-	return (
-		before.every(
-			(step, index) => index === 0 || step > before[index - 1]!,
-		) &&
-		after.every((step, index) => index === 0 || step < after[index - 1]!)
-	);
-}
-
 function blockEnd(css: string): number {
 	let depth = 0;
 	for (let index = 0; index < css.length; index += 1) {
@@ -225,20 +212,32 @@ describe("progressive blur layer map", () => {
 		}
 	});
 
-	it("eases both off-mode gradients in and out, so alpha never reaches zero at a hard slope", () => {
-		const offBlocks = [
-			...layout.matchAll(
-				/:root\[data-backdrop-blur="off"\] \.pblur-(?:bg|scrim) \{([\s\S]*?)^\}/gm,
-			),
-		];
-		expect(offBlocks).toHaveLength(2);
-		for (const [, body = ""] of offBlocks) {
-			const ramp = parseStops(body);
-			expect(ramp[0]).toEqual({ alpha: 0, position: 0 });
-			const steps = ramp
-				.slice(1)
-				.map((stop, index) => stop.alpha - (ramp[index]?.alpha ?? 0));
-			expect(risesThenFalls(steps), body).toBe(true);
+	it("fills the band flat at off, since there is no blur to fade into", () => {
+		const bg =
+			/:root\[data-backdrop-blur="off"\] \.pblur-bg \{([\s\S]*?)^\}/gm.exec(
+				layout,
+			)?.[1];
+		expect(bg).toContain("background-image: none");
+		expect(bg).toContain(
+			"background-color: var(--pblur-flat, var(--background))",
+		);
+		expect(layout).not.toMatch(
+			/:root\[data-backdrop-blur="off"\] \.pblur-scrim \{/,
+		);
+	});
+
+	it("draws the flat band's own edge, on the side the content is on", () => {
+		for (const [direction, edge] of [
+			["bottomToTop", "border-top"],
+			["topToBottom", "border-bottom"],
+		] as const) {
+			const rule = new RegExp(
+				`:root\\[data-backdrop-blur="off"\\]\\s+\\.pblur\\[data-pblur-direction="${direction}"\\]\\s+\\.pblur-bg \\{([\\s\\S]*?)^\\}`,
+				"m",
+			);
+			expect(rule.exec(layout)?.[1]).toContain(
+				`${edge}: 1px solid var(--border)`,
+			);
 		}
 	});
 

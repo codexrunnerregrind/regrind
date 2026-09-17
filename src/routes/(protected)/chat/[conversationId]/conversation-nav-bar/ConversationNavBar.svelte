@@ -14,7 +14,7 @@
 <ProgressiveBlur
 	direction="topToBottom"
 	class="absolute z-10 h-19 w-full shrink-0"
-	bgClass="bg-linear-to-b max-split:from-background split:from-card to-transparent"
+	bgClass="bg-linear-to-b max-split:from-background split:from-card to-transparent split:[--pblur-flat:var(--color-card)]"
 	contentClass="flex items-center h-full"
 	tag="nav"
 >

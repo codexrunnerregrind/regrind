@@ -1142,33 +1142,24 @@ a {
 :root[data-backdrop-blur="off"] .pblur-layer {
 	display: none;
 }
+/* Nothing is blurred, so there is nothing for the band to fade into: it stops
+   pretending to be a gradient and becomes one flat surface with a hairline,
+   the way the docked tab bar does. --pblur-flat lets a bar that sits on a
+   different surface name its own colour. */
 :root[data-backdrop-blur="off"] .pblur-bg {
-	mask-image: linear-gradient(
-		var(--pblur-dir),
-		rgba(0, 0, 0, 0) 0%,
-		rgba(0, 0, 0, 0.061) 7%,
-		rgba(0, 0, 0, 0.216) 14%,
-		rgba(0, 0, 0, 0.425) 20%,
-		rgba(0, 0, 0, 0.648) 27%,
-		rgba(0, 0, 0, 0.844) 34%,
-		rgba(0, 0, 0, 0.972) 40%,
-		rgba(0, 0, 0, 1) 45%,
-		rgba(0, 0, 0, 1) 100%
-	);
+	background-image: none;
+	background-color: var(--pblur-flat, var(--background));
 }
-:root[data-backdrop-blur="off"] .pblur-scrim {
-	display: block;
-	background-image: linear-gradient(
-		var(--pblur-dir),
-		rgba(0, 0, 0, 0) 0%,
-		rgba(0, 0, 0, 0.041) 15%,
-		rgba(0, 0, 0, 0.147) 30%,
-		rgba(0, 0, 0, 0.289) 45%,
-		rgba(0, 0, 0, 0.441) 60%,
-		rgba(0, 0, 0, 0.574) 75%,
-		rgba(0, 0, 0, 0.661) 90%,
-		rgba(0, 0, 0, 0.68) 100%
-	);
+/* On the bg, not the scrim: the opaque fill covers the scrim entirely. */
+:root[data-backdrop-blur="off"]
+	.pblur[data-pblur-direction="bottomToTop"]
+	.pblur-bg {
+	border-top: 1px solid var(--border);
+}
+:root[data-backdrop-blur="off"]
+	.pblur[data-pblur-direction="topToBottom"]
+	.pblur-bg {
+	border-bottom: 1px solid var(--border);
 }
 
 .menu-scrim::backdrop {
@@ -1271,32 +1262,14 @@ a {
 		display: none;
 	}
 	:root:root .pblur-bg {
-		mask-image: linear-gradient(
-			var(--pblur-dir),
-			rgba(0, 0, 0, 0) 0%,
-			rgba(0, 0, 0, 0.061) 7%,
-			rgba(0, 0, 0, 0.216) 14%,
-			rgba(0, 0, 0, 0.425) 20%,
-			rgba(0, 0, 0, 0.648) 27%,
-			rgba(0, 0, 0, 0.844) 34%,
-			rgba(0, 0, 0, 0.972) 40%,
-			rgba(0, 0, 0, 1) 45%,
-			rgba(0, 0, 0, 1) 100%
-		);
+		background-image: none;
+		background-color: var(--pblur-flat, var(--background));
 	}
-	:root:root .pblur-scrim {
-		display: block;
-		background-image: linear-gradient(
-			var(--pblur-dir),
-			rgba(0, 0, 0, 0) 0%,
-			rgba(0, 0, 0, 0.041) 15%,
-			rgba(0, 0, 0, 0.147) 30%,
-			rgba(0, 0, 0, 0.289) 45%,
-			rgba(0, 0, 0, 0.441) 60%,
-			rgba(0, 0, 0, 0.574) 75%,
-			rgba(0, 0, 0, 0.661) 90%,
-			rgba(0, 0, 0, 0.68) 100%
-		);
+	:root:root .pblur[data-pblur-direction="bottomToTop"] .pblur-bg {
+		border-top: 1px solid var(--border);
+	}
+	:root:root .pblur[data-pblur-direction="topToBottom"] .pblur-bg {
+		border-bottom: 1px solid var(--border);
 	}
 	:root:root .menu-scrim::backdrop {
 		background-color: rgba(0, 0, 0, 0.62);
