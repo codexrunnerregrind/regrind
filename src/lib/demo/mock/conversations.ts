@@ -2,7 +2,15 @@ import { previewFromMessage } from "$lib/model/messaging/message-preview";
 import { type ApiResponseMessage } from "$lib/model/messaging/messages";
 import type { AlbumExpirationType } from "$lib/model/messaging/albums";
 import type { Conversation } from "$lib/model/messaging/conversations";
-import { DAY, demoMeProfileId, HOUR, MINUTE, NOW, SECOND } from "../config";
+import {
+	DAY,
+	demoMeProfileId,
+	HOUR,
+	MINUTE,
+	NOW,
+	photoAge,
+	SECOND,
+} from "../config";
 import { albumCoverUrl } from "./albums";
 import { hashFromSeed } from "./avatars";
 import {
@@ -113,8 +121,8 @@ function buildMessage({
 					height: 800,
 					url: DEMO_IMAGE_URL,
 					imageHash: hashFromSeed(`msg-${conv.withId}-${index}`),
-					takenOnGrindr: false,
-					createdAt: timestamp,
+					takenOnGrindr: index % 2 === 0,
+					createdAt: timestamp - photoAge(index),
 				},
 				...base,
 				unsent: false,

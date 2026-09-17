@@ -1,4 +1,4 @@
-import { HOUR, NOW } from "../config";
+import { NOW, photoAge } from "../config";
 import { hashFromSeed } from "./avatars";
 
 type DemoDrawerMedia = {
@@ -43,9 +43,9 @@ export function demoDrawerMedia(): DemoDrawerMedia[] {
 			id: 910_000 + index,
 			url: `https://picsum.photos/seed/opengrind-drawer-${index}/600/800`,
 			contentType: "image/jpeg",
-			createdTs: NOW - (index + 1) * HOUR,
+			createdTs: NOW - photoAge(index),
 			used: index % 3 === 0,
-			takenOnGrindr: false,
+			takenOnGrindr: index % 2 === 1,
 		})),
 	];
 }

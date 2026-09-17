@@ -52,6 +52,24 @@ export const MINUTE = 60 * SECOND;
 export const HOUR = 60 * MINUTE;
 export const DAY = 24 * HOUR;
 
+const PHOTO_AGES = [
+	30 * SECOND,
+	25 * MINUTE,
+	3 * HOUR,
+	30 * HOUR,
+	3 * DAY,
+	9 * DAY,
+	15 * DAY,
+	22 * DAY,
+	30 * DAY,
+	45 * DAY,
+];
+
+/** Spreads demo photos across the stamp's whole range of wordings. */
+export function photoAge(index: number): number {
+	return PHOTO_AGES[index % PHOTO_AGES.length] ?? 0;
+}
+
 export const DEMO_PROFILE_COUNT = 3000;
 export const DEMO_ID_START = demoMeProfileId + 1;
 export const GRID_PAGE_SIZE = 60;

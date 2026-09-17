@@ -228,13 +228,12 @@
 						: 0);
 			}}
 		>
-			{#each medias as { mediaHash, createdAt, takenOnGrindr }, index (mediaHash + index)}
+			{#each medias as { mediaHash, createdAt }, index (mediaHash + index)}
 				{@const src = profileMediaUrl({ mediaHash, size: "full" })}
 				<ImageCarouselItem
 					{src}
 					thumb={src}
 					{createdAt}
-					{takenOnGrindr}
 					label="Profile photo {index + 1} of {medias.length}"
 				/>
 			{/each}

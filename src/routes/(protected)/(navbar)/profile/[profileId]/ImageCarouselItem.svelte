@@ -1,21 +1,13 @@
 <script lang="ts">
-	import TakenOnGrindrBadge from "$lib/components/media/TakenOnGrindrBadge.svelte";
 	import MediaImage from "$lib/components/shared/MediaImage.svelte";
 
 	let {
 		src,
 		thumb,
 		createdAt,
-		takenOnGrindr = false,
 		label,
-	}: {
-		src: string;
-		thumb: string;
-		createdAt: number | null;
-		/** Captured in the app, which is what the badge certifies. */
-		takenOnGrindr?: boolean | null;
-		label: string;
-	} = $props();
+	}: { src: string; thumb: string; createdAt: number | null; label: string } =
+		$props();
 
 	let width: number | null = $state(null);
 	let height: number | null = $state(null);
@@ -45,9 +37,6 @@
 			height = image.naturalHeight;
 		}}
 	/>
-	{#if takenOnGrindr}
-		<TakenOnGrindrBadge {createdAt} class="absolute start-2 top-2" />
-	{/if}
 </a>
 
 <style lang="postcss">

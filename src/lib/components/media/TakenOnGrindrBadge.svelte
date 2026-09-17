@@ -18,16 +18,14 @@
 		class?: ClassValue;
 	} = $props();
 
-	const stamp = $derived(
+	const time = $derived(
 		createdAt === null || compact
 			? null
 			: formatTimeRelativeCustom(createdAt),
 	);
 </script>
 
-<!-- Deliberately quiet: it is a mark on someone's photo, not a label on the
-     app's own furniture, so it takes the overlay type size the bubble time and
-     the distance chip use, over a scrim rather than a solid fill. -->
+<!-- Quiet by design: a mark on someone's photo, not app furniture. -->
 <span
 	class={[
 		"pointer-events-none flex items-center gap-0.5 rounded-full bg-black/45 scrim text-distance leading-none font-medium text-white/90 backdrop-filter-(--bd-veil)",
@@ -38,5 +36,5 @@
 >
 	<SealCheckIcon weight="fill" class="size-3" />
 	<span class="sr-only">Taken on Grindr</span>
-	{#if stamp !== null}{stamp}{/if}
+	{#if time !== null}{time}{/if}
 </span>
