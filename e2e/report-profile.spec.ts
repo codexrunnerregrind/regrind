@@ -23,9 +23,8 @@ test("reporting a profile submits it and offers to block", async ({ page }) => {
 	test.setTimeout(240_000);
 	const drawer = await openReportSheet(page);
 
-	const submit = drawer.getByRole("button", { name: "Submit report" });
 	await expect(
-		submit,
+		drawer.getByRole("button", { name: "Submit report" }),
 		"submit stays disabled until a reason is chosen",
 	).toBeDisabled();
 
@@ -42,7 +41,7 @@ test("reporting a profile submits it and offers to block", async ({ page }) => {
 	await drawer
 		.getByRole("textbox", { name: "Details" })
 		.fill("not who they say they are");
-	await submit.click();
+	await drawer.getByRole("button", { name: "Submit report" }).click();
 
 	await expect(
 		drawer.getByText("Grindr will review this profile."),
@@ -97,12 +96,12 @@ test("reporting a chat message prefills the chat location", async ({
 	await drawer.waitFor({ timeout: 10_000 });
 	await page.waitForTimeout(700);
 
+	await drawer.getByRole("radio", { name: "Harassment or Bullying" }).click();
 	await expect(
 		drawer.getByRole("button", { name: "Profile Photo" }),
 		"a chat report already knows where it happened",
 	).toHaveCount(0);
 
-	await drawer.getByRole("radio", { name: "Harassment or Bullying" }).click();
 	await drawer
 		.getByRole("textbox", { name: "Details" })
 		.fill("abusive message");

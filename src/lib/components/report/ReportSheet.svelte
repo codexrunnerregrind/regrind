@@ -1,10 +1,13 @@
 <script lang="ts">
+	import { ArrowLeftIcon, ShieldIcon, XIcon } from "phosphor-svelte";
 	import { untrack } from "svelte";
 
 	import { blockUser } from "$lib/api/browse/blocks";
 	import { showErrorToast } from "$lib/api/error-toast";
 	import { reportProfile } from "$lib/api/safety/reports";
 	import { Button } from "$lib/components/ui/button";
+	import RadioGroup from "$lib/components/ui/radio/RadioGroup.svelte";
+	import RadioItem from "$lib/components/ui/radio/RadioItem.svelte";
 	import * as ResponsiveDialog from "$lib/components/ui/responsive-dialog";
 	import { Spinner } from "$lib/components/ui/spinner";
 	import { Textarea } from "$lib/components/ui/textarea";
@@ -59,13 +62,12 @@
 	let submitting = $state(false);
 	let blocking = $state(false);
 	let submitted = $state(false);
+	let onDetails = $state(false);
 
 	const isSpam = $derived(reason === "SPAM");
 	const reasonChosen = $derived(reason !== null);
-	const wherePickerShown = $derived(
-		reasonChosen && !isSpam && presetLocations === undefined,
-	);
-	const detailsShown = $derived(reasonChosen && !isSpam);
+	const wherePickerShown = $derived(!isSpam && presetLocations === undefined);
+	const detailsShown = $derived(!isSpam);
 
 	$effect(() => {
 		if (!open) return;
@@ -74,8 +76,17 @@
 			locations = [...(presetLocations ?? [])];
 			comment = "";
 			submitted = false;
+			onDetails = false;
 		});
 	});
+
+	// Going back drops the picks rather than keeping them half-made: it leaves
+	// the reason list live again, so the same reason can be tapped anew.
+	function back() {
+		reason = null;
+		locations = [...(presetLocations ?? [])];
+		onDetails = false;
+	}
 
 	async function submit() {
 		if (submitting || reason === null) return;
@@ -110,16 +121,45 @@
 	}
 </script>
 
+{#snippet sectionLabel(text: string)}
+	<span
+		class="px-1 text-xs font-medium tracking-wide text-muted-foreground uppercase"
+	>
+		{text}
+	</span>
+{/snippet}
+
 <ResponsiveDialog.Root bind:open>
 	<ResponsiveDialog.Content
 		class="flex flex-col gap-4"
 		drawerClass="mx-auto max-w-160"
-		dialogProps={{ showCloseButton: true }}
 	>
-		<ResponsiveDialog.Header>
-			<ResponsiveDialog.Title>
-				{submitted ? "Report submitted" : "Report profile"}
-			</ResponsiveDialog.Title>
+		<ResponsiveDialog.Header drawerClass="px-4 pt-2 pb-0" class="gap-0">
+			<div class="flex items-center gap-2">
+				{#if onDetails && !submitted}
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						class="-ms-1 bg-secondary"
+						onclick={back}
+					>
+						<ArrowLeftIcon />
+						<span class="sr-only">Back</span>
+					</Button>
+				{/if}
+				<ResponsiveDialog.Title class="flex-1 text-left">
+					{submitted ? "Report submitted" : "Report profile"}
+				</ResponsiveDialog.Title>
+				<Button
+					variant="ghost"
+					size="icon-sm"
+					class="-me-1 bg-secondary"
+					onclick={() => (open = false)}
+				>
+					<XIcon />
+					<span class="sr-only">Close</span>
+				</Button>
+			</div>
 			<ResponsiveDialog.Description class="sr-only">
 				Send a report about this profile to Grindr.
 			</ResponsiveDialog.Description>
@@ -157,73 +197,98 @@
 					class="flex flex-col gap-4"
 					drawerClass="px-4"
 				>
-					<div
-						data-slot="report-reasons"
-						class="flex flex-col gap-1.5"
-					>
-						<ToggleGroup.Root
-							type="single"
-							orientation="vertical"
-							variant="outline"
-							spacing={2}
-							aria-label="Reason"
-							class="w-full"
-							bind:value={
-								() => reason ?? "",
-								(next: string) =>
-									(reason =
-										next === ""
-											? null
-											: (next as ReportReason))
-							}
-						>
-							{#each reportReasonSchema.options as value (value)}
-								<ToggleGroup.Item {value} class="justify-start">
-									{reasonLabels[value]}
-								</ToggleGroup.Item>
-							{/each}
-						</ToggleGroup.Root>
-					</div>
-					{#if wherePickerShown}
+					{#if onDetails}
 						<div
-							data-slot="report-locations"
-							class="flex flex-col gap-1.5"
+							data-slot="report-reason-summary"
+							class="flex items-center gap-2 rounded-2xl border border-primary/40 bg-primary/10 p-3 ps-4"
 						>
-							<span class="px-1 text-sm leading-none font-medium">
-								Where it happened
+							<ShieldIcon class="size-5 text-primary" />
+							<span class="min-w-0 flex-1 font-medium">
+								{reason === null ? "" : reasonLabels[reason]}
 							</span>
-							<ToggleGroup.Root
-								type="multiple"
-								variant="outline"
-								spacing={2}
-								aria-label="Where it happened"
-								class="w-full flex-wrap gap-1"
+							<Button
+								variant="link"
+								size="sm"
+								class="-me-1 px-1"
+								onclick={back}
+							>
+								Change
+							</Button>
+						</div>
+						{#if wherePickerShown}
+							<div
+								data-slot="report-locations"
+								class="flex flex-col gap-1.5"
+							>
+								{@render sectionLabel("Where it happened")}
+								<ToggleGroup.Root
+									type="multiple"
+									variant="outline"
+									spacing={2}
+									aria-label="Where it happened"
+									class="w-full flex-wrap gap-1"
+									bind:value={
+										() => locations,
+										(next: string[]) =>
+											(locations =
+												next as ReportLocation[])
+									}
+								>
+									{#each reportLocationSchema.options as value (value)}
+										<ToggleGroup.Item {value}>
+											{locationLabels[value]}
+										</ToggleGroup.Item>
+									{/each}
+								</ToggleGroup.Root>
+							</div>
+						{/if}
+						{#if detailsShown}
+							<div
+								data-slot="report-details"
+								class="flex flex-col gap-1.5"
+							>
+								{@render sectionLabel(detailsLabel)}
+								<Textarea
+									bind:value={comment}
+									aria-label={detailsLabel}
+									placeholder={detailsLabel}
+									class="min-h-24 rounded-2xl"
+								/>
+							</div>
+						{/if}
+					{:else}
+						<div data-slot="report-reasons">
+							<RadioGroup
+								name="report-reason"
+								legend="Reason"
+								hideLegend={true}
 								bind:value={
-									() => locations,
-									(next: string[]) =>
-										(locations = next as ReportLocation[])
+									() => reason ?? "",
+									(next: string) => {
+										reason =
+											next === ""
+												? null
+												: (next as ReportReason);
+										// Picking a reason is the step; nothing
+										// else to decide here, so don't make
+										// them confirm it.
+										onDetails =
+											reason !== null && next !== "SPAM";
+									}
 								}
 							>
-								{#each reportLocationSchema.options as value (value)}
-									<ToggleGroup.Item {value}>
-										{locationLabels[value]}
-									</ToggleGroup.Item>
+								{#each reportReasonSchema.options as value (value)}
+									<RadioItem {value}>
+										{reasonLabels[value]}
+									</RadioItem>
 								{/each}
-							</ToggleGroup.Root>
+							</RadioGroup>
 						</div>
-					{/if}
-					{#if detailsShown}
-						<Textarea
-							bind:value={comment}
-							aria-label={detailsLabel}
-							placeholder={detailsLabel}
-							class="min-h-24"
-						/>
 					{/if}
 				</ResponsiveDialog.Body>
 				<ResponsiveDialog.Footer>
 					<Button
-						disabled={submitting || reason === null}
+						disabled={submitting || !reasonChosen}
 						onclick={() => void submit()}
 					>
 						{#if submitting}
