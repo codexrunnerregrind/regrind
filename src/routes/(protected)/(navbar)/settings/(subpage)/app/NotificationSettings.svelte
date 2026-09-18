@@ -127,34 +127,36 @@
 <!-- The switches above are ReGrind's own preference; these rows are the reasons
      a notification still never arrives. Without them the only clue was a line
      in logcat. -->
-{#if withheld && wanted}
-	{#if access.canPrompt}
-		<SettingsRow
-			title="Allow notifications"
-			description="Your system hasn't granted ReGrind permission yet. Tap to ask."
-			onclick={() => void notificationAccess.request()}
-		>
-			{#snippet icon()}
-				<BellSlashIcon weight="fill" />
-			{/snippet}
-		</SettingsRow>
-	{:else}
-		<SettingsRow
-			title={access.enabled
-				? "Some notifications are turned off"
-				: "Notifications are turned off"}
-			description={access.canOpenSettings
-				? "Your system settings are blocking them. Tap to turn them back on."
-				: "Turn notifications on for ReGrind in your system settings."}
-			onclick={access.canOpenSettings ? openSystemSettings : undefined}
-			external={access.canOpenSettings}
-			destructive
-		>
-			{#snippet icon()}
-				<BellSlashIcon weight="fill" />
-			{/snippet}
-		</SettingsRow>
-	{/if}
+{#if messagesLocked || tapsLocked}
+	<!-- A locked switch cannot be the way out, whether or not the preference
+	     behind it is on, so this row is unconditional. -->
+	<SettingsRow
+		title={access.enabled
+			? "Some notifications are turned off"
+			: "Notifications are turned off"}
+		description={access.canOpenSettings
+			? "Your system settings are blocking them. Tap to turn them back on."
+			: "Turn notifications on for ReGrind in your system settings."}
+		onclick={access.canOpenSettings ? openSystemSettings : undefined}
+		external={access.canOpenSettings}
+		destructive
+	>
+		{#snippet icon()}
+			<BellSlashIcon weight="fill" />
+		{/snippet}
+	</SettingsRow>
+{:else if withheld && wanted && access.canPrompt}
+	<!-- Promptable: the switches still work, so this is only worth saying to
+	     someone who has already asked for notifications. -->
+	<SettingsRow
+		title="Allow notifications"
+		description="Your system hasn't granted ReGrind permission yet. Tap to ask."
+		onclick={() => void notificationAccess.request()}
+	>
+		{#snippet icon()}
+			<BellSlashIcon weight="fill" />
+		{/snippet}
+	</SettingsRow>
 {/if}
 {#if push.registration === "failed"}
 	<SettingsRow
