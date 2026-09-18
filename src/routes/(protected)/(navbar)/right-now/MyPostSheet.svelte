@@ -185,7 +185,7 @@
 			{#if !editing}
 				<!-- The hour is fixed, so this states it rather than offering a
 				     duration control the API has no room for. -->
-				<Drawer.Description>
+				<Drawer.Description class="text-left">
 					People nearby see this for one hour.
 				</Drawer.Description>
 			{/if}
