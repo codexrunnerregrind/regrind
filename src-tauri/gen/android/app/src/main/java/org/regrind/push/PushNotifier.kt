@@ -127,7 +127,7 @@ object PushNotifier {
 		Log.d(TAG, "posted notification key=$key route=$route")
 	}
 
-	private fun ensureChannels(context: Context) {
+	fun ensureChannels(context: Context) {
 		val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 		manager.createNotificationChannel(
 			NotificationChannel(CHAT_CHANNEL_ID, "Messages", NotificationManager.IMPORTANCE_HIGH).apply {

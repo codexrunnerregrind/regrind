@@ -1,16 +1,12 @@
 package org.regrind
 
-import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
-import android.util.Log
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
@@ -25,6 +21,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.crates.keyring.Keyring
 import java.lang.ref.WeakReference
 import org.json.JSONObject
+import org.regrind.push.NotificationPermission
 import org.regrind.push.PushFirebase
 import org.regrind.push.PushHub
 import org.regrind.push.PushNotifier
@@ -91,6 +88,18 @@ class MainActivity : TauriActivity() {
 		@JavascriptInterface fun setActiveRoute(route: String?) {
 			PushHub.setActiveRoute(route)
 		}
+
+		/** The OS's own notification state, as JSON — see NotificationPermission. */
+		@JavascriptInterface fun permissionState(): String =
+			NotificationPermission.state(this@MainActivity).toString()
+
+		@JavascriptInterface fun requestPermission() {
+			runOnUiThread { NotificationPermission.request(this@MainActivity) }
+		}
+
+		@JavascriptInterface fun openNotificationSettings() {
+			runOnUiThread { NotificationPermission.openSettings(this@MainActivity) }
+		}
 	}
 
 	override fun onCreate(savedInstanceState: Bundle?) {
@@ -143,16 +152,38 @@ class MainActivity : TauriActivity() {
 	
 	// Nothing else asks for this on Android — the push path posts notifications
 	// natively rather than through the Tauri plugin — and without the grant
-	// API 33+ drops every one of them silently.
+	// API 33+ drops every one of them silently. Once Android has stopped
+	// honouring the request the settings screen takes over, offering the system
+	// settings instead; re-asking here would only burn the last refusal.
 	private fun ensureNotificationPermission() {
-		if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
-		val permission = Manifest.permission.POST_NOTIFICATIONS
-		if (checkSelfPermission(permission) == PackageManager.PERMISSION_GRANTED) return
-		try {
-			requestPermissions(arrayOf(permission), REQUEST_POST_NOTIFICATIONS)
-		} catch (e: Exception) {
-			Log.w("RegrindPush", "notification permission request failed", e)
-		}
+		if (!NotificationPermission.canPrompt(this)) return
+		NotificationPermission.request(this)
+	}
+
+	override fun onRequestPermissionsResult(
+		requestCode: Int,
+		permissions: Array<out String>,
+		grantResults: IntArray,
+	) {
+		super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+		if (requestCode == NotificationPermission.REQUEST_CODE) dispatchNotificationPermission()
+	}
+
+	// The state can change without us: the prompt, or a trip to the system
+	// settings we come back from. Tell the frontend either way so a toggle it
+	// greyed out does not stay that way.
+	private fun dispatchNotificationPermission() {
+		val webView = webViewRef ?: return
+		val state = NotificationPermission.state(this).toString()
+		// Same guard as the token dispatch: before the app document is loaded
+		// there is nothing listening, and the event is not for a foreign page.
+		val script =
+			"(function(){" +
+				"if (String(location.href).indexOf('localhost') === -1) return;" +
+				"window.dispatchEvent(new CustomEvent('regrind:notification-permission'," +
+				" { detail: $state }));" +
+				"})();"
+		runOnUiThread { webView.evaluateJavascript(script, null) }
 	}
 
 	override fun onWebViewCreate(webView: WebView) {
@@ -174,6 +205,7 @@ class MainActivity : TauriActivity() {
 		super.onResume()
 		PushHub.inForeground = true
 		latestFcmToken?.let { dispatchFcmToken(it) }
+		dispatchNotificationPermission()
 	}
 
 	override fun onPause() {
@@ -256,7 +288,6 @@ class MainActivity : TauriActivity() {
 	}
 
 	companion object {
-		private const val REQUEST_POST_NOTIFICATIONS = 4711
 		private const val FCM_DISPATCH_ATTEMPTS = 25
 		private const val FCM_DISPATCH_RETRY_MS = 400L
 

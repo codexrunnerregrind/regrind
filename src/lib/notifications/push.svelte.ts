@@ -1,4 +1,5 @@
 import { goto } from "$app/navigation";
+import z from "zod";
 
 import { fetchRest } from "$lib/api/transport";
 import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
@@ -15,6 +16,19 @@ import { isAndroidPlatform } from "$lib/platform/os";
 const SYNCED_KEY = "regrind:push-token-synced";
 const TOKEN_KEY = "regrind:fcm-token";
 
+// A registration that silently lapsed is indistinguishable from a working one
+// until a message fails to arrive, so re-post the token when the record of the
+// last sync gets old rather than trusting it forever.
+const RESYNC_AFTER_MS = 3 * 24 * 60 * 60 * 1000;
+// Backoff for a failed sync while the app stays open. Without it a single
+// offline moment at sign-in cost push until the next launch.
+const RETRY_DELAYS_MS = [5_000, 20_000, 60_000, 300_000];
+
+const syncRecordSchema = z.object({ marker: z.string(), at: z.number() });
+
+/** Whether this device is registered for push, for the settings screen to show. */
+export type PushRegistration = "idle" | "syncing" | "registered" | "failed";
+
 // The native side persists the token here as well as firing the event, so a
 // token that arrived before sign-in is not lost.
 function storedToken(): string | null {
@@ -25,15 +39,29 @@ function storedToken(): string | null {
 	}
 }
 
-async function syncToken(token: string, profileId: number): Promise<void> {
-	const trimmed = token.trim();
-	if (!trimmed) return;
+// Keyed by token *and* account: the device token is stable across account
+// switches but the backend association is per-account, so a stale marker from
+// another account must not skip the re-sync. The timestamp is what expires it.
+function syncedRecently(marker: string): boolean {
+	try {
+		const raw = localStorage.getItem(SYNCED_KEY);
+		if (!raw) return false;
+		// A `safeParse` failure covers the pre-timestamp format too: re-post
+		// once and store the record the new way.
+		const record = syncRecordSchema.safeParse(JSON.parse(raw));
+		if (!record.success || record.data.marker !== marker) return false;
+		return Date.now() - record.data.at < RESYNC_AFTER_MS;
+	} catch {
+		return false;
+	}
+}
 
-	// Keyed by token *and* account: the device token is stable across account
-	// switches but the backend association is per-account, so a stale marker
-	// from another account must not skip the re-sync.
+async function syncToken(token: string, profileId: number): Promise<boolean> {
+	const trimmed = token.trim();
+	if (!trimmed) return false;
+
 	const marker = `${trimmed}::${profileId}`;
-	if (localStorage.getItem(SYNCED_KEY) === marker) return;
+	if (syncedRecently(marker)) return true;
 
 	const identifier = trimmed.split(":")[0] || trimmed;
 	const res = await fetchRest("/v3/gcm-push-tokens", {
@@ -41,7 +69,15 @@ async function syncToken(token: string, profileId: number): Promise<void> {
 		body: { vendorProvidedIdentifier: identifier, token: trimmed },
 	});
 	res.assertOk();
-	localStorage.setItem(SYNCED_KEY, marker);
+	try {
+		localStorage.setItem(
+			SYNCED_KEY,
+			JSON.stringify({ marker, at: Date.now() }),
+		);
+	} catch {
+		// A lost marker only costs a redundant POST next time.
+	}
+	return true;
 }
 
 class PushService {
@@ -49,6 +85,16 @@ class PushService {
 	#stopPrefs: (() => void) | null = null;
 	#onToken: ((event: Event) => void) | null = null;
 	#onOpen: ((event: Event) => void) | null = null;
+	#onVisible: (() => void) | null = null;
+	#retryTimer: ReturnType<typeof setTimeout> | null = null;
+	#attempt = 0;
+	#token: string | null = null;
+	#registration = $state<PushRegistration>("idle");
+
+	/** Reactive: whether Grindr has this device's push token. */
+	get registration(): PushRegistration {
+		return this.#registration;
+	}
 
 	/** Register FCM sync + deeplink handling for the signed-in profile. */
 	start(profileId: number): void {
@@ -83,6 +129,15 @@ class PushService {
 		};
 		window.addEventListener("regrind:push-open", this.#onOpen);
 
+		// Coming back to the app is the cheapest moment to notice a sync that
+		// never landed, and the one where the network is most likely back.
+		this.#onVisible = () => {
+			if (document.visibilityState !== "visible") return;
+			if (this.#registration === "syncing") return;
+			void this.#trySync(this.#token ?? storedToken() ?? "");
+		};
+		document.addEventListener("visibilitychange", this.#onVisible);
+
 		// A tap that cold-started the app fires the event before this listener
 		// exists, so native leaves the route here as well. Consume it once.
 		const opened = window.__REGRIND_PUSH_ROUTE;
@@ -107,19 +162,60 @@ class PushService {
 			window.removeEventListener("regrind:push-open", this.#onOpen);
 			this.#onOpen = null;
 		}
+		if (this.#onVisible) {
+			document.removeEventListener("visibilitychange", this.#onVisible);
+			this.#onVisible = null;
+		}
+		this.#clearRetry();
 		this.#stopPrefs?.();
 		this.#stopPrefs = null;
 		this.#profileId = null;
+		this.#token = null;
+		this.#attempt = 0;
+		this.#registration = "idle";
+	}
+
+	/** Re-run a failed registration now, from the settings screen. */
+	async retry(): Promise<void> {
+		this.#attempt = 0;
+		await this.#trySync(this.#token ?? storedToken() ?? "");
 	}
 
 	async #trySync(token: string): Promise<void> {
 		const profileId = this.#profileId;
 		if (profileId === null) return;
+		if (!token) return;
+		this.#token = token;
+		this.#clearRetry();
+		this.#registration = "syncing";
 		try {
 			await syncToken(token, profileId);
+			this.#attempt = 0;
+			this.#registration = "registered";
 		} catch (error) {
 			console.error("[push] failed to sync FCM token", error);
+			this.#registration = "failed";
+			this.#scheduleRetry();
 		}
+	}
+
+	// Backoff rather than a fixed interval: the common failure is a few seconds
+	// of no network at sign-in, and the rare one should not poll all day.
+	#scheduleRetry(): void {
+		const delay = RETRY_DELAYS_MS[this.#attempt];
+		if (delay === undefined) return;
+		this.#attempt += 1;
+		this.#retryTimer = setTimeout(() => {
+			this.#retryTimer = null;
+			const token = this.#token;
+			if (token) void this.#trySync(token);
+		}, delay);
+	}
+
+	#clearRetry(): void {
+		if (this.#retryTimer === null) return;
+		clearTimeout(this.#retryTimer);
+		this.#retryTimer = null;
 	}
 
 	/** Tell native which screen is showing so it can suppress redundant banners. */

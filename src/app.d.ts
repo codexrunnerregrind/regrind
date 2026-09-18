@@ -13,6 +13,10 @@ declare global {
 		__RegrindPush?: {
 			setPrefs(messages: boolean, taps: boolean): void;
 			setActiveRoute(route: string | null): void;
+			/** JSON; see NotificationPermission.kt. Absent on builds older than it. */
+			permissionState?(): string;
+			requestPermission?(): void;
+			openNotificationSettings?(): void;
 		};
 		__REGRIND_FCM_TOKEN?: string;
 		__REGRIND_PUSH_ROUTE?: string;
