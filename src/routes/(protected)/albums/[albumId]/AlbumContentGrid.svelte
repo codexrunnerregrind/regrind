@@ -153,7 +153,7 @@
 						     backdrop blur — see AlbumTile.svelte. -->
 						{#if index === 0}
 							<span
-								class="pointer-events-none absolute bottom-1.5 left-1.5 rounded-plate bg-plate-strong px-1.75 py-0.75 text-3xs font-semibold text-plate-foreground"
+								class="pointer-events-none absolute bottom-2.5 left-1.5 rounded-plate bg-plate-strong px-1.75 py-0.75 text-3xs font-semibold text-plate-foreground"
 							>
 								Cover
 							</span>
