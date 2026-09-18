@@ -17,8 +17,11 @@ declare global {
 			permissionState?(): string;
 			requestPermission?(): void;
 			openNotificationSettings?(): void;
+			refreshToken?(): void;
 		};
 		__REGRIND_FCM_TOKEN?: string;
+		/** Why native has no push token, when it knows it never will. */
+		__REGRIND_FCM_UNAVAILABLE?: string;
 		__REGRIND_PUSH_ROUTE?: string;
 	}
 }

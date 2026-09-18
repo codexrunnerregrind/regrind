@@ -93,6 +93,66 @@ describe("push token registration", () => {
 		expect(push.registration).toBe("registered");
 	});
 
+	it("reports a native token failure as an unregistered device", async () => {
+		delete window.__REGRIND_FCM_TOKEN;
+		push.start(1);
+		await settle();
+
+		window.dispatchEvent(
+			new CustomEvent("regrind:fcm-token-error", {
+				detail: { reason: "token fetch failed" },
+			}),
+		);
+		expect(push.registration).toBe("failed");
+		expect(fetchRestMock).not.toHaveBeenCalled();
+	});
+
+	it("asks native for a token again when the retry has none", async () => {
+		const refreshToken = vi.fn();
+		window.__RegrindPush = {
+			setPrefs: () => {},
+			setActiveRoute: () => {},
+			refreshToken,
+		};
+		delete window.__REGRIND_FCM_TOKEN;
+		push.start(1);
+		await settle();
+		window.dispatchEvent(
+			new CustomEvent("regrind:fcm-token-error", {
+				detail: { reason: "no token" },
+			}),
+		);
+
+		await push.retry();
+		expect(refreshToken).toHaveBeenCalledTimes(1);
+		expect(fetchRestMock).not.toHaveBeenCalled();
+		delete window.__RegrindPush;
+	});
+
+	it("stays failed when there is no native side to re-ask", async () => {
+		delete window.__REGRIND_FCM_TOKEN;
+		push.start(1);
+		await settle();
+		window.dispatchEvent(
+			new CustomEvent("regrind:fcm-token-error", {
+				detail: { reason: "no token" },
+			}),
+		);
+
+		await push.retry();
+		expect(push.registration).toBe("failed");
+	});
+
+	it("picks up a failure that happened before sign-in", async () => {
+		delete window.__REGRIND_FCM_TOKEN;
+		window.__REGRIND_FCM_UNAVAILABLE = "Firebase is not initialised";
+		push.start(1);
+		await settle();
+
+		expect(push.registration).toBe("failed");
+		delete window.__REGRIND_FCM_UNAVAILABLE;
+	});
+
 	it("keeps a failed sync retryable by hand", async () => {
 		fetchRestMock.mockRejectedValue(new Error("offline"));
 		push.start(1);

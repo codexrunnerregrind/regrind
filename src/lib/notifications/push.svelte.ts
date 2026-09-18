@@ -85,6 +85,7 @@ class PushService {
 	#stopPrefs: (() => void) | null = null;
 	#onToken: ((event: Event) => void) | null = null;
 	#onOpen: ((event: Event) => void) | null = null;
+	#onTokenError: ((event: Event) => void) | null = null;
 	#onVisible: (() => void) | null = null;
 	#retryTimer: ReturnType<typeof setTimeout> | null = null;
 	#attempt = 0;
@@ -122,6 +123,13 @@ class PushService {
 		};
 		window.addEventListener("regrind:fcm-token", this.#onToken);
 
+		this.#onTokenError = (event: Event) => {
+			const reason = (event as CustomEvent<{ reason?: string }>).detail
+				?.reason;
+			this.#unavailable(reason ?? "no push token");
+		};
+		window.addEventListener("regrind:fcm-token-error", this.#onTokenError);
+
 		this.#onOpen = (event: Event) => {
 			const route = (event as CustomEvent<{ route?: string }>).detail
 				?.route;
@@ -151,6 +159,10 @@ class PushService {
 		// the next refresh.
 		const known = window.__REGRIND_FCM_TOKEN ?? storedToken();
 		if (known) void this.#trySync(known);
+		// A fetch that failed before sign-in is the reason there is no token to
+		// pick up, so it has to be consulted after it.
+		else if (window.__REGRIND_FCM_UNAVAILABLE)
+			this.#unavailable(window.__REGRIND_FCM_UNAVAILABLE);
 	}
 
 	stop(): void {
@@ -161,6 +173,13 @@ class PushService {
 		if (this.#onOpen) {
 			window.removeEventListener("regrind:push-open", this.#onOpen);
 			this.#onOpen = null;
+		}
+		if (this.#onTokenError) {
+			window.removeEventListener(
+				"regrind:fcm-token-error",
+				this.#onTokenError,
+			);
+			this.#onTokenError = null;
 		}
 		if (this.#onVisible) {
 			document.removeEventListener("visibilitychange", this.#onVisible);
@@ -178,7 +197,32 @@ class PushService {
 	/** Re-run a failed registration now, from the settings screen. */
 	async retry(): Promise<void> {
 		this.#attempt = 0;
-		await this.#trySync(this.#token ?? storedToken() ?? "");
+		const token = this.#token ?? storedToken();
+		if (token) {
+			await this.#trySync(token);
+			return;
+		}
+		// Nothing to sync: the failure was native, so the token itself is what
+		// has to be asked for again. Native answers through the token or the
+		// error event; with no one to ask, the failure stands rather than
+		// leaving the screen waiting on an answer that cannot arrive.
+		const bridge = window.__RegrindPush;
+		if (!bridge?.refreshToken) {
+			this.#registration = "failed";
+			return;
+		}
+		this.#registration = "syncing";
+		bridge.refreshToken();
+	}
+
+	// A native failure means there is no token to post at all. Reported the
+	// same way a failed POST is, because it costs the user the same thing.
+	#unavailable(reason: string): void {
+		if (this.#profileId === null) return;
+		console.error("[push] no FCM token:", reason);
+		this.#clearRetry();
+		this.#token = null;
+		this.#registration = "failed";
 	}
 
 	async #trySync(token: string): Promise<void> {

@@ -12,6 +12,9 @@ class PushMessagingService : FirebaseMessagingService() {
 	override fun onMessageReceived(message: RemoteMessage) {
 		super.onMessageReceived(message)
 		if (message.data.isEmpty()) return
+		// This may be the process's first moment of life, with no webview to
+		// have told us the user's categories.
+		PushHub.loadPrefs(applicationContext)
 		if (PushNotifier.isMarketingCampaign(message.data)) {
 			// Key names only, never values — enough to re-check the filter later.
 			Log.d("RegrindPush", "ignoring marketing campaign push; keys=${message.data.keys.sorted()}")

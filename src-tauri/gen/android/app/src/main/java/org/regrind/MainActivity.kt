@@ -81,8 +81,7 @@ class MainActivity : TauriActivity() {
 	// current and syncs the token through it (see push.svelte.ts).
 	inner class PushInterface {
 		@JavascriptInterface fun setPrefs(messages: Boolean, taps: Boolean) {
-			PushHub.messagesEnabled = messages
-			PushHub.tapsEnabled = taps
+			PushHub.setPrefs(this@MainActivity, messages, taps)
 		}
 
 		@JavascriptInterface fun setActiveRoute(route: String?) {
@@ -100,14 +99,21 @@ class MainActivity : TauriActivity() {
 		@JavascriptInterface fun openNotificationSettings() {
 			runOnUiThread { NotificationPermission.openSettings(this@MainActivity) }
 		}
+
+		/** Re-ask FCM for a token, for the settings screen's retry. */
+		@JavascriptInterface fun refreshToken() {
+			PushFirebase.initialize(this@MainActivity)
+			fetchFcmToken()
+		}
 	}
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		enableEdgeToEdge()
 		Keyring.initializeNdkContext(applicationContext)
 		activityRef = WeakReference(this)
+		PushHub.loadPrefs(applicationContext)
 		PushFirebase.initialize(this)
-		PushFirebase.fetchToken { token -> onFcmTokenRefreshed(token) }
+		fetchFcmToken()
 		pendingWebViewWarning = WebViewSupport.current(
 			context = this,
 			minSupportedMajor = BuildConfig.MIN_SUPPORTED_WEBVIEW_MAJOR,
@@ -194,6 +200,7 @@ class MainActivity : TauriActivity() {
 		webView.addJavascriptInterface(BackInterface(), "__AndroidBack")
 		webView.addJavascriptInterface(PushInterface(), "__RegrindPush")
 		latestFcmToken?.let { dispatchFcmToken(it) }
+		tokenUnavailable?.let { dispatchFcmTokenUnavailable(it) }
 		// A route captured while there was no webview to deliver it to; runs
 		// before handlePushIntent so the two cannot both start a chain.
 		flushPushRoute(0)
@@ -205,6 +212,7 @@ class MainActivity : TauriActivity() {
 		super.onResume()
 		PushHub.inForeground = true
 		latestFcmToken?.let { dispatchFcmToken(it) }
+		tokenUnavailable?.let { dispatchFcmTokenUnavailable(it) }
 		dispatchNotificationPermission()
 	}
 
@@ -259,6 +267,43 @@ class MainActivity : TauriActivity() {
 		}
 	}
 
+	private fun fetchFcmToken() {
+		PushFirebase.fetchToken(
+			onToken = { token -> onFcmTokenRefreshed(token) },
+			onUnavailable = { reason ->
+				tokenUnavailable = reason
+				dispatchFcmTokenUnavailable(reason)
+			},
+		)
+	}
+
+	// Without this the frontend cannot tell "no token yet" from "there will
+	// never be a token": push registration simply never happened and the
+	// settings screen stayed silent about it.
+	private fun dispatchFcmTokenUnavailable(reason: String, attempt: Int = 0) {
+		val webView = webViewRef ?: return
+		val quoted = JSONObject.quote(reason)
+		val script =
+			"(function(){" +
+				"if (String(location.href).indexOf('localhost') === -1) return 'retry';" +
+				"var r = $quoted;" +
+				"window.__REGRIND_FCM_UNAVAILABLE = r;" +
+				"window.dispatchEvent(new CustomEvent('regrind:fcm-token-error'," +
+				" { detail: { reason: r } }));" +
+				"return 'ok';" +
+				"})();"
+		runOnUiThread {
+			webView.evaluateJavascript(script) { result ->
+				if (result?.contains("retry") == true && attempt < FCM_DISPATCH_ATTEMPTS) {
+					mainHandler.postDelayed(
+						{ dispatchFcmTokenUnavailable(reason, attempt + 1) },
+						FCM_DISPATCH_RETRY_MS,
+					)
+				}
+			}
+		}
+	}
+
 	// The token usually arrives before the webview has navigated to the app, so
 	// injecting blind loses it: the global is wiped by the page load and no
 	// listener exists yet. Wait for the real document, then stash the token in
@@ -293,10 +338,12 @@ class MainActivity : TauriActivity() {
 
 		private var activityRef: WeakReference<MainActivity>? = null
 		private var latestFcmToken: String? = null
+		private var tokenUnavailable: String? = null
 
 		@JvmStatic
 		fun onFcmTokenRefreshed(token: String) {
 			latestFcmToken = token
+			tokenUnavailable = null
 			activityRef?.get()?.dispatchFcmToken(token)
 		}
 	}

@@ -23,7 +23,6 @@ object NotificationPermission {
 	const val REQUEST_CODE = 4711
 
 	private const val TAG = "RegrindPush"
-	private const val PREFS = "regrind.push"
 	private const val KEY_ASKED = "post-notifications-asked"
 
 	/** What the settings screen renders from. Channel state included: a blocked category is as silent as a blocked app. */
@@ -109,10 +108,10 @@ object NotificationPermission {
 	// `shouldShowRequestPermissionRationale` is false both before the first ask
 	// and after the last one, so the two are only told apart by remembering.
 	private fun asked(context: Context): Boolean =
-		context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_ASKED, false)
+		context.getSharedPreferences(PushHub.PREFS, Context.MODE_PRIVATE).getBoolean(KEY_ASKED, false)
 
 	private fun markAsked(context: Context) {
-		context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+		context.getSharedPreferences(PushHub.PREFS, Context.MODE_PRIVATE)
 			.edit()
 			.putBoolean(KEY_ASKED, true)
 			.apply()
