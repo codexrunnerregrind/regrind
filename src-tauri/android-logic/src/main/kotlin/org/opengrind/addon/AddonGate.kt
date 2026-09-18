@@ -1,6 +1,6 @@
 package org.opengrind.addon
 
-import org.opengrind.update.InstallGate
+import org.regrind.update.InstallGate
 
 object AddonGate {
 	private val releaseCertSha256: ByteArray = InstallGate.RELEASE_CERT_SHA256
