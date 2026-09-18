@@ -16,6 +16,7 @@
 	const conversationState = $derived(getConversationState()());
 
 	let container: HTMLDivElement | null = $state(null);
+	let content: HTMLDivElement | null = $state(null);
 	let refreshControl: DataRefreshControl | undefined = $state();
 
 	const FLOOR_SLOP_PX = 16;
@@ -157,7 +158,9 @@
 	 * a message wrapping onto a third line — and every time it does, the list
 	 * loses that much height from its bottom. Watching the list's own box rather
 	 * than the composer's keeps the newest message resting on the floor no
-	 * matter what changed size, and needs nothing measured to do it.
+	 * matter what changed size, and needs nothing measured to do it. The
+	 * transcript is watched for the same reason: photo bubbles stand at a
+	 * placeholder ratio until they decode, well after the opening scroll.
 	 */
 	function keepRestingOnResizeEffect() {
 		const el = container;
@@ -169,6 +172,7 @@
 			});
 		});
 		observer.observe(el);
+		if (content) observer.observe(content);
 		return () => observer.disconnect();
 	}
 </script>
@@ -197,6 +201,7 @@
 		{:else}
 			<div
 				class="flex min-h-overscrollable shrink-0 flex-col justify-end gap-1"
+				bind:this={content}
 			>
 				<ConversationPaginationSentinel {container} />
 				<MessagesList {seenMessageIds} />
