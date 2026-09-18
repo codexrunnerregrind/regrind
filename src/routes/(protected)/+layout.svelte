@@ -5,7 +5,6 @@
 	import { reportAccountProfile } from "$lib/api/accounts.svelte";
 	import CommandCenter from "$lib/components/command-center/CommandCenter.svelte";
 	import VideoCallOverlay from "$lib/components/video-call/VideoCallOverlay.svelte";
-	import { startEntitlementMaintenance } from "$lib/entitlements/expiring-media-entitlement";
 	import { notifications } from "$lib/notifications/notifications.svelte";
 	import { push } from "$lib/notifications/push.svelte";
 	import { startOnlineHeartbeat } from "$lib/presence/online-heartbeat";
@@ -37,11 +36,6 @@
 	afterNavigate(() => push.setActiveRoute(page.url.pathname));
 
 	$effect(() => startOnlineHeartbeat());
-
-	// Keep the expiring-photo and unsend entitlements from lapsing when the
-	// session's token is renewed: renew it ahead of time, seeded from the
-	// granting region, for whichever account is active.
-	$effect(() => startEntitlementMaintenance(data.ourProfileId));
 </script>
 
 {@render children()}

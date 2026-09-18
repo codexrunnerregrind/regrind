@@ -1,124 +1,109 @@
+import {
+	accountEpoch,
+	isAccountEpochCurrent,
+	registerAccountCache,
+} from "$lib/api/account-caches";
 import { getCascadeV4 } from "$lib/api/browse/grid";
+import { errorUrn, tieredFeature } from "$lib/api/error-urn";
 import { callMethod } from "$lib/api/methods";
 import { getActiveGeohashSnapshot } from "$lib/app-data/preferences.svelte";
-import { ws } from "$lib/ws.svelte";
+import { withDeadline } from "$lib/util/deadline";
 import { randomHondurasGeohash } from "./honduras";
 
 /**
- * Grindr gates expiring photos and message unsend by region. The server takes
- * the account's location from the grid it asks for and settles the session's
- * feature set when the session is established, so asking for a granting
- * region's grid, refreshing against it, then reporting the real location back
- * is the automated equal of picking the spot, relaunching, and moving back.
+ * Grindr gates expiring photos and message unsend by region, on the geohash the
+ * session was refreshed against. Refreshing against a granting region, then
+ * reporting the real location back, is the automated equal of picking the spot,
+ * relaunching, and moving back.
  *
- * The grant lives on the token, so {@link startEntitlementMaintenance} renews
- * it ahead of expiry — a plain refresh would report the real location and
- * re-lock both.
+ * Claimed only when the server refuses an action, never at startup, and
+ * {@link withRegionGrant} retries in place so nothing surfaces.
  */
 
-/** Clear of the backend's own 60s refresh buffer, so ours goes first. */
-const EXPIRY_LEAD_MS = 120_000;
-const DEFAULT_INTERVAL_MS = 20 * 60_000;
-/** Long enough that the reconnect our refresh causes cannot loop back here. */
+const STEP_TIMEOUT_MS = 10_000;
+/** A refusal that survives a fresh grant is real; don't hand over again. */
 const MIN_INTERVAL_MS = 60_000;
 
-const lastSeedAt = new Map<number, number>();
-const inFlight = new Map<number, Promise<void>>();
+let lastGrantAt: number | null = null;
+let granting: Promise<void> | null = null;
 
-function seed(profileId: number): Promise<void> {
-	const existing = inFlight.get(profileId);
-	if (existing) return existing;
-	const run = (async () => {
-		try {
-			// A fresh point each time, so every install does not report one.
-			const granting = randomHondurasGeohash();
-			await getCascadeV4({ nearbyGeoHash: granting });
-			await callMethod("refresh_token", { geohash: granting });
-			lastSeedAt.set(profileId, Date.now());
-			// Move back, or the server keeps placing us there for tap and grid
-			// distances; the grant is on the token by now.
-			const here = getActiveGeohashSnapshot();
-			if (here !== null) await getCascadeV4({ nearbyGeoHash: here });
-		} catch (error) {
-			console.error(
-				"[entitlements] could not seed the expiring-media gate",
-				error,
-			);
-		} finally {
-			inFlight.delete(profileId);
-		}
-	})();
-	inFlight.set(profileId, run);
-	return run;
+registerAccountCache({
+	reset: () => {
+		lastGrantAt = null;
+	},
+});
+
+/** The 402s this grant lifts. */
+export function isRegionGatedError(error: unknown): boolean {
+	return (
+		errorUrn(error) === "urn:gr:err:entitlement_limit" ||
+		tieredFeature(error) === "UnsentMessage"
+	);
 }
 
-function seededRecently(profileId: number): boolean {
-	const at = lastSeedAt.get(profileId);
-	return at !== undefined && Date.now() - at < MIN_INTERVAL_MS;
+function grantedRecently(): boolean {
+	return lastGrantAt !== null && Date.now() - lastGrantAt < MIN_INTERVAL_MS;
 }
 
-/**
- * Started but not awaited from the protected layout's load, so switching
- * account does not hang on it; {@link awaitEntitlementSeed} holds the grid
- * instead, which must not report the real location mid-seed. Never throws.
- */
-export function seedExpiringMediaEntitlement(profileId: number): Promise<void> {
-	if (seededRecently(profileId)) {
-		return inFlight.get(profileId) ?? Promise.resolve();
-	}
-	return seed(profileId);
-}
-
-/** Instant when nothing is seeding, and never rejects. */
-export function awaitEntitlementSeed(): Promise<void> {
-	return Promise.all(inFlight.values()).then(() => undefined);
-}
-
-async function msUntilNextSeed(): Promise<number> {
+async function handover(): Promise<void> {
+	// A fresh point each time, so every install does not report one.
+	const geohash = randomHondurasGeohash();
 	try {
-		const health = await callMethod("session_health");
-		if (health.expiresAt === null) return DEFAULT_INTERVAL_MS;
-		const untilExpiry = health.expiresAt * 1000 - Date.now();
-		return Math.max(MIN_INTERVAL_MS, untilExpiry - EXPIRY_LEAD_MS);
-	} catch {
-		return DEFAULT_INTERVAL_MS;
+		await withDeadline({
+			work: async () => {
+				await getCascadeV4({ nearbyGeoHash: geohash });
+				await callMethod("refresh_token", { geohash });
+			},
+			ms: STEP_TIMEOUT_MS,
+		});
+		lastGrantAt = Date.now();
+	} finally {
+		// Move back, or the server keeps placing us there for tap and grid
+		// distances; the grant is on the token by now.
+		const here = getActiveGeohashSnapshot();
+		if (here !== null) {
+			await withDeadline({
+				work: () => getCascadeV4({ nearbyGeoHash: here }),
+				ms: STEP_TIMEOUT_MS,
+			}).catch((error: unknown) => {
+				console.error("[entitlements] could not move back", error);
+			});
+		}
 	}
 }
 
-/**
- * Renews ahead of the token's expiry so the plain refresh never runs, and
- * re-asserts after a reconnect that outran the timer. Returns a stop function.
- */
-export function startEntitlementMaintenance(profileId: number): () => void {
-	let stopped = false;
-	let timer: ReturnType<typeof setTimeout> | null = null;
-
-	const cycle = async (reseed: boolean) => {
-		if (stopped) return;
-		if (reseed && !seededRecently(profileId)) await seed(profileId);
-		if (stopped) return;
-		const delay = await msUntilNextSeed();
-		if (stopped) return;
-		if (timer !== null) clearTimeout(timer);
-		timer = setTimeout(() => void cycle(true), delay);
-	};
-
-	// The layout's load already seeded; just schedule ahead.
-	void cycle(false);
-
-	// The establishing seed provokes the first connect — skip it.
-	let firstConnect = true;
-	const unlisten = ws.onConnected(() => {
-		if (firstConnect) {
-			firstConnect = false;
-			return;
-		}
-		void cycle(true);
+function grant(): Promise<void> {
+	granting ??= handover().finally(() => {
+		granting = null;
 	});
+	return granting;
+}
 
-	return () => {
-		stopped = true;
-		if (timer !== null) clearTimeout(timer);
-		void unlisten.then((stop) => stop());
-	};
+/** Instant when no handover is in flight, and never rejects. */
+export function awaitEntitlementGrant(): Promise<void> {
+	return (granting ?? Promise.resolve()).catch(() => undefined);
+}
+
+/**
+ * Runs `attempt`, and on a region-gated refusal claims the grant and runs it
+ * once more. The original refusal propagates when that fails, so the caller's
+ * error handling is unchanged.
+ */
+export async function withRegionGrant<T>(
+	attempt: () => Promise<T>,
+): Promise<T> {
+	try {
+		return await attempt();
+	} catch (error) {
+		if (!isRegionGatedError(error) || grantedRecently()) throw error;
+		const epoch = accountEpoch();
+		try {
+			await grant();
+		} catch (handoverError) {
+			console.error("[entitlements] handover failed", handoverError);
+			throw error;
+		}
+		if (!isAccountEpochCurrent(epoch)) throw error;
+		return await attempt();
+	}
 }

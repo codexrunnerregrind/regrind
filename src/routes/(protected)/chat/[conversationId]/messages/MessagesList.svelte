@@ -15,6 +15,7 @@
 		unsendMessage,
 	} from "$lib/api/messaging/messages";
 	import ReportSheet from "$lib/components/report/ReportSheet.svelte";
+	import { withRegionGrant } from "$lib/entitlements/expiring-media-entitlement";
 	import { openExternalLink } from "$lib/platform/link-opener";
 	import type { ApiResponseMessage } from "$lib/model/messaging/messages";
 	import { getConversationState } from "../conversation-state.svelte";
@@ -154,10 +155,15 @@
 						({ revert } = conversationState.markMessageAsUnsent(
 							message.messageId,
 						));
-						await unsendMessage({
-							conversationId: conversationState.conversationId,
-							messageId: message.messageId,
-						});
+						// A region-gated refusal grants and unsends
+						// again, unseen.
+						await withRegionGrant(() =>
+							unsendMessage({
+								conversationId:
+									conversationState.conversationId,
+								messageId: message.messageId,
+							}),
+						);
 					} catch (error) {
 						console.error(error);
 						reportUnsendFailure(error);

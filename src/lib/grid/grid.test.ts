@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getCascadeV4Mock, awaitEntitlementSeedMock } = vi.hoisted(() => ({
+const { getCascadeV4Mock, awaitEntitlementGrantMock } = vi.hoisted(() => ({
 	getCascadeV4Mock: vi.fn(),
-	awaitEntitlementSeedMock: vi.fn(),
+	awaitEntitlementGrantMock: vi.fn(),
 }));
 
 vi.mock("$lib/api/browse/grid", () => ({ getCascadeV4: getCascadeV4Mock }));
 vi.mock("$lib/entitlements/expiring-media-entitlement", () => ({
-	awaitEntitlementSeed: awaitEntitlementSeedMock,
+	awaitEntitlementGrant: awaitEntitlementGrantMock,
 }));
 
 import { resetNowForTesting, setNowForTesting } from "$lib/util/clock";
@@ -92,12 +92,12 @@ const cascade = (items: unknown[]) => {
 describe("getGrid", () => {
 	beforeEach(() => {
 		getCascadeV4Mock.mockReset();
-		awaitEntitlementSeedMock.mockResolvedValue(undefined);
+		awaitEntitlementGrantMock.mockResolvedValue(undefined);
 	});
 
-	it("holds the cascade until the entitlement seed is done", async () => {
+	it("holds the cascade until the entitlement handover is done", async () => {
 		let finishHandover!: () => void;
-		awaitEntitlementSeedMock.mockReturnValue(
+		awaitEntitlementGrantMock.mockReturnValue(
 			new Promise<void>((resolve) => {
 				finishHandover = resolve;
 			}),

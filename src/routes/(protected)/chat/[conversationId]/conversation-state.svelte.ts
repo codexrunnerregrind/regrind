@@ -14,6 +14,7 @@ import {
 	deletedConversationIds,
 	deletedMessageIds,
 } from "$lib/chat/message-deleted";
+import { withRegionGrant } from "$lib/entitlements/expiring-media-entitlement";
 import { previewFromMessage } from "$lib/model/messaging/message-preview";
 import { reconciler } from "$lib/util/reconcile";
 import type { ConversationsState } from "$lib/chat/conversations-state.svelte";
@@ -439,11 +440,11 @@ export class ConversationState {
 		replyToMessageId?: string;
 	}): Promise<void> {
 		try {
-			const sent = await sendMessage({
-				toUserId: this.profile!.profileId,
-				message,
-				replyToMessageId,
-			});
+			// A region-gated refusal grants and sends again, unseen.
+			const toUserId = this.profile!.profileId;
+			const sent = await withRegionGrant(() =>
+				sendMessage({ toUserId, message, replyToMessageId }),
+			);
 			if (this.#destroyed) return;
 			const msg = this.messages.find((m) => m.messageId === tempId);
 			if (msg) {
