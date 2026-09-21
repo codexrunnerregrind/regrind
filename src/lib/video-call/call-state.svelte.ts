@@ -275,10 +275,20 @@ class VideoCallState {
 		const channelId = this.#channelId;
 		if (this.phase !== "incoming" || channelId === null) return;
 
-		let token: string | null | undefined;
+		// Before the request rather than after it: a webview only shows the
+		// microphone prompt while the tap that answered is still live, so
+		// asking for the mic behind the join is refused without ever asking.
+		// A failure here is left to the join, which reports it properly.
 		try {
-			const joined = await joinVideoCall(channelId);
-			token = joined.token;
+			await (await this.#openSession()).openMic();
+		} catch (error) {
+			console.warn("[video-call] could not open the microphone", error);
+		}
+		if (!this.#stillRinging(channelId)) return;
+
+		let joined;
+		try {
+			joined = await joinVideoCall(channelId);
 			this.#maxSeconds = joined.maxSeconds ?? this.#maxSeconds;
 		} catch (error) {
 			await this.hangUp();
@@ -286,13 +296,42 @@ class VideoCallState {
 			return;
 		}
 
-		if (!token) {
+		// The call can have ended while we were asking to join it, in which
+		// case there is nothing left to connect and the teardown has happened.
+		if (!this.#stillRinging(channelId)) return;
+
+		if (!joined.token) {
+			// A refusal — our own allowance spent, the call already gone —
+			// comes back as a 2xx naming a result, which says more than we can.
 			await this.hangUp();
-			toast.error("Couldn't answer the call");
+			toast.error(
+				videoCallResultMessage({
+					result: joined.result,
+					fallback: "Couldn't answer the call",
+				}),
+			);
+			void this.refreshAllowance();
 			return;
 		}
 
-		await this.#connect({ channelId, token, waitForThem: false });
+		await this.#connect({
+			channelId,
+			token: joined.token,
+			waitForThem: false,
+		});
+	}
+
+	/**
+	 * Whether the call being answered is still the one on screen. A hang-up
+	 * already under way counts as gone: it takes a few turns to reach the
+	 * reset, and answering into it would race that.
+	 */
+	#stillRinging(channelId: string): boolean {
+		return (
+			!this.#ending &&
+			this.phase === "incoming" &&
+			this.#channelId === channelId
+		);
 	}
 
 	/**
@@ -413,7 +452,11 @@ class VideoCallState {
 			// The call can have been declined, or have failed to start, while
 			// the camera was opening — in which case this one is nobody's and
 			// has to be shut rather than left running.
-			if (this.phase === "idle" || this.#session !== session) {
+			if (
+				this.phase === "idle" ||
+				this.#ending ||
+				this.#session !== session
+			) {
 				await session.leave();
 				return;
 			}
@@ -444,6 +487,16 @@ class VideoCallState {
 		try {
 			const session = await this.#openSession();
 			await session.join({ channelId, token, profileId: ourProfileId });
+			// The call can have been hung up while we were joining it, and a
+			// session nobody is in has to be closed rather than left publishing.
+			if (
+				this.phase === "idle" ||
+				this.#ending ||
+				this.#session !== session
+			) {
+				await session.leave();
+				return;
+			}
 			this.facing = session.facing;
 			this.cameraReady = session.hasCamera;
 			if (this.#localTile) session.playLocalVideo(this.#localTile);

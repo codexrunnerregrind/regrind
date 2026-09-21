@@ -110,6 +110,21 @@ export class AgoraSession {
 	}
 
 	/**
+	 * Opens the microphone without joining anything. Called the moment the
+	 * call is answered rather than once the server has replied, so that the
+	 * permission prompt still happens under the tap that asked for it: a
+	 * WKWebView only shows one while the gesture is live, and behind the join
+	 * request it is denied without asking.
+	 */
+	async openMic(): Promise<void> {
+		if (this.#mic) return;
+		if (!webRtcSupported()) throw new WebRtcUnsupportedError();
+		const mic = await AgoraRTC.createMicrophoneAudioTrack();
+		if (this.#micMuted) await mic.setMuted(true);
+		this.#mic = mic;
+	}
+
+	/**
 	 * Joins the channel and starts publishing. `uid` must be our own profile
 	 * id: the token is issued against that uid, and joining under any other
 	 * (including a server-assigned one) is rejected as an invalid token even
@@ -129,13 +144,11 @@ export class AgoraSession {
 	}): Promise<void> {
 		if (!webRtcSupported()) throw new WebRtcUnsupportedError();
 		await this.openCamera();
-		const mic = await AgoraRTC.createMicrophoneAudioTrack();
-		if (this.#micMuted) await mic.setMuted(true);
-		this.#mic = mic;
+		await this.openMic();
 		await this.#client.setClientRole("host");
 		await this.#client.join(AGORA_APP_ID, channelId, token, profileId);
-		// `openCamera` above guarantees the camera, or threw.
-		await this.#client.publish([mic, this.#camera!]);
+		// The two opens above guarantee both tracks, or threw.
+		await this.#client.publish([this.#mic!, this.#camera!]);
 	}
 
 	playLocalVideo(into: HTMLElement): void {

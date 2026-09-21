@@ -17,6 +17,7 @@ const {
 	agoraJoinMock,
 	agoraLeaveMock,
 	agoraOpenCameraMock,
+	agoraOpenMicMock,
 	agoraSwitchCameraMock,
 } = vi.hoisted(() => ({
 	startVideoCallMock: vi.fn(),
@@ -31,6 +32,7 @@ const {
 	agoraJoinMock: vi.fn(),
 	agoraLeaveMock: vi.fn(),
 	agoraOpenCameraMock: vi.fn(),
+	agoraOpenMicMock: vi.fn(),
 	agoraSwitchCameraMock: vi.fn(),
 }));
 
@@ -60,6 +62,7 @@ vi.mock("$lib/video-call/agora-session", () => ({
 		join = agoraJoinMock;
 		leave = agoraLeaveMock;
 		openCamera = agoraOpenCameraMock;
+		openMic = agoraOpenMicMock;
 		switchCamera = agoraSwitchCameraMock;
 		playLocalVideo = vi.fn();
 		setMicMuted = vi.fn();
@@ -117,6 +120,7 @@ describe("videoCall", () => {
 		agoraJoinMock.mockResolvedValue(undefined);
 		agoraLeaveMock.mockResolvedValue(undefined);
 		agoraOpenCameraMock.mockResolvedValue(undefined);
+		agoraOpenMicMock.mockResolvedValue(undefined);
 		agoraSwitchCameraMock.mockResolvedValue("environment");
 		// jsdom has no WebRTC of its own, and every entry point checks for it.
 		globalThis.RTCPeerConnection ??= class {} as never;
@@ -286,6 +290,62 @@ describe("videoCall", () => {
 			}),
 		);
 		expect(videoCall.phase).toBe("active");
+	});
+
+	// The microphone prompt only shows while the tap that answered is still
+	// live, so it cannot wait behind the join request.
+	it("opens the microphone before asking the server to join", async () => {
+		let micOpenBeforeJoin = false;
+		joinVideoCallMock.mockImplementation(() => {
+			micOpenBeforeJoin = agoraOpenMicMock.mock.calls.length > 0;
+			return Promise.resolve({ token: "token-2" });
+		});
+		listeners.get("videocall.v1.incoming_call")?.({
+			payload: { channelId: "channel-9", senderId: 7 },
+		});
+
+		await videoCall.accept();
+
+		expect(micOpenBeforeJoin).toBe(true);
+	});
+
+	// A refusal of our own answer names its reason, and "no time left" is not
+	// something to report as "couldn't answer".
+	it("says why the answer was refused", async () => {
+		joinVideoCallMock.mockResolvedValue({
+			result: "EXCEED_LENGTH_LIMIT",
+			token: null,
+		});
+		listeners.get("videocall.v1.incoming_call")?.({
+			payload: { channelId: "channel-9", senderId: 7 },
+		});
+
+		await videoCall.accept();
+
+		expect(videoCall.phase).toBe("idle");
+		expect(toastErrorMock).toHaveBeenCalledWith(
+			"You've used up your video call time",
+		);
+	});
+
+	// Ending while we are answering leaves nothing to join: connecting anyway
+	// would publish into a channel the call is already over on.
+	it("stops answering a call that ends mid-answer", async () => {
+		joinVideoCallMock.mockImplementation(() => {
+			listeners.get("videocall.v1.call_ended")?.({
+				payload: { channelId: "channel-9", result: "DECLINED" },
+			});
+			return Promise.resolve({ token: "token-2" });
+		});
+		listeners.get("videocall.v1.incoming_call")?.({
+			payload: { channelId: "channel-9", senderId: 7 },
+		});
+
+		await videoCall.accept();
+		await settle();
+
+		expect(agoraJoinMock).not.toHaveBeenCalled();
+		expect(videoCall.phase).toBe("idle");
 	});
 
 	it("gives up on an answer with no token to join with", async () => {
