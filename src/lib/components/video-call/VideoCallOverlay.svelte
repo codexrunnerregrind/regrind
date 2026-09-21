@@ -84,6 +84,18 @@
 		corner = `${vertical}-${horizontal}`;
 	}
 
+	// A call that ends mid-drag never delivers the pointerup, so the drag is
+	// dropped with the tile rather than left to reopen on the next call.
+	function trackTile(element: HTMLElement) {
+		tile = element;
+		return () => {
+			tile = null;
+			origin = null;
+			offset = null;
+			dragged = false;
+		};
+	}
+
 	// The click that closes a drag would otherwise also swap the tiles. Only
 	// that one: a tap right after is a tap.
 	function swallowClick(event: MouseEvent): void {
@@ -221,7 +233,7 @@
 		     included: a call is answered having already seen what is going out,
 		     and on the camera picked for it. It is dragged to any corner. -->
 		<div
-			bind:this={tile}
+			{@attach trackTile}
 			role="group"
 			aria-label="Your video — drag to another corner"
 			class={[

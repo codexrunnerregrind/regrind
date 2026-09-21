@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 
 import { cleanup, fireEvent, render } from "@testing-library/svelte";
+import { tick } from "svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const swapTiles = vi.fn();
 
-const videoCall = {
+const videoCall = $state({
 	phase: "active",
 	party: { name: "Sam", mediaHash: null },
 	facing: "user" as const,
@@ -25,7 +26,7 @@ const videoCall = {
 	switchCamera: vi.fn(),
 	hangUp: vi.fn(),
 	accept: vi.fn(),
-};
+});
 
 vi.mock("$lib/video-call/call-state.svelte", () => ({ videoCall }));
 
@@ -71,6 +72,7 @@ async function dragTo(tile: HTMLElement, x: number, y: number) {
 describe("VideoCallOverlay self tile", () => {
 	afterEach(() => {
 		swapTiles.mockClear();
+		videoCall.phase = "active";
 		cleanup();
 	});
 
@@ -107,6 +109,23 @@ describe("VideoCallOverlay self tile", () => {
 		await pointer(tile, "pointerup", 104, 100);
 		expect(tile.style.bottom).toBe("9rem");
 		expect(tile.style.right).toBe("1rem");
+	});
+
+	it("drops a drag the call ended in the middle of", async () => {
+		const { tile } = overlay();
+		await pointer(tile, "pointerdown", 100, 100);
+		await pointer(tile, "pointermove", 160, 160);
+		expect(tile.style.translate).toBe("60px 60px");
+
+		// They hang up mid-drag: no pointerup ever reaches the tile.
+		videoCall.phase = "idle";
+		await tick();
+		videoCall.phase = "active";
+		await tick();
+
+		const next = document.querySelector<HTMLElement>('[role="group"]')!;
+		expect(next.style.translate).toBe("");
+		expect(next.style.bottom).toBe("9rem");
 	});
 
 	it("swaps the tiles on a tap but not at the end of a drag", async () => {
