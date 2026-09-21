@@ -9,8 +9,7 @@
 	href="/settings/profile"
 	variant="default"
 	aria-label="Edit profile"
-	class="h-12 text-base"
 >
-	<PencilIcon class="size-6" />
+	<PencilIcon />
 	Edit profile
 </Button>
