@@ -22,7 +22,7 @@ impl Freshness {
 		}
 	}
 
-	fn directive(self) -> &'static str {
+	pub fn directive(self) -> &'static str {
 		match self {
 			Self::Immutable => "private, max-age=604800, immutable",
 			Self::Uncacheable => "no-store",

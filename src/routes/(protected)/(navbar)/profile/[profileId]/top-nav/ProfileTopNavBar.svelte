@@ -36,6 +36,7 @@
 			{profileId}
 			name={profile.displayName}
 			distance={profile.showDistance ? profile.distance : null}
+			blockable={profile.isBlockable !== false}
 			{onBlocked}
 			{onHidden}
 		/>

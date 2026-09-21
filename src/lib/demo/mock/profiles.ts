@@ -47,6 +47,7 @@ export type DemoSeed = {
 	favorite: boolean;
 	unread: number;
 	instagram: string | null;
+	blockable: boolean;
 };
 
 const FIRST_NAMES = [
@@ -301,7 +302,17 @@ const featuredOverrides = new Map<number, Partial<DemoSeed>>([
 			unread: 1,
 		},
 	],
-	[100010, { name: null, age: 40, photos: 0, bio: null, distanceM: 10 }],
+	[
+		100010,
+		{
+			name: null,
+			age: 40,
+			photos: 0,
+			bio: null,
+			distanceM: 10,
+			blockable: false,
+		},
+	],
 	[100011, { name: "Lucas90", photos: 2, bio: LONG_WORD_2, distanceM: 11 }],
 	[100012, { name: "😎🔥💯", age: 29, photos: 1, bio: "", distanceM: 12 }],
 	[
@@ -362,6 +373,7 @@ export const meSeed: DemoSeed = {
 	favorite: false,
 	unread: 0,
 	instagram: "demo.user",
+	blockable: true,
 };
 
 const seedCache = new Map<number, DemoSeed>();
@@ -412,6 +424,7 @@ function buildSeed(id: number): DemoSeed {
 		instagram: chance({ rng, probability: 0.25 })
 			? `${pick({ rng, items: FIRST_NAMES }).toLowerCase()}_${id % 1000}`
 			: null,
+		blockable: true,
 	};
 	base.unread =
 		base.favorite && chance({ rng, probability: 0.5 })

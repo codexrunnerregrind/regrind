@@ -5,6 +5,14 @@ use std::str::FromStr;
 use crate::error::AppError;
 use crate::state::AppState;
 
+const SIGNED_UPLOAD_PATHS: [&str; 2] =
+	["/v5/media/upload", "/v6/chat/media/upload"];
+
+fn requires_device_signature(path: &str) -> bool {
+	let path = path.split(['?', '#']).next().unwrap_or(path);
+	SIGNED_UPLOAD_PATHS.contains(&path)
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct RawResponse {
 	pub status: u16,
@@ -30,7 +38,9 @@ fn decode_request(payload: &str) -> Result<RequestPayload, AppError> {
 	})
 }
 
-fn encode_response(response: &RawResponse) -> Result<String, AppError> {
+pub(crate) fn encode_response(
+	response: &RawResponse,
+) -> Result<String, AppError> {
 	rmp_serde::encode::to_vec_named(response)
 		.map(|bytes| STANDARD.encode(&bytes))
 		.map_err(|e| AppError::Http(e.to_string()))
@@ -43,7 +53,7 @@ pub async fn request(
 ) -> Result<String, AppError> {
 	let payload = decode_request(&payload)?;
 
-	if grindr::requires_device_signature(&payload.path) {
+	if requires_device_signature(&payload.path) {
 		return Err(AppError::Api {
 			code: 400,
 			message: format!(
@@ -70,8 +80,13 @@ pub async fn request(
 	};
 
 	let client = state.client()?;
-	let raw = client
-		.request_authenticated_raw(method, &payload.path, json_body)
+	let request = client.request(method, &payload.path);
+	let request = match &json_body {
+		Some(body) => request.json(body),
+		None => request,
+	};
+	let raw = request
+		.send()
 		.await
 		.map_err(|e| AppError::from_client_error(e, &client))?;
 
@@ -141,15 +156,15 @@ mod tests {
 
 	#[test]
 	fn the_signed_upload_paths_are_the_ones_the_rest_bridge_refuses() {
-		assert!(grindr::requires_device_signature("/v5/media/upload"));
-		assert!(grindr::requires_device_signature(
+		assert!(requires_device_signature("/v5/media/upload"));
+		assert!(requires_device_signature(
 			"/v6/chat/media/upload?takenOnGrindr=true"
 		));
 
-		assert!(!grindr::requires_device_signature(
+		assert!(!requires_device_signature(
 			"/v5/chat/media/upload?takenOnGrindr=false"
 		));
-		assert!(!grindr::requires_device_signature("/v7/profiles/1"));
+		assert!(!requires_device_signature("/v7/profiles/1"));
 	}
 
 	#[test]

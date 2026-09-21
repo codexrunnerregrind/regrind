@@ -12,6 +12,10 @@ export default defineConfig(async ({ command }) => ({
 	plugins: [sveltekit(), tailwindcss()],
 	resolve: process.env.VITEST ? { conditions: ["browser"] } : undefined,
 
+	// OPEN_GRIND_STORE already selects the Android manifest overlay; exposing it
+	// here lets the bundle drop what a store build may not carry.
+	envPrefix: ["VITE_", "OPEN_GRIND_"],
+
 	esbuild: { drop: command === "build" ? ["console", "debugger"] : [] },
 
 	optimizeDeps: { include: ["maplibre-gl/dist/maplibre-gl-csp.js"] },

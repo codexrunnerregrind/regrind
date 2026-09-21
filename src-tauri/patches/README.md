@@ -41,6 +41,16 @@ On Android the custom-protocol handler runs while the process-global `REQUEST_HA
 
 Backport of [wry 0.56.0](https://github.com/tauri-apps/wry/releases/tag/wry-v0.56.0). **Delete when a `tauri-runtime-wry` requiring `wry >= 0.56` is published**.
 
+On Android wry hands `WebResourceResponse` a `ByteArrayInputStream` of the fully buffered body. A handler can instead register a `ResponseStream` and name its id in the `x-wry-stream` header, and the WebView pulls the body through JNI.
+
+| File                           | Change                                                                                                                       |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- |
+| `android/stream.rs`            | `ResponseStream`, the id registry and the four `stream*` natives.                                                            |
+| `android/binding.rs`, `lib.rs` | Register the natives in `android_binding!` and export the stream API.                                                        |
+| `android/kotlin/`              | `RustInputStream` reads through the natives. `RustWebViewClient` swaps it in for the `x-wry-stream` header, and R8 keeps it. |
+
+Not a backport: **keep it when the 0.56 hunks are deleted.**
+
 ## tauri-codegen
 
 Embedded assets and CSP hashes are emitted in hash-map and `readdir` order. The patch sorts both.

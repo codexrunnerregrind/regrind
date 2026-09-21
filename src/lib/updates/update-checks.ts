@@ -1,7 +1,6 @@
-import { addonUpdates } from "./addon.svelte";
-import { GOOGLE_OAUTH_COMPONENT } from "./components";
+import { addonFlows } from "./addon.svelte";
 import { problemBody, updateErrorText } from "./error-copy";
-import type { CheckReport } from "./flow";
+import type { CheckReport, UpdateFlow } from "./flow";
 import { getInstalledVersion } from "./index";
 import { showNotice, showProblem, showUpToDate } from "./toasts";
 import { checkForUpdateNow } from "./updates-manager";
@@ -60,30 +59,30 @@ export function manualCheckOffered({
 }
 
 async function checkInstalledAddon({
+	flow,
 	reportFailure,
 }: {
+	flow: UpdateFlow;
 	reportFailure: boolean;
 }): Promise<CheckReport | null> {
+	const { component } = flow;
 	try {
-		const installed = await getInstalledVersion(GOOGLE_OAUTH_COMPONENT);
+		const installed = await getInstalledVersion(component);
 		if (installed === null) {
-			await addonUpdates.withdrawUpdate();
+			await flow.withdrawUpdate();
 			return null;
 		}
 	} catch (error) {
 		if (reportFailure) {
 			const title = updateErrorText(error, {
 				fallback: "Couldn't check for updates",
-				component: GOOGLE_OAUTH_COMPONENT,
+				component,
 			});
-			showProblem({
-				title,
-				body: problemBody({ component: GOOGLE_OAUTH_COMPONENT, title }),
-			});
+			showProblem({ title, body: problemBody({ component, title }) });
 		}
 		return "failed";
 	}
-	return addonUpdates.checkNow({ reportFailure });
+	return flow.checkNow({ reportFailure });
 }
 
 async function checkEachComponent({
@@ -93,7 +92,11 @@ async function checkEachComponent({
 }: CheckScope & { reportFailure: boolean }): Promise<CheckReport[]> {
 	const reports = await Promise.all([
 		selfManaged ? checkForUpdateNow({ reportFailure }) : null,
-		addonAvailable ? checkInstalledAddon({ reportFailure }) : null,
+		...(addonAvailable
+			? addonFlows.map((flow) =>
+					checkInstalledAddon({ flow, reportFailure }),
+				)
+			: []),
 	]);
 	return reports.filter((report) => report !== null);
 }

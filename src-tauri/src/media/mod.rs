@@ -1,35 +1,63 @@
+mod buffered;
 mod cache;
 mod flight;
 mod range;
+mod registry;
+mod requested;
 mod response;
+mod stream;
 mod target;
 mod upstream;
 mod windowed;
 
+use std::collections::HashMap;
+use std::sync::Arc;
+
+use grindr::MediaFetcher;
+use tauri::async_runtime::JoinHandle;
 use tauri::http::{header, Method, Request, Response, StatusCode};
-use tauri::{
-	AppHandle, Manager, Runtime, UriSchemeContext, UriSchemeResponder,
-};
+use tauri::{AppHandle, Runtime, UriSchemeContext, UriSchemeResponder};
 use tokio::sync::{Mutex, Semaphore};
 
-use crate::state::AppState;
 use crate::storage::ProfileId;
 
-use cache::{cache_key, scope_of, CachedMedia, MediaCache};
+use buffered::serve_buffered;
+use cache::{scope_of, CachedMedia, MediaCache};
 use flight::Flights;
-use range::deliver_ranged;
-use response::{deliverable_status, refused, Freshness};
-use target::{decode_target, host_of, Target};
-use upstream::{
-	deliver_upstream, detail_of, fetch, refusal, serve_windowed, windowable,
-	FetchError,
-};
+use registry::unregister_stream;
+use response::refused;
+use stream::serve_streamed;
+use target::{decode_target, Target};
+use upstream::{detail_of, fetch};
 use windowed::Windowed;
 
 pub const SCHEME: &str = "ogmedia";
 
 const MAX_MEDIA_BYTES: usize = 16 * 1024 * 1024;
 const OFFICIAL_APP_REQUESTS_PER_HOST: usize = 20;
+const STREAMING_PLATFORM: bool = cfg!(target_os = "android");
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Delivery {
+	Buffered,
+	Streamed,
+}
+
+impl Delivery {
+	fn pick(
+		streaming_platform: bool,
+		fetcher: MediaFetcher,
+		range: Option<&str>,
+	) -> Self {
+		let plays_or_seeks =
+			fetcher == MediaFetcher::MediaPlayer || range.is_some();
+		if streaming_platform && plays_or_seeks {
+			Self::Streamed
+		} else {
+			Self::Buffered
+		}
+	}
+}
 
 /// Fetches media for something other than the webview — a save to the device,
 /// a waveform, a notification image — with the proxy's client, headers and
@@ -47,7 +75,8 @@ pub struct MediaProxy {
 	cache: Mutex<MediaCache>,
 	windowed: Mutex<Windowed>,
 	flights: Flights,
-	fetches: Semaphore,
+	fetches: Arc<Semaphore>,
+	pumps: Mutex<HashMap<u64, JoinHandle<()>>>,
 }
 
 impl Default for MediaProxy {
@@ -56,7 +85,8 @@ impl Default for MediaProxy {
 			cache: Mutex::default(),
 			windowed: Mutex::default(),
 			flights: Flights::default(),
-			fetches: Semaphore::new(OFFICIAL_APP_REQUESTS_PER_HOST),
+			fetches: Arc::new(Semaphore::new(OFFICIAL_APP_REQUESTS_PER_HOST)),
+			pumps: Mutex::default(),
 		}
 	}
 }
@@ -67,6 +97,11 @@ impl MediaProxy {
 	}
 
 	pub async fn forget_everything(&self) {
+		let pumps: Vec<_> = self.pumps.lock().await.drain().collect();
+		for (id, pump) in pumps {
+			pump.abort();
+			unregister_stream(id);
+		}
 		self.cache.lock().await.clear();
 		self.windowed.lock().await.clear();
 		self.flights.clear().await;
@@ -117,67 +152,36 @@ async fn serve<R: Runtime>(
 		return refused(StatusCode::BAD_REQUEST);
 	};
 	let range = range.as_deref();
-	let freshness = Freshness::of(&url);
-	// Scoped to the account that is asking. The cache sits in front of the
-	// server, so it is the only thing standing between one account and photos
-	// another account was entitled to.
-	let key = cache_key(app.state::<AppState>().active_profile_id(), &url);
-	let proxy = app.state::<MediaProxy>();
+	let delivery = Delivery::pick(STREAMING_PLATFORM, fetcher, range);
+	serve_by(delivery, app, &url, fetcher, range, is_head).await
+}
 
-	if let Some(hit) = proxy.cached(&key).await {
-		return deliver_ranged(&hit, range, is_head, freshness);
-	}
-	if proxy.windowed.lock().await.contains(&key) {
-		return serve_windowed(app, &url, fetcher, range, is_head).await;
-	}
-
-	let flight = proxy.flights.acquire(&key).await;
-	if let Some(hit) = proxy.cached(&key).await {
-		return deliver_ranged(&hit, range, is_head, freshness);
-	}
-	if proxy.windowed.lock().await.contains(&key) {
-		drop(flight);
-		return serve_windowed(app, &url, fetcher, range, is_head).await;
-	}
-
-	let fetched = match fetch(app, &url, fetcher, None).await {
-		Ok(fetched) => fetched,
-		Err(error) if windowable(&error, fetcher) => {
-			tracing::warn!(
-				"[media] {} falls back to windowed: {}",
-				host_of(&url),
-				detail_of(&error)
-			);
-			let mut windowed = proxy.windowed.lock().await;
-			if matches!(error, FetchError::Oversized) {
-				windowed.always(key);
-			} else {
-				windowed.for_now(key);
-			}
-			drop(windowed);
-			drop(flight);
-			return serve_windowed(app, &url, fetcher, range, is_head).await;
+async fn serve_by<R: Runtime>(
+	delivery: Delivery,
+	app: &AppHandle<R>,
+	url: &str,
+	fetcher: MediaFetcher,
+	range: Option<&str>,
+	is_head: bool,
+) -> Response<Vec<u8>> {
+	match delivery {
+		Delivery::Streamed if !is_head => {
+			serve_streamed(app, url, fetcher, range).await
 		}
-		Err(error) => return refusal(error, &url),
-	};
-
-	if deliverable_status(fetched.status) == Some(StatusCode::OK) {
-		let media = CachedMedia {
-			content_type: fetched.content_type,
-			body: fetched.body,
-		};
-		proxy.cache.lock().await.put(&key, media.clone());
-		return deliver_ranged(&media, range, is_head, freshness);
+		Delivery::Streamed | Delivery::Buffered => {
+			serve_buffered(app, url, fetcher, range, is_head).await
+		}
 	}
-	deliver_upstream(fetched, is_head)
 }
 
 #[cfg(test)]
 mod tests {
 	use tauri::test::{mock_builder, mock_context, noop_assets, MockRuntime};
+	use tauri::Manager;
 
 	use crate::state::AppState;
 
+	use super::cache::cache_key;
 	use super::*;
 
 	const PHOTO: &str = "https://cdns.grindr.com/images/thumb/320x320/ff";
@@ -189,7 +193,7 @@ mod tests {
 		})
 	}
 
-	fn app_without_a_client() -> tauri::App<MockRuntime> {
+	pub(super) fn app_without_a_client() -> tauri::App<MockRuntime> {
 		mock_builder()
 			.manage(MediaProxy::default())
 			.manage(AppState::default())
@@ -197,7 +201,7 @@ mod tests {
 			.expect("mock app")
 	}
 
-	async fn cache(
+	pub(super) async fn cache(
 		app: &tauri::App<MockRuntime>,
 		url: &str,
 		body: &'static [u8],
@@ -209,6 +213,13 @@ mod tests {
 				body: grindr::Bytes::from_static(body),
 			},
 		);
+	}
+
+	pub(super) fn header_str(
+		response: &Response<Vec<u8>>,
+		name: impl header::AsHeaderName,
+	) -> Option<&str> {
+		response.headers().get(name).and_then(|v| v.to_str().ok())
 	}
 
 	#[tokio::test]
@@ -403,5 +414,22 @@ mod tests {
 		let response = serve(app.handle(), None, None, false).await;
 
 		assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+	}
+
+	#[test]
+	fn only_a_video_or_a_seek_streams_and_only_on_a_streaming_platform() {
+		let video = grindr::MediaFetcher::MediaPlayer;
+		let image = grindr::MediaFetcher::ImageLoader;
+
+		assert_eq!(Delivery::pick(true, video, None), Delivery::Streamed);
+		assert_eq!(
+			Delivery::pick(true, image, Some("bytes=0-")),
+			Delivery::Streamed
+		);
+		assert_eq!(Delivery::pick(true, image, None), Delivery::Buffered);
+		assert_eq!(
+			Delivery::pick(false, video, Some("bytes=0-")),
+			Delivery::Buffered
+		);
 	}
 }

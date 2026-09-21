@@ -6,7 +6,12 @@ import SealWarningIcon from "phosphor-svelte/lib/SealWarningIcon";
 import { toast } from "svelte-sonner";
 
 import { openExternalLink } from "$lib/platform/link-opener";
-import { APP_COMPONENT, type ComponentKey } from "./components";
+import {
+	ADDON_NAME,
+	type AddonKey,
+	APP_COMPONENT,
+	type ComponentKey,
+} from "./components";
 import type { InstallKind } from "./flow";
 import type { StageView } from "./stage";
 import ToastCard from "./ToastCard.svelte";
@@ -115,14 +120,12 @@ export function showAddonInstalled({
 	tag,
 	kind,
 }: {
-	component: ComponentKey;
+	component: AddonKey;
 	tag: string | null;
 	kind: InstallKind;
 }): void {
-	const done =
-		kind === "install"
-			? "Google OAuth app installed"
-			: "Google OAuth app updated";
+	const name = ADDON_NAME[component];
+	const done = kind === "install" ? `${name} installed` : `${name} updated`;
 	toast.custom(ToastCard, {
 		...PLACEMENT,
 		id: `${INSTALLED_TOAST}:${component}`,

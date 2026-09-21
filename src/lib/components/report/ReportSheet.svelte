@@ -25,11 +25,13 @@
 		open = $bindable(),
 		profileId,
 		locations: presetLocations,
+		blockable = true,
 		onBlocked,
 	}: {
 		open: boolean;
 		profileId: Profile["profileId"];
 		locations?: ReportLocation[];
+		blockable?: boolean;
 		onBlocked?: () => void;
 	} = $props();
 
@@ -171,22 +173,26 @@
 					class="flex flex-col items-center gap-2 py-4 text-center"
 				>
 					<p>Grindr will review this profile.</p>
-					<p class="text-sm text-muted-foreground">
-						You can block this profile so you stop seeing it.
-					</p>
+					{#if blockable}
+						<p class="text-sm text-muted-foreground">
+							You can block this profile so you stop seeing it.
+						</p>
+					{/if}
 				</div>
 			</ResponsiveDialog.Body>
 			<ResponsiveDialog.Footer>
-				<Button
-					variant="destructive"
-					disabled={blocking}
-					onclick={() => void block()}
-				>
-					{#if blocking}
-						<Spinner />
-					{/if}
-					Block profile
-				</Button>
+				{#if blockable}
+					<Button
+						variant="destructive"
+						disabled={blocking}
+						onclick={() => void block()}
+					>
+						{#if blocking}
+							<Spinner />
+						{/if}
+						Block profile
+					</Button>
+				{/if}
 				<Button variant="secondary" onclick={() => (open = false)}>
 					Done
 				</Button>

@@ -38,7 +38,23 @@ provide("toggle-appearance", async () => {
 </script>
 
 <template>
-	<DefaultTheme.Layout />
+	<DefaultTheme.Layout>
+		<template #home-hero-image>
+			<picture class="image-src">
+				<source
+					media="(min-width: 960px) and (not (min-width: 1060px))"
+					type="image/avif"
+					srcset="/hero-1x2.avif"
+				/>
+				<source
+					media="(min-width: 960px) and (not (min-width: 1060px))"
+					srcset="/hero-1x2.webp"
+				/>
+				<source type="image/avif" srcset="/hero-1x3.avif" />
+				<img src="/hero-1x3.webp" alt="Screenshots of Open Grind" fetchpriority="high" />
+			</picture>
+		</template>
+	</DefaultTheme.Layout>
 </template>
 
 <style>

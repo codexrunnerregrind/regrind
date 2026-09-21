@@ -89,8 +89,10 @@ class TransferService : Service() {
 	private fun titleText(title: TransferTitle): Int =
 		when (title) {
 			TransferTitle.AppUpdate -> R.string.update_transfer_title
-			TransferTitle.AddonInstall -> R.string.addon_install_transfer_title
-			TransferTitle.AddonUpdate -> R.string.addon_update_transfer_title
+			TransferTitle.GoogleOauthInstall -> R.string.google_oauth_install_transfer_title
+			TransferTitle.GoogleOauthUpdate -> R.string.google_oauth_update_transfer_title
+			TransferTitle.RecaptchaInstall -> R.string.recaptcha_install_transfer_title
+			TransferTitle.RecaptchaUpdate -> R.string.recaptcha_update_transfer_title
 		}
 
 	companion object {

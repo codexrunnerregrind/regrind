@@ -2,24 +2,36 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { CheckReport } from "./flow";
 
-const { addonUpdates, updatesManager, updatesApi, toasts } = vi.hoisted(() => ({
-	addonUpdates: {
-		checkNow: vi.fn<(options: unknown) => Promise<CheckReport>>(),
-		withdrawUpdate: vi.fn<() => Promise<void>>(),
-	},
-	updatesManager: {
-		checkForUpdateNow: vi.fn<(options: unknown) => Promise<CheckReport>>(),
-	},
-	updatesApi: { getInstalledVersion: vi.fn<() => Promise<string | null>>() },
-	toasts: {
-		showProblem:
-			vi.fn<(problem: { title: string; body?: string }) => void>(),
-		showUpToDate: vi.fn<(title: string) => void>(),
-		showNotice: vi.fn<(title: string) => void>(),
-	},
-}));
+const { googleOAuth, recaptcha, updatesManager, updatesApi, toasts } =
+	vi.hoisted(() => {
+		const flow = (component: string) => ({
+			component,
+			checkNow: vi.fn<(options: unknown) => Promise<CheckReport>>(),
+			withdrawUpdate: vi.fn<() => Promise<void>>(),
+		});
+		return {
+			googleOAuth: flow("google-oauth"),
+			recaptcha: flow("recaptcha"),
+			updatesManager: {
+				checkForUpdateNow:
+					vi.fn<(options: unknown) => Promise<CheckReport>>(),
+			},
+			updatesApi: {
+				getInstalledVersion:
+					vi.fn<(component: string) => Promise<string | null>>(),
+			},
+			toasts: {
+				showProblem:
+					vi.fn<
+						(problem: { title: string; body?: string }) => void
+					>(),
+				showUpToDate: vi.fn<(title: string) => void>(),
+				showNotice: vi.fn<(title: string) => void>(),
+			},
+		};
+	});
 
-vi.mock("./addon.svelte", () => ({ addonUpdates }));
+vi.mock("./addon.svelte", () => ({ addonFlows: [googleOAuth, recaptcha] }));
 vi.mock("./updates-manager", () => updatesManager);
 vi.mock("./index", () => updatesApi);
 vi.mock("./toasts", () => toasts);
@@ -38,11 +50,31 @@ const storeBuild = {
 };
 const selfManagedBuild = { selfManaged: true, addonAvailable: true };
 
+type Lookup = string | null | { rejects: unknown };
+
+function installed(byComponent: Record<string, Lookup>) {
+	const lookups = new Map(
+		Object.entries(byComponent).map(([component, lookup]) => {
+			const read = vi.fn<() => Promise<string | null>>();
+			if (lookup !== null && typeof lookup === "object") {
+				read.mockRejectedValue(lookup.rejects);
+			} else {
+				read.mockResolvedValue(lookup);
+			}
+			return [component, read] as const;
+		}),
+	);
+	updatesApi.getInstalledVersion.mockImplementation(
+		(component) => lookups.get(component)?.() ?? Promise.resolve(null),
+	);
+}
+
 beforeEach(() => {
 	vi.clearAllMocks();
-	updatesApi.getInstalledVersion.mockResolvedValue("1.1.0");
+	installed({ "google-oauth": "1.1.0" });
 	updatesManager.checkForUpdateNow.mockResolvedValue("current");
-	addonUpdates.checkNow.mockResolvedValue("current");
+	googleOAuth.checkNow.mockResolvedValue("current");
+	recaptcha.checkNow.mockResolvedValue("current");
 });
 
 describe("the automatic update checks switch", () => {
@@ -113,7 +145,7 @@ describe("checking right after opting in", () => {
 		await checkAfterOptIn(storeBuild);
 
 		expect(updatesManager.checkForUpdateNow).not.toHaveBeenCalled();
-		expect(addonUpdates.checkNow).toHaveBeenCalledOnce();
+		expect(googleOAuth.checkNow).toHaveBeenCalledOnce();
 	});
 
 	it("checks the app and the add-on quietly on a self-managed build", async () => {
@@ -122,7 +154,7 @@ describe("checking right after opting in", () => {
 		expect(updatesManager.checkForUpdateNow).toHaveBeenCalledWith({
 			reportFailure: false,
 		});
-		expect(addonUpdates.checkNow).toHaveBeenCalledWith({
+		expect(googleOAuth.checkNow).toHaveBeenCalledWith({
 			reportFailure: false,
 		});
 	});
@@ -131,7 +163,7 @@ describe("checking right after opting in", () => {
 		await checkAfterOptIn({ selfManaged: true, addonAvailable: false });
 
 		expect(updatesManager.checkForUpdateNow).toHaveBeenCalledOnce();
-		expect(addonUpdates.checkNow).not.toHaveBeenCalled();
+		expect(googleOAuth.checkNow).not.toHaveBeenCalled();
 	});
 
 	it("does not ask about an add-on that is not installed", async () => {
@@ -139,7 +171,7 @@ describe("checking right after opting in", () => {
 
 		await checkAfterOptIn(storeBuild);
 
-		expect(addonUpdates.checkNow).not.toHaveBeenCalled();
+		expect(googleOAuth.checkNow).not.toHaveBeenCalled();
 	});
 
 	it("withdraws the update offer of an add-on that was uninstalled", async () => {
@@ -147,7 +179,7 @@ describe("checking right after opting in", () => {
 
 		await checkAfterOptIn(storeBuild);
 
-		expect(addonUpdates.withdrawUpdate).toHaveBeenCalledOnce();
+		expect(googleOAuth.withdrawUpdate).toHaveBeenCalledOnce();
 	});
 
 	it("never says that nothing was found", async () => {
@@ -175,10 +207,10 @@ describe("the Check for updates action", () => {
 		expect(updatesManager.checkForUpdateNow).toHaveBeenCalledWith({
 			reportFailure: true,
 		});
-		expect(addonUpdates.checkNow).toHaveBeenCalledWith({
+		expect(googleOAuth.checkNow).toHaveBeenCalledWith({
 			reportFailure: true,
 		});
-		expect(addonUpdates.withdrawUpdate).not.toHaveBeenCalled();
+		expect(googleOAuth.withdrawUpdate).not.toHaveBeenCalled();
 	});
 
 	it("says no updates are available when everything is current", async () => {
@@ -201,7 +233,7 @@ describe("the Check for updates action", () => {
 
 		await checkForUpdatesNow(selfManagedBuild);
 
-		expect(addonUpdates.checkNow).not.toHaveBeenCalled();
+		expect(googleOAuth.checkNow).not.toHaveBeenCalled();
 		expect(toasts.showUpToDate).toHaveBeenCalledExactlyOnceWith(
 			"No updates available",
 		);
@@ -212,7 +244,7 @@ describe("the Check for updates action", () => {
 
 		await checkForUpdatesNow(storeBuild);
 
-		expect(addonUpdates.checkNow).not.toHaveBeenCalled();
+		expect(googleOAuth.checkNow).not.toHaveBeenCalled();
 		expect(toasts.showUpToDate).not.toHaveBeenCalled();
 		expect(toasts.showNotice).toHaveBeenCalledExactlyOnceWith(
 			"No add-ons installed",
@@ -223,7 +255,7 @@ describe("the Check for updates action", () => {
 		updatesApi.getInstalledVersion.mockResolvedValue(null);
 
 		let finishWithdrawing: () => void = () => {};
-		addonUpdates.withdrawUpdate.mockReturnValueOnce(
+		googleOAuth.withdrawUpdate.mockReturnValueOnce(
 			new Promise((resolve) => {
 				finishWithdrawing = resolve;
 			}),
@@ -231,7 +263,7 @@ describe("the Check for updates action", () => {
 
 		const checking = checkForUpdatesNow(storeBuild);
 		await vi.waitFor(() =>
-			expect(addonUpdates.withdrawUpdate).toHaveBeenCalledOnce(),
+			expect(googleOAuth.withdrawUpdate).toHaveBeenCalledOnce(),
 		);
 		expect(toasts.showNotice).not.toHaveBeenCalled();
 
@@ -242,13 +274,11 @@ describe("the Check for updates action", () => {
 	});
 
 	it("reports an add-on it could not look for instead of calling it current", async () => {
-		updatesApi.getInstalledVersion.mockRejectedValue(
-			new Error("no plugin"),
-		);
+		installed({ "google-oauth": { rejects: new Error("no plugin") } });
 
 		await checkForUpdatesNow(storeBuild);
 
-		expect(addonUpdates.checkNow).not.toHaveBeenCalled();
+		expect(googleOAuth.checkNow).not.toHaveBeenCalled();
 		expect(toasts.showUpToDate).not.toHaveBeenCalled();
 		expect(toasts.showProblem).toHaveBeenCalledExactlyOnceWith({
 			title: "Couldn't check for updates",
@@ -257,9 +287,13 @@ describe("the Check for updates action", () => {
 	});
 
 	it("does not repeat the Google OAuth app under a title that names it", async () => {
-		updatesApi.getInstalledVersion.mockRejectedValue({
-			kind: "unsupported",
-			detail: { reason: "foreignTarget" },
+		installed({
+			"google-oauth": {
+				rejects: {
+					kind: "unsupported",
+					detail: { reason: "foreignTarget" },
+				},
+			},
 		});
 
 		await checkForUpdatesNow(storeBuild);
@@ -271,9 +305,7 @@ describe("the Check for updates action", () => {
 	});
 
 	it("keeps a failed add-on lookup quiet right after opting in", async () => {
-		updatesApi.getInstalledVersion.mockRejectedValue(
-			new Error("no plugin"),
-		);
+		installed({ "google-oauth": { rejects: new Error("no plugin") } });
 
 		await checkAfterOptIn(storeBuild);
 
@@ -291,7 +323,7 @@ describe("the Check for updates action", () => {
 		"stays quiet about the rest when the app reports %s and the add-on %s",
 		async (app, addon) => {
 			updatesManager.checkForUpdateNow.mockResolvedValue(app);
-			addonUpdates.checkNow.mockResolvedValue(addon);
+			googleOAuth.checkNow.mockResolvedValue(addon);
 
 			await checkForUpdatesNow(selfManagedBuild);
 
@@ -301,7 +333,7 @@ describe("the Check for updates action", () => {
 
 	it("waits for every check before it settles", async () => {
 		let answerAddon: (report: CheckReport) => void = () => {};
-		addonUpdates.checkNow.mockReturnValue(
+		googleOAuth.checkNow.mockReturnValue(
 			new Promise((resolve) => {
 				answerAddon = resolve;
 			}),
@@ -312,7 +344,7 @@ describe("the Check for updates action", () => {
 			settled = true;
 		});
 		await vi.waitFor(() =>
-			expect(addonUpdates.checkNow).toHaveBeenCalledOnce(),
+			expect(googleOAuth.checkNow).toHaveBeenCalledOnce(),
 		);
 		expect(settled).toBe(false);
 
@@ -320,5 +352,82 @@ describe("the Check for updates action", () => {
 		await checking;
 
 		expect(toasts.showUpToDate).toHaveBeenCalledOnce();
+	});
+});
+
+describe("the reCAPTCHA helper", () => {
+	it("is checked once it is installed", async () => {
+		installed({ "google-oauth": "1.1.0", recaptcha: "1.1.0" });
+
+		await checkForUpdatesNow(storeBuild);
+
+		expect(recaptcha.checkNow).toHaveBeenCalledExactlyOnceWith({
+			reportFailure: true,
+		});
+		expect(googleOAuth.checkNow).toHaveBeenCalledOnce();
+	});
+
+	it("is never asked about while it is not installed", async () => {
+		await checkForUpdatesNow(storeBuild);
+		await checkAfterOptIn(storeBuild);
+
+		expect(recaptcha.checkNow).not.toHaveBeenCalled();
+		expect(recaptcha.withdrawUpdate).toHaveBeenCalledTimes(2);
+	});
+
+	it("is checked on its own when the Google OAuth app is not installed", async () => {
+		installed({ recaptcha: "1.1.0" });
+
+		await checkForUpdatesNow(storeBuild);
+
+		expect(googleOAuth.checkNow).not.toHaveBeenCalled();
+		expect(recaptcha.checkNow).toHaveBeenCalledOnce();
+		expect(toasts.showNotice).not.toHaveBeenCalled();
+		expect(toasts.showUpToDate).toHaveBeenCalledExactlyOnceWith(
+			"No updates available",
+		);
+	});
+
+	it("is checked quietly right after opting in", async () => {
+		installed({ recaptcha: "1.1.0" });
+
+		await checkAfterOptIn(storeBuild);
+
+		expect(recaptcha.checkNow).toHaveBeenCalledExactlyOnceWith({
+			reportFailure: false,
+		});
+	});
+
+	it("keeps the rest quiet while it offers an update", async () => {
+		installed({ "google-oauth": "1.1.0", recaptcha: "1.0.0" });
+		recaptcha.checkNow.mockResolvedValue("offered");
+
+		await checkForUpdatesNow(selfManagedBuild);
+
+		expect(toasts.showUpToDate).not.toHaveBeenCalled();
+	});
+
+	it("is named under the problem when its lookup fails", async () => {
+		installed({
+			"google-oauth": "1.1.0",
+			recaptcha: { rejects: new Error("no plugin") },
+		});
+
+		await checkForUpdatesNow(storeBuild);
+
+		expect(recaptcha.checkNow).not.toHaveBeenCalled();
+		expect(toasts.showProblem).toHaveBeenCalledExactlyOnceWith({
+			title: "Couldn't check for updates",
+			body: "reCAPTCHA helper",
+		});
+	});
+
+	it("is not asked about where add-ons can't install", async () => {
+		installed({ "google-oauth": "1.1.0", recaptcha: "1.1.0" });
+
+		await checkForUpdatesNow({ selfManaged: true, addonAvailable: false });
+
+		expect(updatesApi.getInstalledVersion).not.toHaveBeenCalled();
+		expect(recaptcha.checkNow).not.toHaveBeenCalled();
 	});
 });

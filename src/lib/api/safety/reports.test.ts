@@ -20,6 +20,7 @@ vi.mock("$lib/api/analytics/assignments", () => ({
 		Promise.resolve(assignmentsOn.has(key)),
 }));
 
+import { ApiError } from "$lib/api/api-error";
 import {
 	getProfileReport,
 	getProfileReportV31,
@@ -52,22 +53,40 @@ const rightNowPostReport: RightNowPostReportRequest = {
 	locations: ["RIGHT_NOW_PHOTO", "RIGHT_NOW_TEXT"],
 };
 
-function respond({
+function response({
 	status = 200,
 	body = null,
 }: { status?: number; body?: unknown } = {}) {
 	const assertOk = () => {
 		if (status < 200 || status >= 300)
-			throw new Error(`API request failed with status ${status}`);
+			throw new ApiError({
+				message: `API request failed with status ${status}`,
+				request: { method: "POST", path: "/" },
+				response: { status, body: "" },
+			});
 	};
-	fetchRestMock.mockResolvedValue({
+	return {
 		status,
 		assertOk,
 		jsonParsed: (schema: ZodType) => {
 			assertOk();
 			return schema.parse(body);
 		},
-	});
+	};
+}
+
+function respond(options: { status?: number; body?: unknown } = {}) {
+	fetchRestMock.mockResolvedValue(response(options));
+}
+
+function respondInTurn(...statuses: number[]) {
+	for (const status of statuses) {
+		fetchRestMock.mockResolvedValueOnce(response({ status }));
+	}
+}
+
+function requestedPaths() {
+	return fetchRestMock.mock.calls.map(([path]) => path);
 }
 
 function onlyRequest() {
@@ -273,13 +292,65 @@ describe("reportProfile", () => {
 			});
 		});
 
-		it("throws when v5 rejects the report", async () => {
-			callMethodMock.mockResolvedValue("minted-token");
-			respond({ status: 403 });
+		describe("with a minted token", () => {
+			beforeEach(() => {
+				callMethodMock.mockResolvedValue("minted-token");
+			});
 
-			await expect(
-				reportProfile({ profileId: PROFILE_ID, report }),
-			).rejects.toThrow("status 403");
+			it.each([400, 403, 422])(
+				"refiles on the ungated v3.1 without the token when v5 refuses it with %i",
+				async (status) => {
+					respondInTurn(status, 200);
+
+					await expect(
+						reportProfile({ profileId: PROFILE_ID, report }),
+					).resolves.toBeUndefined();
+
+					expect(requestedPaths()).toStrictEqual([
+						"/v5/flags/42",
+						"/v3.1/flags/42",
+					]);
+					expect(fetchRestMock.mock.lastCall).toStrictEqual([
+						"/v3.1/flags/42",
+						{ method: "POST", body: report },
+					]);
+				},
+			);
+
+			it("throws the v3.1 refusal when the fallback is refused too", async () => {
+				respondInTurn(403, 409);
+
+				await expect(
+					reportProfile({ profileId: PROFILE_ID, report }),
+				).rejects.toThrow("status 409");
+				expect(requestedPaths()).toStrictEqual([
+					"/v5/flags/42",
+					"/v3.1/flags/42",
+				]);
+			});
+
+			it("does not refile after a v5 server error, which may have filed it", async () => {
+				respondInTurn(500);
+
+				await expect(
+					reportProfile({ profileId: PROFILE_ID, report }),
+				).rejects.toThrow("status 500");
+				expect(requestedPaths()).toStrictEqual(["/v5/flags/42"]);
+			});
+
+			it("does not refile when v5 never answered", async () => {
+				fetchRestMock.mockRejectedValueOnce(
+					new ApiError({
+						message: "Network error",
+						request: { method: "POST", path: "/v5/flags/42" },
+					}),
+				);
+
+				await expect(
+					reportProfile({ profileId: PROFILE_ID, report }),
+				).rejects.toThrow("Network error");
+				expect(requestedPaths()).toStrictEqual(["/v5/flags/42"]);
+			});
 		});
 	});
 });

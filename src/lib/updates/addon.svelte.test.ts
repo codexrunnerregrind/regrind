@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Capability, Readiness, Unsupported } from "./types";
 import {
@@ -125,6 +125,62 @@ describe("the add-on activity the sign-in screen observes", () => {
 
 		expect(toasts.showUpToDate).toHaveBeenCalledExactlyOnceWith(
 			"The Google OAuth app is up to date",
+		);
+	});
+});
+
+describe("the reCAPTCHA helper's update flow", () => {
+	beforeEach(() => {
+		vi.resetModules();
+		vi.clearAllMocks();
+		fake.reset();
+		platform.isAndroidPlatform.mockReturnValue(true);
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("is watched alongside the Google OAuth app", async () => {
+		vi.useFakeTimers();
+		await probedCapability(releaseSigned);
+		const { startAddonUpdateWatch } = await import("./addon.svelte");
+
+		await startAddonUpdateWatch();
+
+		const checked = api.checkForUpdate.mock.calls.map(
+			([{ component }]) => component,
+		);
+		expect(checked).toHaveLength(2);
+		expect(checked).toEqual(
+			expect.arrayContaining(["google-oauth", "recaptcha"]),
+		);
+	});
+
+	it("offers its update without touching the sign-in screen's activity", async () => {
+		const { addonActivity, recaptchaUpdates } =
+			await import("./addon.svelte");
+		api.checkForUpdate.mockResolvedValue(
+			offer("update", { component: "recaptcha" }),
+		);
+
+		await expect(recaptchaUpdates.checkNow()).resolves.toBe("offered");
+
+		expect(lastShownToast()).toMatchObject({
+			component: "recaptcha",
+			view: { stage: "available" },
+		});
+		expect(addonActivity.stage).toBeNull();
+	});
+
+	it("says the reCAPTCHA helper is up to date when a tap finds nothing newer", async () => {
+		const { recaptchaUpdates } = await import("./addon.svelte");
+		api.checkForUpdate.mockResolvedValue(upToDate);
+
+		await recaptchaUpdates.installNow();
+
+		expect(toasts.showUpToDate).toHaveBeenCalledExactlyOnceWith(
+			"The reCAPTCHA helper is up to date",
 		);
 	});
 });

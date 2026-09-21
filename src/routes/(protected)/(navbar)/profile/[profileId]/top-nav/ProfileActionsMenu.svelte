@@ -25,12 +25,14 @@
 		profileId,
 		name = null,
 		distance = null,
+		blockable,
 		onBlocked,
 		onHidden,
 	}: {
 		profileId: number;
 		name?: string | null;
 		distance?: number | null;
+		blockable: boolean;
 		onBlocked: () => void;
 		onHidden: () => void;
 	} = $props();
@@ -181,16 +183,18 @@
 				<EyeSlashIcon class="size-5" />
 				Hide profile
 			</DropdownMenu.Item>
-			<DropdownMenu.Item
-				variant="destructive"
-				onSelect={() => (blockOpen = true)}
-			>
-				<ProhibitIcon class="size-5" />
-				Block profile
-			</DropdownMenu.Item>
+			{#if blockable}
+				<DropdownMenu.Item
+					variant="destructive"
+					onSelect={() => (blockOpen = true)}
+				>
+					<ProhibitIcon class="size-5" />
+					Block profile
+				</DropdownMenu.Item>
+			{/if}
 		</DropdownMenu.Content>
 	</DropdownMenu.Root>
 </div>
 
 <BlockProfileDialog bind:open={blockOpen} {profileId} {name} {onBlocked} />
-<ReportSheet bind:open={reportOpen} {profileId} {onBlocked} />
+<ReportSheet bind:open={reportOpen} {profileId} {blockable} {onBlocked} />

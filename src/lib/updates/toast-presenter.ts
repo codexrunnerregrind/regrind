@@ -1,4 +1,4 @@
-import { APP_COMPONENT, type ComponentKey } from "./components";
+import { ADDON_NAME, APP_COMPONENT, type ComponentKey } from "./components";
 import { problemBody } from "./error-copy";
 import type { StagePresenter } from "./flow";
 import {
@@ -22,6 +22,11 @@ export function toastPresenter(component: ComponentKey): StagePresenter {
 			if (component === APP_COMPONENT) void showInstalled();
 			else showAddonInstalled({ component, tag, kind });
 		},
-		upToDate: () => showUpToDate("The Google OAuth app is up to date"),
+		upToDate: () =>
+			showUpToDate(
+				component === APP_COMPONENT
+					? "Open Grind is up to date"
+					: `The ${ADDON_NAME[component]} is up to date`,
+			),
 	};
 }

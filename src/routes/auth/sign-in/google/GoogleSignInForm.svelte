@@ -23,6 +23,7 @@
 	import { Textarea } from "$lib/components/ui/textarea";
 	import { openExternalLink } from "$lib/platform/link-opener";
 	import { isAndroidPlatform } from "$lib/platform/os";
+	import { isPlayBuild } from "$lib/platform/store";
 	import { getInstalledVersion, GOOGLE_OAUTH_COMPONENT } from "$lib/updates";
 	import {
 		addonActivity,
@@ -38,6 +39,9 @@
 
 	const COMPANION_RELEASES =
 		"https://git.opengrind.org/open-grind/google-oauth-app/releases#install";
+	const COMPANION_GUIDE =
+		"https://opengrind.org/guides/sign-in-with-google#installed-from-google-play";
+	const companionHref = isPlayBuild() ? COMPANION_GUIDE : COMPANION_RELEASES;
 	const automated = isAndroidPlatform();
 
 	let token = $state("");
@@ -96,7 +100,7 @@
 			) {
 				await addonUpdates.installNow();
 			} else {
-				openExternalLink(COMPANION_RELEASES);
+				openExternalLink(companionHref);
 			}
 		} finally {
 			starting = false;
@@ -152,7 +156,7 @@
 
 {#snippet companionLink()}
 	<Link
-		href={COMPANION_RELEASES}
+		href={companionHref}
 		class="font-medium text-primary underline underline-offset-2"
 	>
 		Open Grind Google OAuth app
@@ -195,7 +199,9 @@
 				<Card.Header>
 					<Card.Title>Sign in with Google</Card.Title>
 					<Card.Description>
-						{#if view === "install"}
+						{#if view === "install" && isPlayBuild()}
+							Signing in with Google needs the {@render companionLink()}
+						{:else if view === "install"}
 							Download and install the {@render companionLink()} to
 							sign in with Google
 						{:else if view === "continue"}

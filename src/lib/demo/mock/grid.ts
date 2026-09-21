@@ -76,7 +76,7 @@ export function buildFullProfile(seed: DemoSeed): Profile {
 		pronouns: null,
 		nsfw: null,
 		verifiedInstagramId: seed.instagram,
-		isBlockable: true,
+		isBlockable: seed.blockable,
 		showTribes: true,
 		showPosition: seed.position !== null,
 		aboutMe: seed.bio,

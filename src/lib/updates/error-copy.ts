@@ -1,6 +1,7 @@
 import z from "zod";
 
 import {
+	ADDON_NAME,
 	APP_COMPONENT,
 	type ComponentKey,
 	GOOGLE_OAUTH_COMPONENT,
@@ -62,28 +63,30 @@ const copy: Record<KnownKind, string> = {
 	busy: "Another download is already running",
 };
 
-const addonUnsupportedCopy: Partial<Record<Unsupported["reason"], string>> = {
-	externallyManaged:
-		"The store that installed the Google OAuth app manages its updates",
-	foreignSigner:
-		"This copy of ReGrind isn't signed by Open Grind, so it can't install the Google OAuth app",
-	foreignTarget:
-		"The installed Google OAuth app isn't signed by Open Grind. Uninstall it to install the official one.",
-	noReleaseArtifacts: "The Google OAuth app isn't published for this device",
-	undetermined:
-		"ReGrind can't tell whether it may install the Google OAuth app",
-};
+function addonUnsupportedCopy(
+	name: string,
+): Partial<Record<Unsupported["reason"], string>> {
+	return {
+		externallyManaged: `The store that installed the ${name} manages its updates`,
+		foreignSigner: `This copy of ReGrind isn't signed by Open Grind, so it can't install the ${name}`,
+		foreignTarget: `The installed ${name} isn't signed by Open Grind. Uninstall it to install the official one.`,
+		noReleaseArtifacts: `The ${name} isn't published for this device`,
+		undetermined: `ReGrind can't tell whether it may install the ${name}`,
+	};
+}
 
-const addonCopy: Partial<Record<KnownKind, string>> = {
-	unsigned: "Failed to verify the Google OAuth app",
-	signature: "Failed to verify the Google OAuth app",
-	storage: "Couldn't save the Google OAuth app download",
-	install: "Couldn't install the Google OAuth app",
-};
+function addonCopy(name: string): Partial<Record<KnownKind, string>> {
+	return {
+		unsigned: `Failed to verify the ${name}`,
+		signature: `Failed to verify the ${name}`,
+		storage: `Couldn't save the ${name} download`,
+		install: `Couldn't install the ${name}`,
+	};
+}
 
-const addonUpdateCopy: Partial<Record<KnownKind, string>> = {
-	install: "Couldn't update the Google OAuth app",
-};
+function addonUpdateCopy(name: string): Partial<Record<KnownKind, string>> {
+	return { install: `Couldn't update the ${name}` };
+}
 
 const busyCopy: Record<ComponentKey, string> = {
 	[APP_COMPONENT]: "Wait for the ReGrind update to finish downloading",
@@ -103,20 +106,23 @@ const busyDetailSchema = z.object({
 
 const PACKAGE_MANAGER_INSTALL_FAILED_INSUFFICIENT_STORAGE = -4;
 
-const noStorageCopy: Record<typeof APP_COMPONENT | Release["kind"], string> = {
-	[APP_COMPONENT]: "Not enough storage to install the update",
-	install: "Not enough storage to install the Google OAuth app",
-	update: "Not enough storage to update the Google OAuth app",
-};
+const APP_NO_STORAGE = "Not enough storage to install the update";
 
-const GOOGLE_OAUTH_SUBJECT = "Google OAuth app";
+function addonNoStorageCopy(name: string): Record<Release["kind"], string> {
+	return {
+		install: `Not enough storage to install the ${name}`,
+		update: `Not enough storage to update the ${name}`,
+	};
+}
 
 export function unsupportedText(
 	{ reason }: Unsupported | Pick<Unsupported, "reason">,
 	{ component = APP_COMPONENT }: { component?: ComponentKey } = {},
 ): string {
 	const addonText =
-		component === APP_COMPONENT ? undefined : addonUnsupportedCopy[reason];
+		component === APP_COMPONENT
+			? undefined
+			: addonUnsupportedCopy(ADDON_NAME[component])[reason];
 	return addonText ?? unsupportedCopy[reason];
 }
 
@@ -127,7 +133,7 @@ export function noReleaseText({
 }): string {
 	return component === APP_COMPONENT
 		? "No ReGrind release is published yet"
-		: "No Google OAuth app release is published yet";
+		: `No ${ADDON_NAME[component]} release is published yet`;
 }
 
 export function updateErrorText(
@@ -148,9 +154,10 @@ export function updateErrorText(
 		return running.success ? busyCopy[running.data.component] : copy.busy;
 	}
 	if (component === APP_COMPONENT) return copy[known.kind];
+	const name = ADDON_NAME[component];
 	const updateText =
-		kind === "update" ? addonUpdateCopy[known.kind] : undefined;
-	return updateText ?? addonCopy[known.kind] ?? copy[known.kind];
+		kind === "update" ? addonUpdateCopy(name)[known.kind] : undefined;
+	return updateText ?? addonCopy(name)[known.kind] ?? copy[known.kind];
 }
 
 export function installFailedText({
@@ -163,9 +170,9 @@ export function installFailedText({
 	kind: Release["kind"];
 }): string {
 	if (code === PACKAGE_MANAGER_INSTALL_FAILED_INSUFFICIENT_STORAGE) {
-		return noStorageCopy[
-			component === APP_COMPONENT ? APP_COMPONENT : kind
-		];
+		return component === APP_COMPONENT
+			? APP_NO_STORAGE
+			: addonNoStorageCopy(ADDON_NAME[component])[kind];
 	}
 	return updateErrorText(
 		{ kind: "install" },
@@ -180,10 +187,7 @@ export function problemBody({
 	component: ComponentKey;
 	title: string;
 }): string | undefined {
-	const named = title
-		.toLowerCase()
-		.includes(GOOGLE_OAUTH_SUBJECT.toLowerCase());
-	return component === APP_COMPONENT || named
-		? undefined
-		: GOOGLE_OAUTH_SUBJECT;
+	if (component === APP_COMPONENT) return undefined;
+	const name = ADDON_NAME[component];
+	return title.toLowerCase().includes(name.toLowerCase()) ? undefined : name;
 }

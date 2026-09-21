@@ -213,7 +213,7 @@ pub fn run() {
             api::recaptcha::mint_recaptcha_token,
             storage::storage_backend,
             api::rest::request,
-            api::media_upload::upload_chat_media,
+            api::media_upload::upload_media,
             api::media_upload::upload_chat_audio,
             api::media_upload::upload_chat_video,
             api::media_upload::upload_chat_video_file,

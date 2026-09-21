@@ -1,6 +1,11 @@
-use grindr::{GrindrError, MediaFetcher, MediaRequest, MediaResponse};
+use std::sync::Arc;
+
+use grindr::{
+	GrindrClient, GrindrError, MediaFetcher, MediaRequest, MediaResponse,
+};
 use tauri::http::{header, Response, StatusCode};
 use tauri::{AppHandle, Manager, Runtime};
+use tokio::sync::OwnedSemaphorePermit;
 
 use crate::state::AppState;
 
@@ -17,13 +22,34 @@ pub enum FetchError {
 	Upstream(GrindrError),
 }
 
-pub fn windowable(error: &FetchError, fetcher: MediaFetcher) -> bool {
-	let body_will_never_fit = matches!(error, FetchError::Oversized);
-	let deadline_ran_out =
-		matches!(error, FetchError::Upstream(GrindrError::Http(_)));
-	let plays_from_windows = fetcher == MediaFetcher::MediaPlayer;
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Fallback {
+	Stream,
+	Window,
+	Refuse,
+}
 
-	body_will_never_fit || (deadline_ran_out && plays_from_windows)
+impl Fallback {
+	pub fn pick(
+		streaming_platform: bool,
+		error: &FetchError,
+		fetcher: MediaFetcher,
+	) -> Self {
+		let body_will_never_fit = matches!(error, FetchError::Oversized);
+		let deadline_ran_out =
+			matches!(error, FetchError::Upstream(GrindrError::Http(_)));
+		let plays_from_windows = fetcher == MediaFetcher::MediaPlayer;
+
+		match (
+			streaming_platform,
+			body_will_never_fit,
+			deadline_ran_out && plays_from_windows,
+		) {
+			(true, true, _) => Self::Stream,
+			(false, true, _) | (false, _, true) => Self::Window,
+			_ => Self::Refuse,
+		}
+	}
 }
 
 pub fn detail_of(error: &FetchError) -> String {
@@ -43,19 +69,28 @@ fn classify(error: GrindrError) -> FetchError {
 	}
 }
 
+pub async fn admit<R: Runtime>(
+	app: &AppHandle<R>,
+) -> Result<(OwnedSemaphorePermit, GrindrClient), FetchError> {
+	let fetches = Arc::clone(&app.state::<MediaProxy>().fetches);
+	let permit = fetches
+		.acquire_owned()
+		.await
+		.map_err(|_| FetchError::Busy)?;
+	let client = app
+		.state::<AppState>()
+		.client()
+		.map_err(|_| FetchError::Busy)?;
+	Ok((permit, client))
+}
+
 pub async fn fetch<R: Runtime>(
 	app: &AppHandle<R>,
 	url: &str,
 	fetcher: MediaFetcher,
 	range: Option<&str>,
 ) -> Result<MediaResponse, FetchError> {
-	let proxy = app.state::<MediaProxy>();
-	let Ok(_permit) = proxy.fetches.acquire().await else {
-		return Err(FetchError::Busy);
-	};
-	let Ok(client) = app.state::<AppState>().client() else {
-		return Err(FetchError::Busy);
-	};
+	let (_permit, client) = admit(app).await?;
 	client
 		.fetch_media(MediaRequest {
 			url,
@@ -67,7 +102,7 @@ pub async fn fetch<R: Runtime>(
 		.map_err(classify)
 }
 
-fn without_url(mut message: String) -> String {
+pub fn without_url(mut message: String) -> String {
 	const MARKER: &str = " for url (";
 	let Some(start) = message.find(MARKER) else {
 		return message;
@@ -80,16 +115,13 @@ fn without_url(mut message: String) -> String {
 	message
 }
 
-fn refusal_detail(error: FetchError) -> Result<String, StatusCode> {
+pub fn refusal_detail(error: FetchError) -> Result<String, StatusCode> {
 	match error {
 		FetchError::Busy => Err(StatusCode::SERVICE_UNAVAILABLE),
 		FetchError::Upstream(GrindrError::InvalidRequest(_)) => {
 			Err(StatusCode::BAD_REQUEST)
 		}
-		FetchError::Oversized => {
-			Ok(format!("media body exceeds {MAX_MEDIA_BYTES} bytes"))
-		}
-		FetchError::Upstream(error) => Ok(without_url(error.to_string())),
+		error => Ok(detail_of(&error)),
 	}
 }
 
@@ -153,14 +185,45 @@ mod tests {
 			"operation timed out".to_owned(),
 		));
 
-		assert!(windowable(&timed_out, MediaFetcher::MediaPlayer));
-		assert!(!windowable(&timed_out, MediaFetcher::ImageLoader));
+		assert_eq!(
+			Fallback::pick(false, &timed_out, MediaFetcher::MediaPlayer),
+			Fallback::Window
+		);
+		assert_eq!(
+			Fallback::pick(false, &timed_out, MediaFetcher::ImageLoader),
+			Fallback::Refuse
+		);
+	}
+
+	#[test]
+	fn a_timed_out_video_is_refused_where_the_webview_pulls_bodies() {
+		let timed_out = FetchError::Upstream(GrindrError::Http(
+			"operation timed out".to_owned(),
+		));
+
+		assert_eq!(
+			Fallback::pick(true, &timed_out, MediaFetcher::MediaPlayer),
+			Fallback::Refuse
+		);
+	}
+
+	#[test]
+	fn a_body_over_the_ceiling_is_streamed_where_the_webview_pulls_bodies() {
+		for fetcher in [MediaFetcher::MediaPlayer, MediaFetcher::ImageLoader] {
+			assert_eq!(
+				Fallback::pick(true, &FetchError::Oversized, fetcher),
+				Fallback::Stream
+			);
+		}
 	}
 
 	#[test]
 	fn a_body_over_the_ceiling_is_windowed_whatever_asked_for_it() {
 		for fetcher in [MediaFetcher::MediaPlayer, MediaFetcher::ImageLoader] {
-			assert!(windowable(&FetchError::Oversized, fetcher));
+			assert_eq!(
+				Fallback::pick(false, &FetchError::Oversized, fetcher),
+				Fallback::Window
+			);
 		}
 	}
 
@@ -176,7 +239,16 @@ mod tests {
 		];
 
 		for error in hopeless {
-			assert!(!windowable(&error, MediaFetcher::MediaPlayer));
+			for streaming_platform in [false, true] {
+				assert_eq!(
+					Fallback::pick(
+						streaming_platform,
+						&error,
+						MediaFetcher::MediaPlayer
+					),
+					Fallback::Refuse
+				);
+			}
 		}
 	}
 

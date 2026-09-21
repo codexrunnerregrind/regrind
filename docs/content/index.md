@@ -27,6 +27,10 @@ hero:
       text: Source code
       icon: '<span class="vp-icon i-forgejo"></span>'
       link: https://git.opengrind.org/open-grind/open-grind
+    - theme: ghost
+      text: Telegram
+      icon: '<span class="vp-icon i-telegram"></span>'
+      link: https://t.me/opengrind
 
 features:
   - title: Unlocked grid
@@ -55,8 +59,11 @@ features:
     link: https://git.opengrind.org/open-grind/open-grind/src/branch/main/SECURITY.md#security-policy
 ---
 
-<img src="/app-screenshots-1x6.avif" class="hero-screenshots-1x6">
-<img src="/app-screenshots-3x2.avif" class="hero-screenshots-3x2">
-<img src="/app-screenshots-2x3.avif" class="hero-screenshots-2x3">
-
-<hr />
+<picture class="app-screenshots">
+<source media="(min-width: 1024px)" type="image/avif" srcset="/app-screenshots-1x6.avif">
+<source media="(min-width: 1024px)" srcset="/app-screenshots-1x6.webp">
+<source media="(min-width: 600px)" type="image/avif" srcset="/app-screenshots-3x2.avif">
+<source media="(min-width: 600px)" srcset="/app-screenshots-3x2.webp">
+<source type="image/avif" srcset="/app-screenshots-2x3.avif">
+<img src="/app-screenshots-2x3.webp" alt="Open Grind screenshots">
+</picture>

@@ -1,4 +1,4 @@
-import { APP_COMPONENT, type ComponentKey } from "./components";
+import { ADDON_NAME, APP_COMPONENT, type ComponentKey } from "./components";
 import type { Progress, Release, UpdateError } from "./types";
 
 export type UpdateStage =
@@ -40,24 +40,28 @@ const appTitles: Record<UpdateStage, string> = {
 	installing: "Installing…",
 };
 
-const addonTitles: Record<Release["kind"], Record<UpdateStage, string>> = {
-	install: {
-		available: "Google OAuth app is available",
-		downloading: "Downloading the Google OAuth app…",
-		verifying: "Verifying the Google OAuth app…",
-		paused: "Google OAuth app is ready to download",
-		ready: "Google OAuth app is downloaded",
-		installing: "Installing the Google OAuth app…",
-	},
-	update: {
-		available: "Google OAuth app update available",
-		downloading: "Downloading the Google OAuth app update…",
-		verifying: "Verifying the Google OAuth app update…",
-		paused: "Google OAuth app update is available",
-		ready: "Google OAuth app update is downloaded",
-		installing: "Updating the Google OAuth app…",
-	},
-};
+function addonTitles(
+	name: string,
+): Record<Release["kind"], Record<UpdateStage, string>> {
+	return {
+		install: {
+			available: `${name} is available`,
+			downloading: `Downloading the ${name}…`,
+			verifying: `Verifying the ${name}…`,
+			paused: `${name} is ready to download`,
+			ready: `${name} is downloaded`,
+			installing: `Installing the ${name}…`,
+		},
+		update: {
+			available: `${name} update available`,
+			downloading: `Downloading the ${name} update…`,
+			verifying: `Verifying the ${name} update…`,
+			paused: `${name} update is available`,
+			ready: `${name} update is downloaded`,
+			installing: `Updating the ${name}…`,
+		},
+	};
+}
 
 type StageCopyArgs = {
 	component: ComponentKey;
@@ -67,7 +71,7 @@ type StageCopyArgs = {
 
 export function stageTitle({ component, kind, stage }: StageCopyArgs): string {
 	if (component === APP_COMPONENT) return appTitles[stage];
-	return addonTitles[kind][stage];
+	return addonTitles(ADDON_NAME[component])[kind][stage];
 }
 
 const installBodies: Record<UpdateStage, string | undefined> = {

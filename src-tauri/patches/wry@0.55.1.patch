@@ -13,10 +13,47 @@ index 0988872..aa12f07 100644
  level = "warn"
  priority = 0
 diff --git a/src/android/binding.rs b/src/android/binding.rs
-index 031cd09..af6559c 100644
+index 031cd09..ca862c8 100644
 --- a/src/android/binding.rs
 +++ b/src/android/binding.rs
-@@ -99,7 +99,12 @@ fn handle_request(
+@@ -9,8 +9,8 @@ use http::{
+ use jni::errors::Result as JniResult;
+ pub use jni::{
+   self,
+-  objects::{GlobalRef, JClass, JMap, JObject, JString},
+-  sys::{jboolean, jint, jobject, jstring},
++  objects::{GlobalRef, JByteArray, JClass, JMap, JObject, JString},
++  sys::{jboolean, jint, jlong, jobject, jstring},
+   JNIEnv,
+ };
+ pub use ndk;
+@@ -22,6 +22,7 @@ use super::{
+   ASSET_LOADER_DOMAIN, EVAL_CALLBACKS, IPC, ON_LOAD_HANDLER, REQUEST_HANDLER, TITLE_CHANGE_HANDLER,
+   URL_LOADING_OVERRIDE, WITH_ASSET_LOADER,
+ };
++pub use super::stream::*;
+ 
+ use crate::PageLoadEvent;
+ 
+@@ -87,6 +88,17 @@ macro_rules! android_binding {
+       handleReceivedTitle,
+       [JString, JString],
+     );
++    android_fn!($domain, $package, Rust, streamAvailable, [jlong], jint);
++    android_fn!($domain, $package, Rust, streamSkip, [jlong, jlong], jlong);
++    android_fn!(
++      $domain,
++      $package,
++      Rust,
++      streamRead,
++      [jlong, JByteArray, jint, jint],
++      jint
++    );
++    android_fn!($domain, $package, Rust, streamClose, [jlong]);
+   }};
+ }
+ 
+@@ -99,7 +111,12 @@ fn handle_request(
    let webview_id = env.get_string(&webview_id)?;
    let webview_id = webview_id.to_str().ok().unwrap_or_default();
  
@@ -30,7 +67,7 @@ index 031cd09..af6559c 100644
      #[cfg(feature = "tracing")]
      let span =
        tracing::info_span!(parent: None, "wry::custom_protocol::handle", uri = tracing::field::Empty).entered();
-@@ -162,7 +167,7 @@ fn handle_request(
+@@ -162,7 +179,7 @@ fn handle_request(
      let response = {
        #[cfg(feature = "tracing")]
        let _span = tracing::info_span!("wry::custom_protocol::call_handler").entered();
@@ -39,8 +76,76 @@ index 031cd09..af6559c 100644
          webview_id,
          final_request,
          is_document_start_script_enabled != 0,
+diff --git a/src/android/kotlin/Rust.kt b/src/android/kotlin/Rust.kt
+index b5b6bdf..5e13aad 100644
+--- a/src/android/kotlin/Rust.kt
++++ b/src/android/kotlin/Rust.kt
+@@ -43,4 +43,9 @@ object Rust {
+     @JvmStatic external fun onEval(webviewId: String, id: Int, result: String)
+ 
+     @JvmStatic external fun handleReceivedTitle(webviewId: String, title: String)
++
++    @JvmStatic external fun streamAvailable(handle: Long): Int
++    @JvmStatic external fun streamSkip(handle: Long, n: Long): Long
++    @JvmStatic external fun streamRead(handle: Long, buffer: ByteArray, offset: Int, length: Int): Int
++    @JvmStatic external fun streamClose(handle: Long)
+ }
+\ No newline at end of file
+diff --git b/src/android/kotlin/RustInputStream.kt b/src/android/kotlin/RustInputStream.kt
+new file mode 100644
+index 0000000..2aa7046
+--- /dev/null
++++ b/src/android/kotlin/RustInputStream.kt
+@@ -0,0 +1,22 @@
++// Copyright 2020-2023 Tauri Programme within The Commons Conservancy
++// SPDX-License-Identifier: Apache-2.0
++// SPDX-License-Identifier: MIT
++
++package {{package}}
++
++import java.io.InputStream
++
++class RustInputStream(private val handle: Long) : InputStream() {
++    override fun available(): Int = Rust.streamAvailable(handle)
++
++    override fun skip(n: Long): Long = Rust.streamSkip(handle, n)
++
++    override fun read(b: ByteArray, off: Int, len: Int): Int = Rust.streamRead(handle, b, off, len)
++
++    override fun read(): Int {
++        val one = ByteArray(1)
++        return if (read(one, 0, 1) == 1) one[0].toInt() and 0xff else -1
++    }
++
++    override fun close() = Rust.streamClose(handle)
++}
+diff --git a/src/android/kotlin/RustWebViewClient.kt b/src/android/kotlin/RustWebViewClient.kt
+index 3dae460..c698b94 100644
+--- a/src/android/kotlin/RustWebViewClient.kt
++++ b/src/android/kotlin/RustWebViewClient.kt
+@@ -41,6 +41,7 @@ class RustWebViewClient(webView: RustWebView, context: Context): WebViewClient()
+         } else {
+             val response = Rust.handleRequest(view.id, request, view.isDocumentStartScriptEnabled)
+             if (response != null) {
++                response.responseHeaders?.remove("x-wry-stream")?.let { response.data = RustInputStream(it.toLong()) }
+                 if (response.responseHeaders != null) {
+                     response.responseHeaders["Cache-Control"] = "no-store"
+                 } else {
+diff --git a/src/android/kotlin/proguard-wry.pro b/src/android/kotlin/proguard-wry.pro
+index a0f19c6..40df27b 100644
+--- a/src/android/kotlin/proguard-wry.pro
++++ b/src/android/kotlin/proguard-wry.pro
+@@ -33,3 +33,8 @@
+ -keep class {{package-unescaped}}.RustWebChromeClient,{{package-unescaped}}.RustWebViewClient {
+   public <init>(...);
+ }
++
++-keep class {{package-unescaped}}.RustInputStream {
++  public <init>(...);
++  public <methods>;
++}
 diff --git a/src/android/mod.rs b/src/android/mod.rs
-index 8f44c70..3b64104 100644
+index 8f44c70..cf10b0c 100644
 --- a/src/android/mod.rs
 +++ b/src/android/mod.rs
 @@ -21,7 +21,7 @@ use raw_window_handle::HasWindowHandle;
@@ -52,7 +157,16 @@ index 8f44c70..3b64104 100644
    time::Duration,
  };
  
-@@ -70,7 +70,7 @@ macro_rules! define_static_handlers {
+@@ -37,6 +37,8 @@ use crate::util::Counter;
+ static COUNTER: Counter = Counter::new();
+ const MAIN_PIPE_TIMEOUT: Duration = Duration::from_secs(10);
+ 
++pub(crate) mod stream;
++
+ pub struct Context<'a, 'b> {
+   pub env: &'a mut JNIEnv<'b>,
+   pub activity: &'a JObject<'b>,
+@@ -70,7 +72,7 @@ macro_rules! define_static_handlers {
  
  define_static_handlers! {
    IPC = UnsafeIpc { handler: Box<dyn Fn(Request<String>)> };
@@ -61,7 +175,7 @@ index 8f44c70..3b64104 100644
    TITLE_CHANGE_HANDLER = UnsafeTitleHandler { handler: Box<dyn Fn(String)> };
    URL_LOADING_OVERRIDE = UnsafeUrlLoadingOverride { handler: Box<dyn Fn(String) -> bool> };
    ON_LOAD_HANDLER = UnsafeOnPageLoadHandler { handler: Box<dyn Fn(PageLoadEvent, String)> };
-@@ -247,7 +247,7 @@ impl InnerWebView {
+@@ -247,7 +249,7 @@ impl InnerWebView {
        .unwrap()
        .insert(
          id.clone(),
@@ -70,11 +184,195 @@ index 8f44c70..3b64104 100644
            move |webview_id: &str, mut request, is_document_start_script_enabled| {
              let uri = request.uri().to_string();
              if let Some((custom_protocol, custom_protocol_handler)) =
+diff --git b/src/android/stream.rs b/src/android/stream.rs
+new file mode 100644
+index 0000000..755e1e8
+--- /dev/null
++++ b/src/android/stream.rs
+@@ -0,0 +1,169 @@
++// Copyright 2020-2023 Tauri Programme within The Commons Conservancy
++// SPDX-License-Identifier: Apache-2.0
++// SPDX-License-Identifier: MIT
++
++use std::{
++  collections::HashMap,
++  io,
++  panic::{catch_unwind, AssertUnwindSafe},
++  sync::{
++    atomic::{AtomicU64, Ordering},
++    Arc, Mutex, MutexGuard, PoisonError,
++  },
++};
++
++use jni::{
++  objects::{JByteArray, JClass},
++  sys::{jbyte, jint, jlong, jsize},
++  JNIEnv,
++};
++use once_cell::sync::Lazy;
++
++/// Response header naming the [`register_stream`] id whose stream becomes the body.
++pub const STREAM_HEADER: &str = "x-wry-stream";
++
++/// A response body with `java.io.InputStream` semantics.
++pub trait ResponseStream: Send {
++  fn available(&mut self) -> io::Result<u64>;
++  fn skip(&mut self, n: u64) -> io::Result<u64>;
++  /// `Ok(0)` is end of stream.
++  fn read(&mut self, buf: &mut [u8]) -> io::Result<usize>;
++  /// Must not block.
++  fn close(&mut self);
++}
++
++type Entry = Arc<Mutex<Box<dyn ResponseStream>>>;
++
++static STREAMS: Lazy<Mutex<HashMap<u64, Entry>>> = Lazy::new(Default::default);
++static NEXT_ID: AtomicU64 = AtomicU64::new(1);
++
++fn streams() -> MutexGuard<'static, HashMap<u64, Entry>> {
++  STREAMS.lock().unwrap_or_else(PoisonError::into_inner)
++}
++
++pub fn register_stream(stream: Box<dyn ResponseStream>) -> u64 {
++  let id = NEXT_ID.fetch_add(1, Ordering::Relaxed);
++  streams().insert(id, Arc::new(Mutex::new(stream)));
++  id
++}
++
++pub fn unregister_stream(id: u64) -> bool {
++  let Some(entry) = streams().remove(&id) else {
++    return false;
++  };
++  let closed = entry.try_lock().map(|mut stream| stream.close()).is_ok();
++  if !closed {
++    std::thread::spawn(move || {
++      if let Ok(mut stream) = entry.lock() {
++        stream.close();
++      }
++    });
++  }
++  true
++}
++
++fn with_stream<T>(
++  handle: jlong,
++  body: impl FnOnce(&mut dyn ResponseStream) -> io::Result<T>,
++) -> io::Result<T> {
++  let entry = streams()
++    .get(&(handle as u64))
++    .cloned()
++    .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "unknown stream"))?;
++  let mut stream = entry
++    .lock()
++    .map_err(|_| io::Error::other("stream poisoned"))?;
++  body(&mut **stream)
++}
++
++fn guarded<T>(
++  env: &mut JNIEnv,
++  sentinel: T,
++  body: impl FnOnce(&mut JNIEnv) -> io::Result<T>,
++) -> T {
++  match catch_unwind(AssertUnwindSafe(|| body(env))) {
++    Ok(Ok(value)) => value,
++    Ok(Err(error)) => {
++      throw(env, &error.to_string());
++      sentinel
++    }
++    Err(_) => {
++      throw(env, "stream panicked");
++      sentinel
++    }
++  }
++}
++
++fn throw(env: &mut JNIEnv, message: &str) {
++  if env.exception_check().unwrap_or(true) {
++    return;
++  }
++  let _ = env.throw_new("java/io/IOException", message);
++}
++
++fn read_bounds(capacity: jsize, offset: jint, length: jint) -> io::Result<(jsize, usize)> {
++  match offset.checked_add(length) {
++    Some(end) if offset >= 0 && length >= 0 && end <= capacity => Ok((offset, length as usize)),
++    _ => Err(io::Error::new(
++      io::ErrorKind::InvalidInput,
++      "read range outside the buffer",
++    )),
++  }
++}
++
++fn as_jbytes(bytes: &[u8]) -> &[jbyte] {
++  unsafe { std::slice::from_raw_parts(bytes.as_ptr().cast::<jbyte>(), bytes.len()) }
++}
++
++#[allow(non_snake_case)]
++pub unsafe fn streamAvailable(mut env: JNIEnv, _: JClass, handle: jlong) -> jint {
++  guarded(&mut env, 0, |_| {
++    with_stream(handle, |stream| stream.available()).map(|n| n.min(jint::MAX as u64) as jint)
++  })
++}
++
++#[allow(non_snake_case)]
++pub unsafe fn streamSkip(mut env: JNIEnv, _: JClass, handle: jlong, n: jlong) -> jlong {
++  guarded(&mut env, 0, |_| {
++    if n <= 0 {
++      return Ok(0);
++    }
++    with_stream(handle, |stream| stream.skip(n as u64))
++      .map(|skipped| skipped.min(jlong::MAX as u64) as jlong)
++  })
++}
++
++#[allow(non_snake_case)]
++pub unsafe fn streamRead(
++  mut env: JNIEnv,
++  _: JClass,
++  handle: jlong,
++  buffer: JByteArray,
++  offset: jint,
++  length: jint,
++) -> jint {
++  guarded(&mut env, -1, |env| {
++    let capacity = env.get_array_length(&buffer).map_err(io::Error::other)?;
++    let (offset, length) = read_bounds(capacity, offset, length)?;
++    if length == 0 {
++      return Ok(0);
++    }
++    let mut chunk = vec![0u8; length];
++    let read = with_stream(handle, |stream| stream.read(&mut chunk))?;
++    if read == 0 {
++      return Ok(-1);
++    }
++    env
++      .set_byte_array_region(&buffer, offset, as_jbytes(&chunk[..read]))
++      .map_err(io::Error::other)?;
++    Ok(read as jint)
++  })
++}
++
++#[allow(non_snake_case)]
++pub unsafe fn streamClose(mut env: JNIEnv, _: JClass, handle: jlong) {
++  guarded(&mut env, (), |_| {
++    unregister_stream(handle as u64);
++    Ok(())
++  })
++}
 diff --git a/src/lib.rs b/src/lib.rs
-index 38fbc9e..a372e8d 100644
+index 38fbc9e..0db98ba 100644
 --- a/src/lib.rs
 +++ b/src/lib.rs
-@@ -644,7 +644,7 @@ struct WebViewAttributes<'a> {
+@@ -369,6 +369,8 @@ pub mod prelude {
+ #[cfg(target_os = "android")]
+ pub use android::JniHandle;
+ #[cfg(target_os = "android")]
++pub use android::stream::{register_stream, unregister_stream, ResponseStream, STREAM_HEADER};
++#[cfg(target_os = "android")]
+ use android::*;
+ 
+ #[cfg(gtk)]
+@@ -644,7 +646,7 @@ struct WebViewAttributes<'a> {
    ///   locate your files in those directories. For more information, see [Loading in-app content](https://developer.android.com/guide/webapps/load-local-content) page.
    /// - iOS: To get the path of your assets, you can call [`CFBundle::resources_path`](https://docs.rs/core-foundation/latest/core_foundation/bundle/struct.CFBundle.html#method.resources_path). So url like `wry://assets/index.html` could get the html file in assets directory.
    pub custom_protocols:
@@ -83,7 +381,7 @@ index 38fbc9e..a372e8d 100644
  
    /// The IPC handler to receive the message from Javascript on webview
    /// using `window.ipc.postMessage("insert_message_here")` to host Rust code.
-@@ -1037,7 +1037,7 @@ impl<'a> WebViewBuilder<'a> {
+@@ -1037,7 +1039,7 @@ impl<'a> WebViewBuilder<'a> {
    #[cfg(feature = "protocol")]
    pub fn with_custom_protocol<F>(mut self, name: String, handler: F) -> Self
    where
@@ -92,7 +390,7 @@ index 38fbc9e..a372e8d 100644
    {
      #[cfg(any(
        target_os = "linux",
-@@ -1102,7 +1102,7 @@ impl<'a> WebViewBuilder<'a> {
+@@ -1102,7 +1104,7 @@ impl<'a> WebViewBuilder<'a> {
    #[cfg(feature = "protocol")]
    pub fn with_asynchronous_custom_protocol<F>(mut self, name: String, handler: F) -> Self
    where

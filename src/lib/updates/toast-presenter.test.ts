@@ -57,3 +57,39 @@ describe("a Google OAuth app problem toast", () => {
 		]);
 	});
 });
+
+describe("the up-to-date toast", () => {
+	it("names the add-on that is up to date", () => {
+		toastPresenter("recaptcha").upToDate();
+		toastPresenter("google-oauth").upToDate();
+
+		expect(toasts.showUpToDate.mock.calls).toStrictEqual([
+			["The reCAPTCHA helper is up to date"],
+			["The Google OAuth app is up to date"],
+		]);
+	});
+
+	it("names Open Grind for the app itself", () => {
+		toastPresenter("app").upToDate();
+
+		expect(toasts.showUpToDate).toHaveBeenCalledExactlyOnceWith(
+			"Open Grind is up to date",
+		);
+	});
+});
+
+describe("the installed toast", () => {
+	it("hands the reCAPTCHA helper's install to the add-on toast", () => {
+		toastPresenter("recaptcha").installed({
+			tag: "v1.1.0",
+			kind: "update",
+		});
+
+		expect(toasts.showAddonInstalled).toHaveBeenCalledExactlyOnceWith({
+			component: "recaptcha",
+			tag: "v1.1.0",
+			kind: "update",
+		});
+		expect(toasts.showInstalled).not.toHaveBeenCalled();
+	});
+});

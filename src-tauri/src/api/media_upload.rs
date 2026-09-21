@@ -1,9 +1,9 @@
 use base64::{engine::general_purpose::STANDARD, Engine as _};
-use grindr::GrindrClient;
 use serde::{Deserialize, Serialize};
 
+use crate::api::rest::{encode_response, RawResponse};
 use crate::error::AppError;
-use crate::photo::{self, Photo};
+use crate::photo;
 use crate::state::AppState;
 
 const MAX_AUDIO_BYTES: usize = 32 * 1024 * 1024;
@@ -28,61 +28,62 @@ pub struct MediaUploadResponse {
 	pub media_hash: String,
 }
 
-async fn upload_signed_v6(
-	client: &GrindrClient,
-	photo: Photo,
-) -> Result<MediaUploadResponse, AppError> {
-	let response = client
-		.upload_chat_media(photo.bytes, &photo.content_type, None, None, true)
-		.await
-		.map_err(|e| AppError::from_client_error(e, client))?;
-
-	Ok(MediaUploadResponse {
-		media_id: response.media_id,
-		url: response.url,
-		media_hash: response.media_hash,
+/// A non-2xx upload is the API's refusal, not a transport failure, so it is
+/// reported the way every other client error is.
+fn parsed_json<T: serde::de::DeserializeOwned>(
+	client: &grindr::GrindrClient,
+	response: grindr::RawResponse,
+) -> Result<T, AppError> {
+	if !(200..300).contains(&response.status) {
+		return Err(AppError::from_client_error(
+			grindr::GrindrError::from_response(response.status, &response.body),
+			client,
+		));
+	}
+	serde_json::from_slice(&response.body).map_err(|e| {
+		AppError::Http(format!("Failed to parse upload response: {e}"))
 	})
 }
 
-async fn upload_unsigned_v5(
-	client: &GrindrClient,
-	photo: Photo,
+fn parsed_upload(
+	client: &grindr::GrindrClient,
+	response: grindr::RawResponse,
 ) -> Result<MediaUploadResponse, AppError> {
-	let response = client
-		.upload_chat_media_unsigned(photo.bytes, &photo.content_type)
-		.await
-		.map_err(|e| AppError::from_client_error(e, client))?;
-
-	Ok(MediaUploadResponse {
-		media_id: response.media_id,
-		url: response.url,
-		media_hash: response.media_hash,
-	})
+	parsed_json(client, response)
 }
 
-/// Signing marks media as taken on Grindr regardless of the query parameter,
-/// so only in-app captures may take the signed endpoint.
 #[tauri::command]
-pub async fn upload_chat_media(
+pub async fn upload_media(
 	app: tauri::AppHandle,
 	state: tauri::State<'_, AppState>,
+	path: String,
+	signed: bool,
 	content_type: String,
-	taken_on_grindr: bool,
 	// Base64, because raw byte arrays over the Tauri IPC are unreliable.
 	// https://github.com/tauri-apps/tauri/issues/10573
 	data: String,
-) -> Result<MediaUploadResponse, AppError> {
+) -> Result<String, AppError> {
 	let bytes = STANDARD.decode(&data).map_err(|e| {
 		AppError::Http(format!("Failed to decode base64 media: {e}"))
 	})?;
 	let photo = photo::normalize(&app, bytes, content_type).await?;
 
 	let client = state.client()?;
-	if taken_on_grindr {
-		upload_signed_v6(&client, photo).await
+	let request = client.request(grindr::Method::POST, &path);
+	let request = if signed {
+		request.signed_bytes(&photo.content_type, photo.bytes)
 	} else {
-		upload_unsigned_v5(&client, photo).await
-	}
+		request.bytes(&photo.content_type, photo.bytes)
+	};
+	let raw = request
+		.send()
+		.await
+		.map_err(|e| AppError::from_client_error(e, &client))?;
+
+	encode_response(&RawResponse {
+		status: raw.status,
+		body: raw.body,
+	})
 }
 
 /// The webview records voice notes itself, so the bytes arrive already
@@ -120,17 +121,20 @@ pub async fn upload_chat_audio(
 		)));
 	}
 
+	let mut path = "/v6/chat/media/upload?takenOnGrindr=true".to_owned();
+	if let Some(length) = length_ms {
+		path.push_str(&format!("&length={length}"));
+	}
+
 	let client = state.client()?;
 	let response = client
-		.upload_chat_media(bytes, &content_type, length_ms, None, true)
+		.request(grindr::Method::POST, &path)
+		.signed_bytes(&content_type, bytes)
+		.send()
 		.await
 		.map_err(|e| AppError::from_client_error(e, &client))?;
 
-	Ok(MediaUploadResponse {
-		media_id: response.media_id,
-		url: response.url,
-		media_hash: response.media_hash,
-	})
+	parsed_upload(&client, response)
 }
 
 /// A video picked from the gallery. Unlike a photo the bytes go up untouched —
@@ -192,12 +196,9 @@ async fn send_video(
 
 	let client = state.client()?;
 	let response = client
-		.request_authenticated_bytes(
-			grindr::Method::POST,
-			&path,
-			content_type,
-			bytes,
-		)
+		.request(grindr::Method::POST, &path)
+		.bytes(content_type, bytes)
+		.send()
 		.await
 		.map_err(|e| AppError::from_client_error(e, &client))?;
 
@@ -346,12 +347,12 @@ pub async fn upload_album_content(
 
 	let client = state.client()?;
 	let response = client
-		.request_authenticated_bytes(
+		.request(
 			grindr::Method::POST,
 			&format!("/v1/albums/{album_id}/content"),
-			&format!("multipart/form-data; boundary={boundary}"),
-			body,
 		)
+		.bytes(&format!("multipart/form-data; boundary={boundary}"), body)
+		.send()
 		.await
 		.map_err(|e| AppError::from_client_error(e, &client))?;
 
@@ -439,14 +440,14 @@ pub async fn upload_right_now_media(
 
 	let client = state.client()?;
 	let response = client
-		.request_authenticated_bytes(
+		.request(
 			grindr::Method::POST,
 			&format!(
 				"/v1/media/upload?img_1_top={top}&img_1_left={left}&img_1_right={right}&img_1_bottom={bottom}"
 			),
-			&photo.content_type,
-			photo.bytes,
 		)
+		.bytes(&photo.content_type, photo.bytes)
+		.send()
 		.await
 		.map_err(|e| AppError::from_client_error(e, &client))?;
 
@@ -498,21 +499,31 @@ pub async fn upload_profile_image(
 	let client = state.client()?;
 	if taken_on_grindr {
 		let response = client
-			.upload_profile_image(photo.bytes, Some(&thumb_coords), true)
+			.request(
+				grindr::Method::POST,
+				&format!(
+					"/v5/media/upload?takenOnGrindr=true&thumbCoords={thumb_coords}"
+				),
+			)
+			.signed_bytes("image/jpeg", photo.bytes)
+			.send()
 			.await
 			.map_err(|e| AppError::from_client_error(e, &client))?;
+		let parsed: LegacyMediaUploadResponse = parsed_json(&client, response)?;
 		return Ok(ProfileImageUploadResponse {
-			media_hash: response.hash,
+			media_hash: parsed.hash,
 		});
 	}
 
 	let response = client
-		.request_authenticated_bytes(
+		.request(
 			grindr::Method::POST,
-			&format!("/v4/media/upload?thumbCoords={thumb_coords}&takenOnGrindr=false"),
-			&photo.content_type,
-			photo.bytes,
+			&format!(
+				"/v4/media/upload?thumbCoords={thumb_coords}&takenOnGrindr=false"
+			),
 		)
+		.bytes(&photo.content_type, photo.bytes)
+		.send()
 		.await
 		.map_err(|e| AppError::from_client_error(e, &client))?;
 

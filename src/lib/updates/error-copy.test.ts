@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { APP_COMPONENT, GOOGLE_OAUTH_COMPONENT } from "./components";
+import {
+	APP_COMPONENT,
+	GOOGLE_OAUTH_COMPONENT,
+	RECAPTCHA_COMPONENT,
+} from "./components";
 import {
 	installFailedText,
 	noReleaseText,
@@ -250,5 +254,70 @@ describe("the subject line under a problem", () => {
 				title: "Couldn't reach the release server",
 			}),
 		).toBe(undefined);
+	});
+});
+
+describe("copy for the reCAPTCHA helper", () => {
+	const component = RECAPTCHA_COMPONENT;
+
+	it("names the helper wherever an add-on is named", () => {
+		expect(
+			unsupportedText({ reason: "foreignTarget" }, { component }),
+		).toBe(
+			"The installed reCAPTCHA helper isn't signed by Open Grind. Uninstall it to install the official one.",
+		);
+		expect(
+			updateErrorText(
+				{ kind: "signature" },
+				{ fallback: "fallback", component },
+			),
+		).toBe("Failed to verify the reCAPTCHA helper");
+		expect(
+			updateErrorText(
+				{ kind: "install" },
+				{ fallback: "fallback", component, kind: "update" },
+			),
+		).toBe("Couldn't update the reCAPTCHA helper");
+		expect(noReleaseText({ component })).toBe(
+			"No reCAPTCHA helper release is published yet",
+		);
+		expect(installFailedText({ code: -4, component, kind: "update" })).toBe(
+			"Not enough storage to update the reCAPTCHA helper",
+		);
+	});
+
+	it("never mentions the Google OAuth app", () => {
+		const texts = [
+			...(
+				[
+					"externallyManaged",
+					"foreignSigner",
+					"foreignTarget",
+					"noReleaseArtifacts",
+					"undetermined",
+				] as const
+			).map((reason) => unsupportedText({ reason }, { component })),
+			...(["unsigned", "signature", "storage", "install"] as const).map(
+				(kind) =>
+					updateErrorText(
+						{ kind },
+						{ fallback: "fallback", component },
+					),
+			),
+			installFailedText({ code: -4, component, kind: "install" }),
+		];
+		for (const text of texts) expect(text).not.toMatch(/Google/);
+	});
+
+	it("puts the helper's name under a problem title that lacks it", () => {
+		expect(
+			problemBody({ component, title: "Couldn't check for updates" }),
+		).toBe("reCAPTCHA helper");
+		expect(
+			problemBody({
+				component,
+				title: "Failed to verify the reCAPTCHA helper",
+			}),
+		).toBeUndefined();
 	});
 });

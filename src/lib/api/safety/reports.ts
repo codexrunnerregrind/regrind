@@ -1,4 +1,5 @@
 import { isAssignmentOn } from "$lib/api/analytics/assignments";
+import { ApiError } from "$lib/api/api-error";
 import { callMethod } from "$lib/api/methods";
 import { fetchRest } from "$lib/api/transport";
 import {
@@ -13,6 +14,12 @@ import {
 import type { Profile } from "$lib/model/users/profiles";
 
 const RIGHT_NOW_MODERATION = "right-now-moderation";
+
+function refusedByServer(error: unknown): boolean {
+	if (!(error instanceof ApiError) || error.response === null) return false;
+	const { status } = error.response;
+	return status >= 400 && status < 500;
+}
 
 async function submittedReportAt(
 	path: string,
@@ -128,5 +135,13 @@ export async function reportProfile({
 		await reportProfileV31({ profileId, report });
 		return;
 	}
-	await reportProfileV5({ profileId, report: { ...report, captchaToken } });
+	try {
+		await reportProfileV5({
+			profileId,
+			report: { ...report, captchaToken },
+		});
+	} catch (error) {
+		if (!refusedByServer(error)) throw error;
+		await reportProfileV31({ profileId, report });
+	}
 }

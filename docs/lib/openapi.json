@@ -2,7 +2,7 @@
 	"openapi": "3.0.3",
 	"info": {
 		"title": "Grindr API",
-		"version": "26.15.1 (2026-08-30)"
+		"version": "26.16.1.179451 (2026-09-13)"
 	},
 	"servers": [
 		{
@@ -1812,6 +1812,74 @@
 						"description": "OK"
 					}
 				},
+				"x-wip": true
+			}
+		},
+		"/v1/popup-logic": {
+			"post": {
+				"tags": [
+					"system/modal"
+				],
+				"operationId": "fetchPopUpLogicPlan",
+				"security": [
+					{
+						"Grindr3Auth": []
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/PopUpLogicPlanInput"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PopUpLogicPlan"
+								}
+							}
+						},
+						"description": "OK"
+					}
+				},
+				"summary": "Fetch pop-up logic plan",
+				"description": "Returns an ordered, session-scoped plan of modal steps.",
+				"x-wip": true
+			}
+		},
+		"/v1/popup-logic/ack": {
+			"post": {
+				"tags": [
+					"system/modal"
+				],
+				"operationId": "acknowledgePopUpLogicStep",
+				"security": [
+					{
+						"Grindr3Auth": []
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/PopUpLogicAcknowledge"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "OK"
+					}
+				},
+				"summary": "Acknowledge pop-up logic step",
 				"x-wip": true
 			}
 		},
@@ -7922,6 +7990,92 @@
 				"x-wip": true
 			}
 		},
+		"/v3/push-tokens/{token}": {
+			"delete": {
+				"tags": [
+					"settings/account"
+				],
+				"operationId": "deleteFcmPushToken",
+				"security": [
+					{
+						"Grindr3Auth": []
+					}
+				],
+				"parameters": [
+					{
+						"name": "token",
+						"in": "path",
+						"required": true,
+						"schema": {
+							"type": "string"
+						},
+						"description": "The FCM registration token to deregister."
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "OK"
+					}
+				},
+				"summary": "Delete FCM push token",
+				"description": "Deregisters an FCM push token.",
+				"x-wip": true
+			}
+		},
+		"/v5/push-settings": {
+			"get": {
+				"tags": [
+					"settings/account"
+				],
+				"operationId": "getPushSettings",
+				"security": [
+					{
+						"Grindr3Auth": []
+					}
+				],
+				"responses": {
+					"200": {
+						"content": {
+							"application/json": {
+								"schema": {
+									"$ref": "#/components/schemas/PushSettings"
+								}
+							}
+						},
+						"description": "OK"
+					}
+				},
+				"summary": "Get push settings"
+			},
+			"put": {
+				"tags": [
+					"settings/account"
+				],
+				"operationId": "updatePushSettings",
+				"security": [
+					{
+						"Grindr3Auth": []
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"$ref": "#/components/schemas/PushSettings"
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": {
+						"description": "OK"
+					}
+				},
+				"summary": "Update push settings",
+				"description": "Per-category push toggles. Only the fields present in the request body are updated."
+			}
+		},
 		"/v3/users/update-password": {
 			"post": {
 				"tags": [
@@ -8916,6 +9070,17 @@
 					}
 				],
 				"operationId": "getKetchConsent",
+				"parameters": [
+					{
+						"name": "includePurposeInfo",
+						"in": "query",
+						"required": false,
+						"schema": {
+							"type": "boolean"
+						},
+						"description": "When `true`, the response includes a `purposeInfo` map keyed by purpose code, each value `{ allowed, allowsOptOut, isRecorded, requiresOptIn, legalBasis, source, collectedAt, issuedAt }`."
+					}
+				],
 				"requestBody": {
 					"required": true,
 					"content": {
@@ -12152,6 +12317,120 @@
 			}
 		},
 		"schemas": {
+			"PushSettings": {
+				"type": "object",
+				"description": "Per-category push-notification toggles.",
+				"properties": {
+					"favoritePushNotification": {
+						"type": "boolean",
+						"nullable": true,
+						"description": "Notify when a favorite comes online."
+					},
+					"tapPushNotification": {
+						"type": "boolean",
+						"nullable": true,
+						"description": "Notify on received taps."
+					}
+				}
+			},
+			"PopUpLogicPlanInput": {
+				"type": "object",
+				"required": [
+					"sessionId",
+					"supportedStepKeys",
+					"context"
+				],
+				"properties": {
+					"sessionId": {
+						"type": "string"
+					},
+					"supportedStepKeys": {
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"description": "Step keys the client is able to render."
+					},
+					"context": {
+						"type": "object",
+						"additionalProperties": {
+							"type": "string"
+						}
+					}
+				}
+			},
+			"PopUpLogicPlan": {
+				"type": "object",
+				"required": [
+					"schemaVersion",
+					"planVersion",
+					"steps"
+				],
+				"properties": {
+					"schemaVersion": {
+						"type": "integer"
+					},
+					"planVersion": {
+						"type": "string",
+						"description": "Server plan identifier, e.g. `pc-pilot.2026-08-12.1`."
+					},
+					"steps": {
+						"type": "array",
+						"items": {
+							"$ref": "#/components/schemas/PopUpLogicStep"
+						}
+					}
+				}
+			},
+			"PopUpLogicStep": {
+				"type": "object",
+				"required": [
+					"key",
+					"type"
+				],
+				"properties": {
+					"key": {
+						"type": "string"
+					},
+					"type": {
+						"type": "string",
+						"description": "`Mandatory` or `Optional`."
+					},
+					"params": {
+						"type": "object",
+						"additionalProperties": {
+							"type": "string"
+						}
+					},
+					"triggerEvent": {
+						"type": "string",
+						"nullable": true
+					}
+				}
+			},
+			"PopUpLogicAcknowledge": {
+				"type": "object",
+				"required": [
+					"stepKey",
+					"action",
+					"planVersion",
+					"sessionId"
+				],
+				"properties": {
+					"stepKey": {
+						"type": "string"
+					},
+					"action": {
+						"type": "string"
+					},
+					"planVersion": {
+						"type": "string"
+					},
+					"sessionId": {
+						"type": "string"
+					}
+				}
+			},
 			"UndocumentedObject": {
 				"type": "object",
 				"additionalProperties": true,
@@ -12438,6 +12717,10 @@
 					"BUSINESS_SOLICITATION",
 					"TRANSACTIONAL_SERVICES",
 					"SCAMS_AND_PROMOTIONS",
+					"DRUG_SEEKING",
+					"DRUG_FACILITATION",
+					"NON_CONSENSUAL_INTIMATE_IMAGERY",
+					"SEXTORTION",
 					"BLOCK_DECISION",
 					"Other"
 				],

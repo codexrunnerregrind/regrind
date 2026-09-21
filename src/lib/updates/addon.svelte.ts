@@ -1,6 +1,6 @@
 import { isAndroidPlatform } from "$lib/platform/os";
 import { buildSignedByOpenGrind } from "./capability.svelte";
-import { GOOGLE_OAUTH_COMPONENT } from "./components";
+import { GOOGLE_OAUTH_COMPONENT, RECAPTCHA_COMPONENT } from "./components";
 import { type StagePresenter, UpdateFlow } from "./flow";
 import { getUpdateReadiness, updatesAvailableHere } from "./index";
 import type { UpdateStage } from "./stage";
@@ -72,7 +72,17 @@ export const addonUpdates = new UpdateFlow({
 	presenter: observed(toastPresenter(GOOGLE_OAUTH_COMPONENT)),
 });
 
+export const recaptchaUpdates = new UpdateFlow({
+	component: RECAPTCHA_COMPONENT,
+	presenter: toastPresenter(RECAPTCHA_COMPONENT),
+});
+
+export const addonFlows: readonly UpdateFlow[] = [
+	addonUpdates,
+	recaptchaUpdates,
+];
+
 export async function startAddonUpdateWatch(): Promise<void> {
 	if (!addonInstallerAvailable()) return;
-	await addonUpdates.start();
+	await Promise.all(addonFlows.map((flow) => flow.start()));
 }

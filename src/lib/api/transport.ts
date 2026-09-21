@@ -14,18 +14,7 @@ import { demoEnabled, demoRoute } from "$lib/demo";
 import { schemaName } from "$lib/model/schema-names";
 import { fromBase64, toBase64 } from "$lib/util/base64";
 
-type RequestInfo = { method: string; path: string; body: unknown };
-
-// https://github.com/tauri-apps/tauri/issues/10573
-async function invokeWithBinaryPayload(
-	payload: Uint8Array,
-): Promise<Uint8Array> {
-	const res = await invoke("request", { payload: toBase64(payload) });
-	if (typeof res !== "string") {
-		throw new Error("Invalid response from backend");
-	}
-	return fromBase64(res);
-}
+type RequestInfo = { method: string; path: string; body?: unknown };
 
 function buildRestResponse({
 	status,
@@ -97,38 +86,18 @@ function buildRestResponse({
 	};
 }
 
-export async function fetchRest(
-	path: string,
-	options: {
-		method?: string;
-		body?: unknown;
-		abortController?: AbortController;
-	} = { method: "GET" },
+// https://github.com/tauri-apps/tauri/issues/10573
+export async function invokeRest(
+	command: string,
+	options: { args: Record<string, unknown>; requestInfo: RequestInfo },
 ) {
-	const method = options.method ?? "GET";
-	const requestInfo = { method, path, body: options.body };
-	if (demoEnabled) {
-		const { status, body } = demoRoute({
-			path,
-			method,
-			body: options.body,
-		});
-		const responseBody = new TextEncoder().encode(
-			JSON.stringify(body ?? null),
-		);
-		return buildRestResponse({ status, responseBody, requestInfo });
-	}
+	const { requestInfo } = options;
 	try {
-		const payload = encode({
-			method: options.method || "GET",
-			path,
-			body: options.body === undefined ? null : encode(options.body),
-		});
-		const packed = await invokeWithBinaryPayload(payload);
-		if (options.abortController?.signal.aborted) {
-			throw new Error("Request aborted");
+		const res = await invoke(command, options.args);
+		if (typeof res !== "string") {
+			throw new Error("Invalid response from backend");
 		}
-		const decoded = decode(packed);
+		const decoded = decode(fromBase64(res));
 		const { status, body: responseBody } = z
 			.object({ status: z.number(), body: z.instanceof(Uint8Array) })
 			.parse(decoded);
@@ -165,6 +134,46 @@ export async function fetchRest(
 			cause: error,
 		});
 	}
+}
+
+export async function fetchRest(
+	path: string,
+	options: {
+		method?: string;
+		body?: unknown;
+		abortController?: AbortController;
+	} = { method: "GET" },
+) {
+	const method = options.method ?? "GET";
+	const requestInfo = { method, path, body: options.body };
+	if (demoEnabled) {
+		const { status, body } = demoRoute({
+			path,
+			method,
+			body: options.body,
+		});
+		const responseBody = new TextEncoder().encode(
+			JSON.stringify(body ?? null),
+		);
+		return buildRestResponse({ status, responseBody, requestInfo });
+	}
+	const payload = encode({
+		method,
+		path,
+		body: options.body === undefined ? null : encode(options.body),
+	});
+	const response = await invokeRest("request", {
+		args: { payload: toBase64(payload) },
+		requestInfo,
+	});
+	if (options.abortController?.signal.aborted) {
+		throw new ApiError({
+			message: "Request aborted",
+			request: requestInfo,
+			response: null,
+		});
+	}
+	return response;
 }
 
 export function parseApiResponse<TSchema extends z.ZodType>(options: {

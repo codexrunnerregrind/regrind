@@ -100,3 +100,29 @@ describe("the stage toast body", () => {
 		);
 	});
 });
+
+describe("the reCAPTCHA helper's stage toast title", () => {
+	it("names the helper, not another add-on", () => {
+		expect(
+			copyOf({
+				copy: stageTitle,
+				component: "recaptcha",
+				kind: "update",
+			}),
+		).toStrictEqual({
+			available: "reCAPTCHA helper update available",
+			downloading: "Downloading the reCAPTCHA helper update…",
+			verifying: "Verifying the reCAPTCHA helper update…",
+			paused: "reCAPTCHA helper update is available",
+			ready: "reCAPTCHA helper update is downloaded",
+			installing: "Updating the reCAPTCHA helper…",
+		});
+		expect(
+			stageTitle({
+				component: "recaptcha",
+				kind: "install",
+				stage: "downloading",
+			}),
+		).toBe("Downloading the reCAPTCHA helper…");
+	});
+});

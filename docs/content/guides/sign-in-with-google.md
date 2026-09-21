@@ -22,6 +22,16 @@ Due to security checks by Google, you must [install a Google OAuth add-on (recom
 2. On the sign in screen, tap "Install" and confirm Android's install prompt; alternatively, install [Google OAuth App manually](https://git.opengrind.org/open-grind/google-oauth-app/releases)
 3. Tap "Continue", then follow the instructions
 
+### Installed from Google Play
+
+Open Grind from Google Play can't install other apps, so install the add-on yourself:
+
+1. Open [Google OAuth App releases](https://git.opengrind.org/open-grind/google-oauth-app/releases) in your browser
+2. Download the APK for your device and open it; Android asks your browser for permission to install apps once
+3. Return to Open Grind, tap "Sign in with Google", then "Continue"
+
+Or skip the add-on and [paste the sign in token manually](#manually-paste-google-oauth-token).
+
 ### Manually paste Google OAuth token
 
 **If you already have Open Grind Google OAuth app installed,** try these steps to retrieve Google OAuth token and put it into Open Grind manually:

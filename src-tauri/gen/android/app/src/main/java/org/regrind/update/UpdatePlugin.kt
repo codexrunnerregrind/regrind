@@ -192,6 +192,11 @@ class UpdatePlugin(private val activity: Activity) : Plugin(activity) {
 		val args = runCatching { invoke.parseArgs(TransferArgs::class.java) }.getOrNull()
 		val title = TransferTitle.of(
 			updatesThisApp = args == null || args.packageName == activity.packageName,
+			addon = when (args?.packageName) {
+				GOOGLE_OAUTH -> TransferTitle.Addon.GoogleOauth
+				RECAPTCHA -> TransferTitle.Addon.Recaptcha
+				else -> null
+			},
 			kind = args?.kind,
 		)
 		runCatching { TransferService.start(context = activity, title = title) }
