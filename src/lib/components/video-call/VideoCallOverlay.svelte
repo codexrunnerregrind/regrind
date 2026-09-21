@@ -22,6 +22,76 @@
 	const facingLabel = $derived(
 		videoCall.facing === "user" ? "front" : "back",
 	);
+
+	// Our tile is dragged to whichever corner keeps it off their face, and
+	// stays there for the next call: the overlay outlives every call.
+	type Corner = "top-left" | "top-right" | "bottom-left" | "bottom-right";
+
+	const SIDE_INSET = "1rem";
+	// Clear of the name and timer at the top, of the controls at the bottom.
+	const TOP_INSET = "calc(5.5rem + var(--safe-area-top))";
+	const BOTTOM_INSET = "9rem";
+	// Under this, the gesture was a tap on the swap control, not a drag.
+	const DRAG_SLOP = 8;
+
+	let corner = $state<Corner>("bottom-right");
+	let tile = $state<HTMLElement | null>(null);
+	let offset = $state<{ x: number; y: number } | null>(null);
+	let origin: { x: number; y: number; pointer: number } | null = null;
+	let dragged = false;
+
+	const placement = $derived({
+		top: corner.startsWith("top") ? TOP_INSET : "auto",
+		bottom: corner.startsWith("bottom") ? BOTTOM_INSET : "auto",
+		left: corner.endsWith("left") ? SIDE_INSET : "auto",
+		right: corner.endsWith("right") ? SIDE_INSET : "auto",
+	});
+
+	function startDrag(event: PointerEvent): void {
+		if (event.pointerType === "mouse" && event.button !== 0) return;
+		origin = {
+			x: event.clientX,
+			y: event.clientY,
+			pointer: event.pointerId,
+		};
+		dragged = false;
+		tile?.setPointerCapture(event.pointerId);
+	}
+
+	function moveDrag(event: PointerEvent): void {
+		if (!origin || event.pointerId !== origin.pointer) return;
+		const x = event.clientX - origin.x;
+		const y = event.clientY - origin.y;
+		if (!dragged && Math.hypot(x, y) < DRAG_SLOP) return;
+		dragged = true;
+		offset = { x, y };
+	}
+
+	function endDrag(event: PointerEvent): void {
+		if (!origin || event.pointerId !== origin.pointer) return;
+		origin = null;
+		// Read where it was let go of before the offset is dropped: the
+		// element only moves back on the next render.
+		const box = dragged ? tile?.getBoundingClientRect() : undefined;
+		offset = null;
+		if (!box) return;
+		const vertical =
+			box.top + box.height / 2 < window.innerHeight / 2
+				? "top"
+				: "bottom";
+		const horizontal =
+			box.left + box.width / 2 < window.innerWidth / 2 ? "left" : "right";
+		corner = `${vertical}-${horizontal}`;
+	}
+
+	// The click that closes a drag would otherwise also swap the tiles. Only
+	// that one: a tap right after is a tap.
+	function swallowClick(event: MouseEvent): void {
+		if (!dragged) return;
+		dragged = false;
+		event.preventDefault();
+		event.stopPropagation();
+	}
 </script>
 
 <!-- One control: a round button with its job written under it, so the row
@@ -149,9 +219,25 @@
 
 		<!-- Our own tile sits above the controls in every phase, ringing
 		     included: a call is answered having already seen what is going out,
-		     and on the camera picked for it. -->
+		     and on the camera picked for it. It is dragged to any corner. -->
 		<div
-			class="absolute right-4 bottom-36 z-20 h-40 w-28 overflow-hidden rounded-xl border border-white/15 bg-neutral-900 shadow-lg"
+			bind:this={tile}
+			role="group"
+			aria-label="Your video — drag to another corner"
+			class={[
+				"absolute z-20 h-40 w-28 touch-none overflow-hidden rounded-xl border border-white/15 bg-neutral-900 shadow-lg",
+				{ "cursor-grabbing": offset, "cursor-grab": !offset },
+			]}
+			style:top={placement.top}
+			style:bottom={placement.bottom}
+			style:left={placement.left}
+			style:right={placement.right}
+			style:translate={offset ? `${offset.x}px ${offset.y}px` : undefined}
+			onpointerdown={startDrag}
+			onpointermove={moveDrag}
+			onpointerup={endDrag}
+			onpointercancel={endDrag}
+			onclickcapture={swallowClick}
 		>
 			<div
 				class="size-full"
@@ -189,7 +275,7 @@
 				<button
 					type="button"
 					aria-label="Swap the video tiles"
-					class="absolute inset-0"
+					class="absolute inset-0 touch-none"
 					onclick={() => videoCall.swapTiles()}
 				></button>
 			{/if}
