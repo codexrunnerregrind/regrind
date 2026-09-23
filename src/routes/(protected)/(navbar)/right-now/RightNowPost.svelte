@@ -228,10 +228,10 @@
 	<div class="relative z-10">
 		<RightNowAvatar {profileId} {displayName} {mediaHash} {onlineUntil} />
 	</div>
-	<div class="w-full">
+	<div class="w-full min-w-0">
 		<div
 			class={[
-				"mt-1 leading-snug font-medium wrap-break-word",
+				"mt-1 leading-snug font-medium wrap-anywhere",
 				{ "text-foreground": postText !== null },
 			]}
 		>
@@ -250,7 +250,7 @@
 						data-pswp-width={state?.width}
 						data-pswp-height={state?.height}
 						class={[
-							"pswp-trigger overflow-hidden",
+							"pswp-trigger max-w-full overflow-hidden",
 							{
 								"pointer-events-none w-full": !state?.loaded,
 								"cursor-pointer": state?.loaded,
