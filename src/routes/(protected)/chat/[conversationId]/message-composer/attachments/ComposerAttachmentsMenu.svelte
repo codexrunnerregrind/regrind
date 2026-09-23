@@ -130,7 +130,7 @@
 <Drawer.Root bind:open>
 	<Drawer.Content
 		class={[
-			"mx-auto max-w-200 border-none bg-transparent p-0 shadow-none before:hidden",
+			"max-w-media-panel mx-auto border-none bg-transparent p-0 shadow-none before:hidden",
 			{ "h-full": isFullsizeTab, "h-fit": !isFullsizeTab },
 		]}
 		handle={null}

@@ -236,7 +236,7 @@ async fn send_video(
 /// before it offers the file-based path below.
 #[tauri::command]
 pub fn video_transcoding_supported() -> bool {
-	crate::video::supported()
+	crate::video::transcode::supported()
 }
 
 /// Uploads a clip straight off the camera roll, re-encoded on the way.
@@ -253,7 +253,7 @@ pub async fn upload_chat_video_file(
 	length_seconds: Option<i64>,
 	looping: bool,
 ) -> Result<MediaUploadResponse, AppError> {
-	let bytes = crate::video::shrink(&app, &source).await?;
+	let bytes = crate::video::transcode::shrink(&app, &source).await?;
 	if bytes.is_empty() {
 		return Err(AppError::Media(
 			"That video came back empty from conversion".into(),

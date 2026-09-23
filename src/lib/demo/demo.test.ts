@@ -204,10 +204,13 @@ describe("demo route data matches the real schemas", () => {
 		expect(expiringImages).toBeGreaterThan(0);
 	});
 
-	it("my albums are shareable and validate", () => {
+	// Not every album is shareable — the API marks one whose share allowance is
+	// spent — so the seeds carry both states rather than only the happy one.
+	it("my albums validate and cover both shareable states", () => {
 		const { albums } = myAlbumsResponseSchema.parse(route("/v1/albums"));
 		expect(albums.length).toBeGreaterThan(0);
-		expect(albums.every((album) => album.isShareable)).toBe(true);
+		expect(albums.some((album) => album.isShareable)).toBe(true);
+		expect(albums.some((album) => !album.isShareable)).toBe(true);
 	});
 
 	it("sharing an album succeeds", () => {
@@ -227,7 +230,7 @@ describe("demo route data matches the real schemas", () => {
 		const response = demoRoute({
 			path: "/v1/albums/294604/unshares",
 			method: "PUT",
-			body: { profiles: [{ profileId: 100001, shareId: 0 }] },
+			body: { profiles: [{ profileId: 100001, shareId: "0" }] },
 		});
 		expect(response.status).toBe(200);
 	});

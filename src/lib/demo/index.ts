@@ -1,5 +1,5 @@
 export { demoEnabled, demoMeProfileId } from "./config";
-export { demoUploadAlbumContent } from "./mock/albums";
+export { demoUploadAlbumContent, demoUploadAlbumFile } from "./mock/albums";
 export {
 	demoBaseAvatarUrl,
 	demoMediaUrl,

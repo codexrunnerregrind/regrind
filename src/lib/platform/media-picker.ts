@@ -13,14 +13,14 @@ const mimeTypesByExtension: Record<string, string> = {
 	mov: "video/quicktime",
 	mp4: "video/mp4",
 	png: "image/png",
-	webm: "video/webm",
+	webp: "image/webp",
 };
 
-const imageExtensions = ["jpg", "jpeg", "png"];
+const imageExtensions = ["jpg", "jpeg", "png", "webp"];
 
 // A clip off an iPhone camera is QuickTime, not MP4; without the extension here
 // one is labelled `video/mp4` on the way up, which is a lie about the bytes.
-const videoExtensions = ["mov", "mp4", "webm"];
+const videoExtensions = ["mp4", "mov"];
 
 const filtersByKind = {
 	image: {

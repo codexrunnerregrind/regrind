@@ -1,13 +1,32 @@
+import type { AlbumStorageLimits } from "$lib/model/messaging/albums";
 import { DAY, demoMeProfileId, NOW } from "../config";
 import { demoMediaUrl, unsplash } from "./avatars";
 import { demoConversationSeeds, localDateTime } from "./conversation-seeds";
 import { picsum } from "./picsum";
 import { photosOf, profileSeed } from "./profiles";
 
+export const albumProcessingPlaceholderUrl =
+	"https://d3w4wp6rol9nvz.cloudfront.net/https://d1weu1y74qn7ma.cloudfront.net/albums-video-loading.mp4";
+
+export const demoAlbumStorageLimits = {
+	subscriptionType: "FreeAlbums",
+	maxAlbums: 5,
+	maxContentItemsPerAlbum: 10,
+	maxShares: 5000,
+	maxViewableAlbums: 5,
+	maxViewableVideos: 1,
+	maxContentSize: 125829120,
+	maxContentSizeHumanReadable: "120.00 MB",
+	maxVideoLength: 15000,
+	minVideoLength: 1,
+	maxShareableAlbums: 1,
+	maxVideosPerAlbum: 1,
+} satisfies AlbumStorageLimits;
+
 const UNSPLASH_COVER_BLUR = 30;
 const UNSPLASH_ALBUM_COVERS = new Map([[5004, "1645973342475-e9fcd3fc0d39"]]);
 
-const ALBUMS_WITH_VIDEO = new Set([5001, 5004]);
+const ALBUMS_WITH_VIDEO = new Set([5001, 5004, 9001]);
 
 function generateAlbumContent(albumId: number) {
 	const count = 3 + (albumId % 3);
@@ -120,6 +139,9 @@ export function demoAlbumsSharedByProfile(profileId: number) {
 }
 
 const DEMO_ALBUM_NAMES = ["Gym", "Beach trip", null];
+// The API marks an album unshareable once its share allowance is spent; the
+// composer draws that state differently, so one seed carries it.
+const DEMO_UNSHAREABLE_ALBUM_INDEX = 2;
 const DEMO_FIRST_ALBUM_ID = 9001;
 
 function buildDemoAlbum(
@@ -127,6 +149,7 @@ function buildDemoAlbum(
 	albumName: string | null,
 	sharedCount: number,
 	content = generateAlbumContent(albumId),
+	isShareable = true,
 ) {
 	return {
 		albumId,
@@ -134,7 +157,7 @@ function buildDemoAlbum(
 		profileId: demoMeProfileId,
 		version: 1,
 		content,
-		isShareable: true,
+		isShareable,
 		sharedCount,
 		createdAt: localDateTime(NOW - 3 * DAY),
 		updatedAt: localDateTime(NOW - DAY),
@@ -146,7 +169,13 @@ let demoNextAlbumId = DEMO_FIRST_ALBUM_ID + DEMO_ALBUM_NAMES.length;
 
 function demoAlbumStore() {
 	demoAlbums ??= DEMO_ALBUM_NAMES.map((albumName, index) =>
-		buildDemoAlbum(DEMO_FIRST_ALBUM_ID + index, albumName, index),
+		buildDemoAlbum(
+			DEMO_FIRST_ALBUM_ID + index,
+			albumName,
+			index,
+			undefined,
+			index !== DEMO_UNSHAREABLE_ALBUM_INDEX,
+		),
 	);
 	return demoAlbums;
 }
@@ -181,7 +210,10 @@ export function demoShareAlbum(albumId: number, body: unknown) {
 		.filter(
 			(id): id is number => id !== undefined && !existing.includes(id),
 		);
-	if (added.length > 0) demoAlbumShares.set(albumId, [...existing, ...added]);
+	if (added.length === 0) return;
+	demoAlbumShares.set(albumId, [...existing, ...added]);
+	const album = demoAlbumStore().find((item) => item.albumId === albumId);
+	if (album) album.sharedCount += added.length;
 }
 
 export function demoUnshareAlbum(albumId: number, body: unknown) {
@@ -205,6 +237,9 @@ export function demoMyAlbums() {
 
 export function demoCreateAlbum(body: unknown) {
 	const albumName = albumNameFromBody(body);
+	// The API answers the album cap with a 402, which is what the grid names.
+	if (demoAlbumStore().length >= demoAlbumStorageLimits.maxAlbums)
+		return null;
 	const album = buildDemoAlbum(demoNextAlbumId++, albumName, 0, []);
 	demoAlbumStore().push(album);
 	return { albumId: album.albumId, albumName };
@@ -262,6 +297,54 @@ export function demoUploadAlbumContent({
 		.find((album) => album.albumId === albumId)
 		?.content.push(item);
 	return { contentId: item.contentId, contentUrl: url };
+}
+
+/**
+ * Whether a demo upload is still being transcoded. It never is — a demo upload
+ * lands whole — so this only answers for an item that exists, which is what the
+ * poller distinguishes from a 404.
+ */
+export function demoAlbumContentProcessing({
+	albumId,
+	contentId,
+}: {
+	albumId: number;
+	contentId: number;
+}): { processing: boolean } | null {
+	const item = demoAlbumContent(albumId).content.find(
+		(candidate) => candidate.contentId === contentId,
+	);
+	return item === undefined ? null : { processing: false };
+}
+
+/**
+ * A file-streamed upload in demo mode: there are no bytes to keep, so the item
+ * is a placeholder standing in for what the server would have made of the file.
+ */
+export function demoUploadAlbumFile({
+	albumId,
+	kind,
+}: {
+	albumId: number;
+	kind: "photo" | "video";
+}): { contentId: number; sha256: string } {
+	const url = picsum({
+		seed: `album-${albumId}-upload-${demoNextContentId}`,
+	});
+	const item = {
+		contentId: demoNextContentId++,
+		contentType: kind === "video" ? "video/mp4" : "image/jpeg",
+		coverUrl: url,
+		statusId: 1,
+		thumbUrl: url,
+		url,
+		processing: false,
+		rejectionId: null,
+	};
+	demoAlbumStore()
+		.find((album) => album.albumId === albumId)
+		?.content.push(item);
+	return { contentId: item.contentId, sha256: `demo-${item.contentId}` };
 }
 
 export function demoDeleteAlbumContent(albumId: number, contentId: number) {

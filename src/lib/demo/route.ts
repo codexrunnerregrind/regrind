@@ -1,4 +1,9 @@
 import {
+	albumNameRequestSchema,
+	albumShareRequestSchema,
+	albumUnshareRequestSchema,
+} from "$lib/model/messaging/albums";
+import {
 	profileReportRequestSchema,
 	profileReportRequestV2Schema,
 	rightNowPostReportRequestSchema,
@@ -7,8 +12,10 @@ import { accountPreferencesUpdateSchema } from "$lib/model/settings/account";
 import { demoMeProfileId } from "./config";
 import {
 	demoAlbumContent,
+	demoAlbumContentProcessing,
 	demoAlbumSharesFor,
 	demoAlbumsSharedByProfile,
+	demoAlbumStorageLimits,
 	demoCreateAlbum,
 	demoDeleteAlbum,
 	demoDeleteAlbumContent,
@@ -343,9 +350,6 @@ export function demoRoute({
 	if (method === "GET" && segments[0] === "v2" && segments[1] === "albums") {
 		return ok(demoAlbumContent(Number(segments[2])));
 	}
-	if (method === "POST" && rawPath === "/v2/albums") {
-		return ok(demoCreateAlbum(body));
-	}
 	if (
 		method === "PUT" &&
 		segments[0] === "v2" &&
@@ -390,7 +394,10 @@ export function demoRoute({
 		segments[3] === "unshares" &&
 		segments.length === 4
 	) {
-		demoUnshareAlbum(Number(segments[2]), body);
+		demoUnshareAlbum(
+			Number(segments[2]),
+			albumUnshareRequestSchema.parse(body),
+		);
 		return ok({});
 	}
 	if (
@@ -417,6 +424,27 @@ export function demoRoute({
 	if (method === "GET" && rawPath === "/v1/albums") {
 		return ok(demoMyAlbums());
 	}
+	if (method === "GET" && rawPath === "/v1/albums/storage") {
+		return ok(demoAlbumStorageLimits);
+	}
+	if (method === "POST" && rawPath === "/v2/albums") {
+		const created = demoCreateAlbum(albumNameRequestSchema.parse(body));
+		return created === null ? { status: 402, body: null } : ok(created);
+	}
+	if (
+		method === "GET" &&
+		segments[0] === "v1" &&
+		segments[1] === "albums" &&
+		segments[3] === "content" &&
+		segments[5] === "processing" &&
+		segments.length === 6
+	) {
+		const status = demoAlbumContentProcessing({
+			albumId: Number(segments[2]),
+			contentId: Number(segments[4]),
+		});
+		return status === null ? { status: 404, body: null } : ok(status);
+	}
 	if (
 		method === "POST" &&
 		segments[0] === "v4" &&
@@ -424,7 +452,10 @@ export function demoRoute({
 		segments[3] === "shares" &&
 		segments.length === 4
 	) {
-		demoShareAlbum(Number(segments[2]), body);
+		demoShareAlbum(
+			Number(segments[2]),
+			albumShareRequestSchema.parse(body),
+		);
 		return ok({});
 	}
 	if (method === "POST" && rawPath === "/v4/chat/message/send") {

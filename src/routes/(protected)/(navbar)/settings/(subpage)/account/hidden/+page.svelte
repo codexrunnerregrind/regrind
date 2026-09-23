@@ -4,7 +4,7 @@
 
 <script lang="ts">
 	import { getHiddenUsers, unhideUser } from "$lib/api/browse/hides";
-	import ProfileList from "../profile-list/ProfileList.svelte";
+	import ProfileList from "$lib/components/profile-list/ProfileList.svelte";
 </script>
 
 <svelte:head>

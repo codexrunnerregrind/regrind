@@ -1,23 +1,40 @@
 import { invoke } from "@tauri-apps/api/core";
 import z from "zod";
 
-import { fetchRest } from "$lib/api/transport";
-import { demoEnabled, demoUploadAlbumContent } from "$lib/demo";
+import { cachedFetch } from "$lib/api/cache";
+import { fetchRest, uploadFileRest } from "$lib/api/transport";
 import {
+	demoEnabled,
+	demoUploadAlbumContent,
+	demoUploadAlbumFile,
+} from "$lib/demo";
+import {
+	type AlbumContentOrderRequest,
+	albumContentProcessingResponseSchema,
 	albumContentSchema,
+	albumContentUploadResponseSchema,
 	albumDetailsSchema,
 	type AlbumExpirationType,
 	albumMinSchema,
+	type AlbumNameRequest,
+	albumNameResponseSchema,
 	albumPosterSchema,
 	type AlbumShareRequest,
 	albumSharesSchema,
+	type AlbumStorageLimits,
 	albumStorageLimitsSchema,
+	type AlbumUnshareRequest,
 	myAlbumsResponseSchema,
 	pressieAlbumsFeedResponseSchema,
 	pressieAlbumsPaywallResponseSchema,
 	sharedAlbumSchema,
 } from "$lib/model/messaging/albums";
+import {
+	mediaFileDescriptor,
+	type MediaFileInspection,
+} from "$lib/platform/media-file";
 import { toBase64 } from "$lib/util/base64";
+import type { PickedMedia } from "$lib/platform/media-picker";
 
 const albumResponseSchema = z.object({
 	...albumMinSchema.shape,
@@ -38,22 +55,86 @@ export async function getAlbumContent(albumId: number) {
 
 export type AlbumContentResponse = Awaited<ReturnType<typeof getAlbumContent>>;
 
-const albumNameResponseSchema = z.object({
-	albumId: z.int(),
-	albumName: z.string().nullable(),
-});
+export async function getMyAlbums() {
+	const { albums } = await fetchRest("/v1/albums").then((res) =>
+		res.jsonParsed(myAlbumsResponseSchema),
+	);
+	return albums;
+}
 
-/**
- * Creates an empty album. Throws with a 402 response once the account is at its
- * album cap.
- */
-export async function createAlbum({ albumName }: { albumName: string | null }) {
+export const getAlbumStorageLimits = cachedFetch(() =>
+	fetchRest("/v1/albums/storage").then((res) =>
+		res.jsonParsed(albumStorageLimitsSchema),
+	),
+);
+
+export async function getAlbumContentProcessing({
+	albumId,
+	contentId,
+}: {
+	albumId: number;
+	contentId: number;
+}) {
+	return await fetchRest(
+		`/v1/albums/${albumId}/content/${contentId}/processing`,
+	).then((res) => res.jsonParsed(albumContentProcessingResponseSchema));
+}
+
+export async function shareAlbum({
+	albumId,
+	profileIds,
+	expirationType = "INDEFINITE",
+}: {
+	albumId: number;
+	profileIds: number[];
+	expirationType?: AlbumExpirationType;
+}) {
+	await fetchRest(`/v4/albums/${albumId}/shares`, {
+		method: "POST",
+		body: {
+			profiles: profileIds.map((profileId) => ({
+				profileId,
+				expirationType,
+			})),
+		} satisfies AlbumShareRequest,
+	}).then((res) => res.assertOk());
+}
+
+export async function getAlbumShares(albumId: number) {
+	const { profileIds } = await fetchRest(`/v1/albums/${albumId}/shares`).then(
+		(res) => res.jsonParsed(albumSharesSchema),
+	);
+	return profileIds ?? [];
+}
+
+export async function unshareAlbum({
+	albumId,
+	profileIds,
+}: {
+	albumId: number;
+	profileIds: number[];
+}) {
+	await fetchRest(`/v1/albums/${albumId}/unshares`, {
+		method: "PUT",
+		body: {
+			profiles: profileIds.map((profileId) => ({
+				profileId,
+				shareId: crypto.randomUUID(),
+			})),
+		} satisfies AlbumUnshareRequest,
+	}).then((res) => res.assertOk());
+}
+
+export async function createAlbum({
+	albumName = null,
+}: { albumName?: string | null } = {}) {
 	const res = await fetchRest("/v2/albums", {
 		method: "POST",
-		body: { albumName },
+		body: { albumName } satisfies AlbumNameRequest,
 	});
-	// Asserted before parsing so the documented 402 surfaces as an HTTP error
-	// rather than a schema-validation failure against the error body.
+	// Asserted before parsing so the documented 402 at the album cap surfaces as
+	// an HTTP error the grid can name, rather than as a schema-validation
+	// failure against the error body.
 	res.assertOk();
 	return res.jsonParsed(albumNameResponseSchema);
 }
@@ -65,36 +146,16 @@ export async function renameAlbum({
 	albumId: number;
 	albumName: string | null;
 }) {
-	const res = await fetchRest(`/v2/albums/${albumId}`, {
+	return await fetchRest(`/v2/albums/${albumId}`, {
 		method: "PUT",
-		body: { albumName },
-	});
-	res.assertOk();
-	return res.jsonParsed(albumNameResponseSchema);
+		body: { albumName } satisfies AlbumNameRequest,
+	}).then((res) => res.jsonParsed(albumNameResponseSchema));
 }
 
-/** Deleting an album that is already gone answers 403, not 404. */
 export async function deleteAlbum({ albumId }: { albumId: number }) {
-	return await fetchRest(`/v1/albums/${albumId}`, { method: "DELETE" }).then(
-		(res) => res.assertOk(),
+	await fetchRest(`/v1/albums/${albumId}`, { method: "DELETE" }).then((res) =>
+		res.assertOk(),
 	);
-}
-
-/**
- * Replaces the album's content order. Every existing content id must appear
- * exactly once, so callers pass the full list rather than a delta.
- */
-export async function reorderAlbumContent({
-	albumId,
-	contentIds,
-}: {
-	albumId: number;
-	contentIds: number[];
-}) {
-	return await fetchRest(`/v1/albums/${albumId}/content/order`, {
-		method: "POST",
-		body: { contentIds },
-	}).then((res) => res.assertOk());
 }
 
 export async function deleteAlbumContent({
@@ -104,26 +165,88 @@ export async function deleteAlbumContent({
 	albumId: number;
 	contentId: number;
 }) {
-	return await fetchRest(`/v1/albums/${albumId}/content/${contentId}`, {
+	await fetchRest(`/v1/albums/${albumId}/content/${contentId}`, {
 		method: "DELETE",
 	}).then((res) => res.assertOk());
 }
 
-const albumContentUploadSchema = z.object({
-	contentId: z.int(),
-	contentUrl: z.string().nullable(),
-});
+export async function reorderAlbumContent({
+	albumId,
+	contentIds,
+}: {
+	albumId: number;
+	contentIds: number[];
+}) {
+	await fetchRest(`/v1/albums/${albumId}/content/order`, {
+		method: "POST",
+		body: { contentIds } satisfies AlbumContentOrderRequest,
+	}).then((res) => res.assertOk());
+}
+
+function albumContentQuery(inspection: MediaFileInspection): string {
+	if (inspection.kind !== "video") return "";
+	const { width, height } = inspection;
+	if (width === undefined || height === undefined) return "";
+	return `width=${width}&height=${height}&`;
+}
+
+export async function uploadAlbumContent({
+	albumId,
+	media,
+	inspection,
+	limits,
+	profileId,
+	onHashed,
+}: {
+	albumId: number;
+	media: PickedMedia;
+	inspection: MediaFileInspection;
+	limits: Pick<AlbumStorageLimits, "maxContentSize">;
+	profileId: number;
+	onHashed?: (sha256: string) => void;
+}): Promise<{ contentId: number; sha256: string | null }> {
+	if (demoEnabled) {
+		const uploaded = demoUploadAlbumFile({
+			albumId,
+			kind: inspection.kind === "video" ? "video" : "photo",
+		});
+		onHashed?.(uploaded.sha256);
+		return uploaded;
+	}
+	if (media.source === "web") {
+		throw new Error("A file picked in the browser has no native path");
+	}
+	const { response, sha256 } = await uploadFileRest(
+		`/v1/albums/${albumId}/content?${albumContentQuery(inspection)}isFresh=false`,
+		{
+			file: mediaFileDescriptor(media),
+			part: { name: "content", filename: "" },
+			maxBodySize: limits.maxContentSize,
+			profileId,
+			onHashed,
+		},
+	);
+	const { contentId } = response.jsonParsed(albumContentUploadResponseSchema);
+	return { contentId, sha256 };
+}
 
 /**
- * Adds one photo to an album.
+ * The still frame the API made for a clip. An album read hands back a
+ * `thumbUrl` for a clip too, but that one 404s until the transcode is done,
+ * so a clip's tile is drawn from this instead.
+ */
+/**
+ * Adds one framed photo to an album, from bytes rather than from the picked
+ * file: the editor reframes a photo before it goes up, so what is uploaded
+ * never exists on disk. Clips still take {@link uploadAlbumContent}, which
+ * streams the file the picker handed over.
  *
  * This is the only upload in the API that takes `multipart/form-data`, which
- * the REST bridge has no way to send, so it goes through its own Tauri command
- * with the bytes rather than through {@link fetchRest}. The API answers a
- * re-upload of the same bytes with the first upload's content id instead of a
- * second copy.
+ * the REST bridge has no way to send, so it goes through its own Tauri command.
+ * The API answers a re-upload of the same bytes with the first upload's content
+ * id instead of a second copy.
  */
-export async function uploadAlbumContent({
+export async function uploadAlbumPhotoBytes({
 	albumId,
 	bytes,
 	contentType,
@@ -140,14 +263,9 @@ export async function uploadAlbumContent({
 		contentType,
 		data: toBase64(bytes),
 	});
-	return albumContentUploadSchema.parse(response);
+	return albumContentUploadResponseSchema.parse(response);
 }
 
-/**
- * The still frame the API made for a clip. An album read hands back a
- * `thumbUrl` for a clip too, but that one 404s until the transcode is done,
- * so a clip's tile is drawn from this instead.
- */
 export async function getAlbumMediaPoster({
 	albumId,
 	contentId,
@@ -158,51 +276,6 @@ export async function getAlbumMediaPoster({
 	return await fetchRest(
 		`/v1/albums/${albumId}/content/${contentId}/poster`,
 	).then((res) => res.jsonParsed(albumPosterSchema));
-}
-
-/**
- * The account's album limits. Read before a clip goes up: the upload endpoint
- * answers a clip that breaks one of them with a bare `400 unknown error`.
- */
-export async function getAlbumStorageLimits() {
-	return await fetchRest("/v1/albums/storage").then((res) =>
-		res.jsonParsed(albumStorageLimitsSchema),
-	);
-}
-
-/** The profiles an album is currently shared with. */
-export async function getAlbumShares(albumId: number) {
-	const { profileIds } = await fetchRest(`/v1/albums/${albumId}/shares`).then(
-		(res) => res.jsonParsed(albumSharesSchema),
-	);
-	return profileIds ?? [];
-}
-
-/**
- * Revokes an album share.
- *
- * `shareId` and `expiresAt` are optional per the spec, but the official client
- * appears to send them, so they go along with the documented placeholder
- * `shareId` of `"0"` rather than being omitted. `GET .../shares` returns only
- * profile ids, so there is no per-share id to echo back.
- */
-export async function unshareAlbum({
-	albumId,
-	profileIds,
-}: {
-	albumId: number;
-	profileIds: number[];
-}) {
-	return await fetchRest(`/v1/albums/${albumId}/unshares`, {
-		method: "PUT",
-		body: {
-			profiles: profileIds.map((profileId) => ({
-				profileId,
-				shareId: "0",
-				expiresAt: null,
-			})),
-		},
-	}).then((res) => res.assertOk());
 }
 
 /**
@@ -230,37 +303,6 @@ export async function getAlbumsSharedByProfile(profileId: number) {
 		(res) => res.jsonParsed(sharedAlbumsResponseSchema),
 	);
 	return albums;
-}
-
-export async function getMyAlbums() {
-	const { albums } = await fetchRest("/v1/albums").then((res) =>
-		res.jsonParsed(myAlbumsResponseSchema),
-	);
-	return albums;
-}
-
-/**
- * Shares an album with the given profiles. The API automatically sends the
- * shared album to the chat with every listed profile.
- */
-export async function shareAlbum({
-	albumId,
-	profileIds,
-	expirationType = "INDEFINITE",
-}: {
-	albumId: number;
-	profileIds: number[];
-	expirationType?: AlbumExpirationType;
-}) {
-	return await fetchRest(`/v4/albums/${albumId}/shares`, {
-		method: "POST",
-		body: {
-			profiles: profileIds.map((profileId) => ({
-				profileId,
-				expirationType,
-			})),
-		} satisfies AlbumShareRequest,
-	}).then((res) => res.assertOk());
 }
 
 /**

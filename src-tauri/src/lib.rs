@@ -6,10 +6,12 @@ mod capabilities;
 mod context_menu;
 mod desktop_entry;
 mod error;
+mod hex;
 pub mod media;
 mod photo;
 mod state;
 mod storage;
+mod upload;
 mod video;
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 mod webview_recovery;
@@ -184,8 +186,9 @@ pub fn run() {
         .plugin(api::facebook_oauth::plugin())
         .plugin(api::update::plugin())
         .plugin(app_settings::plugin())
-        .plugin(video::plugin())
+        .plugin(video::transcode::plugin())
         .manage(AppState::default())
+        .manage(upload::UploadLock::default())
         .manage(media::MediaProxy::default())
         .manage(api::session_recovery::SessionRecovery::default())
         .register_asynchronous_uri_scheme_protocol(media::SCHEME, media::handle)
@@ -213,14 +216,16 @@ pub fn run() {
             api::recaptcha::mint_recaptcha_token,
             storage::storage_backend,
             api::rest::request,
-            api::media_upload::upload_media,
-            api::media_upload::upload_chat_audio,
-            api::media_upload::upload_chat_video,
-            api::media_upload::upload_chat_video_file,
-            api::media_upload::video_transcoding_supported,
-            api::media_upload::upload_right_now_media,
-            api::media_upload::upload_album_content,
-            api::media_upload::upload_profile_image,
+            upload::bytes::upload_media,
+            upload::bytes::upload_chat_audio,
+            upload::bytes::upload_chat_video,
+            upload::bytes::upload_chat_video_file,
+            upload::bytes::video_transcoding_supported,
+            upload::bytes::upload_right_now_media,
+            upload::bytes::upload_album_content,
+            upload::bytes::upload_profile_image,
+            upload::inspect::inspect_media_file,
+            upload::file::upload_media_file,
             api::media_download::download_media,
             api::ws::ws_connect,
             api::ws::ws_send,

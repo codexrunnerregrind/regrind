@@ -4,7 +4,7 @@ import { showErrorToast } from "$lib/api/error-toast";
 import {
 	type AlbumContentResponse,
 	getAlbumStorageLimits,
-	uploadAlbumContent,
+	uploadAlbumPhotoBytes,
 } from "$lib/api/messaging/albums";
 import { clearMyAlbumsCache } from "$lib/chat/my-albums";
 import { PhotoEditQueue } from "$lib/components/media/photo-edit-queue.svelte";
@@ -70,7 +70,7 @@ export class AlbumMediaAdder {
 			for await (const photo of this.edits.edit(taking)) {
 				this.adding = true;
 				// One request per photo — the endpoint takes a single part.
-				await uploadAlbumContent({ albumId, ...photo });
+				await uploadAlbumPhotoBytes({ albumId, ...photo });
 				added += 1;
 				this.adding = false;
 			}

@@ -38,7 +38,7 @@
 	const expiry = $derived(albumExpiry(message, getNow()));
 
 	const className: import("svelte/elements").ClassValue = $derived([
-		"aspect-3/4 h-auto relative",
+		"aspect-3/4 h-auto",
 		{
 			"ring ring-accent": message.hasUnseenContent,
 			"w-2/5 min-w-35 max-w-60": !media.clone,

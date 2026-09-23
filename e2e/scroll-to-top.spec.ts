@@ -47,7 +47,7 @@ const SURFACES: Surface[] = [
 	{
 		name: "the blocked list",
 		path: "/settings/account/blocked",
-		scroller: '[data-slot="settings-scroller"]',
+		scroller: '[data-slot="subpage-scroller"]',
 		content: '[role="switch"]',
 	},
 ];
@@ -164,7 +164,7 @@ test("a list that fits on screen never offers the button", async ({ page }) => {
 	});
 
 	const overflow = await page
-		.locator('[data-slot="settings-scroller"]')
+		.locator('[data-slot="subpage-scroller"]')
 		.evaluate((el) => el.scrollHeight - el.clientHeight);
 	expect(overflow).toBeLessThanOrEqual(TOP_SLOP_PX);
 	await expect(page.locator(BUTTON)).toHaveCount(0);

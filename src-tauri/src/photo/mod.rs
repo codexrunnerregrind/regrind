@@ -1,6 +1,6 @@
 mod encode;
 mod heif;
-mod source;
+pub(crate) mod source;
 
 use tauri::{AppHandle, Runtime};
 
@@ -8,7 +8,7 @@ use crate::error::AppError;
 
 use source::Format;
 
-const JPEG: &str = "image/jpeg";
+pub const JPEG: &str = "image/jpeg";
 const DAMAGED: &str = "Unreadable or damaged photo";
 
 #[cfg(target_os = "android")]
@@ -57,7 +57,7 @@ pub fn dimensions(bytes: &[u8]) -> Option<(u32, u32)> {
 		.ok()
 }
 
-async fn off_thread<T: Send + 'static>(
+pub(crate) async fn off_thread<T: Send + 'static>(
 	work: impl FnOnce() -> T + Send + 'static,
 ) -> Result<T, AppError> {
 	tokio::task::spawn_blocking(work)
