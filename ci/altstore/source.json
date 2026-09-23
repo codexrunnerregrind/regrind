@@ -35,13 +35,13 @@
 			],
 			"versions": [
 				{
-					"version": "0.1.0.14",
-					"buildVersion": "0.1.0.14",
-					"date": "2026-09-14",
-					"localizedDescription": "- Sign in with Facebook\n- Filter the inbox, and jump to the top of any list\n- Add a photo to an album straight from the grid\n- Export and import your favorites\n- A \"new\" badge on profiles, and a back button\n- Adjustable background blur, better tuned on Linux\n- Licenses and credits page\n- Clearer notification text and offline errors\n- Linux AppImage builds\n- Other fixes",
-					"downloadURL": "https://git.opengrind.org/codexrunner/regrind/releases/download/v0.1.0-beta.14/regrind-v0.1.0-beta.14.ipa",
-					"size": 40279509,
-					"sha256": "f51c9e184be32b12b1d27c0e03d5df4187b41848ec36a3ddf21c0ae61b2faf7a",
+					"version": "0.1.0.15",
+					"buildVersion": "0.1.0.15",
+					"date": "2026-09-23",
+					"localizedDescription": "- Each account keeps its own filters when you switch accounts (#3)\n- Drag your camera preview to any corner during video calls (#8)\n- Expiring videos now open in the media viewer and can be saved (#1)\n- Saved media now includes the user ID (#2)\n- Add videos to your albums\n- Other bug fixes and UI improvements",
+					"downloadURL": "https://git.opengrind.org/codexrunner/regrind/releases/download/v0.1.0-beta.15/regrind-v0.1.0-beta.15.ipa",
+					"size": 40721385,
+					"sha256": "c69d243acb0f246f8f3996b607705b3150cd1ab04a04b9ca4b2bb6c1529b0aac",
 					"minOSVersion": "14.0"
 				}
 			]

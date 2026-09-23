@@ -1,0 +1,6 @@
+- Each account keeps its own filters when you switch accounts (#3)
+- Drag your camera preview to any corner during video calls (#8)
+- Expiring videos now open in the media viewer and can be saved (#1)
+- Saved media now includes the user ID (#2)
+- Add videos to your albums
+- Other bug fixes and UI improvements
