@@ -308,6 +308,10 @@
 }
 
 @theme {
+	/* The attachments drawer and anything that has to line up with it. 50rem is
+	   the 800px the drawer carried inline before it was named. */
+	--container-media-panel: 50rem;
+
 	/* Chat bubbles: 14pt all round, with the corner nearest the sender pulled in
 	   to 4pt on the last bubble of a stack — the redesign's replacement for a
 	   drawn tail. */
