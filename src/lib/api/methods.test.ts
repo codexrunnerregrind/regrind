@@ -66,7 +66,7 @@ describe("asAppError", () => {
 	});
 
 	it("recognizes the message-less kinds the backend serializes as a bare tag", () => {
-		expect(asAppError({ kind: "NotLoggedIn" })?.kind).toBe("NotLoggedIn");
+		expect(asAppError({ kind: "NotSignedIn" })?.kind).toBe("NotSignedIn");
 	});
 
 	it.each([
@@ -76,7 +76,7 @@ describe("asAppError", () => {
 			"Something blocked the request before it reached Grindr",
 		],
 		["RateLimited", "Grindr is rate limiting us"],
-		["NotLoggedIn", "You're signed out"],
+		["NotSignedIn", "You're signed out"],
 		["SessionStale", "Couldn't refresh your session"],
 	])("says what %s means without a message to quote", (kind, expected) => {
 		expect(asAppError({ kind })?.prettyMessage).toBe(expected);
@@ -275,7 +275,10 @@ describe("callMethod", () => {
 		});
 
 		await expect(
-			callMethod("login", { email: "a@b.co", password: "hunter2" }),
+			callMethod("sign_in_with_email", {
+				email: "a@b.co",
+				password: "hunter2",
+			}),
 		).resolves.toEqual({ profileId: 42, restriction: null });
 	});
 
@@ -311,21 +314,24 @@ describe("callMethod", () => {
 	it("resolves the unit response of a command that returns nothing", async () => {
 		invokeMock.mockResolvedValueOnce(null);
 
-		await expect(callMethod("logout")).resolves.toBeNull();
+		await expect(callMethod("sign_out")).resolves.toBeNull();
 	});
 
 	it("rejects a response that does not match the declared schema", async () => {
 		invokeMock.mockResolvedValueOnce({ profileId: "not a number" });
 
 		await expect(
-			callMethod("login", { email: "a@b.co", password: "hunter2" }),
+			callMethod("sign_in_with_email", {
+				email: "a@b.co",
+				password: "hunter2",
+			}),
 		).rejects.toThrow();
 	});
 
 	it("passes backend errors through untouched", async () => {
 		invokeMock.mockRejectedValueOnce({ kind: "Auth", message: "nope" });
 
-		await expect(callMethod("auth_state")).rejects.toEqual({
+		await expect(callMethod("current_session")).rejects.toEqual({
 			kind: "Auth",
 			message: "nope",
 		});
@@ -340,7 +346,7 @@ describe("callMethod", () => {
 			},
 		});
 
-		await expect(callMethod("auth_state")).rejects.toBeDefined();
+		await expect(callMethod("current_session")).rejects.toBeDefined();
 
 		expect(requestBlockedAlertState.open).toBe(true);
 		expect(requestBlockedAlertState.kind).toBe("cloudflare");
@@ -349,7 +355,7 @@ describe("callMethod", () => {
 	it("raises the same alert when the local network refuses it", async () => {
 		invokeMock.mockRejectedValueOnce({ kind: "NetworkBlocked" });
 
-		await expect(callMethod("auth_state")).rejects.toBeDefined();
+		await expect(callMethod("current_session")).rejects.toBeDefined();
 
 		expect(requestBlockedAlertState.open).toBe(true);
 		expect(requestBlockedAlertState.kind).toBe("network");
@@ -358,7 +364,7 @@ describe("callMethod", () => {
 	it("leaves the alert down for an error that is not a block", async () => {
 		invokeMock.mockRejectedValueOnce({ kind: "Auth", message: "nope" });
 
-		await expect(callMethod("auth_state")).rejects.toBeDefined();
+		await expect(callMethod("current_session")).rejects.toBeDefined();
 
 		expect(requestBlockedAlertState.open).toBe(false);
 	});

@@ -6,6 +6,7 @@ import { goto } from "$app/navigation";
 import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
 import { ApiError } from "$lib/api/api-error";
+import { signedInProfileId } from "$lib/api/current-session";
 import {
 	type AlbumContentResponse,
 	getAlbumContent,
@@ -15,7 +16,6 @@ import {
 	sendAlbumContentReaction,
 	sendAlbumContentReply,
 } from "$lib/api/messaging/messages";
-import { callMethod } from "$lib/api/methods";
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 import {
 	measureImage,
@@ -439,9 +439,9 @@ export async function openAlbumLightbox(
 			? {}
 			: {
 					onOpenChat: async () => {
-						const ourProfileId = await callMethod(
-							"auth_state",
-						).catch(() => null);
+						const ourProfileId = await signedInProfileId().catch(
+							() => null,
+						);
 						if (ourProfileId === null) return;
 						const conversationId = [toUserId, ourProfileId]
 							.toSorted((a, b) => a - b)

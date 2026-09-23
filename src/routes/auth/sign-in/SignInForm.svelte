@@ -26,13 +26,13 @@
 	const oauthProviders: Record<
 		OauthProvider,
 		{
-			method: "login_with_google" | "login_with_facebook";
+			method: "sign_in_with_google" | "sign_in_with_facebook";
 			label: string;
 			failures: Record<string, () => void>;
 		}
 	> = {
 		google: {
-			method: "login_with_google",
+			method: "sign_in_with_google",
 			label: "Google",
 			failures: {
 				[companionUnavailable]: () => void goto("/auth/sign-in/google"),
@@ -49,7 +49,7 @@
 			},
 		},
 		facebook: {
-			method: "login_with_facebook",
+			method: "sign_in_with_facebook",
 			label: "Facebook",
 			failures: {
 				"facebook-dialog-error": () =>
@@ -81,7 +81,9 @@
 		event.preventDefault();
 		submitting = "password";
 		try {
-			await finishSignIn(await callMethod("login", { email, password }));
+			await finishSignIn(
+				await callMethod("sign_in_with_email", { email, password }),
+			);
 		} catch (error) {
 			reportSignInFailure({
 				error,
@@ -113,7 +115,7 @@
 			if (enabled) recaptchaDialogOpen = true;
 		} catch (error) {
 			console.error(
-				"[login] failed to check recaptcha_first_party assignment",
+				"[sign-in] failed to check recaptcha_first_party assignment",
 				error,
 			);
 		}

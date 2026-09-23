@@ -26,7 +26,7 @@ const connectionFailedMessage =
 const messagelessMessages: Partial<Record<ApiErrorKind, string>> = {
 	...blockedAndStaleMessages,
 	RateLimited: "Grindr is rate limiting us",
-	NotLoggedIn: "You're signed out",
+	NotSignedIn: "You're signed out",
 	ContentTooLarge: "Larger than the upload limit",
 };
 
@@ -52,7 +52,7 @@ export const restrictionSchema = z.object({
 });
 export type Restriction = z.infer<typeof restrictionSchema>;
 
-export const loginResultSchema = z.object({
+export const signInResultSchema = z.object({
 	profileId: z.coerce.number().int().nonnegative(),
 	restriction: restrictionSchema.nullish(),
 });
@@ -73,22 +73,21 @@ export const accountSummarySchema = z.object({
 export type AccountSummary = z.infer<typeof accountSummarySchema>;
 
 export const methods = {
-	login: {
+	sign_in_with_email: {
 		request: z.object({ email: z.email(), password: z.string().min(1) }),
-		response: loginResultSchema,
+		response: signInResultSchema,
 	},
-	login_with_google: { request: z.undefined(), response: loginResultSchema },
-	google_sign_in: {
+	sign_in_with_google: {
+		request: z.undefined(),
+		response: signInResultSchema,
+	},
+	sign_in_with_google_token: {
 		request: z.object({ token: z.string().min(1) }),
-		response: loginResultSchema,
+		response: signInResultSchema,
 	},
-	login_with_facebook: {
+	sign_in_with_facebook: {
 		request: z.undefined(),
-		response: loginResultSchema,
-	},
-	auth_state: {
-		request: z.undefined(),
-		response: z.int().nonnegative().nullable(),
+		response: signInResultSchema,
 	},
 	account_restriction: {
 		request: z.undefined(),
@@ -100,9 +99,9 @@ export const methods = {
 	},
 	// The geohash seeds the resumed session's recorded location, which is what
 	// unlocks the region-gated entitlements.
-	refresh_token: {
+	refresh_session: {
 		request: z.object({ geohash: geohashSchema.optional() }).optional(),
-		response: loginResultSchema,
+		response: signInResultSchema,
 	},
 	rotate_api_params: {
 		request: z.undefined(),
@@ -113,7 +112,7 @@ export const methods = {
 	},
 	// The account that is active once this one is gone, or null when it was the
 	// last one signed in.
-	logout: { request: z.undefined(), response: profileIdSchema.nullable() },
+	sign_out: { request: z.undefined(), response: profileIdSchema.nullable() },
 	accounts_list: {
 		request: z.undefined(),
 		response: z.array(accountSummarySchema),
@@ -154,10 +153,10 @@ export const methods = {
 		}),
 		response: z.string().min(1),
 	},
-	session_health: {
+	current_session: {
 		request: z.undefined(),
 		response: z.object({
-			signedIn: z.boolean(),
+			profileId: z.int().nonnegative().nullable(),
 			expiresAt: z.int().nonnegative().nullable(),
 			stale: z.boolean(),
 		}),

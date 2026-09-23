@@ -68,7 +68,7 @@ describe("SessionErrorAlert", () => {
 	beforeEach(() => {
 		callMethodMock
 			.mockReset()
-			.mockResolvedValue({ signedIn: true, expiresAt: 0, stale: true });
+			.mockResolvedValue({ profileId: 1, expiresAt: 0, stale: true });
 		signOutMock.mockReset().mockResolvedValue(undefined);
 		toastErrorMock.mockReset();
 		writeTextMock.mockReset().mockResolvedValue(undefined);
@@ -216,7 +216,7 @@ describe("SessionErrorAlert", () => {
 	});
 
 	it("signs out instead of retrying forever once the session is gone", async () => {
-		callMethodMock.mockRejectedValue({ kind: "NotLoggedIn" });
+		callMethodMock.mockRejectedValue({ kind: "NotSignedIn" });
 		render(SessionErrorAlert);
 
 		await fireEvent.click(

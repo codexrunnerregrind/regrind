@@ -7,7 +7,9 @@ const {
 	undeliveredHandlers,
 	rejectedHandlers,
 } = vi.hoisted(() => ({
-	callMethodMock: vi.fn(() => Promise.resolve(1)),
+	callMethodMock: vi.fn(() =>
+		Promise.resolve({ profileId: 1, expiresAt: null, stale: false }),
+	),
 	connectedHandlers: [] as (() => void)[],
 	droppedHandlers: [] as ((skipped: number) => void)[],
 	undeliveredHandlers: [] as ((event: unknown) => void)[],

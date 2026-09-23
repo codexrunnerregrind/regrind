@@ -91,7 +91,7 @@ pub fn spawn_ws_tasks(
 					continue;
 				}
 				match event {
-					grindr::AuthEvent::LoggedOut => {
+					grindr::AuthEvent::SignedOut => {
 						app.emit(
 							"auth:session-error",
 							SessionErrorPayload {

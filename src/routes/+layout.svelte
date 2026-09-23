@@ -8,7 +8,7 @@
 	import { onMount } from "svelte";
 	import { toast, Toaster } from "svelte-sonner";
 
-	import { startGoogleHandbackWatch } from "$lib/api/google-handback";
+	import { startGoogleHandoffWatch } from "$lib/api/google-handoff";
 	import {
 		hydratePreferences,
 		preferencesLoaded,
@@ -85,7 +85,7 @@
 	import faviconPng from "$lib/assets/favicon.png";
 	import AccountStatusAlert from "$lib/components/feedback/AccountStatusAlert.svelte";
 	import CopyErrorConfirmAlert from "$lib/components/feedback/CopyErrorConfirmAlert.svelte";
-	import GoogleHandbackConfirmAlert from "$lib/components/feedback/GoogleHandbackConfirmAlert.svelte";
+	import GoogleHandoffConfirmAlert from "$lib/components/feedback/GoogleHandoffConfirmAlert.svelte";
 	import RequestBlockedAlert from "$lib/components/feedback/RequestBlockedAlert.svelte";
 	import SessionErrorAlert from "$lib/components/feedback/SessionErrorAlert.svelte";
 	import faviconSvg from "../../contrib/logo/regrind.svg";
@@ -112,7 +112,7 @@
 
 	$effect(() => {
 		if (!onboarded) return;
-		const watch = startGoogleHandbackWatch();
+		const watch = startGoogleHandoffWatch();
 		return () => {
 			void watch.then((stop) => stop());
 		};
@@ -163,5 +163,5 @@
 	<SessionErrorAlert />
 	<AccountStatusAlert />
 	<CopyErrorConfirmAlert />
-	<GoogleHandbackConfirmAlert />
+	<GoogleHandoffConfirmAlert />
 </IconContext>

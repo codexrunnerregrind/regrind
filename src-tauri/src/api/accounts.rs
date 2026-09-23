@@ -336,7 +336,7 @@ pub async fn account_remove(
 	profile_id: ProfileId,
 ) -> Result<Option<ProfileId>, AppError> {
 	if let Some(account) = state.take(profile_id) {
-		account.client.logout().await;
+		account.client.sign_out().await;
 	}
 	forget_account(profile_id);
 	let index = AccountsStorage::remove(profile_id)?;

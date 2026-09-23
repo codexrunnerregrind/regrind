@@ -52,7 +52,7 @@ async function handover(): Promise<void> {
 		await withDeadline({
 			work: async () => {
 				await getCascadeV4({ nearbyGeoHash: geohash });
-				await callMethod("refresh_token", { geohash });
+				await callMethod("refresh_session", { geohash });
 			},
 			ms: STEP_TIMEOUT_MS,
 		});

@@ -2,7 +2,7 @@
 	import { page } from "$app/state";
 	import { toast } from "svelte-sonner";
 
-	import { googleHandbackState } from "$lib/api/google-handback-state.svelte";
+	import { googleHandoffState } from "$lib/api/google-handoff-state.svelte";
 	import { callMethod } from "$lib/api/methods";
 	import {
 		companionDisabled,
@@ -111,7 +111,7 @@
 		if (continuing) return;
 		continuing = true;
 		try {
-			await finishSignIn(await callMethod("login_with_google"));
+			await finishSignIn(await callMethod("sign_in_with_google"));
 		} catch (error) {
 			reportSignInFailure({
 				error,
@@ -163,7 +163,7 @@
 	</Link>
 {/snippet}
 
-{#if googleHandbackState.phase === "signingIn"}
+{#if googleHandoffState.phase === "signingIn"}
 	<Card.Root class="m-auto w-full max-w-sm gap-2">
 		<Card.Header>
 			<Card.Title>Signing you in</Card.Title>
@@ -183,7 +183,7 @@
 				try {
 					submitting = true;
 					await finishSignIn(
-						await callMethod("google_sign_in", {
+						await callMethod("sign_in_with_google_token", {
 							token: token.trim(),
 						}),
 					);

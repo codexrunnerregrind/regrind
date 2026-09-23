@@ -233,7 +233,7 @@ describe("GoogleSignInForm", () => {
 		await fireEvent.click(button("Install"));
 		await settled();
 
-		expect(callMethodMock).toHaveBeenCalledWith("login_with_google");
+		expect(callMethodMock).toHaveBeenCalledWith("sign_in_with_google");
 		expect(api.checkForUpdate).not.toHaveBeenCalled();
 		expectBusy("Continue");
 	});
@@ -257,7 +257,7 @@ describe("GoogleSignInForm", () => {
 		answerInstallProbe(null);
 		await settled();
 
-		expect(callMethodMock).toHaveBeenCalledWith("login_with_google");
+		expect(callMethodMock).toHaveBeenCalledWith("sign_in_with_google");
 		expect(api.checkForUpdate).not.toHaveBeenCalled();
 		expectBusy("Continue");
 	});
@@ -417,10 +417,10 @@ describe("GoogleSignInForm", () => {
 		expect(toCompanion.closest('[data-slot="card"]')).toBeNull();
 	});
 
-	it("keeps the signing-in card while a handback is being exchanged", async () => {
-		const { googleHandbackState } =
-			await import("$lib/api/google-handback-state.svelte");
-		googleHandbackState.phase = "signingIn";
+	it("keeps the signing-in card while a handoff is being exchanged", async () => {
+		const { googleHandoffState } =
+			await import("$lib/api/google-handoff-state.svelte");
+		googleHandoffState.phase = "signingIn";
 		try {
 			const { screen } = await opened();
 
@@ -429,7 +429,7 @@ describe("GoogleSignInForm", () => {
 				screen.queryByRole("button", { name: "Install" }),
 			).toBeNull();
 		} finally {
-			googleHandbackState.phase = "idle";
+			googleHandoffState.phase = "idle";
 		}
 	});
 
@@ -444,9 +444,10 @@ describe("GoogleSignInForm", () => {
 		await fireEvent.click(button("Sign in"));
 		await settled();
 
-		expect(callMethodMock).toHaveBeenCalledWith("google_sign_in", {
-			token: "pasted-token",
-		});
+		expect(callMethodMock).toHaveBeenCalledWith(
+			"sign_in_with_google_token",
+			{ token: "pasted-token" },
+		);
 	});
 
 	it("leaves Install tappable while the install permission is pending", async () => {

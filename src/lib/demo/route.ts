@@ -92,13 +92,11 @@ function ok(body: unknown): DemoResponse {
 
 export function demoCallMethod(method: string): unknown {
 	switch (method) {
-		case "auth_state":
-			return demoMeProfileId;
-		case "login":
-		case "login_with_google":
-		case "google_sign_in":
-		case "login_with_facebook":
-		case "refresh_token":
+		case "sign_in_with_email":
+		case "sign_in_with_google":
+		case "sign_in_with_google_token":
+		case "sign_in_with_facebook":
+		case "refresh_session":
 			return { profileId: demoMeProfileId, restriction: null };
 		case "rotate_api_params":
 			return { "user-agent": "demo", "l-device-info": "demo" };
@@ -106,8 +104,12 @@ export function demoCallMethod(method: string): unknown {
 			return false;
 		case "mint_recaptcha_token":
 			return "demo-recaptcha-token";
-		case "session_health":
-			return { signedIn: true, expiresAt: null, stale: false };
+		case "current_session":
+			return {
+				profileId: demoMeProfileId,
+				expiresAt: null,
+				stale: false,
+			};
 		// Demo mode is one made-up account, so the switcher shows exactly it and
 		// nothing can be added or switched to.
 		case "accounts_list":
