@@ -37,6 +37,8 @@
 	} from "$lib/model/messaging/albums";
 	import { hapticImpact } from "$lib/platform/haptics";
 	import { AlbumMediaAdder } from "./album-add-media.svelte";
+	import { AlbumLimits } from "./album-limits.svelte";
+	import { AlbumProcessingPoll } from "./album-processing.svelte";
 	import { saveAlbumMedia } from "./album-save-all";
 	import AlbumContentGrid from "./AlbumContentGrid.svelte";
 	import AlbumDeleteDialog from "./AlbumDeleteDialog.svelte";
@@ -59,6 +61,14 @@
 
 	const isMine = $derived(
 		album !== null && album.profileId === data.ourProfileId,
+	);
+
+	const limits = new AlbumLimits();
+	$effect(() => {
+		if (isMine) void limits.read();
+	});
+	const remaining = $derived(
+		album === null ? null : limits.remaining(album.content),
 	);
 	const first = $derived(album?.content[0] ?? null);
 	// A processing item has no usable URL yet, so the summary shows the album's
@@ -84,15 +94,18 @@
 
 	const media = new AlbumMediaAdder({
 		id: () => albumId,
+		profileId: () => data.ourProfileId,
 		content: () => album?.content ?? [],
 		busy: () => busy,
 		reload: () => refresh(albumId),
 	});
 
+	const processingPoll = new AlbumProcessingPoll();
+
 	async function load(id: number) {
 		album = null;
 		error = null;
-		polls = 0;
+		processingPoll.reset();
 		if (!Number.isFinite(id)) {
 			error = new Error("Invalid album");
 			return;
@@ -118,25 +131,12 @@
 		void load(albumId);
 	});
 
-	// Bounded because an item can sit in `processing` indefinitely — a clip the
-	// API never finishes with stays that way — and polling for it forever costs
-	// the battery for nothing. Reopening the album starts the count again.
-	const PROCESSING_POLLS = 10;
-	let polls = $state(0);
-
-	// A clip is transcoded on Grindr's side after the upload, and until that is
-	// done the API serves no poster, no playable media, and refuses to delete or
-	// reorder it. The album read says which items are in that state, so it is
-	// re-read until none are.
-	$effect(() => {
-		if (album === null || !album.content.some(isProcessing)) return;
-		if (polls >= PROCESSING_POLLS) return;
-		const timer = setTimeout(() => {
-			polls += 1;
-			void refresh(albumId);
-		}, 6000);
-		return () => clearTimeout(timer);
-	});
+	$effect(() =>
+		processingPoll.schedule({
+			processing: album?.content.some(isProcessing) === true,
+			refresh: () => void refresh(albumId),
+		}),
+	);
 
 	function openRename() {
 		renameValue = album?.albumName ?? "";
@@ -410,6 +410,14 @@
 									/>
 								{/if}
 							</span>
+							{#if isMine && remaining !== null}
+								<span class="text-2xs/[1.4] text-ink3">
+									{remaining.items} left, of which {remaining.videos}
+									{remaining.videos === 1
+										? "video"
+										: "videos"}
+								</span>
+							{/if}
 							<!-- Wraps: the column beside the cover is narrow on a phone. -->
 							<div
 								class="mt-0.5 flex flex-wrap items-center gap-2"

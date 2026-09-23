@@ -76,7 +76,7 @@ mod tests {
 	use tauri_plugin_fs::FsExt;
 
 	use super::*;
-	use crate::upload::test_support::{app, TempFile};
+	use crate::upload::test_support::{app, safe_path, TempFile};
 
 	#[test]
 	fn a_video_brand_without_a_readable_visual_track_is_unsupported() {
@@ -86,7 +86,9 @@ mod tests {
 		let temp = TempFile::new("allowed.mp4", &bytes);
 		let path = temp.path().to_path_buf();
 		app.fs_scope().allow_file(&path).expect("allow");
-		let picked = PickedFile::Desktop { path: path.clone() };
+		let picked = PickedFile::Desktop {
+			path: safe_path(&path),
+		};
 
 		let inspection = inspect(&mut picked.open(app.handle()).expect("open"))
 			.expect("inspect");
@@ -111,7 +113,9 @@ mod tests {
 		);
 		let path = temp.path().to_path_buf();
 		app.fs_scope().allow_file(&path).expect("allow");
-		let picked = PickedFile::Desktop { path: path.clone() };
+		let picked = PickedFile::Desktop {
+			path: safe_path(&path),
+		};
 
 		let inspection = inspect(&mut picked.open(app.handle()).expect("open"))
 			.expect("inspect");
@@ -127,7 +131,9 @@ mod tests {
 		let temp = TempFile::new("short.png", b"\x89PNG\r\n\x1a\n");
 		let path = temp.path().to_path_buf();
 		app.fs_scope().allow_file(&path).expect("allow");
-		let picked = PickedFile::Desktop { path: path.clone() };
+		let picked = PickedFile::Desktop {
+			path: safe_path(&path),
+		};
 
 		let inspection = inspect(&mut picked.open(app.handle()).expect("open"))
 			.expect("inspect");

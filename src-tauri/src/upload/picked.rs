@@ -1,10 +1,9 @@
 use std::fs::File;
 use std::io;
-use std::path::PathBuf;
 
 use serde::Deserialize;
 use tauri::Runtime;
-use tauri_plugin_fs::FsExt;
+use tauri_plugin_fs::{FsExt, SafeFilePath};
 
 const CONTENT_SCHEME: &str = "content://";
 
@@ -24,8 +23,16 @@ pub struct AndroidUri {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(tag = "source", rename_all = "lowercase")]
 pub enum PickedFile {
-	Android { uri: AndroidUri },
-	Desktop { path: PathBuf },
+	Android {
+		uri: AndroidUri,
+	},
+	/// Desktop and iOS. The picker hands back a plain path on some routes and a
+	/// `file://` URL on others — iOS does both — so the value is resolved before
+	/// it is checked against the scope, or a URL would read as a relative path
+	/// no folder ever allows.
+	Desktop {
+		path: SafeFilePath,
+	},
 }
 
 impl PickedFile {
@@ -35,16 +42,22 @@ impl PickedFile {
 	) -> io::Result<File> {
 		match self {
 			PickedFile::Desktop { path } => {
+				let path = path.clone().into_path().map_err(|error| {
+					io::Error::new(
+						io::ErrorKind::InvalidInput,
+						error.to_string(),
+					)
+				})?;
 				let allowed = app
 					.try_fs_scope()
-					.is_some_and(|scope| scope.is_allowed(path));
+					.is_some_and(|scope| scope.is_allowed(&path));
 				if !allowed {
 					return Err(io::Error::new(
 						io::ErrorKind::PermissionDenied,
 						OUTSIDE_SCOPE,
 					));
 				}
-				File::open(path)
+				File::open(&path)
 			}
 			PickedFile::Android { uri } => {
 				if !uri.uri.starts_with(CONTENT_SCHEME) {
@@ -85,14 +98,56 @@ fn open_android<R: Runtime>(
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::upload::test_support::{app, TempFile};
+	use crate::upload::test_support::{app, safe_path, TempFile};
 
 	#[test]
 	fn a_desktop_path_outside_the_scope_is_refused() {
 		let app = app();
 		let temp = TempFile::new("outside.jpg", b"\xFF\xD8\xFF");
 		let path = temp.path().to_path_buf();
-		let picked = PickedFile::Desktop { path: path.clone() };
+		let picked = PickedFile::Desktop {
+			path: safe_path(&path),
+		};
+
+		let refused = picked.open(app.handle()).expect_err("refused");
+
+		assert_eq!(refused.kind(), io::ErrorKind::PermissionDenied);
+		assert_eq!(refused.to_string(), OUTSIDE_SCOPE);
+	}
+
+	/// iOS hands back a `file://` URL rather than a path on some picker routes,
+	/// and a URL taken for a path is refused as being outside every folder the
+	/// app may read — which is what it looked like when an album took no clips.
+	#[test]
+	fn an_ios_file_url_opens_the_file_it_names() {
+		let app = app();
+		let temp = TempFile::new("clip.mov", b"\0\0\0\x14ftypqt  ");
+		let path = temp.path().to_path_buf();
+		app.fs_scope().allow_file(&path).expect("allow");
+		let url = format!("file://{}", path.display());
+		let picked: PickedFile = serde_json::from_value(serde_json::json!({
+			"source": "desktop",
+			"key": "k",
+			"mimeType": "video/quicktime",
+			"path": url,
+		}))
+		.expect("desktop");
+
+		picked.open(app.handle()).expect("opens the picked file");
+	}
+
+	#[test]
+	fn a_file_url_outside_the_scope_is_still_refused() {
+		let app = app();
+		let temp = TempFile::new("outside.mov", b"\0\0\0\x14ftypqt  ");
+		let url = format!("file://{}", temp.path().display());
+		let picked: PickedFile = serde_json::from_value(serde_json::json!({
+			"source": "desktop",
+			"key": "k",
+			"mimeType": "video/quicktime",
+			"path": url,
+		}))
+		.expect("desktop");
 
 		let refused = picked.open(app.handle()).expect_err("refused");
 
@@ -137,8 +192,12 @@ mod tests {
 			r#"{"source":"desktop","key":"k","mimeType":null,"path":"/tmp/a.jpg"}"#,
 		)
 		.expect("desktop");
-		assert!(
-			matches!(desktop, PickedFile::Desktop { path } if path == std::path::Path::new("/tmp/a.jpg"))
+		let PickedFile::Desktop { path } = desktop else {
+			panic!("expected a desktop pick");
+		};
+		assert_eq!(
+			path.into_path().expect("path"),
+			std::path::Path::new("/tmp/a.jpg")
 		);
 
 		let android: PickedFile = serde_json::from_str(

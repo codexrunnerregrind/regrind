@@ -111,7 +111,7 @@ mod tests {
 	use crate::hex::hex;
 	use crate::upload::file::sha256_hex;
 	use crate::upload::form::FormPart;
-	use crate::upload::test_support::{app, TempFile};
+	use crate::upload::test_support::{app, safe_path, TempFile};
 	use crate::video::boxes::Span;
 	use crate::video::strip::Fill;
 
@@ -134,7 +134,9 @@ mod tests {
 		app.fs_scope().allow_file(path).expect("allow");
 		FileBody {
 			app: app.handle().clone(),
-			file: PickedFile::Desktop { path: path.clone() },
+			file: PickedFile::Desktop {
+				path: safe_path(path),
+			},
 			framing: Framing::new(&FormPart {
 				name: "content",
 				filename: "",

@@ -40,3 +40,11 @@ impl Drop for TempFile {
 		std::fs::remove_file(&self.0).ok();
 	}
 }
+
+/// The picker's handle on a local file, as the frontend sends it.
+pub fn safe_path(path: &Path) -> tauri_plugin_fs::SafeFilePath {
+	path.to_str()
+		.expect("utf-8 path")
+		.parse()
+		.expect("safe path")
+}
