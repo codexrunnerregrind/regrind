@@ -855,7 +855,7 @@ a {
 
 /* Pull-to-refresh containers */
 @utility pull-scroller {
-	@apply size-full overflow-auto overscroll-contain;
+	@apply size-full overflow-x-hidden overflow-y-auto overscroll-contain;
 }
 
 [data-sonner-toaster] {
