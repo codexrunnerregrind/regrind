@@ -40,8 +40,8 @@
 					"date": "2026-09-23",
 					"localizedDescription": "- Each account keeps its own filters when you switch accounts (#3)\n- Drag your camera preview to any corner during video calls (#8)\n- Expiring videos now open in the media viewer and can be saved (#1)\n- Saved media now includes the user ID (#2)\n- Add videos to your albums\n- Other bug fixes and UI improvements",
 					"downloadURL": "https://git.opengrind.org/codexrunner/regrind/releases/download/v0.1.0-beta.15/regrind-v0.1.0-beta.15.ipa",
-					"size": 40721385,
-					"sha256": "c69d243acb0f246f8f3996b607705b3150cd1ab04a04b9ca4b2bb6c1529b0aac",
+					"size": 40723188,
+					"sha256": "dd7ed10d6b922848c37116c46580a8e1a3c34a6ba4022b341e49566f5a98846d",
 					"minOSVersion": "14.0"
 				}
 			]
