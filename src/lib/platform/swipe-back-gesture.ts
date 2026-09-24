@@ -1,4 +1,9 @@
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+import {
+	beginEdgeSwipeBack,
+	type EdgeSwipe,
+} from "$lib/platform/system-back-gesture";
+import { canGoBack } from "$lib/util/history";
 
 /**
  * Interactive left-edge "swipe to go back" gesture.
@@ -12,6 +17,9 @@ import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelt
  * Back navigation is routed through {@link backGestureEventHandlers} so a
  * swipe first dismisses any open sheet/dialog (mirroring the Android
  * hardware-back behavior) before falling through to `history.back()`.
+ *
+ * Inside a page stack the stack takes the drag instead, sliding the page off
+ * the one beneath it (see {@link beginEdgeSwipeBack}).
  */
 
 // Width of the left-edge zone (px) where a drag may begin.
@@ -29,10 +37,6 @@ function runBackGestureHandlers(): boolean {
 		if (handlers[index]?.() !== true) return true;
 	}
 	return false;
-}
-
-function canGoBack(): boolean {
-	return window.navigation?.canGoBack ?? history.length > 1;
 }
 
 function navigateBack() {
@@ -60,6 +64,22 @@ function shouldIgnoreStart(target: EventTarget | null): boolean {
 	return false;
 }
 
+// iOS draws a focused field's caret and selection in a native overlay that
+// neither a transform nor a layout offset carries along, so a drag strands it
+// as a dark bar across the composer — and being native, no CSS on the field
+// reaches it. Ending the editing session is the only thing that clears it,
+// which is also what a back gesture does in most iOS apps. The cost is a
+// cancelled swipe coming back without the keyboard.
+function blurEditing() {
+	const editing = document.activeElement;
+	if (
+		editing instanceof HTMLInputElement ||
+		editing instanceof HTMLTextAreaElement ||
+		(editing instanceof HTMLElement && editing.isContentEditable)
+	)
+		editing.blur();
+}
+
 export function applySwipeBackGesture(): () => void {
 	const screen = document.getElementById("screen-nav-root");
 	if (!screen) return () => {};
@@ -71,8 +91,10 @@ export function applySwipeBackGesture(): () => void {
 	let lastT = 0;
 	let velocity = 0;
 	let active = false;
+	let driven: EdgeSwipe | null = null;
 
 	function reset() {
+		driven = null;
 		pointerId = null;
 		active = false;
 		screen!.style.transition = "";
@@ -110,6 +132,12 @@ export function applySwipeBackGesture(): () => void {
 			}
 			if (dx < ACTIVATION_SLOP) return;
 			active = true;
+			blurEditing();
+			driven = beginEdgeSwipeBack();
+			if (driven) {
+				event.preventDefault();
+				return;
+			}
 			try {
 				screen!.setPointerCapture(event.pointerId);
 			} catch {
@@ -118,20 +146,6 @@ export function applySwipeBackGesture(): () => void {
 			screen!.style.transition = "none";
 			screen!.style.willChange = "transform";
 			screen!.style.boxShadow = "-12px 0 24px rgba(0, 0, 0, 0.35)";
-			// iOS draws a focused field's caret and selection in a native
-			// overlay that neither the transform nor a layout offset carries
-			// along, so a drag strands it as a dark bar across the composer —
-			// and being native, no CSS on the field reaches it. Ending the
-			// editing session is the only thing that clears it, which is also
-			// what a back gesture does in most iOS apps. The cost is a
-			// cancelled swipe coming back without the keyboard.
-			const editing = document.activeElement;
-			if (
-				editing instanceof HTMLInputElement ||
-				editing instanceof HTMLTextAreaElement ||
-				(editing instanceof HTMLElement && editing.isContentEditable)
-			)
-				editing.blur();
 		}
 
 		const dt = event.timeStamp - lastT;
@@ -141,6 +155,10 @@ export function applySwipeBackGesture(): () => void {
 
 		event.preventDefault();
 		const offset = Math.max(0, dx);
+		if (driven) {
+			driven.track(offset / window.innerWidth);
+			return;
+		}
 		screen!.style.transform = `translateX(${offset}px)`;
 	}
 
@@ -155,6 +173,13 @@ export function applySwipeBackGesture(): () => void {
 		const commit =
 			dx > window.innerWidth * COMMIT_DISTANCE_RATIO ||
 			velocity > COMMIT_VELOCITY;
+
+		if (driven) {
+			if (commit) driven.commit();
+			else driven.cancel();
+			reset();
+			return;
+		}
 
 		screen!.style.transition =
 			"transform 220ms cubic-bezier(0.22, 1, 0.36, 1)";
