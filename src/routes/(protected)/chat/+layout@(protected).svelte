@@ -12,9 +12,11 @@
 	import * as Resizable from "$lib/components/ui/resizable";
 	import { below } from "$lib/util/breakpoints.svelte";
 	import { swipeTabs } from "$lib/util/swipe-tabs";
+	import ConversationScreen from "./[conversationId]/ConversationScreen.svelte";
 	import ConversationsList from "./ConversationsList.svelte";
+	import LiveStack from "./live-stack/LiveStack.svelte";
 
-	let { data, children }: import("./$types").LayoutProps = $props();
+	let { data }: import("./$types").LayoutProps = $props();
 
 	const conversations = untrack(() =>
 		getOrCreateConversationsState(data.ourProfileId),
@@ -54,27 +56,53 @@
 		return () => observer.disconnect();
 	});
 
-	const isChatSelected = $derived(page.params.conversationId !== undefined);
+	const conversationId = $derived(page.params.conversationId ?? null);
 
 	const mobile = below("split");
 </script>
 
-<!-- Inbox sits outside the (navbar) layout, so the tab-bar swipe is attached
-     here too. Only on mobile, and `swipeToNavTab` itself declines inside a
-     conversation, where a horizontal swipe belongs to the message rows. The
-     list's own Messages/Albums swipe nests inside and goes first. -->
-<main
-	class="flex h-(--viewport-height) w-full flex-1 pt-(--safe-area-top) pb-(--safe-area-bottom)"
-	use:swipeTabs={{
-		enabled: mobile.current,
-		onNext: () => swipeToNavTab(page.route.id, 1),
-		onPrev: () => swipeToNavTab(page.route.id, -1),
-	}}
->
-	{#if !mobile.current}
+{#snippet conversationScreen(id: string, leaving = false)}
+	<ConversationScreen
+		conversationId={id}
+		ourProfileId={data.ourProfileId}
+		{leaving}
+	/>
+{/snippet}
+
+{#if mobile.current}
+	<!-- The conversation slides over a list that stays mounted underneath, so
+	     coming back finds it where it was. Inbox sits outside the (navbar)
+	     layout, so the tab-bar swipe is attached to the list here; the list's
+	     own Messages/Albums swipe nests inside and goes first. -->
+	<LiveStack
+		basePath="/chat"
+		keyOf={(target) => target.params?.conversationId ?? null}
+	>
+		{#snippet base({ covered })}
+			<main
+				class="flex min-h-0 flex-1 flex-col"
+				use:swipeTabs={{
+					onNext: () => swipeToNavTab(page.route.id, 1),
+					onPrev: () => swipeToNavTab(page.route.id, -1),
+				}}
+			>
+				<ConversationsList {covered} />
+			</main>
+			<NavBar ourProfileId={data.ourProfileId} />
+		{/snippet}
+		{#snippet sheet(id, { leaving })}
+			<main class="flex min-h-0 max-w-full flex-1 flex-col">
+				{@render conversationScreen(id, leaving)}
+			</main>
+		{/snippet}
+	</LiveStack>
+{:else}
+	<main
+		class="flex h-(--viewport-height) w-full flex-1 pt-(--safe-area-top) pb-(--safe-area-bottom)"
+	>
 		<Resizable.PaneGroup
 			direction="horizontal"
-			class="mx-auto h-auto! max-h-full max-w-300 max-split:hidden!"
+			class="mx-auto h-auto! max-h-full max-w-300"
 			bind:ref={paneGroup}
 			autoSaveId="/(protected)/chat/layout"
 		>
@@ -99,25 +127,16 @@
 					<Card.Root
 						class={[
 							"relative h-full gap-0 rounded-chat-panel p-0 dark:ring-neutral-800",
-							{ "bg-card/20 ring-0": !isChatSelected },
+							{ "bg-card/20 ring-0": conversationId === null },
 						]}
 					>
-						{@render children?.()}
+						{#if conversationId !== null}
+							{@render conversationScreen(conversationId)}
+						{/if}
 					</Card.Root>
 				</div>
 			</Resizable.Pane>
 		</Resizable.PaneGroup>
-	{/if}
-	{#if isChatSelected}
-		{#if mobile.current}
-			<div class="flex max-w-full flex-1 flex-col self-stretch">
-				{@render children?.()}
-			</div>
-		{/if}
-	{:else if mobile.current}
-		<ConversationsList />
-	{/if}
-</main>
-{#if !mobile.current || page.route.id !== "/(protected)/chat/[conversationId]"}
+	</main>
 	<NavBar ourProfileId={data.ourProfileId} />
 {/if}
