@@ -37,7 +37,7 @@
 <div class="screen-nav-host">
 	<div
 		bind:this={container}
-		class="pull-scroller overscroll-x-auto"
+		class="pull-scroller"
 		onscroll={() => (views.scrollY = container?.scrollTop ?? 0)}
 	>
 		<div

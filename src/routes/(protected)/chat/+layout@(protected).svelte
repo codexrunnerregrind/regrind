@@ -130,7 +130,13 @@
 							{ "bg-card/20 ring-0": conversationId === null },
 						]}
 					>
-						{#if conversationId !== null}
+						{#if conversationId === null}
+							<Card.Content class="m-auto flex p-6">
+								<span class="text-center text-xl text-muted">
+									Select a conversation to start chatting
+								</span>
+							</Card.Content>
+						{:else}
 							{@render conversationScreen(conversationId)}
 						{/if}
 					</Card.Root>
