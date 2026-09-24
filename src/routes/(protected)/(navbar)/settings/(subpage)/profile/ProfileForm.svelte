@@ -24,8 +24,8 @@
 	import { WheelPicker } from "$lib/components/ui/carousel";
 	import { Spinner } from "$lib/components/ui/spinner";
 	import { type Profile } from "$lib/model/users/profiles";
-	import { bottomChrome } from "$lib/util/bottom-chrome.svelte";
 	import { deepEqual } from "$lib/util/deep-equal";
+	import { bottomChrome } from "$lib/util/screen-chrome.svelte";
 	import type { Gender } from "$lib/model/users/genders";
 	import type { Pronoun } from "$lib/model/users/pronouns";
 	import type { ProfileTagsResponse } from "$lib/model/users/tags";

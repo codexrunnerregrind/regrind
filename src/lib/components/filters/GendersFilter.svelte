@@ -7,6 +7,7 @@
 	import { Spinner } from "$lib/components/ui/spinner";
 	import * as ToggleGroup from "$lib/components/ui/toggle-group";
 	import { isFilterableGender } from "$lib/model/browse/grid/filters";
+	import { instantWhenReducedMotion } from "$lib/util/reduced-motion";
 	import FilterDropdown from "./FilterDropdown.svelte";
 	import { isGenderChipShown, selectGenders } from "./gender-chips";
 	import { selectionSummary } from "./summary";
@@ -24,15 +25,17 @@
 		),
 	);
 
-	const hide = (node: HTMLDivElement): TransitionConfig => {
-		const width = node.offsetWidth;
-		return {
-			duration: 400,
-			css: (t: number, u: number) =>
-				`width: calc(${t} * ${width}px); opacity: ${t}; margin-left: calc(${u} * -4px)`,
-			easing: expoOut,
-		};
-	};
+	const hide = instantWhenReducedMotion(
+		(node: HTMLDivElement): TransitionConfig => {
+			const width = node.offsetWidth;
+			return {
+				duration: 400,
+				css: (t: number, u: number) =>
+					`width: calc(${t} * ${width}px); opacity: ${t}; margin-left: calc(${u} * -4px)`,
+				easing: expoOut,
+			};
+		},
+	);
 
 	let expanded = $state(false);
 

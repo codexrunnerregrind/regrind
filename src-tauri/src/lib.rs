@@ -9,6 +9,9 @@ mod error;
 mod hex;
 pub mod media;
 mod photo;
+#[cfg(test)]
+mod pin_support;
+mod plugin_rejection;
 mod state;
 mod storage;
 mod upload;

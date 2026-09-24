@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { cubicOut, expoOut } from "svelte/easing";
-	import { Tween } from "svelte/motion";
-	import { scale, type TransitionConfig } from "svelte/transition";
+	import { prefersReducedMotion, Tween } from "svelte/motion";
 	import type { ClassValue } from "svelte/elements";
+	import type { TransitionConfig } from "svelte/transition";
 
 	import { Button } from "$lib/components/ui/button";
+	import { scale } from "$lib/util/reduced-motion";
 	import { cn } from "$lib/util/utils";
 	import { attachPullInputs } from "./refresh/attach-inputs";
 	import {
@@ -23,6 +24,7 @@
 		position,
 		container,
 		hintOffset = 0,
+		anchorOffset = 0,
 		containerClass,
 		onrefresh,
 	}: {
@@ -30,6 +32,7 @@
 		position: "top" | "bottom";
 		container?: HTMLElement | null;
 		hintOffset?: number;
+		anchorOffset?: number;
 		containerClass?: ClassValue;
 		onrefresh?: () => void;
 	} = $props();
@@ -86,6 +89,8 @@
 	const DISC_TRAVEL = DISC_REST - DISC_START;
 	const DISC_WINDOW = DISC_REST + DISC_TRAVEL + DISC_SIZE + DISC_SHADOW;
 	const discTop = new Tween(DISC_START, { duration: 250, easing: cubicOut });
+	const settleMotion = () =>
+		prefersReducedMotion.current ? { duration: 0 } : undefined;
 	let discOutro = $state(false);
 
 	function discDragTop(displayPx: number): number {
@@ -139,9 +144,9 @@
 		if (model.gestureActive && model.source === "touch") {
 			void discTop.set(discDragTop(model.displayPx), { duration: 0 });
 		} else if (busy) {
-			void discTop.set(DISC_REST);
+			void discTop.set(DISC_REST, settleMotion());
 		} else if (discShown) {
-			void discTop.set(DISC_START);
+			void discTop.set(DISC_START, settleMotion());
 		}
 	});
 
@@ -176,7 +181,10 @@
 		if (model.gestureActive && model.source === "overscroll") {
 			void reveal.set(model.displayPx, { duration: 0 });
 		} else if (!model.gestureActive) {
-			void reveal.set(busy || restingButton.shown ? REST_HEIGHT_PX : 0);
+			void reveal.set(
+				busy || restingButton.shown ? REST_HEIGHT_PX : 0,
+				settleMotion(),
+			);
 		}
 	});
 
@@ -239,7 +247,7 @@
 			},
 			containerClass,
 		)}
-		style:--drc-anchor="{headerOffset.px}px"
+		style:--drc-anchor="{headerOffset.px + anchorOffset}px"
 		style:height="{overlayHeight}px"
 		style:opacity
 	>

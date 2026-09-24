@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { Label } from "$lib/components/ui/label";
+	import { Spinner } from "$lib/components/ui/spinner";
 	import { Switch } from "$lib/components/ui/switch";
+	import { cn } from "$lib/util/utils";
 
 	let {
 		title,
@@ -8,6 +10,8 @@
 		icon,
 		checked = $bindable(),
 		disabled = false,
+		busy = false,
+		class: className,
 	}: {
 		title: string;
 		description?: string;
@@ -15,12 +19,17 @@
 		icon?: import("svelte").Snippet;
 		checked: boolean;
 		disabled?: boolean;
+		busy?: boolean;
+		class?: string;
 	} = $props();
 </script>
 
 <Label
-	class="flex items-center gap-3 rounded-xl border p-4 transition-all hover:bg-muted aria-disabled:opacity-60"
-	aria-disabled={disabled}
+	class={cn(
+		"flex items-center gap-3 rounded-xl border p-4 transition-all hover:bg-muted aria-disabled:opacity-60",
+		className,
+	)}
+	aria-disabled={disabled || busy}
 >
 	{#if icon}
 		<!-- A tile rather than a bare glyph: it holds the icon at one size
@@ -40,5 +49,8 @@
 			</p>
 		{/if}
 	</div>
-	<Switch bind:checked {disabled} />
+	{#if busy}
+		<Spinner class="text-muted-foreground" />
+	{/if}
+	<Switch bind:checked disabled={disabled || busy} />
 </Label>

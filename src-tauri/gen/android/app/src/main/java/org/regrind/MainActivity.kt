@@ -11,6 +11,7 @@ import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
 import android.widget.TextView
+import androidx.activity.BackEventCompat
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
@@ -27,11 +28,19 @@ import org.regrind.push.PushHub
 import org.regrind.push.PushNotifier
 
 class MainActivity : TauriActivity() {
-	private var insetsTop = 0
-	private var insetsBottom = 0
-	private var insetsLeft = 0
-	private var insetsRight = 0
-	@Volatile private var imeVisibleState = false
+	private data class WebInsets(
+		val top: Double,
+		val bottom: Double,
+		val left: Double,
+		val right: Double,
+		val imeVisible: Boolean,
+	) {
+		fun toJavascript() = "{ top: $top, bottom: $bottom, left: $left, right: $right, ime: $imeVisible }"
+	}
+
+	@Volatile private var webInsets = WebInsets(top = 0.0, bottom = 0.0, left = 0.0, right = 0.0, imeVisible = false)
+	private var sentWebInsets: WebInsets? = null
+	@Volatile private var backGestureProgress = 0f
 	private var webViewRef: WebView? = null
 	private var pendingWebViewWarning: WebViewSupport.Status? = null
 	private var shownWebViewWarning = false
@@ -64,14 +73,38 @@ class MainActivity : TauriActivity() {
 	}
 
 	inner class InsetsInterface {
-		@JavascriptInterface fun top() = insetsTop
-		@JavascriptInterface fun bottom() = insetsBottom
-		@JavascriptInterface fun left() = insetsLeft
-		@JavascriptInterface fun right() = insetsRight
-		@JavascriptInterface fun imeVisible() = imeVisibleState
+		@JavascriptInterface fun top() = webInsets.top
+		@JavascriptInterface fun bottom() = webInsets.bottom
+		@JavascriptInterface fun left() = webInsets.left
+		@JavascriptInterface fun right() = webInsets.right
+		@JavascriptInterface fun imeVisible() = webInsets.imeVisible
+	}
+
+	private val backProgressCallback = object : OnBackPressedCallback(true) {
+		override fun handleOnBackStarted(backEvent: BackEventCompat) {
+			backGestureProgress = 0f
+			webViewRef?.evaluateJavascript("window.__AndroidOnBackGestureStart?.()", null)
+		}
+
+		override fun handleOnBackProgressed(backEvent: BackEventCompat) {
+			backGestureProgress = backEvent.progress
+		}
+
+		override fun handleOnBackCancelled() {
+			backGestureProgress = 0f
+			webViewRef?.evaluateJavascript("window.__AndroidOnBackGestureCancel?.()", null)
+		}
+
+		override fun handleOnBackPressed() {
+			isEnabled = false
+			onBackPressedDispatcher.onBackPressed()
+			isEnabled = true
+		}
 	}
 
 	inner class BackInterface {
+		@JavascriptInterface fun gestureProgress() = backGestureProgress
+
 		@JavascriptInterface fun moveTaskToBack() {
 			runOnUiThread { this@MainActivity.moveTaskToBack(true) }
 		}
@@ -129,16 +162,21 @@ class MainActivity : TauriActivity() {
 		}
 		
 		ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { view, insets ->
-			val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+			val bars = insets.getInsets(
+				WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+			)
 			val ime = insets.getInsets(WindowInsetsCompat.Type.ime())
 			val isImeVisible = insets.isVisible(WindowInsetsCompat.Type.ime())
-			imeVisibleState = isImeVisible
-			val density = resources.displayMetrics.density
+			val density = resources.displayMetrics.density.toDouble()
 			
-			insetsTop = (bars.top / density).toInt()
-			insetsBottom = if (isImeVisible) 0 else (bars.bottom / density).toInt()
-			insetsLeft = (bars.left / density).toInt()
-			insetsRight = (bars.right / density).toInt()
+			val nextInsets = WebInsets(
+				top = bars.top / density,
+				bottom = if (isImeVisible) 0.0 else bars.bottom / density,
+				left = bars.left / density,
+				right = bars.right / density,
+				imeVisible = isImeVisible,
+			)
+			webInsets = nextInsets
 			
 			val bottomMargin = if (isImeVisible) ime.bottom else 0
 			webViewRef?.let { wv ->
@@ -150,7 +188,11 @@ class MainActivity : TauriActivity() {
 				}
 			}
 			
-			webViewRef?.evaluateJavascript("window.__reapplyInsets?.()", null)
+			val webView = webViewRef
+			if (webView != null && nextInsets != sentWebInsets) {
+				sentWebInsets = nextInsets
+				webView.evaluateJavascript("window.__reapplyInsets?.(${nextInsets.toJavascript()})", null)
+			}
 			
 			ViewCompat.onApplyWindowInsets(view, insets)
 		}
@@ -199,6 +241,9 @@ class MainActivity : TauriActivity() {
 		webView.addJavascriptInterface(InsetsInterface(), "__AndroidInsets")
 		webView.addJavascriptInterface(BackInterface(), "__AndroidBack")
 		webView.addJavascriptInterface(PushInterface(), "__RegrindPush")
+		// After Tauri's AppPlugin adds its back callback: only the last one added gets the gesture progress.
+		backProgressCallback.remove()
+		onBackPressedDispatcher.addCallback(this, backProgressCallback)
 		latestFcmToken?.let { dispatchFcmToken(it) }
 		tokenUnavailable?.let { dispatchFcmTokenUnavailable(it) }
 		// A route captured while there was no webview to deliver it to; runs

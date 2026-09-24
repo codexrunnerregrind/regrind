@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { isFloatingNav } from "$lib/platform/nav-style.svelte";
-	import { bottomChrome } from "$lib/util/bottom-chrome.svelte";
+	import { bottomChrome } from "$lib/util/screen-chrome.svelte";
 	import type { TapType } from "$lib/model/interest/taps";
 	import OpenConversationButton from "./OpenConversationButton.svelte";
 	import TapProfileButton from "./TapProfileButton.svelte";

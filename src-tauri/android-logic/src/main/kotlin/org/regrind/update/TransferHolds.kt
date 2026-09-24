@@ -1,16 +1,18 @@
 package org.regrind.update
 
 class TransferHolds {
-	private val active = ArrayList<TransferTitle>()
+	private val active = ArrayList<Transfer>()
 
 	@Synchronized
-	fun begin(title: TransferTitle) {
-		active.add(title)
+	fun begin(transfer: Transfer) {
+		active.add(transfer)
 	}
 
 	@Synchronized
-	fun end(title: TransferTitle): TransferTitle? {
-		active.remove(title)
-		return active.lastOrNull()
+	fun end(transfer: Transfer) {
+		active.remove(transfer)
 	}
+
+	@Synchronized
+	fun newest(): Transfer? = active.lastOrNull()
 }

@@ -88,15 +88,16 @@
 	);
 	const view = virtualGrid({
 		grid: () => gridElement,
-		count: () => gridProfiles.length + pendingSkeletons,
+		count: () => gridState.profiles.length + pendingSkeletons,
 	});
 	const visibleProfiles = $derived(
-		gridProfiles.slice(view.startIndex, view.endIndex),
+		gridState.profiles.slice(view.startIndex, view.endIndex),
 	);
 	const visibleSkeletons = $derived(
 		Math.max(
 			0,
-			view.endIndex - Math.max(view.startIndex, gridProfiles.length),
+			view.endIndex -
+				Math.max(view.startIndex, gridState.profiles.length),
 		),
 	);
 
@@ -119,6 +120,7 @@
 	     list of matches, so the windowing offsets would only push it off-screen. -->
 	<div
 		bind:this={gridElement}
+		data-slot="grid-cells"
 		class="photo-grid"
 		data-grid-columns={getProfileGridColumnsSnapshot()}
 		style:padding-top={search.active ? undefined : `${view.paddingTopPx}px`}
@@ -168,7 +170,7 @@
 			{#each Array.from({ length: PAGE_SKELETONS })}
 				<GridCellSkeleton />
 			{/each}
-		{:else if gridState.error && gridProfiles.length === 0}
+		{:else if gridState.error && gridState.profiles.length === 0}
 			<div class="col-span-full flex p-4">
 				<ApiErrorDisplay
 					error={gridState.error}
@@ -177,7 +179,7 @@
 				/>
 			</div>
 		{:else}
-			{#if gridProfiles.length === 0}
+			{#if gridState.profiles.length === 0}
 				<EmptyGrid />
 			{/if}
 			{#each visibleProfiles as item (item.id)}

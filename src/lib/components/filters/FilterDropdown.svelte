@@ -3,6 +3,7 @@
 	import { expoOut } from "svelte/easing";
 	import type { TransitionConfig } from "svelte/transition";
 
+	import { instantWhenReducedMotion } from "$lib/util/reduced-motion";
 	import { cn } from "$lib/util/utils";
 
 	let {
@@ -32,15 +33,17 @@
 
 	const uid = $props.id();
 
-	const hide = (node: HTMLDivElement): TransitionConfig => {
-		const height = node.scrollHeight;
-		return {
-			duration: 400,
-			css: (t: number, u: number) =>
-				`height: calc(${t} * ${height}px); opacity: ${t}; margin-top: calc(${u} * -8px)`,
-			easing: expoOut,
-		};
-	};
+	const hide = instantWhenReducedMotion(
+		(node: HTMLDivElement): TransitionConfig => {
+			const height = node.scrollHeight;
+			return {
+				duration: 400,
+				css: (t: number, u: number) =>
+					`height: calc(${t} * ${height}px); opacity: ${t}; margin-top: calc(${u} * -8px)`,
+				easing: expoOut,
+			};
+		},
+	);
 </script>
 
 <!-- A list row rather than a checkbox: the value itself says whether the filter

@@ -10,7 +10,7 @@
 	import { getViewActivityState } from "$lib/interest/view-activity.svelte";
 	import { hapticSelection } from "$lib/platform/haptics";
 	import { isFloatingNav } from "$lib/platform/nav-style.svelte";
-	import { bottomChrome } from "$lib/util/bottom-chrome.svelte";
+	import { bottomChrome } from "$lib/util/screen-chrome.svelte";
 	import { scrollActiveViewToTop } from "$lib/util/scroll";
 
 	let { ourProfileId }: { ourProfileId: number } = $props();

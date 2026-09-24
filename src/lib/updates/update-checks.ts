@@ -1,6 +1,7 @@
-import { addonFlows } from "./addon.svelte";
+import { addonFlow } from "./addon.svelte";
+import { ADDON_KEYS, type AddonKey } from "./components";
 import { problemBody, updateErrorText } from "./error-copy";
-import type { CheckReport, UpdateFlow } from "./flow";
+import type { CheckReport } from "./flow";
 import { getInstalledVersion } from "./index";
 import { showNotice, showProblem, showUpToDate } from "./toasts";
 import { checkForUpdateNow } from "./updates-manager";
@@ -58,17 +59,13 @@ export function manualCheckOffered({
 	return selfManaged || addonAvailable;
 }
 
-async function checkInstalledAddon({
-	flow,
-	reportFailure,
-}: {
-	flow: UpdateFlow;
-	reportFailure: boolean;
-}): Promise<CheckReport | null> {
-	const { component } = flow;
+async function checkInstalledAddon(
+	component: AddonKey,
+	{ reportFailure }: { reportFailure: boolean },
+): Promise<CheckReport | null> {
+	const flow = addonFlow(component);
 	try {
-		const installed = await getInstalledVersion(component);
-		if (installed === null) {
+		if ((await getInstalledVersion(component)) === null) {
 			await flow.withdrawUpdate();
 			return null;
 		}
@@ -93,8 +90,8 @@ async function checkEachComponent({
 	const reports = await Promise.all([
 		selfManaged ? checkForUpdateNow({ reportFailure }) : null,
 		...(addonAvailable
-			? addonFlows.map((flow) =>
-					checkInstalledAddon({ flow, reportFailure }),
+			? ADDON_KEYS.map((addon) =>
+					checkInstalledAddon(addon, { reportFailure }),
 				)
 			: []),
 	]);

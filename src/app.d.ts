@@ -1,6 +1,14 @@
+import type { NativeInsets } from "$lib/platform/android-native-bridge";
+
 declare global {
+	namespace App {
+		interface PageState {
+			profileOrigin?: "browse";
+		}
+	}
+
 	interface Window {
-		__reapplyInsets: () => unknown;
+		__reapplyInsets: (insets?: NativeInsets) => unknown;
 		__AndroidInsets?: {
 			top(): number;
 			bottom(): number;
@@ -9,7 +17,7 @@ declare global {
 			imeVisible?(): boolean;
 		};
 		__AndroidOnBackGesture?: () => boolean;
-		__AndroidBack?: { moveTaskToBack(): void };
+		__AndroidBack?: { moveTaskToBack(): void; gestureProgress(): number };
 		__RegrindPush?: {
 			setPrefs(messages: boolean, taps: boolean): void;
 			setActiveRoute(route: string | null): void;
@@ -23,6 +31,9 @@ declare global {
 		/** Why native has no push token, when it knows it never will. */
 		__REGRIND_FCM_UNAVAILABLE?: string;
 		__REGRIND_PUSH_ROUTE?: string;
+		__AndroidOnBackGestureStart?: () => boolean;
+		__AndroidOnBackGestureCancel?: () => void;
+		pswp?: unknown;
 	}
 }
 

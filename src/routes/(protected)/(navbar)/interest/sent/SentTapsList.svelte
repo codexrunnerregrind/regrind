@@ -22,7 +22,7 @@
 
 	let container: HTMLDivElement | null = $state(null);
 
-	restoreScrollOnce(() => container, taps);
+	restoreScrollOnce({ container: () => container, state: taps });
 
 	// Same as the received list: the profile screen swipes through the rest of
 	// what is on screen here.

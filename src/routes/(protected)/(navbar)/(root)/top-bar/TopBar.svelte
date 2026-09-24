@@ -1,6 +1,7 @@
 <script lang="ts">
 	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
 	import { gridState } from "$lib/grid/grid-state.svelte";
+	import { topChrome } from "$lib/util/screen-chrome.svelte";
 	import type { FavoriteSearch } from "$lib/favorites/favorite-search.svelte";
 	import FavoriteNoteSearch from "../FavoriteNoteSearch.svelte";
 	import GridFilters from "../GridFilters.svelte";
@@ -36,6 +37,7 @@
 	bgClass="bg-linear-to-b from-background to-transparent"
 	contentClass="flex flex-col pt-fixed-header"
 	direction="topToBottom"
+	{@attach topChrome}
 >
 	<div class="scrollbar-thin flex gap-0.5 overflow-x-auto p-4 pt-0">
 		<LocationChange />

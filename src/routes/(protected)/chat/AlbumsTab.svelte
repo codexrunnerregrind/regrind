@@ -14,7 +14,7 @@
 
 	// Opening an album unmounts the tab — the grid comes back from cache, so the
 	// position it was read at has to come back with it.
-	restoreScrollOnce(() => container, sharedAlbums);
+	restoreScrollOnce({ container: () => container, state: sharedAlbums });
 
 	function openMyAlbums() {
 		hapticSelection();

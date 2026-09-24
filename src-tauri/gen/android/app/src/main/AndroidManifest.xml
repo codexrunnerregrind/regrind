@@ -28,6 +28,7 @@
 	<queries>
 		<package android:name="org.opengrind.google_oauth" />
 		<package android:name="org.opengrind.recaptcha" />
+		<package android:name="org.opengrind.fcm" />
 	</queries>
 
 	<!-- AndroidTV support -->
@@ -36,6 +37,7 @@
 	<application
 		android:allowBackup="false"
 		android:dataExtractionRules="@xml/data_extraction_rules"
+		android:enableOnBackInvokedCallback="true"
 		android:icon="@mipmap/ic_launcher"
 		android:label="@string/app_name"
 		android:theme="@style/Theme.regrind"

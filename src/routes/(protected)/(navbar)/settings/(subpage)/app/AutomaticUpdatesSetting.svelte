@@ -4,7 +4,6 @@
 
 	import { showErrorToast } from "$lib/api/error-toast";
 	import SettingsSwitchRow from "$lib/components/settings/SettingsSwitchRow.svelte";
-	import { getUpdateSettings, setAutomaticUpdateChecks } from "$lib/updates";
 	import { addonInstallerAvailable } from "$lib/updates/addon.svelte";
 	import {
 		updatesSelfManaged,
@@ -15,10 +14,15 @@
 		checkAfterOptIn,
 		manualCheckOffered,
 	} from "$lib/updates/update-checks";
+	import {
+		automaticChecksEnabled,
+		hydrateUpdateSettings,
+		saveAutomaticChecks,
+	} from "$lib/updates/update-settings.svelte";
 	import CheckForUpdatesButton from "./CheckForUpdatesButton.svelte";
 
-	let stored = $state<boolean | null>(null);
 	let pending = $state<boolean | null>(null);
+	const stored = $derived(automaticChecksEnabled());
 	const value = $derived(pending ?? stored ?? false);
 	const addonAvailable = addonInstallerAvailable();
 	const selfManaged = $derived(updatesSelfManaged());
@@ -32,16 +36,9 @@
 
 	onMount(() => {
 		if (setting.blocked) return;
-		getUpdateSettings()
-			.then((settings) => {
-				stored = settings.autoCheck;
-			})
-			.catch((error: unknown) => {
-				showErrorToast({
-					label: "Couldn't read update settings",
-					error,
-				});
-			});
+		hydrateUpdateSettings().catch((error: unknown) => {
+			showErrorToast({ label: "Couldn't read update settings", error });
+		});
 	});
 </script>
 
@@ -53,11 +50,10 @@
 		() => value,
 		(newValue: boolean) => {
 			pending = newValue;
-			setAutomaticUpdateChecks(newValue)
-				.then((settings) => {
-					stored = settings.autoCheck;
+			saveAutomaticChecks(newValue)
+				.then((autoCheck) => {
 					pending = null;
-					if (settings.autoCheck) {
+					if (autoCheck) {
 						void checkAfterOptIn({ selfManaged, addonAvailable });
 					}
 				})

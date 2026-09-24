@@ -30,6 +30,12 @@
 	import DeleteConversationsDialog from "./DeleteConversationsDialog.svelte";
 	import LazyConversation from "./LazyConversation.svelte";
 
+	let {
+		covered = false,
+		class: className,
+	}: { covered?: boolean; class?: import("svelte/elements").ClassValue } =
+		$props();
+
 	const EAGER_COUNT = 10;
 
 	const conversations: ConversationsState = getConversations();
@@ -37,15 +43,12 @@
 	const visibleEntries = $derived(conversations.visibleEntries);
 
 	$effect(() => {
-		conversations.noteListViewed();
+		if (!covered) conversations.noteListViewed();
 	});
 
 	let container: HTMLDivElement | null = $state(null);
 
-	restoreScrollOnce(() => container, conversations);
-
-	let { class: className }: { class?: import("svelte/elements").ClassValue } =
-		$props();
+	restoreScrollOnce({ container: () => container, state: conversations });
 
 	// "Messages" rather than "Inbox": the screen title above already says Inbox,
 	// so the tab names the list instead of repeating it.
@@ -124,7 +127,7 @@
 	}
 
 	$effect(() => {
-		if (selecting && (!mobile.current || selection.size === 0)) {
+		if (selecting && (!mobile.current || covered || selection.size === 0)) {
 			exitSelection();
 		}
 	});

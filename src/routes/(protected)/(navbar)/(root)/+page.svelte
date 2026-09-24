@@ -88,7 +88,7 @@
 		else scrolledPastSearch = delta > 0;
 	}
 
-	restoreScrollOnce(() => gridContainer, gridState);
+	restoreScrollOnce({ container: () => gridContainer, state: gridState });
 </script>
 
 <svelte:head>

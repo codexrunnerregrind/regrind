@@ -1,5 +1,9 @@
 import { type ComponentProps, mount, unmount } from "svelte";
-import type { PhotoSwipeEventsMap } from "photoswipe";
+import type {
+	PhotoSwipeEventsMap,
+	PhotoSwipeModule,
+	PhotoSwipeModuleOption,
+} from "photoswipe";
 import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
 import VideoPlayer from "$lib/components/shared/VideoPlayer.svelte";
@@ -7,6 +11,7 @@ import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelt
 import { openExternalLink } from "$lib/platform/link-opener";
 import { isLinuxPlatform } from "$lib/platform/os";
 import { canDecodeH264 } from "$lib/platform/video-codecs";
+import { TRANSPARENT_PIXEL } from "$lib/util/load-when-visible";
 import "./photoswipe.css";
 
 const BROKEN_MEDIA_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="64" height="64" fill="var(--color-neutral-500)" style="display:block" aria-hidden="true"><path d="M216,40H40A16,16,0,0,0,24,56V200a16,16,0,0,0,16,16h64a8,8,0,0,0,7.59-5.47l14.83-44.48L163,151.43a8.07,8.07,0,0,0,4.46-4.46l14.62-36.55,44.48-14.83A8,8,0,0,0,232,88V56A16,16,0,0,0,216,40ZM117,152.57a8,8,0,0,0-4.62,4.9L98.23,200H40V160.69l46.34-46.35a8,8,0,0,1,11.32,0l32.84,32.84Zm115-30.84V200a16,16,0,0,1-16,16H137.73a8,8,0,0,1-7.59-10.53l7.94-23.8a8,8,0,0,1,4.61-4.9l35.77-14.31,14.31-35.77a8,8,0,0,1,4.9-4.61l23.8-7.94A8,8,0,0,1,232,121.73Z"/></svg>`;
@@ -179,10 +184,113 @@ export function applyPhotoSwipeThumbDimensions(
 ): void {
 	lightbox.addFilter("itemData", (itemData) => {
 		const img = itemData.element?.querySelector("img");
-		if (img?.naturalWidth) {
+		if (img?.naturalWidth && img.src !== TRANSPARENT_PIXEL) {
 			itemData.width = img.naturalWidth;
 			itemData.height = img.naturalHeight;
 		}
 		return itemData;
 	});
+	lightbox.on("loadComplete", ({ slide, content }) => {
+		const image = content.element;
+		if (
+			content.width > 0 ||
+			!(image instanceof HTMLImageElement) ||
+			image.naturalWidth === 0
+		)
+			return;
+		content.width = slide.width = image.naturalWidth;
+		content.height = slide.height = image.naturalHeight;
+		slide.currentResolution = 0;
+		slide.calculateSize();
+		slide.zoomAndPanToInitial();
+		slide.applyCurrentZoomPan();
+		slide.updateContentSize(true);
+	});
+}
+
+type Listener = () => void;
+
+const busyLightboxes = new Set<PhotoSwipeLightbox>();
+const openingListeners = new Set<Listener>();
+const idleListeners = new Set<Listener>();
+
+export function isPhotoSwipeBusy(): boolean {
+	return busyLightboxes.size > 0;
+}
+
+export function onPhotoSwipeOpening(listener: Listener): () => void {
+	openingListeners.add(listener);
+	return () => {
+		openingListeners.delete(listener);
+	};
+}
+
+export function onPhotoSwipeIdle(listener: Listener): () => void {
+	idleListeners.add(listener);
+	return () => {
+		idleListeners.delete(listener);
+	};
+}
+
+function notify(listeners: Set<Listener>): void {
+	for (const listener of [...listeners]) listener();
+}
+
+function release(lightbox: PhotoSwipeLightbox): void {
+	if (busyLightboxes.delete(lightbox) && busyLightboxes.size === 0)
+		notify(idleListeners);
+}
+
+function specialKeyUsed(event: MouseEvent): boolean {
+	return (
+		event.button === 1 ||
+		event.ctrlKey ||
+		event.metaKey ||
+		event.altKey ||
+		event.shiftKey
+	);
+}
+
+function isCoreLoader(
+	option: PhotoSwipeModuleOption | undefined,
+): option is () => Promise<PhotoSwipeModule> {
+	return typeof option === "function" && !option.prototype?.goTo;
+}
+
+export function applyPhotoSwipeOpenTracking(
+	lightbox: PhotoSwipeLightbox,
+): () => void {
+	const { gallery, pswpModule } = lightbox.options;
+	if (!(gallery instanceof HTMLElement))
+		throw new TypeError("PhotoSwipe open tracking needs a gallery element");
+
+	const trackOpening = (event: MouseEvent) => {
+		if (specialKeyUsed(event) || window.pswp !== undefined) return;
+		const index = lightbox.applyFilters(
+			"clickedIndex",
+			lightbox.getClickedIndex(event),
+			event,
+			lightbox,
+		);
+		if (index < 0) return;
+		busyLightboxes.add(lightbox);
+		notify(openingListeners);
+	};
+	gallery.addEventListener("click", trackOpening, true);
+
+	if (isCoreLoader(pswpModule))
+		lightbox.options.pswpModule = () =>
+			pswpModule().catch((error: unknown) => {
+				release(lightbox);
+				throw error;
+			});
+
+	lightbox.on("destroy", () => {
+		release(lightbox);
+	});
+
+	return () => {
+		gallery.removeEventListener("click", trackOpening, true);
+		release(lightbox);
+	};
 }
