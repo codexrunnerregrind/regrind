@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 import {
 	attachSystemBackGesture,
+	backGestureOverlayOpen,
 	beginEdgeSwipeBack,
 	type SwipeBackStack,
 } from "./system-back-gesture";
@@ -142,5 +143,24 @@ describe("beginEdgeSwipeBack", () => {
 		attachSystemBackGesture(stack)();
 
 		expect(beginEdgeSwipeBack()).toBeNull();
+	});
+});
+
+describe("backGestureOverlayOpen", () => {
+	it("does not count a mounted stack as an overlay", () => {
+		const detach = attachSystemBackGesture(makeStack().stack);
+
+		expect(backGestureOverlayOpen()).toBe(false);
+
+		detach();
+	});
+
+	it("counts a dialog registered alongside the stack", () => {
+		const detach = attachSystemBackGesture(makeStack().stack);
+		backGestureEventHandlers.add(() => false);
+
+		expect(backGestureOverlayOpen()).toBe(true);
+
+		detach();
 	});
 });

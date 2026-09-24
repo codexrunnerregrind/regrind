@@ -5,10 +5,10 @@
 	import type { Attachment } from "svelte/attachments";
 
 	import { STACK_Z } from "$lib/components/navigation/stack/motion";
+	import { trackScrolled } from "$lib/components/navigation/stack/snapshot";
 	import { paneSurface } from "$lib/components/navigation/stack/surface";
 	import { attachSystemBackGesture } from "$lib/platform/system-back-gesture";
 	import { PageStackState } from "./page-stack-state.svelte";
-	import { trackScrolled } from "./snapshot";
 
 	let {
 		scope,

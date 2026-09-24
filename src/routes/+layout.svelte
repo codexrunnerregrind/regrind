@@ -3,7 +3,7 @@
 	import "@fontsource-variable/ibm-plex-sans/wght-italic.css";
 
 	import "../layout.css";
-	import { beforeNavigate } from "$app/navigation";
+	import { afterNavigate, beforeNavigate } from "$app/navigation";
 	import { IconContext } from "phosphor-svelte";
 	import { onMount } from "svelte";
 	import { toast, Toaster } from "svelte-sonner";
@@ -26,8 +26,15 @@
 	} from "$lib/platform/android-native-bridge";
 	import { blockZoom } from "$lib/platform/block-zoom";
 	import { applyKeyboardInset } from "$lib/platform/keyboard-inset";
-	import { isAndroidPlatform } from "$lib/platform/os";
-	import { applySwipeBackGesture } from "$lib/platform/swipe-back-gesture";
+	import { isAndroidPlatform, isMobilePlatform } from "$lib/platform/os";
+	import {
+		applySwipeBackGesture,
+		settleSwipeBack,
+	} from "$lib/platform/swipe-back-gesture";
+	import {
+		rememberScreen,
+		trackScreenScroll,
+	} from "$lib/platform/swipe-back-ghost";
 	import { startAddonUpdateWatch } from "$lib/updates/addon.svelte";
 	import { updatesSelfManaged } from "$lib/updates/capability.svelte";
 	import { startUpdateWatch } from "$lib/updates/updates-manager";
@@ -59,6 +66,9 @@
 		applyBackGestureHandler();
 		const releaseZoomBlock = blockZoom();
 		const releaseSwipeBack = applySwipeBackGesture();
+		const releaseScreenScroll = screen
+			? trackScreenScroll(screen)
+			: () => {};
 		const releaseTheme = initTheme();
 		if (isAndroidPlatform()) {
 			void registerAndroidBackButtonListener().catch((error) => {
@@ -79,6 +89,7 @@
 			releaseKeyboardInset();
 			releaseZoomBlock();
 			releaseSwipeBack();
+			releaseScreenScroll();
 			releaseTheme();
 		};
 	});
@@ -99,7 +110,14 @@
 		preferencesLoaded() && preferencesSnapshot().onboardingComplete,
 	);
 
-	beforeNavigate(() => abortBackdropBlurTrialGesture());
+	let screen: HTMLDivElement | null = $state(null);
+
+	beforeNavigate(({ type }) => {
+		abortBackdropBlurTrialGesture();
+		if (type !== "leave" && screen && isMobilePlatform())
+			rememberScreen(screen);
+	});
+	afterNavigate(() => settleSwipeBack());
 
 	$effect(() => {
 		applyBackdropBlurQuality();
@@ -159,7 +177,7 @@
 		toastOptions={{ class: "toast" }}
 		expand
 	/>
-	<div id="screen-nav-root">
+	<div id="screen-nav-root" bind:this={screen}>
 		{@render children?.()}
 	</div>
 	<RequestBlockedAlert />

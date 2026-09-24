@@ -88,16 +88,15 @@
 	);
 	const view = virtualGrid({
 		grid: () => gridElement,
-		count: () => gridState.profiles.length + pendingSkeletons,
+		count: () => gridProfiles.length + pendingSkeletons,
 	});
 	const visibleProfiles = $derived(
-		gridState.profiles.slice(view.startIndex, view.endIndex),
+		gridProfiles.slice(view.startIndex, view.endIndex),
 	);
 	const visibleSkeletons = $derived(
 		Math.max(
 			0,
-			view.endIndex -
-				Math.max(view.startIndex, gridState.profiles.length),
+			view.endIndex - Math.max(view.startIndex, gridProfiles.length),
 		),
 	);
 
@@ -170,7 +169,7 @@
 			{#each Array.from({ length: PAGE_SKELETONS })}
 				<GridCellSkeleton />
 			{/each}
-		{:else if gridState.error && gridState.profiles.length === 0}
+		{:else if gridState.error && gridProfiles.length === 0}
 			<div class="col-span-full flex p-4">
 				<ApiErrorDisplay
 					error={gridState.error}
@@ -179,7 +178,7 @@
 				/>
 			</div>
 		{:else}
-			{#if gridState.profiles.length === 0}
+			{#if gridProfiles.length === 0}
 				<EmptyGrid />
 			{/if}
 			{#each visibleProfiles as item (item.id)}

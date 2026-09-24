@@ -17,6 +17,17 @@ export type EdgeSwipe = {
 
 let edgeSwipeOwner: (() => EdgeSwipe | null) | null = null;
 
+// A stack keeps its handler registered for as long as it is mounted, so it says
+// nothing about whether a back gesture has anything to dismiss.
+const stackHandlers = new WeakSet<() => boolean>();
+
+/** Whether a dialog, sheet or other overlay would take the next back gesture. */
+export function backGestureOverlayOpen(): boolean {
+	return [...backGestureEventHandlers].some(
+		(handler) => !stackHandlers.has(handler),
+	);
+}
+
 /** Hands a touch edge swipe (iOS) to the attached stack, if it can go back. */
 export function beginEdgeSwipeBack(): EdgeSwipe | null {
 	return edgeSwipeOwner?.() ?? null;
@@ -70,6 +81,7 @@ export function attachSystemBackGesture(stack: SwipeBackStack): () => void {
 	window.__AndroidOnBackGestureStart = start;
 	window.__AndroidOnBackGestureCancel = cancel;
 	edgeSwipeOwner = beginEdge;
+	stackHandlers.add(commitInFlight);
 	backGestureEventHandlers.add(commitInFlight);
 
 	return () => {

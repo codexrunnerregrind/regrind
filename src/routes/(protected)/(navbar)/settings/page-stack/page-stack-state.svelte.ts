@@ -6,11 +6,14 @@ import {
 	COMMIT_EASING,
 } from "$lib/components/navigation/stack/motion";
 import { StackSettle } from "$lib/components/navigation/stack/settle";
+import {
+	type PaneSnapshot,
+	snapshotPane,
+} from "$lib/components/navigation/stack/snapshot";
 import { canGoBack } from "$lib/util/history";
 import { isWithin } from "$lib/util/pathname";
 import type { StackSurface } from "$lib/components/navigation/stack/surface";
 import { ancestorsOf, stackRelation, type StackRelation } from "./hierarchy";
-import { type PaneSnapshot, snapshotPane } from "./snapshot";
 
 type LiveRole = "front" | "back";
 

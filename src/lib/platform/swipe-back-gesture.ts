@@ -1,5 +1,10 @@
 import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
 import {
+	showSwipeBackGhost,
+	type SwipeBackGhost,
+} from "$lib/platform/swipe-back-ghost";
+import {
+	backGestureOverlayOpen,
 	beginEdgeSwipeBack,
 	type EdgeSwipe,
 } from "$lib/platform/system-back-gesture";
@@ -19,7 +24,8 @@ import { canGoBack } from "$lib/util/history";
  * hardware-back behavior) before falling through to `history.back()`.
  *
  * Inside a page stack the stack takes the drag instead, sliding the page off
- * the one beneath it (see {@link beginEdgeSwipeBack}).
+ * the one beneath it (see {@link beginEdgeSwipeBack}). Elsewhere the screen
+ * being returned to is shown beneath from a snapshot, when one was kept.
  */
 
 // Width of the left-edge zone (px) where a drag may begin.
@@ -30,6 +36,16 @@ const ACTIVATION_SLOP = 12;
 const COMMIT_DISTANCE_RATIO = 0.35;
 // Horizontal velocity (px/ms) that commits regardless of distance.
 const COMMIT_VELOCITY = 0.4;
+const SETTLE = "220ms cubic-bezier(0.22, 1, 0.36, 1)";
+// Past this a committed swipe gives up waiting for the page it went back to.
+const NAVIGATION_WATCHDOG_MS = 1000;
+
+let settleAfterNavigation: (() => void) | null = null;
+
+/** Lets a committed swipe drop its snapshot once the page beneath rendered. */
+export function settleSwipeBack(): void {
+	settleAfterNavigation?.();
+}
 
 function runBackGestureHandlers(): boolean {
 	const handlers = [...backGestureEventHandlers];
@@ -92,22 +108,66 @@ export function applySwipeBackGesture(): () => void {
 	let velocity = 0;
 	let active = false;
 	let driven: EdgeSwipe | null = null;
+	let ghost: SwipeBackGhost | null = null;
 
 	function reset() {
 		driven = null;
+		ghost?.remove();
+		ghost = null;
+		settleAfterNavigation = null;
 		pointerId = null;
 		active = false;
 		screen!.style.transition = "";
 		screen!.style.transform = "";
 		screen!.style.willChange = "";
 		screen!.style.boxShadow = "";
+		screen!.style.background = "";
+		screen!.style.minHeight = "";
+	}
+
+	function afterTransition(done: () => void) {
+		const finish = () => {
+			screen!.removeEventListener("transitionend", onEnd);
+			clearTimeout(fallback);
+			done();
+		};
+		// Bubbles up from the page's own transitions too.
+		const onEnd = (event: TransitionEvent) => {
+			if (event.target === screen) finish();
+		};
+		// transitionend is skipped when nothing actually moves.
+		const fallback = setTimeout(finish, 300);
+		screen!.addEventListener("transitionend", onEnd);
+	}
+
+	function commitWithGhost() {
+		screen!.style.transition = `transform ${SETTLE}`;
+		ghost!.settle(1, SETTLE);
+		screen!.style.transform = `translateX(${window.innerWidth}px)`;
+		afterTransition(() => {
+			const watchdog = setTimeout(reset, NAVIGATION_WATCHDOG_MS);
+			settleAfterNavigation = () => {
+				clearTimeout(watchdog);
+				screen!.style.transition = "none";
+				reset();
+			};
+			navigateBack();
+		});
+	}
+
+	function cancelWithGhost() {
+		screen!.style.transition = `transform ${SETTLE}`;
+		ghost!.settle(0, SETTLE);
+		screen!.style.transform = "translateX(0px)";
+		afterTransition(reset);
 	}
 
 	function onPointerDown(event: PointerEvent) {
 		if (event.pointerType === "mouse") return;
-		if (pointerId !== null) return;
+		// A ghost outlives the finger while the release settles.
+		if (pointerId !== null || ghost) return;
 		if (event.clientX > EDGE_ZONE) return;
-		if (!canGoBack() && backGestureEventHandlers.size === 0) return;
+		if (!canGoBack() && !backGestureOverlayOpen()) return;
 		if (shouldIgnoreStart(event.target)) return;
 
 		pointerId = event.pointerId;
@@ -146,6 +206,14 @@ export function applySwipeBackGesture(): () => void {
 			screen!.style.transition = "none";
 			screen!.style.willChange = "transform";
 			screen!.style.boxShadow = "-12px 0 24px rgba(0, 0, 0, 0.35)";
+			if (canGoBack() && !backGestureOverlayOpen()) {
+				ghost = showSwipeBackGhost(screen!);
+				if (ghost) {
+					// The page has to hide the copy beneath it while it is dragged.
+					screen!.style.background = "var(--background)";
+					screen!.style.minHeight = "100dvh";
+				}
+			}
 		}
 
 		const dt = event.timeStamp - lastT;
@@ -160,6 +228,7 @@ export function applySwipeBackGesture(): () => void {
 			return;
 		}
 		screen!.style.transform = `translateX(${offset}px)`;
+		ghost?.track(offset / window.innerWidth);
 	}
 
 	function onPointerEnd(event: PointerEvent) {
@@ -178,6 +247,13 @@ export function applySwipeBackGesture(): () => void {
 			if (commit) driven.commit();
 			else driven.cancel();
 			reset();
+			return;
+		}
+
+		pointerId = null;
+		if (ghost) {
+			if (commit) commitWithGhost();
+			else cancelWithGhost();
 			return;
 		}
 
