@@ -1,6 +1,6 @@
 name: regrind
 options:
-  bundleIdPrefix: org.regrind.app
+  bundleIdPrefix: org.regrind.ios
   deploymentTarget:
     iOS: 14.0
 fileGroups: [../../src]
@@ -11,7 +11,7 @@ settingGroups:
   app:
     base:
       PRODUCT_NAME: ReGrind
-      PRODUCT_BUNDLE_IDENTIFIER: org.regrind.app
+      PRODUCT_BUNDLE_IDENTIFIER: org.regrind.ios
 targetTemplates:
   app:
     type: application

@@ -213,14 +213,14 @@ Prerequisites:
 
 Everything needed to reproduce an iOS build is committed:
 
-| Setting                   | Value                      | Where it's pinned                                                             |
-| ------------------------- | -------------------------- | ----------------------------------------------------------------------------- |
-| Apple development team    | `APPLE_DEVELOPMENT_TEAM`   | your environment, see below (config holds a placeholder)                      |
-| Bundle identifier         | `org.regrind.app`          | `src-tauri/tauri.conf.json` &rarr; `identifier` (and `gen/apple/project.yml`) |
-| Marketing / build version | from `version`             | `src-tauri/tauri.conf.json` &rarr; `version`                                  |
-| iOS usage descriptions    | location permission string | `src-tauri/Info.ios.plist`                                                    |
-| Export method             | `debugging`                | `src-tauri/gen/apple/ExportOptions.plist`                                     |
-| Xcode project             | committed                  | `src-tauri/gen/apple/` (regenerate with `bun tauri ios init`)                 |
+| Setting                   | Value                      | Where it's pinned                                                                 |
+| ------------------------- | -------------------------- | --------------------------------------------------------------------------------- |
+| Apple development team    | `APPLE_DEVELOPMENT_TEAM`   | your environment, see below (config holds a placeholder)                          |
+| Bundle identifier         | `org.regrind.ios`          | `src-tauri/tauri.ios.conf.json` &rarr; `identifier` (and `gen/apple/project.yml`) |
+| Marketing / build version | from `version`             | `src-tauri/tauri.conf.json` &rarr; `version`                                      |
+| iOS usage descriptions    | location permission string | `src-tauri/Info.ios.plist`                                                        |
+| Export method             | `debugging`                | `src-tauri/gen/apple/ExportOptions.plist`                                         |
+| Xcode project             | committed                  | `src-tauri/gen/apple/` (regenerate with `bun tauri ios init`)                     |
 
 The team ID is **not** committed. `bundle.iOS.developmentTeam` in
 [`src-tauri/tauri.conf.json`](./src-tauri/tauri.conf.json) holds the placeholder
@@ -319,7 +319,7 @@ refreshes on-device so the seven-day cycle is invisible after setup; AltStore
 needs a computer on the same network to refresh.
 
 Sideloading clients re-sign the IPA under the installing user's team and append
-that team ID to the bundle identifier, so `org.regrind.app` does not collide
+that team ID to the bundle identifier, so `org.regrind.ios` does not collide
 between users.
 
 #### Why the release IPA is unsigned
