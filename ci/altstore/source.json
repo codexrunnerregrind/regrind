@@ -35,13 +35,13 @@
 			],
 			"versions": [
 				{
-					"version": "0.1.0.15",
-					"buildVersion": "0.1.0.15",
-					"date": "2026-09-23",
-					"localizedDescription": "- Each account keeps its own filters when you switch accounts (#3)\n- Drag your camera preview to any corner during video calls (#8)\n- Expiring videos now open in the media viewer and can be saved (#1)\n- Saved media now includes the user ID (#2)\n- Add videos to your albums\n- Other bug fixes and UI improvements",
-					"downloadURL": "https://github.com/codexrunnerregrind/regrind/releases/download/v0.1.0-beta.15/regrind-v0.1.0-beta.15.ipa",
-					"size": 40723188,
-					"sha256": "dd7ed10d6b922848c37116c46580a8e1a3c34a6ba4022b341e49566f5a98846d",
+					"version": "0.1.0.16",
+					"buildVersion": "0.1.0.16",
+					"date": "2026-10-19",
+					"localizedDescription": "- Send GIFs and Gaymoji from the new stickers button in the message field, and see them in chats and inbox previews\n- Reuse earlier uploads when adding profile photos\n- Expiring photos and unsend are more reliable: the location bypass now holds until the action finishes",
+					"downloadURL": "https://github.com/codexrunnerregrind/regrind/releases/download/v0.1.0-beta.16/regrind-v0.1.0-beta.16.ipa",
+					"size": 41609813,
+					"sha256": "c38289a15c0dfc3e39b6d1c773b616ec60f0db004b2672d1a7cd62a2231724a9",
 					"minOSVersion": "14.0"
 				}
 			]
