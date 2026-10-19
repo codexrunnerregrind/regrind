@@ -63,7 +63,11 @@ const date =
 		: new Date().toISOString().slice(0, 10);
 
 const tauri = JSON.parse(read("src-tauri/tauri.conf.json"));
-const { version, identifier } = tauri;
+const { version } = tauri;
+// tauri.ios.conf.json overrides the bundle id for iOS builds.
+const identifier: string =
+	JSON.parse(read("src-tauri/tauri.ios.conf.json")).identifier ??
+	tauri.identifier;
 
 // The release tag and asset filename come from this version, so running on a
 // -dev tree would rewrite the live manifest to point at a release that will
@@ -108,7 +112,7 @@ const buildVersion = plistValue("CFBundleVersion");
 
 const bundleId = plistValue("CFBundleIdentifier");
 if (bundleId !== identifier) {
-	fail(`IPA is ${bundleId} but tauri.conf.json says ${identifier}`);
+	fail(`IPA is ${bundleId} but the tauri config says ${identifier}`);
 }
 
 // This fork's own listing text, not fastlane/metadata — that describes

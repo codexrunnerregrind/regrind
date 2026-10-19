@@ -101,17 +101,18 @@ touch -r "$ARCHIVE_APP" "$WORK/Payload"
 cp -Rp "$ARCHIVE_APP" "$WORK/Payload/"
 APP="$WORK/Payload/$(basename "$ARCHIVE_APP")"
 
-# The manifest takes the bundle ID from tauri.conf.json, but the IPA carries
+# The manifest takes the bundle ID from tauri.ios.conf.json (falling back to
+# tauri.conf.json), but the IPA carries
 # whatever it was built with — and a local device build may have patched
 # `identifier` to keep its icon separate. Sideloaders key updates off the bundle
 # ID, so a mismatch ships an app that can never be updated. Refuse instead.
 BUNDLE_ID="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' \
 	"$APP/Info.plist")"
 IDENTIFIER="$(sed -n 's/^[[:space:]]*"identifier": "\([^"]*\)".*/\1/p' \
-	src-tauri/tauri.conf.json | head -1)"
+	src-tauri/tauri.ios.conf.json src-tauri/tauri.conf.json | head -1)"
 if [ "$BUNDLE_ID" != "$IDENTIFIER" ]; then
 	echo "built $BUNDLE_ID but the manifest advertises $IDENTIFIER;" >&2
-	echo "restore identifier in tauri.conf.json and rebuild" >&2
+	echo "restore identifier in tauri.ios.conf.json and rebuild" >&2
 	exit 1
 fi
 
