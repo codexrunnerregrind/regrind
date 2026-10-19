@@ -381,13 +381,13 @@ describe("MessageComposer sheet triggers", () => {
 
 	afterEach(cleanup);
 
-	it("reaches the GIFs and stickers button before the text field, as it sits on screen", () => {
+	it("reaches the GIFs and stickers button after the text field, as it sits inside its end", () => {
 		const { textarea, getByRole } = renderComposer();
 		const stickers = getByRole("button", { name: "GIFs and stickers" });
 
 		expect(
 			stickers.compareDocumentPosition(textarea) &
-				Node.DOCUMENT_POSITION_FOLLOWING,
+				Node.DOCUMENT_POSITION_PRECEDING,
 		).toBeTruthy();
 	});
 

@@ -119,6 +119,8 @@
 		/>
 
 		<MediaSheetTabBar
+			index={selectedTab === "gifs" ? 0 : 1}
+			count={2}
 			trailing={selectedTab === "gifs" && consented
 				? giphyAttribution
 				: undefined}
@@ -128,7 +130,7 @@
 				GIFs
 			</MediaSheetTab>
 			<MediaSheetTab value="gaymoji">
-				<SmileyIcon class="size-5" />
+				<SmileyIcon weight="fill" class="size-5" />
 				Gaymoji
 			</MediaSheetTab>
 		</MediaSheetTabBar>

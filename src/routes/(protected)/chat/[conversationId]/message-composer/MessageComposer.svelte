@@ -196,7 +196,7 @@
 			);
 		}}
 	/>
-	<!-- One row: attach, stickers, field, send. `items-end` keeps the two
+	<!-- One row: attach, field (stickers inside), send. `items-end` keeps the two
 	     buttons on the bottom line as the field grows to multiple lines. -->
 	<div class="relative flex w-full items-end gap-2">
 		<ComposerAttachmentsTrigger
@@ -208,20 +208,23 @@
 					open: true,
 				})}
 		/>
-		<ComposerStickersTrigger
-			bind:ref={stickersTrigger}
-			onClick={() =>
-				sheets.setOpen({
-					conversationId,
-					sheet: "stickers",
-					open: true,
-				})}
-		/>
 		<MessageTextInput
 			bind:value={textContent}
 			bind:ref={textInput}
 			onEscape={onCancelReply}
-		/>
+		>
+			{#snippet trailing()}
+				<ComposerStickersTrigger
+					bind:ref={stickersTrigger}
+					onClick={() =>
+						sheets.setOpen({
+							conversationId,
+							sheet: "stickers",
+							open: true,
+						})}
+				/>
+			{/snippet}
+		</MessageTextInput>
 		<!-- Fixed slot: mic and send cross-fade over each other, so without a
 		     reserved box the row would resize for a frame mid-swap. The mic stays
 		     put through a recording — swapping it out mid-hold would drop the

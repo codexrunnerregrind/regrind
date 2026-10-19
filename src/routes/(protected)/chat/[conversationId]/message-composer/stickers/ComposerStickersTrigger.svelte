@@ -14,6 +14,8 @@
 
 <ComposerButton
 	bind:ref
+	variant="ghost"
+	class="size-8 text-muted-foreground hover:bg-transparent"
 	aria-label="GIFs and stickers"
 	onclick={onClick}
 	{disabled}
