@@ -14,7 +14,6 @@
 	} from "$lib/api/feature-flags-state.svelte";
 	import { ProfileModerationError } from "$lib/api/users/profile-moderation";
 	import {
-		deleteProfilePhotos,
 		type ProfileUpdate,
 		setProfilePhotos,
 		updateOwnProfile,
@@ -25,7 +24,10 @@
 	import { Button } from "$lib/components/ui/button";
 	import { WheelPicker } from "$lib/components/ui/carousel";
 	import { Spinner } from "$lib/components/ui/spinner";
-	import { type Profile } from "$lib/model/users/profiles";
+	import {
+		type Profile,
+		PROFILE_PHOTO_AWAITING_REVIEW,
+	} from "$lib/model/users/profiles";
 	import { deepEqual } from "$lib/util/deep-equal";
 	import { bottomChrome } from "$lib/util/screen-chrome.svelte";
 	import type { Gender } from "$lib/model/users/genders";
@@ -126,7 +128,9 @@
 		medias: initial.medias.map((media) => ({
 			mediaHash: media.mediaHash,
 			takenOnGrindr: media.takenOnGrindr ?? false,
+			pending: media.state === PROFILE_PHOTO_AWAITING_REVIEW,
 		})),
+		removedPhotos: [] as string[],
 	});
 
 	let saving = $state(false);
@@ -179,11 +183,12 @@
 			showDistance: initial.showDistance,
 			profileTags: sent.profileTags,
 		} satisfies ProfileUpdate;
-		const currentHashes = sent.medias.map((media) => media.mediaHash);
-		const savedHashes = savedForm.medias.map((media) => media.mediaHash);
-		const removedHashes = savedHashes.filter(
-			(hash) => !currentHashes.includes(hash),
+		const removed = new Set(sent.removedPhotos);
+		const keptPhotos = sent.medias.filter(
+			(media) => !removed.has(media.mediaHash),
 		);
+		const currentHashes = keptPhotos.map((media) => media.mediaHash);
+		const savedHashes = savedForm.medias.map((media) => media.mediaHash);
 		const photosChanged =
 			currentHashes.length !== savedHashes.length ||
 			currentHashes.some((hash, index) => hash !== savedHashes[index]);
@@ -192,23 +197,20 @@
 				cacheProfileId: ourProfileId,
 				profile: body,
 			});
-			// The photo list is its own endpoint — the profile update carries no
-			// photos at all — and the removals go last so a hash is never deleted
-			// off the CDN while the profile still points at it.
+			// The photo list is its own endpoint; the profile update carries no
+			// photos. Removed photos stay in Previous uploads.
 			if (photosChanged) {
 				await setProfilePhotos({
 					cacheProfileId: ourProfileId,
 					mediaHashes: currentHashes,
-					takenOnGrindrHashes: sent.medias
+					takenOnGrindrHashes: keptPhotos
 						.filter((media) => media.takenOnGrindr)
 						.map((media) => media.mediaHash),
 				});
 			}
-			await deleteProfilePhotos({
-				cacheProfileId: ourProfileId,
-				mediaHashes: removedHashes,
-			});
-			savedForm = sent;
+			form.medias = keptPhotos;
+			form.removedPhotos = [];
+			savedForm = { ...sent, medias: keptPhotos, removedPhotos: [] };
 			toast.success("Profile updated");
 		} catch (error) {
 			if (error instanceof ProfileModerationError) {
@@ -238,6 +240,7 @@
 			<div class="p-3">
 				<ProfilePicturesUpload
 					bind:medias={form.medias}
+					bind:removed={form.removedPhotos}
 					{ourProfileId}
 				/>
 			</div>

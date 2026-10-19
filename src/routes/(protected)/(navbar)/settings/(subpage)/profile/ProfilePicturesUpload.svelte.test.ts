@@ -36,8 +36,16 @@ describe("profile pictures upload", () => {
 			props: {
 				ourProfileId: 1,
 				medias: [
-					{ mediaHash: "first", takenOnGrindr: false },
-					{ mediaHash: "second", takenOnGrindr: false },
+					{
+						mediaHash: "first",
+						takenOnGrindr: false,
+						pending: false,
+					},
+					{
+						mediaHash: "second",
+						takenOnGrindr: false,
+						pending: false,
+					},
 				],
 			},
 		});
@@ -73,7 +81,13 @@ describe("profile pictures upload", () => {
 			{
 				props: {
 					ourProfileId: 1,
-					medias: [{ mediaHash: "first", takenOnGrindr: false }],
+					medias: [
+						{
+							mediaHash: "first",
+							takenOnGrindr: false,
+							pending: false,
+						},
+					],
 				},
 			},
 		);
@@ -91,5 +105,49 @@ describe("profile pictures upload", () => {
 		expect(profiles.getProfileUploadedPhotos).toHaveBeenCalledWith({
 			selected: false,
 		});
+	});
+
+	it("marks a removed photo and keeps it again on undo", async () => {
+		const { getByRole } = render(ProfilePicturesUpload, {
+			props: {
+				ourProfileId: 1,
+				medias: [
+					{
+						mediaHash: "first",
+						takenOnGrindr: false,
+						pending: false,
+					},
+				],
+				removed: [],
+			},
+		});
+
+		await fireEvent.click(
+			getByRole("button", { name: "Remove profile photo 1" }),
+		);
+		expect(getByRole("img", { name: "Profile photo 1" })).toBeTruthy();
+		await fireEvent.click(
+			getByRole("button", { name: "Keep profile photo 1" }),
+		);
+
+		expect(
+			getByRole("button", { name: "Remove profile photo 1" }),
+		).toBeTruthy();
+	});
+
+	it("labels photos still awaiting review", () => {
+		const { getByRole, getByText } = render(ProfilePicturesUpload, {
+			props: {
+				ourProfileId: 1,
+				medias: [
+					{ mediaHash: "first", takenOnGrindr: false, pending: true },
+				],
+			},
+		});
+
+		expect(
+			getByRole("img", { name: "Profile photo 1, awaiting review" }),
+		).toBeTruthy();
+		expect(getByText("In review")).toBeTruthy();
 	});
 });

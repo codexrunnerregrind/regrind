@@ -14,6 +14,7 @@
 	import { PhotoEditQueue } from "$lib/components/media/photo-edit-queue.svelte";
 	import PhotoEditorDrawer from "$lib/components/media/PhotoEditorDrawer.svelte";
 	import { demoEnabled } from "$lib/demo";
+	import { PROFILE_PHOTO_AWAITING_REVIEW } from "$lib/model/users/profiles";
 	import { discardStagedMedia } from "$lib/platform/media-file";
 	import {
 		receiveMedia,
@@ -31,13 +32,21 @@
 	const DAILY_LIMIT_MESSAGE =
 		"You've reached today's limit for new profile photos";
 
-	type PreviousUpload = { mediaHash: string };
+	type PreviousUpload = { mediaHash: string; state: number };
+	type ProfilePhoto = {
+		mediaHash: string;
+		takenOnGrindr: boolean;
+		pending: boolean;
+	};
 
 	let {
 		medias = $bindable(),
+		removed = $bindable([]),
 		ourProfileId,
 	}: {
-		medias: { mediaHash: string; takenOnGrindr: boolean }[];
+		medias: ProfilePhoto[];
+		/** Taken off the profile on save; tapping again keeps them. */
+		removed?: string[];
 		ourProfileId: number;
 	} = $props();
 
@@ -53,8 +62,10 @@
 	let uploading = $state(false);
 	const edits = new PhotoEditQueue();
 
-	function removePhoto(mediaHash: string) {
-		medias = medias.filter((media) => media.mediaHash !== mediaHash);
+	function toggleRemoved(mediaHash: string) {
+		removed = removed.includes(mediaHash)
+			? removed.filter((hash) => hash !== mediaHash)
+			: [...removed, mediaHash];
 	}
 
 	/**
@@ -108,7 +119,11 @@
 				)
 					medias = [
 						...medias,
-						{ mediaHash, takenOnGrindr: photo.takenOnGrindr },
+						{
+							mediaHash,
+							takenOnGrindr: photo.takenOnGrindr,
+							pending: true,
+						},
 					];
 				uploading = false;
 			}
@@ -132,9 +147,10 @@
 	function addPreviousUploads(chosen: PreviousUpload[]): boolean {
 		medias = [
 			...medias,
-			...chosen.map(({ mediaHash }) => ({
+			...chosen.map(({ mediaHash, state }) => ({
 				mediaHash,
 				takenOnGrindr: false,
+				pending: state === PROFILE_PHOTO_AWAITING_REVIEW,
 			})),
 		];
 		return true;
@@ -164,7 +180,9 @@
 				mediaHash={media.mediaHash}
 				position={i + 1}
 				takenOnGrindr={media.takenOnGrindr}
-				onDelete={() => removePhoto(media.mediaHash)}
+				pending={media.pending}
+				removed={removed.includes(media.mediaHash)}
+				onDelete={() => toggleRemoved(media.mediaHash)}
 			/>
 		</div>
 	{/each}
