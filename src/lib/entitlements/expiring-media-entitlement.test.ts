@@ -1,13 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { getCascadeV4Mock, callMethodMock, getActiveGeohashSnapshotMock } =
+const { updateLocationMock, callMethodMock, getActiveGeohashSnapshotMock } =
 	vi.hoisted(() => ({
-		getCascadeV4Mock: vi.fn(),
+		updateLocationMock: vi.fn(),
 		callMethodMock: vi.fn(),
 		getActiveGeohashSnapshotMock: vi.fn(),
 	}));
 
-vi.mock("$lib/api/browse/grid", () => ({ getCascadeV4: getCascadeV4Mock }));
+vi.mock("$lib/api/browse/location", () => ({
+	updateLocation: updateLocationMock,
+}));
 vi.mock("$lib/api/methods", () => ({ callMethod: callMethodMock }));
 vi.mock("$lib/app-data/preferences.svelte", () => ({
 	getActiveGeohashSnapshot: getActiveGeohashSnapshotMock,
@@ -53,7 +55,7 @@ beforeEach(() => {
 	vi.clearAllMocks();
 	// Drops the grant cooldown left by the previous test.
 	clearAccountCaches();
-	getCascadeV4Mock.mockResolvedValue({});
+	updateLocationMock.mockResolvedValue(undefined);
 	callMethodMock.mockResolvedValue({ profileId: 1 });
 	getActiveGeohashSnapshotMock.mockReturnValue(HERE);
 });
@@ -76,19 +78,15 @@ describe("withRegionGrant", () => {
 		const attempt = vi.fn().mockResolvedValue("sent");
 		await expect(withRegionGrant(attempt)).resolves.toBe("sent");
 		expect(attempt).toHaveBeenCalledTimes(1);
-		expect(getCascadeV4Mock).not.toHaveBeenCalled();
+		expect(updateLocationMock).not.toHaveBeenCalled();
 	});
 
-	it("hands over and retries on a gated refusal", async () => {
+	it("retries while held in Honduras, then moves back", async () => {
 		const order: string[] = [];
-		getCascadeV4Mock.mockImplementation(
-			(query: { nearbyGeoHash: string }) => {
-				order.push(
-					query.nearbyGeoHash === HERE
-						? "cascade:here"
-						: "cascade:grant",
-				);
-				return Promise.resolve({});
+		updateLocationMock.mockImplementation(
+			({ geohash }: { geohash: string }) => {
+				order.push(geohash === HERE ? "move:here" : "move:grant");
+				return Promise.resolve();
 			},
 		);
 		callMethodMock.mockImplementation(() => {
@@ -97,13 +95,25 @@ describe("withRegionGrant", () => {
 		});
 		const attempt = vi
 			.fn()
-			.mockRejectedValueOnce(gateError(LIMIT_BODY))
-			.mockResolvedValue("sent");
+			.mockImplementationOnce(() => {
+				order.push("attempt");
+				return Promise.reject(gateError(LIMIT_BODY));
+			})
+			.mockImplementation(() => {
+				order.push("retry");
+				return Promise.resolve("sent");
+			});
 
 		await expect(withRegionGrant(attempt)).resolves.toBe("sent");
+		await awaitEntitlementGrant();
 
-		expect(order).toEqual(["cascade:grant", "refresh", "cascade:here"]);
-		expect(attempt).toHaveBeenCalledTimes(2);
+		expect(order).toEqual([
+			"attempt",
+			"move:grant",
+			"refresh",
+			"retry",
+			"move:here",
+		]);
 		const [, seeded] = callMethodMock.mock.calls[0] as [
 			string,
 			{ geohash: string },
@@ -111,12 +121,34 @@ describe("withRegionGrant", () => {
 		expect(insideHonduras(decodeGeohash(seeded.geohash))).toBe(true);
 	});
 
+	it("moves back after the retry even when it fails", async () => {
+		const attempt = vi
+			.fn()
+			.mockRejectedValueOnce(gateError(UNSEND_BODY))
+			.mockRejectedValueOnce(new Error("offline"));
+		await expect(withRegionGrant(attempt)).rejects.toThrow("offline");
+		await awaitEntitlementGrant();
+		expect(updateLocationMock).toHaveBeenLastCalledWith({ geohash: HERE });
+	});
+
+	it("grants again for a later action once moved back", async () => {
+		const refusedOnce = () =>
+			vi
+				.fn()
+				.mockRejectedValueOnce(gateError(UNSEND_BODY))
+				.mockResolvedValue("unsent");
+		await withRegionGrant(refusedOnce());
+		await awaitEntitlementGrant();
+		await expect(withRegionGrant(refusedOnce())).resolves.toBe("unsent");
+		expect(callMethodMock).toHaveBeenCalledTimes(2);
+	});
+
 	it("leaves an ungated failure alone", async () => {
 		const error = new Error("offline");
 		const attempt = vi.fn().mockRejectedValue(error);
 		await expect(withRegionGrant(attempt)).rejects.toBe(error);
 		expect(attempt).toHaveBeenCalledTimes(1);
-		expect(getCascadeV4Mock).not.toHaveBeenCalled();
+		expect(updateLocationMock).not.toHaveBeenCalled();
 	});
 
 	it("reports the original refusal when the retry is refused too", async () => {
@@ -129,26 +161,24 @@ describe("withRegionGrant", () => {
 		expect(attempt).toHaveBeenCalledTimes(2);
 	});
 
-	it("does not hand over again inside the cooldown", async () => {
-		await withRegionGrant(
-			vi
-				.fn()
-				.mockRejectedValueOnce(gateError(LIMIT_BODY))
-				.mockResolvedValue("sent"),
-		);
-		getCascadeV4Mock.mockClear();
+	it("does not hand over again after a refusal under the hold", async () => {
+		await expect(
+			withRegionGrant(vi.fn().mockRejectedValue(gateError(LIMIT_BODY))),
+		).rejects.toBeInstanceOf(ApiError);
+		await awaitEntitlementGrant();
+		updateLocationMock.mockClear();
 
 		const stillRefused = vi.fn().mockRejectedValue(gateError(LIMIT_BODY));
 		await expect(withRegionGrant(stillRefused)).rejects.toBeInstanceOf(
 			ApiError,
 		);
 		expect(stillRefused).toHaveBeenCalledTimes(1);
-		expect(getCascadeV4Mock).not.toHaveBeenCalled();
+		expect(updateLocationMock).not.toHaveBeenCalled();
 	});
 
 	it("reports the refusal when the handover itself fails", async () => {
 		const refusal = gateError(UNSEND_BODY);
-		getCascadeV4Mock.mockRejectedValue(new Error("no network"));
+		updateLocationMock.mockRejectedValue(new Error("no network"));
 		const attempt = vi.fn().mockRejectedValue(refusal);
 		await expect(withRegionGrant(attempt)).rejects.toBe(refusal);
 		expect(attempt).toHaveBeenCalledTimes(1);
@@ -189,7 +219,8 @@ describe("withRegionGrant", () => {
 				.mockRejectedValueOnce(gateError(LIMIT_BODY))
 				.mockResolvedValue("sent"),
 		);
-		expect(getCascadeV4Mock).toHaveBeenCalledTimes(1);
+		await awaitEntitlementGrant();
+		expect(updateLocationMock).toHaveBeenCalledTimes(1);
 	});
 
 	it("holds awaitEntitlementGrant until the handover finishes", async () => {

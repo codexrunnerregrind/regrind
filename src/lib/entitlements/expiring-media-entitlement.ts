@@ -3,7 +3,7 @@ import {
 	isAccountEpochCurrent,
 	registerAccountCache,
 } from "$lib/api/account-caches";
-import { getCascadeV4 } from "$lib/api/browse/grid";
+import { updateLocation } from "$lib/api/browse/location";
 import { errorUrn, tieredFeature } from "$lib/api/error-urn";
 import { callMethod } from "$lib/api/methods";
 import { getActiveGeohashSnapshot } from "$lib/app-data/preferences.svelte";
@@ -11,25 +11,33 @@ import { withDeadline } from "$lib/util/deadline";
 import { randomHondurasGeohash } from "./honduras";
 
 /**
- * Grindr gates expiring photos and message unsend by region, on the geohash the
- * session was refreshed against. Refreshing against a granting region, then
- * reporting the real location back, is the automated equal of picking the spot,
- * relaunching, and moving back.
- *
- * Claimed only when the server refuses an action, never at startup, and
- * {@link withRegionGrant} retries in place so nothing surfaces.
+ * Grindr gates expiring photos and unsend by region, checking both the token and
+ * the location on record when the action runs. So a refused action is retried
+ * while held in Honduras, and only then moved back (upstream #446).
  */
 
 const STEP_TIMEOUT_MS = 10_000;
-/** A refusal that survives a fresh grant is real; don't hand over again. */
+/** Moves back even if a retry hangs. */
+const HOLD_TIMEOUT_MS = 15_000;
+/** A refusal that survives the hold is real; don't hand over again. */
 const MIN_INTERVAL_MS = 60_000;
 
-let lastGrantAt: number | null = null;
-let granting: Promise<void> | null = null;
+type Hold = {
+	holders: number;
+	over: boolean;
+	epoch: number;
+	entered: Promise<void>;
+	done: Promise<void>;
+	finish: () => void;
+	timer: ReturnType<typeof setTimeout>;
+};
+
+let current: Hold | null = null;
+let refusedUnderHoldAt: number | null = null;
 
 registerAccountCache({
 	reset: () => {
-		lastGrantAt = null;
+		refusedUnderHoldAt = null;
 	},
 });
 
@@ -41,52 +49,95 @@ export function isRegionGatedError(error: unknown): boolean {
 	);
 }
 
-function grantedRecently(): boolean {
-	return lastGrantAt !== null && Date.now() - lastGrantAt < MIN_INTERVAL_MS;
+function refusedRecently(): boolean {
+	return (
+		refusedUnderHoldAt !== null &&
+		Date.now() - refusedUnderHoldAt < MIN_INTERVAL_MS
+	);
 }
 
-async function handover(): Promise<void> {
+async function enter(): Promise<void> {
 	// A fresh point each time, so every install does not report one.
 	const geohash = randomHondurasGeohash();
-	try {
-		await withDeadline({
-			work: async () => {
-				await getCascadeV4({ nearbyGeoHash: geohash });
-				await callMethod("refresh_session", { geohash });
-			},
-			ms: STEP_TIMEOUT_MS,
-		});
-		lastGrantAt = Date.now();
-	} finally {
-		// Move back, or the server keeps placing us there for tap and grid
-		// distances; the grant is on the token by now.
-		const here = getActiveGeohashSnapshot();
-		if (here !== null) {
-			await withDeadline({
-				work: () => getCascadeV4({ nearbyGeoHash: here }),
-				ms: STEP_TIMEOUT_MS,
-			}).catch((error: unknown) => {
-				console.error("[entitlements] could not move back", error);
-			});
-		}
-	}
-}
-
-function grant(): Promise<void> {
-	granting ??= handover().finally(() => {
-		granting = null;
+	await withDeadline({
+		work: async () => {
+			await updateLocation({ geohash });
+			await callMethod("refresh_session", { geohash });
+		},
+		ms: STEP_TIMEOUT_MS,
 	});
-	return granting;
 }
 
-/** Instant when no handover is in flight, and never rejects. */
-export function awaitEntitlementGrant(): Promise<void> {
-	return (granting ?? Promise.resolve()).catch(() => undefined);
+async function moveBack(epoch: number): Promise<void> {
+	if (!isAccountEpochCurrent(epoch)) return;
+	const here = getActiveGeohashSnapshot();
+	if (here === null) return;
+	await withDeadline({
+		work: () => updateLocation({ geohash: here }),
+		ms: STEP_TIMEOUT_MS,
+	});
+}
+
+function close(hold: Hold): Promise<void> {
+	if (hold.over) return hold.done;
+	hold.over = true;
+	clearTimeout(hold.timer);
+	// Location writes stay ordered: the move back waits out the move there.
+	void hold.entered
+		.catch(() => undefined)
+		.then(() => moveBack(hold.epoch))
+		.catch((error: unknown) => {
+			console.error("[entitlements] could not move back", error);
+		})
+		.finally(() => {
+			if (current === hold) current = null;
+			hold.finish();
+		});
+	return hold.done;
+}
+
+function open(after: Promise<void>): Hold {
+	const { promise: done, resolve: finish } = Promise.withResolvers<void>();
+	const hold: Hold = {
+		holders: 0,
+		over: false,
+		epoch: accountEpoch(),
+		entered: after.then(enter),
+		done,
+		finish,
+		timer: setTimeout(() => void close(hold), HOLD_TIMEOUT_MS),
+	};
+	return hold;
+}
+
+/** Joins the hold in flight, or opens one once the last has moved back. */
+function lease(): { entered: Promise<void>; release: () => void } {
+	if (current === null || current.over) {
+		current = open(current?.done ?? Promise.resolve());
+	}
+	const hold = current;
+	hold.holders += 1;
+	let released = false;
+	return {
+		entered: hold.entered,
+		release: () => {
+			if (released) return;
+			released = true;
+			hold.holders -= 1;
+			if (hold.holders === 0) void close(hold);
+		},
+	};
+}
+
+/** Resolves once no hold is in flight or moving back; never rejects. */
+export async function awaitEntitlementGrant(): Promise<void> {
+	let hold: Hold | null;
+	while ((hold = current) !== null) await hold.done;
 }
 
 /**
- * Runs `attempt`, and on a region-gated refusal claims the grant and runs it
- * once more. The original refusal propagates when that fails, so the caller's
+ * Runs `attempt`, and on a region-gated refusal runs it once more while held in
+ * Honduras. The original refusal propagates when that fails, so the caller's
  * error handling is unchanged.
  */
 export async function withRegionGrant<T>(
@@ -95,15 +146,27 @@ export async function withRegionGrant<T>(
 	try {
 		return await attempt();
 	} catch (error) {
-		if (!isRegionGatedError(error) || grantedRecently()) throw error;
+		if (!isRegionGatedError(error) || refusedRecently()) throw error;
 		const epoch = accountEpoch();
+		const { entered, release } = lease();
 		try {
-			await grant();
-		} catch (handoverError) {
-			console.error("[entitlements] handover failed", handoverError);
-			throw error;
+			try {
+				await entered;
+			} catch (handoverError) {
+				console.error("[entitlements] handover failed", handoverError);
+				throw error;
+			}
+			if (!isAccountEpochCurrent(epoch)) throw error;
+			try {
+				return await attempt();
+			} catch (retryError) {
+				if (isRegionGatedError(retryError)) {
+					refusedUnderHoldAt = Date.now();
+				}
+				throw retryError;
+			}
+		} finally {
+			release();
 		}
-		if (!isAccountEpochCurrent(epoch)) throw error;
-		return await attempt();
 	}
 }
