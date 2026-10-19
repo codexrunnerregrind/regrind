@@ -460,7 +460,10 @@
 						onView={(index) => void view(index)}
 						onRemove={(contentId) => void removeContent(contentId)}
 						onReorder={(from, to) => void moveContent(from, to)}
+						room={remaining?.items ?? null}
 						onAdd={() => void media.add()}
+						onAddFromDrawer={(mediaIds) =>
+							media.addFromDrawer(mediaIds)}
 					/>
 
 					{#if isMine}

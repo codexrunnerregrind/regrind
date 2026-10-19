@@ -236,7 +236,10 @@
 		<SectionHeader>Photos</SectionHeader>
 		<SettingsGroup divider="none">
 			<div class="p-3">
-				<ProfilePicturesUpload bind:medias={form.medias} />
+				<ProfilePicturesUpload
+					bind:medias={form.medias}
+					{ourProfileId}
+				/>
 			</div>
 		</SettingsGroup>
 

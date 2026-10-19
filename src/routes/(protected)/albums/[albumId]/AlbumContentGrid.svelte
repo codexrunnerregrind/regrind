@@ -8,8 +8,16 @@
 		type AlbumContentResponse,
 		getAlbumMediaPoster,
 	} from "$lib/api/messaging/albums";
+	import {
+		deleteDrawerMedia,
+		type DrawerMedia,
+		getAllDrawerMedia,
+	} from "$lib/api/messaging/drawer";
 	import { getAlbumGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
+	import { isVideoContent } from "$lib/components/album/album";
+	import PreviousUploadsSheet from "$lib/components/media-sheet/PreviousUploadsSheet.svelte";
 	import { dragReorder } from "$lib/util/drag-reorder";
+	import { proxyMediaUrl } from "$lib/util/media";
 
 	let {
 		albumId,
@@ -21,7 +29,9 @@
 		onView,
 		onRemove,
 		onReorder,
+		room,
 		onAdd,
+		onAddFromDrawer,
 	}: {
 		albumId: number;
 		content: AlbumContentResponse["content"];
@@ -33,8 +43,19 @@
 		onView: (index: number) => void;
 		onRemove: (contentId: number) => void;
 		onReorder: (from: number, to: number) => void;
+		/** Items the album still has room for, or `null` if unknown. */
+		room: number | null;
+		/** Picks and uploads new media. */
 		onAdd: () => void;
+		onAddFromDrawer: (mediaIds: number[]) => Promise<boolean>;
 	} = $props();
+
+	let sheetOpen = $state(false);
+
+	async function loadDrawerPhotos(): Promise<DrawerMedia[]> {
+		const drawer = await getAllDrawerMedia();
+		return drawer.filter((item) => !isVideoContent(item.contentType));
+	}
 
 	const isVideo = (item: AlbumContentResponse["content"][number]) =>
 		item.contentType.startsWith("video/");
@@ -86,7 +107,7 @@
 					type="button"
 					class="flex aspect-album-photo items-center justify-center rounded-lg border border-dashed border-border text-muted-foreground disabled:opacity-50"
 					disabled={adding || busy}
-					onclick={onAdd}
+					onclick={() => (sheetOpen = true)}
 					aria-label="Add photos"
 				>
 					{#if adding}
@@ -168,3 +189,19 @@
 		</p>
 	{/if}
 </div>
+
+<PreviousUploadsSheet
+	bind:open={sheetOpen}
+	uploadLabel="Upload photos or videos"
+	submitLabel="Add to album"
+	max={room}
+	load={loadDrawerPhotos}
+	describe={(item) => ({
+		key: item.id,
+		src: proxyMediaUrl(item.url),
+		video: false,
+	})}
+	onUpload={onAdd}
+	onDelete={(item) => deleteDrawerMedia(item.id)}
+	onSubmit={(chosen) => onAddFromDrawer(chosen.map(({ id }) => id))}
+/>

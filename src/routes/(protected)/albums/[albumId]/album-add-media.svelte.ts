@@ -1,7 +1,9 @@
 import { toast } from "svelte-sonner";
 
+import { httpStatusOf } from "$lib/api/api-error";
 import { showErrorToast } from "$lib/api/error-toast";
 import {
+	addDrawerMediaToAlbum,
 	type AlbumContentResponse,
 	getAlbumStorageLimits,
 	uploadAlbumContent,
@@ -131,6 +133,27 @@ export class AlbumMediaAdder {
 		clearMyAlbumsCache();
 		await this.album.reload();
 		toast.success(addedMessage(addedPhotos, addedVideos));
+	}
+
+	/** Adds photos already in the drawer. `false` keeps the sheet open. */
+	async addFromDrawer(mediaIds: number[]): Promise<boolean> {
+		if (this.adding || this.album.busy()) return false;
+		this.adding = true;
+		try {
+			await addDrawerMediaToAlbum({ albumId: this.album.id(), mediaIds });
+		} catch (error) {
+			console.error(error);
+			if (httpStatusOf(error) === 402)
+				toast.error(fullAlbumMessage(null));
+			else showErrorToast({ label: "Failed to add to album", error });
+			return false;
+		} finally {
+			this.adding = false;
+		}
+		clearMyAlbumsCache();
+		await this.album.reload();
+		toast.success(addedMessage(mediaIds.length, 0));
+		return true;
 	}
 }
 

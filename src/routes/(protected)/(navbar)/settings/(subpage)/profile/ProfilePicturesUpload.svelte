@@ -5,7 +5,12 @@
 
 	import { httpStatusOf } from "$lib/api/api-error";
 	import { showErrorToast } from "$lib/api/error-toast";
-	import { uploadProfilePhoto } from "$lib/api/users/profiles";
+	import {
+		deleteProfilePhotos,
+		getProfileUploadedPhotos,
+		uploadProfilePhoto,
+	} from "$lib/api/users/profiles";
+	import PreviousUploadsSheet from "$lib/components/media-sheet/PreviousUploadsSheet.svelte";
 	import { PhotoEditQueue } from "$lib/components/media/photo-edit-queue.svelte";
 	import PhotoEditorDrawer from "$lib/components/media/PhotoEditorDrawer.svelte";
 	import { demoEnabled } from "$lib/demo";
@@ -19,15 +24,24 @@
 		pickMultipleMedia,
 	} from "$lib/platform/media-picker";
 	import { dragReorder } from "$lib/util/drag-reorder";
+	import { profileMediaUrl } from "$lib/util/media";
 	import { maxProfilePhotos as MAX_PHOTOS } from "./options";
 	import ProfilePictureSlot from "./ProfilePictureSlot.svelte";
 
 	const DAILY_LIMIT_MESSAGE =
 		"You've reached today's limit for new profile photos";
 
+	type PreviousUpload = { mediaHash: string };
+
 	let {
 		medias = $bindable(),
-	}: { medias: { mediaHash: string; takenOnGrindr: boolean }[] } = $props();
+		ourProfileId,
+	}: {
+		medias: { mediaHash: string; takenOnGrindr: boolean }[];
+		ourProfileId: number;
+	} = $props();
+
+	let sheetOpen = $state(false);
 
 	const emptySlots = $derived(
 		Array.from(
@@ -107,6 +121,25 @@
 		}
 	}
 
+	async function loadPreviousUploads(): Promise<PreviousUpload[]> {
+		const { medias: uploaded } = await getProfileUploadedPhotos({
+			selected: false,
+		});
+		const shown = new Set(medias.map(({ mediaHash }) => mediaHash));
+		return uploaded.filter(({ mediaHash }) => !shown.has(mediaHash));
+	}
+
+	function addPreviousUploads(chosen: PreviousUpload[]): boolean {
+		medias = [
+			...medias,
+			...chosen.map(({ mediaHash }) => ({
+				mediaHash,
+				takenOnGrindr: false,
+			})),
+		];
+		return true;
+	}
+
 	receiveMedia(() =>
 		medias.length < MAX_PHOTOS && !demoEnabled && !uploading
 			? {
@@ -141,7 +174,7 @@
 				type="button"
 				class="flex aspect-square items-center justify-center rounded-xl border border-dashed border-border text-muted-foreground disabled:opacity-50"
 				disabled={uploading}
-				onclick={() => void addPhotos()}
+				onclick={() => (sheetOpen = true)}
 				aria-label="Add profile photo"
 			>
 				{#if uploading}
@@ -166,6 +199,26 @@
 		you save.
 	</p>
 {/if}
+
+<PreviousUploadsSheet
+	bind:open={sheetOpen}
+	uploadLabel="Upload photos"
+	submitLabel="Add to profile"
+	max={MAX_PHOTOS - medias.length}
+	load={loadPreviousUploads}
+	describe={({ mediaHash }) => ({
+		key: mediaHash,
+		src: profileMediaUrl({ mediaHash, size: "thumb" }),
+		video: false,
+	})}
+	onUpload={() => void addPhotos()}
+	onDelete={({ mediaHash }) =>
+		deleteProfilePhotos({
+			cacheProfileId: ourProfileId,
+			mediaHashes: [mediaHash],
+		})}
+	onSubmit={addPreviousUploads}
+/>
 
 <PhotoEditorDrawer
 	queue={edits}
