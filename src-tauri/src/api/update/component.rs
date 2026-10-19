@@ -1,3 +1,4 @@
+use super::client;
 use super::error::UpdateError;
 use super::install;
 
@@ -12,6 +13,7 @@ pub enum Target {
 
 pub struct Component {
 	pub key: &'static str,
+	pub index_origin: fn() -> String,
 	pub index_path: &'static str,
 	pub asset_stem: &'static str,
 	pub asset_suffix: fn() -> Option<String>,
@@ -41,7 +43,8 @@ impl Component {
 
 pub static APP: Component = Component {
 	key: APP_KEY,
-	index_path: "api/v1/repos/codexrunner/regrind/releases?limit=3&draft=false",
+	index_origin: client::github_api,
+	index_path: "repos/codexrunnerregrind/regrind/releases?per_page=3",
 	asset_stem: "regrind",
 	asset_suffix: install::release_asset_suffix,
 	target: Target::ThisApp,
@@ -49,6 +52,7 @@ pub static APP: Component = Component {
 
 pub static GOOGLE_OAUTH: Component = Component {
 	key: "google-oauth",
+	index_origin: client::origin,
 	index_path:
 		"api/v1/repos/open-grind/google-oauth-app/releases?limit=3&draft=false",
 	asset_stem: "open-grind-google-oauth",
@@ -58,6 +62,7 @@ pub static GOOGLE_OAUTH: Component = Component {
 
 pub static RECAPTCHA: Component = Component {
 	key: "recaptcha",
+	index_origin: client::origin,
 	index_path:
 		"api/v1/repos/open-grind/recaptcha-helper/releases?limit=3&draft=false",
 	asset_stem: "open-grind-recaptcha-helper",
@@ -67,6 +72,7 @@ pub static RECAPTCHA: Component = Component {
 
 pub static FCM: Component = Component {
 	key: "fcm",
+	index_origin: client::origin,
 	index_path:
 		"api/v1/repos/open-grind/fcm-service/releases?limit=3&draft=false",
 	asset_stem: "open-grind-fcm-service",

@@ -25,10 +25,12 @@ function describeChecks({
 	addonAvailable,
 }: UpdatesScope): string {
 	if (selfManaged || !addonAvailable) {
-		const subject = addonAvailable ? "ReGrind and its add-ons" : "ReGrind";
+		const sources = addonAvailable
+			? "ReGrind from GitHub and for its add-ons from git.opengrind.org"
+			: "ReGrind from GitHub";
 		return (
 			unsupportedReason ??
-			`Periodically request updates for ${subject} from git.opengrind.org. ${privacyNote}`
+			`Periodically request updates for ${sources}. ${privacyNote}`
 		);
 	}
 	if (unsupportedReason !== null) {

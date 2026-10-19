@@ -23,7 +23,7 @@ export const COMPONENT_PACKAGE = {
 
 export const COMPONENT_REPO = {
 	// The fork's releases: upstream has no tag for a fork version.
-	[APP_COMPONENT]: "https://git.opengrind.org/codexrunner/regrind",
+	[APP_COMPONENT]: "https://github.com/codexrunnerregrind/regrind",
 	[GOOGLE_OAUTH_COMPONENT]:
 		"https://git.opengrind.org/open-grind/google-oauth-app",
 	[RECAPTCHA_COMPONENT]:

@@ -19,10 +19,9 @@ import { resolve } from "node:path";
 // This fork publishes the iOS builds, so the manifest has to point at the
 // fork's releases and raw files — upstream ships no IPA and every URL under it
 // would 404. Override to retarget a different mirror.
-const REPO =
-	process.env.OPEN_GRIND_REPO ??
-	"https://git.opengrind.org/codexrunner/regrind";
-const RAW = `${REPO}/raw/branch/main`;
+const SLUG = process.env.OPEN_GRIND_REPO ?? "codexrunnerregrind/regrind";
+const REPO = `https://github.com/${SLUG}`;
+const RAW = `https://raw.githubusercontent.com/${SLUG}/main`;
 const METADATA = "fastlane/metadata/android/en-US";
 const SHOTS = "contrib/altstore";
 // The fork's own artwork; fastlane/metadata still carries upstream's mask icon.

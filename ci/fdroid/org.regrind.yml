@@ -32,7 +32,7 @@ Builds:
       - apt-get update
       - apt-get install -y -t forky nodejs
     output: src-tauri/gen/android/app/build/outputs/apk/*/release/regrind-v*-android-${abi}-unsigned.apk
-    binary: https://git.opengrind.org/codexrunner/regrind/releases/download/v%v/regrind-v%v-android-${abi}.apk
+    binary: https://github.com/codexrunnerregrind/regrind/releases/download/v%v/regrind-v%v-android-${abi}.apk
     build: OPEN_GRIND_ANDROID_ABI=${rustTarget} ci/fdroid/build-android.sh
     ndk: ${ndkVersion}
 

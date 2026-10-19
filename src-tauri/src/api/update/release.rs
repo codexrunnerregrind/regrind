@@ -26,6 +26,7 @@ struct IndexRelease {
 struct IndexAsset {
 	name: String,
 	size: u64,
+	#[serde(alias = "node_id")]
 	uuid: String,
 	browser_download_url: String,
 }
@@ -78,7 +79,8 @@ pub async fn fetch_index(
 	channel: Channel,
 ) -> Result<String, UpdateError> {
 	let client = client::build()?;
-	let mut index_url = format!("{}{}", client::origin(), component.index_path);
+	let mut index_url =
+		format!("{}{}", (component.index_origin)(), component.index_path);
 	if !channel.accepts_prereleases() {
 		index_url.push_str("&pre-release=false");
 	}
@@ -495,6 +497,25 @@ mod tests {
              "browser_download_url":"https://evil.example/regrind-0.2.0.apk.minisig"}]}"#;
 		let error = upgrade(&index(&[offsite]), "0.1.0", ".apk").unwrap_err();
 		assert!(matches!(error, UpdateError::ForeignUrl(_)));
+	}
+
+	#[test]
+	fn reads_a_github_release_listing() {
+		let github = format!(
+			r#"{{"tag_name":"v0.2.0","draft":false,"prerelease":true,"assets":[
+            {{"id":1,"node_id":"RA_a","name":"regrind-v0.2.0.apk","size":9,
+             "browser_download_url":"https://github.com/{repo}/releases/download/v0.2.0/regrind-v0.2.0.apk"}},
+            {{"id":2,"node_id":"RA_b","name":"regrind-v0.2.0.apk.minisig","size":228,
+             "browser_download_url":"https://github.com/{repo}/releases/download/v0.2.0/regrind-v0.2.0.apk.minisig"}}]}}"#,
+			repo = client::FORK_REPO
+		);
+		let found = upgrade(&index(&[&github]), "0.1.0-beta.1", ".apk")
+			.unwrap()
+			.unwrap();
+		assert_eq!(found.payload.uuid, "RA_a");
+		assert!(APP
+			.index_path
+			.starts_with(&format!("repos/{}/releases?", client::FORK_REPO)));
 	}
 
 	#[test]

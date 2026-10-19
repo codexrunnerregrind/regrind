@@ -20,7 +20,7 @@ This workaround was [initially posted by Morbo Morbo (@prixoxi:matrix.org)](http
 
 [Reported by @lanivani:matrix.org](https://matrix.to/#/!MNzF_r9RLVXG-Iyr5nPbjds-7-0rIgq1BZdzHXQjshE/$X2f7YYG9dL2cXn-Xv6dDYvMD4kXaP8mpQsSuGL7N_uo): Unlimited Expiring Pics, Unlimited Album Share, Unsending Messages also work in Nigeria.
 
-Based on [codexrunner/regrind@9283c764ed](https://git.opengrind.org/codexrunner/regrind/commit/9283c764ed7cfe22c19d4e5709754278db862267), [codexrunner/regrind@3480334447](https://git.opengrind.org/codexrunner/regrind/commit/3480334447705aca27bab14480b688624a464f92): entitlements for a certain session are based on the geohash provided during token refresh. Consists with the app relaunch and bypass enablement during app working in background reports.
+Based on [codexrunnerregrind/regrind@9283c764ed](https://github.com/codexrunnerregrind/regrind/commit/9283c764ed7cfe22c19d4e5709754278db862267), [codexrunnerregrind/regrind@3480334447](https://github.com/codexrunnerregrind/regrind/commit/3480334447705aca27bab14480b688624a464f92): entitlements for a certain session are based on the geohash provided during token refresh. Consists with the app relaunch and bypass enablement during app working in background reports.
 
 ## Unsending messages
 

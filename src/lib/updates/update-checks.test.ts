@@ -102,7 +102,7 @@ describe("the automatic update checks switch", () => {
 		).toEqual({
 			title: "Check updates automatically",
 			description:
-				"Periodically request updates for ReGrind and its add-ons from git.opengrind.org. No personally identifiable information is sent, no requests are stored or analyzed.",
+				"Periodically request updates for ReGrind from GitHub and for its add-ons from git.opengrind.org. No personally identifiable information is sent, no requests are stored or analyzed.",
 			blocked: false,
 		});
 	});
@@ -115,7 +115,7 @@ describe("the automatic update checks switch", () => {
 				addonAvailable: false,
 			}).description,
 		).toBe(
-			"Periodically request updates for ReGrind from git.opengrind.org. No personally identifiable information is sent, no requests are stored or analyzed.",
+			"Periodically request updates for ReGrind from GitHub. No personally identifiable information is sent, no requests are stored or analyzed.",
 		);
 	});
 

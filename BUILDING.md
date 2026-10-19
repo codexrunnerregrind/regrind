@@ -350,7 +350,7 @@ That builds, strips the signature, writes
 `src-tauri/gen/apple/build/arm64/regrind-v<version>.ipa`, and regenerates the
 source manifest against that exact file. Then attach the IPA to the
 `v<version>` release on
-[the fork's releases](https://git.opengrind.org/codexrunner/regrind/releases)
+[the fork's releases](https://github.com/codexrunnerregrind/regrind/releases)
 and commit `ci/altstore/source.json`.
 
 Pass `--skip-build` to repack an existing build, or `--date YYYY-MM-DD` to pin
@@ -373,7 +373,7 @@ identifier from `tauri.conf.json`, reuses the store listing in
 [`fastlane/metadata`](./fastlane/metadata) that F-Droid already uses, and hashes
 the IPA so `size` and `sha256` match the published artifact byte-for-byte. It
 writes `ci/altstore/source.json`. The URLs point at this fork, since upstream
-publishes no IPA; override with `OPEN_GRIND_REPO` to retarget a mirror.
+publishes no IPA; set `OPEN_GRIND_REPO` to another GitHub `owner/repo` to retarget.
 
 #### Why the release IPA advertises `0.1.0.5`
 
@@ -398,7 +398,7 @@ the rewritten value: device builds keep whatever Tauri generated.
 Users add the raw URL of that JSON as a source in SideStore:
 
 ```
-https://git.opengrind.org/codexrunner/regrind/raw/branch/main/ci/altstore/source.json
+https://raw.githubusercontent.com/codexrunnerregrind/regrind/main/ci/altstore/source.json
 ```
 
 SideStore itself needs a one-time setup: an iOS device **with a passcode set**,

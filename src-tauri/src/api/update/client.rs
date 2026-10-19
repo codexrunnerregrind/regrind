@@ -1,22 +1,51 @@
 use std::time::Duration;
 
-use wreq::header::{HeaderValue, ACCEPT_ENCODING};
+use wreq::header::{HeaderValue, ACCEPT_ENCODING, USER_AGENT};
 use wreq::{redirect, Client, RequestBuilder, Response};
 
 use super::error::UpdateError;
 
 const RELEASE_ORIGIN: &str = "https://git.opengrind.org/";
+const GITHUB_API: &str = "https://api.github.com/";
+pub(super) const FORK_REPO: &str = "codexrunnerregrind/regrind";
+// GitHub answers release downloads with a redirect to its asset CDN.
+const GITHUB_ASSET_HOSTS: [&str; 2] = [
+	"https://release-assets.githubusercontent.com/",
+	"https://objects.githubusercontent.com/",
+];
 
 pub fn origin() -> String {
 	super::dev::origin().unwrap_or_else(|| RELEASE_ORIGIN.to_owned())
 }
 
+pub fn github_api() -> String {
+	super::dev::origin().unwrap_or_else(|| GITHUB_API.to_owned())
+}
+
+fn fork_downloads() -> String {
+	format!("https://github.com/{FORK_REPO}/releases/download/")
+}
+
+fn release_prefixes() -> Vec<String> {
+	match super::dev::origin() {
+		Some(origin) => vec![origin],
+		None => vec![RELEASE_ORIGIN.to_owned(), fork_downloads()],
+	}
+}
+
+fn redirect_prefixes() -> Vec<String> {
+	let mut prefixes = release_prefixes();
+	if super::dev::origin().is_none() {
+		prefixes.extend(GITHUB_ASSET_HOSTS.map(str::to_owned));
+	}
+	prefixes
+}
+
 pub fn build() -> Result<Client, UpdateError> {
-	let origin = origin();
 	Client::builder()
-		.https_only(origin.starts_with("https://"))
+		.https_only(origin().starts_with("https://"))
 		.min_tls_version(wreq::tls::TlsVersion::TLS_1_2)
-		.redirect(release_origin_only(origin))
+		.redirect(release_hosts_only(redirect_prefixes()))
 		.referer(false)
 		.connect_timeout(Duration::from_secs(15))
 		.read_timeout(Duration::from_secs(30))
@@ -27,16 +56,19 @@ pub fn build() -> Result<Client, UpdateError> {
 }
 
 // Identity encoding keeps a 206 body a byte range of the real file.
+// GitHub's API refuses requests without a User-Agent; the value is the same
+// for every install.
 pub fn get(client: &Client, url: &str) -> RequestBuilder {
 	client
 		.get(url)
 		.header(ACCEPT_ENCODING, HeaderValue::from_static("identity"))
+		.header(USER_AGENT, HeaderValue::from_static("regrind"))
 }
 
-fn release_origin_only(origin: String) -> redirect::Policy {
+fn release_hosts_only(prefixes: Vec<String>) -> redirect::Policy {
 	redirect::Policy::custom(move |attempt| {
 		match follow_redirect(
-			&origin,
+			&prefixes,
 			attempt.url().as_str(),
 			attempt.previous().len(),
 		) {
@@ -47,14 +79,17 @@ fn release_origin_only(origin: String) -> redirect::Policy {
 }
 
 fn follow_redirect(
-	origin: &str,
+	prefixes: &[String],
 	url: &str,
 	hops: usize,
 ) -> Result<(), &'static str> {
 	if hops >= 3 {
 		return Err("too many redirects");
 	}
-	if url.starts_with(origin) {
+	if prefixes
+		.iter()
+		.any(|prefix| url.starts_with(prefix.as_str()))
+	{
 		Ok(())
 	} else {
 		Err("redirect leaves the release host")
@@ -81,10 +116,10 @@ pub async fn text_within(
 }
 
 pub fn assert_release_origin(url: &str) -> Result<(), UpdateError> {
-	let origin = origin();
-	let sane = url.starts_with(&origin)
-		&& url.len() > origin.len()
-		&& !url.contains(|c: char| c.is_control() || c.is_whitespace());
+	let sane = release_prefixes().iter().any(|prefix| {
+		url.starts_with(prefix.as_str()) && url.len() > prefix.len()
+	}) && !url
+		.contains(|c: char| c.is_control() || c.is_whitespace());
 	if sane {
 		Ok(())
 	} else {
@@ -100,6 +135,8 @@ mod tests {
 	fn accepts_urls_under_the_release_origin() {
 		let url = format!("{}releases/download/v1.2.3/app.apk", origin());
 		assert!(assert_release_origin(&url).is_ok());
+		let fork = format!("{}v1.2.3/app.apk", fork_downloads());
+		assert!(assert_release_origin(&fork).is_ok());
 	}
 
 	#[test]
@@ -111,6 +148,8 @@ mod tests {
 			"https://git.opengrind.org@evil.example/app.apk",
 			"https://git.opengrind.org",
 			"https://git.opengrind.org/app.apk\nHost: evil",
+			"https://github.com/someone/else/releases/download/v1/app.apk",
+			"https://release-assets.githubusercontent.com/app.apk",
 		] {
 			assert!(assert_release_origin(url).is_err(), "accepted {url}");
 		}
@@ -133,8 +172,12 @@ mod tests {
 			.build()
 			.unwrap();
 
-		assert_eq!(header_names(&request), vec!["accept-encoding"]);
+		assert_eq!(
+			header_names(&request),
+			vec!["accept-encoding", "user-agent"]
+		);
 		assert_eq!(request.headers()["accept-encoding"], "identity");
+		assert_eq!(request.headers()["user-agent"], "regrind");
 	}
 
 	#[test]
@@ -148,25 +191,28 @@ mod tests {
 
 		assert_eq!(
 			header_names(&request),
-			vec!["accept-encoding", "if-range", "range"]
+			vec!["accept-encoding", "if-range", "range", "user-agent"]
 		);
 	}
 
 	#[test]
-	fn redirects_stay_on_the_release_origin() {
-		let origin = origin();
-		let allowed = format!("{origin}releases/download/v1/app.apk");
-		assert!(follow_redirect(&origin, &allowed, 0).is_ok());
-		assert!(follow_redirect(&origin, &allowed, 2).is_ok());
-		assert!(follow_redirect(&origin, &allowed, 3).is_err());
+	fn redirects_stay_on_the_release_hosts() {
+		let prefixes = redirect_prefixes();
+		let allowed = format!("{}releases/download/v1/app.apk", origin());
+		assert!(follow_redirect(&prefixes, &allowed, 0).is_ok());
+		assert!(follow_redirect(&prefixes, &allowed, 2).is_ok());
+		assert!(follow_redirect(&prefixes, &allowed, 3).is_err());
+		let cdn = "https://release-assets.githubusercontent.com/github-production-release-asset/1/2";
+		assert!(follow_redirect(&prefixes, cdn, 1).is_ok());
 		for url in [
 			"https://evil.example/app.apk",
 			"https://git.opengrind.org.evil.example/app.apk",
 			"https://git.opengrind.org@evil.example/app.apk",
 			"http://git.opengrind.org/app.apk",
+			"https://release-assets.githubusercontent.com.evil.example/a",
 		] {
 			assert!(
-				follow_redirect(&origin, url, 0).is_err(),
+				follow_redirect(&prefixes, url, 0).is_err(),
 				"followed {url}"
 			);
 		}

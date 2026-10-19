@@ -5,7 +5,7 @@
 </script>
 
 <Link
-	destination="https://git.opengrind.org/codexrunner/open-grind"
+	destination="https://github.com/codexrunnerregrind/regrind"
 	label="ReGrind Source Code"
 >
 	{#snippet icon()}
