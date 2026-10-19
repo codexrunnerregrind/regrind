@@ -55,7 +55,8 @@
 	data-slot="media-tile"
 	data-vaul-no-drag={lifted ? "" : undefined}
 	class={[
-		"relative aspect-(--photo-grid-aspect)",
+		// Holding a photo would otherwise pop WebKit's own image menu.
+		"relative aspect-(--photo-grid-aspect) select-none [-webkit-touch-callout:none] **:[-webkit-touch-callout:none]",
 		{
 			"cursor-pointer": clickable && !busy,
 			"opacity-50": busy,
