@@ -107,8 +107,8 @@ describe("profile pictures upload", () => {
 		});
 	});
 
-	it("marks a removed photo and keeps it again on undo", async () => {
-		const { getByRole } = render(ProfilePicturesUpload, {
+	it("takes a removed photo off the grid", async () => {
+		const { getByRole, queryByRole } = render(ProfilePicturesUpload, {
 			props: {
 				ourProfileId: 1,
 				medias: [
@@ -118,21 +118,14 @@ describe("profile pictures upload", () => {
 						pending: false,
 					},
 				],
-				removed: [],
 			},
 		});
 
 		await fireEvent.click(
 			getByRole("button", { name: "Remove profile photo 1" }),
 		);
-		expect(getByRole("img", { name: "Profile photo 1" })).toBeTruthy();
-		await fireEvent.click(
-			getByRole("button", { name: "Keep profile photo 1" }),
-		);
 
-		expect(
-			getByRole("button", { name: "Remove profile photo 1" }),
-		).toBeTruthy();
+		expect(queryByRole("img", { name: "Profile photo 1" })).toBeNull();
 	});
 
 	it("labels photos still awaiting review", () => {

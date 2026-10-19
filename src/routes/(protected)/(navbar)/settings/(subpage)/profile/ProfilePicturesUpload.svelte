@@ -41,14 +41,8 @@
 
 	let {
 		medias = $bindable(),
-		removed = $bindable([]),
 		ourProfileId,
-	}: {
-		medias: ProfilePhoto[];
-		/** Taken off the profile on save; tapping again keeps them. */
-		removed?: string[];
-		ourProfileId: number;
-	} = $props();
+	}: { medias: ProfilePhoto[]; ourProfileId: number } = $props();
 
 	let sheetOpen = $state(false);
 
@@ -62,10 +56,8 @@
 	let uploading = $state(false);
 	const edits = new PhotoEditQueue();
 
-	function toggleRemoved(mediaHash: string) {
-		removed = removed.includes(mediaHash)
-			? removed.filter((hash) => hash !== mediaHash)
-			: [...removed, mediaHash];
+	function removePhoto(mediaHash: string) {
+		medias = medias.filter((media) => media.mediaHash !== mediaHash);
 	}
 
 	/**
@@ -181,8 +173,7 @@
 				position={i + 1}
 				takenOnGrindr={media.takenOnGrindr}
 				pending={media.pending}
-				removed={removed.includes(media.mediaHash)}
-				onDelete={() => toggleRemoved(media.mediaHash)}
+				onDelete={() => removePhoto(media.mediaHash)}
 			/>
 		</div>
 	{/each}

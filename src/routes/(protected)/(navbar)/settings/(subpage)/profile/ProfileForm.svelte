@@ -130,7 +130,6 @@
 			takenOnGrindr: media.takenOnGrindr ?? false,
 			pending: media.state === PROFILE_PHOTO_AWAITING_REVIEW,
 		})),
-		removedPhotos: [] as string[],
 	});
 
 	let saving = $state(false);
@@ -183,11 +182,7 @@
 			showDistance: initial.showDistance,
 			profileTags: sent.profileTags,
 		} satisfies ProfileUpdate;
-		const removed = new Set(sent.removedPhotos);
-		const keptPhotos = sent.medias.filter(
-			(media) => !removed.has(media.mediaHash),
-		);
-		const currentHashes = keptPhotos.map((media) => media.mediaHash);
+		const currentHashes = sent.medias.map((media) => media.mediaHash);
 		const savedHashes = savedForm.medias.map((media) => media.mediaHash);
 		const photosChanged =
 			currentHashes.length !== savedHashes.length ||
@@ -203,14 +198,12 @@
 				await setProfilePhotos({
 					cacheProfileId: ourProfileId,
 					mediaHashes: currentHashes,
-					takenOnGrindrHashes: keptPhotos
+					takenOnGrindrHashes: sent.medias
 						.filter((media) => media.takenOnGrindr)
 						.map((media) => media.mediaHash),
 				});
 			}
-			form.medias = keptPhotos;
-			form.removedPhotos = [];
-			savedForm = { ...sent, medias: keptPhotos, removedPhotos: [] };
+			savedForm = sent;
 			toast.success("Profile updated");
 		} catch (error) {
 			if (error instanceof ProfileModerationError) {
@@ -240,7 +233,6 @@
 			<div class="p-3">
 				<ProfilePicturesUpload
 					bind:medias={form.medias}
-					bind:removed={form.removedPhotos}
 					{ourProfileId}
 				/>
 			</div>

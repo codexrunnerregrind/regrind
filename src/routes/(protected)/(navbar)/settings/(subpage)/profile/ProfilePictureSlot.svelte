@@ -1,5 +1,4 @@
 <script lang="ts">
-	import ArrowCounterClockwiseIcon from "phosphor-svelte/lib/ArrowCounterClockwiseIcon";
 	import TrashIcon from "phosphor-svelte/lib/TrashIcon";
 
 	import TakenOnGrindrBadge from "$lib/components/media/TakenOnGrindrBadge.svelte";
@@ -12,7 +11,6 @@
 		position,
 		takenOnGrindr = false,
 		pending = false,
-		removed = false,
 		onDelete,
 	}: {
 		mediaHash: string;
@@ -21,8 +19,6 @@
 		takenOnGrindr?: boolean;
 		/** Not yet approved by Grindr's review. */
 		pending?: boolean;
-		/** Marked to come off the profile on save. */
-		removed?: boolean;
 		onDelete: () => void;
 	} = $props();
 
@@ -35,12 +31,12 @@
 		alt={pending
 			? `Profile photo ${position}, awaiting review`
 			: `Profile photo ${position}`}
-		class={["size-full transition-opacity", { "opacity-35": removed }]}
+		class="size-full"
 		tone="photo"
 		size="md"
 		loading="lazy"
 	/>
-	{#if pending && !removed}
+	{#if pending}
 		<span
 			class="absolute inset-x-1.5 top-1.5 w-fit rounded-full bg-background/70 scrim px-2 py-0.5 text-2xs font-medium backdrop-filter-(--bd-veil)"
 		>
@@ -50,26 +46,13 @@
 	{#if takenOnGrindr}
 		<TakenOnGrindrBadge compact class="absolute start-1.5 bottom-1.5" />
 	{/if}
-	{#if removed}
-		<Button
-			variant="secondary"
-			size="sm"
-			class="absolute inset-0 m-auto w-fit rounded-full"
-			onclick={() => onDelete()}
-			aria-label="Keep profile photo {position}"
-		>
-			<ArrowCounterClockwiseIcon class="size-4" />
-			Undo
-		</Button>
-	{:else}
-		<Button
-			variant="destructive"
-			size="icon-sm"
-			class="absolute top-1.5 right-1.5 rounded-full bg-background/70 scrim backdrop-filter-(--bd-veil)"
-			onclick={() => onDelete()}
-			aria-label="Remove profile photo {position}"
-		>
-			<TrashIcon class="size-4" />
-		</Button>
-	{/if}
+	<Button
+		variant="destructive"
+		size="icon-sm"
+		class="absolute top-1.5 right-1.5 rounded-full bg-background/70 scrim backdrop-filter-(--bd-veil)"
+		onclick={() => onDelete()}
+		aria-label="Remove profile photo {position}"
+	>
+		<TrashIcon class="size-4" />
+	</Button>
 </div>
