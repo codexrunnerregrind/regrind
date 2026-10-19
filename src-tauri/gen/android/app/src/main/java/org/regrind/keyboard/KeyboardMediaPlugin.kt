@@ -1,4 +1,4 @@
-package org.opengrind.keyboard
+package org.regrind.keyboard
 
 import android.app.Activity
 import app.tauri.annotation.Command

@@ -33,7 +33,7 @@ fn watch(
 	api: &PluginApi<Wry, ()>,
 ) -> Result<(), Box<dyn std::error::Error>> {
 	let handle = api.register_android_plugin(
-		"org.opengrind.keyboard",
+		"org.regrind.keyboard",
 		"KeyboardMediaPlugin",
 	)?;
 	let sink = app.clone();
