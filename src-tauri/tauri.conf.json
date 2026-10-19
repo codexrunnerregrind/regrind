@@ -1,7 +1,7 @@
 {
 	"$schema": "https://schema.tauri.app/config/2",
 	"productName": "ReGrind",
-	"version": "0.1.0-beta.16",
+	"version": "0.1.0-beta.17-dev",
 	"identifier": "org.regrind.app",
 	"build": {
 		"beforeDevCommand": "bun run patch-deps && bunx vite dev",
@@ -79,7 +79,7 @@
 			"autoIncrementVersionCode": false,
 			"debugApplicationIdSuffix": ".dev",
 			"minSdkVersion": 28,
-			"versionCode": 1160
+			"versionCode": 1170
 		},
 		"iOS": {
 			"developmentTeam": "YOUR_TEAM_ID"
