@@ -18,6 +18,7 @@ describe("previewFromMessage", () => {
 				timestamp: 1_710_000_000_000,
 				unsent: false,
 				reactions: [],
+				dynamic: false,
 			}),
 		).toEqual({
 			type: "Text",
@@ -48,6 +49,7 @@ describe("previewFromMessage", () => {
 				timestamp: 1_710_000_000_000,
 				unsent: false,
 				reactions: [],
+				dynamic: false,
 			}),
 		).toEqual({ type: "Album", text: null, albumId: 7, imageHash: null });
 	});
@@ -75,6 +77,7 @@ describe("previewFromMessage", () => {
 				timestamp: 1_710_000_000_000,
 				unsent: false,
 				reactions: [],
+				dynamic: false,
 			});
 			expect(preview).toEqual({
 				type,
@@ -102,6 +105,7 @@ describe("previewFromMessage", () => {
 			timestamp: 1_710_000_000_000,
 			unsent: false,
 			reactions: [],
+			dynamic: false,
 		});
 
 		expect(preview).toEqual({
@@ -111,6 +115,31 @@ describe("previewFromMessage", () => {
 			imageHash: null,
 		});
 		expect(previewLabel(preview)).toBe("Expiring image");
+	});
+
+	it("labels a chat video the way its bubble does", () => {
+		const preview = previewFromMessage({
+			type: "Video",
+			body: {
+				mediaId: 12,
+				url: "https://cdns.grindr.com/videos/chat/clip.mp4",
+				contentType: "video/mp4",
+				length: 8000,
+				maxViews: 2,
+				viewsRemaining: 2,
+				looping: false,
+			},
+			messageId: "msg-5",
+			conversationId: "conversation-1",
+			senderId: 42,
+			timestamp: 1_710_000_000_000,
+			unsent: false,
+			reactions: [],
+			dynamic: false,
+		});
+
+		expect(previewLabel(preview)).toBe("Expiring video");
+		expect(previewLabel({ type: "PrivateVideo" })).toBe("Expiring video");
 	});
 });
 
@@ -158,6 +187,7 @@ describe("quoteLabel", () => {
 					timestamp: 1_710_000_000_000,
 					unsent: false,
 					reactions: [],
+					dynamic: false,
 				}),
 			),
 		).toBe("Video call · 1:23");

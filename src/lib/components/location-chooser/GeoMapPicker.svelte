@@ -4,8 +4,10 @@
 		getCurrentPosition,
 		requestPermissions,
 	} from "@tauri-apps/plugin-geolocation";
-	import { BookmarkSimpleIcon, GpsFixIcon, StarIcon } from "phosphor-svelte";
+	import BookmarkSimpleIcon from "phosphor-svelte/lib/BookmarkSimpleIcon";
+	import GpsFixIcon from "phosphor-svelte/lib/GpsFixIcon";
 	import MagnifyingGlassIcon from "phosphor-svelte/lib/MagnifyingGlassIcon";
+	import StarIcon from "phosphor-svelte/lib/StarIcon";
 	import { toast } from "svelte-sonner";
 	import type { MapMouseEvent } from "maplibre-gl";
 
@@ -277,10 +279,8 @@
 
 	let pickerRoot: HTMLElement | null = $state(null);
 
-	// Focusing a field makes iOS scroll whichever ancestor it deems scrollable so
-	// the caret clears the keyboard. The picker's chrome — search bar, saved
-	// places header — is positioned inside the visible area already, so that
-	// scroll only serves to drag it off the top of the screen. Undo it.
+	// iOS scrolls an ancestor on focus to clear the keyboard, dragging the
+	// already-visible chrome off screen. Undo it.
 	$effect(() => {
 		const root = pickerRoot;
 		if (!root) return;

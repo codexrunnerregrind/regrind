@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
-	import { ClipboardTextIcon, UserIcon } from "phosphor-svelte";
+	import ClipboardTextIcon from "phosphor-svelte/lib/ClipboardTextIcon";
+	import UserIcon from "phosphor-svelte/lib/UserIcon";
 	import { onMount } from "svelte";
 	import { tinykeys } from "tinykeys";
 

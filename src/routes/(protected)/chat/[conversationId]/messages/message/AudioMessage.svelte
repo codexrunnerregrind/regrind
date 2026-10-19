@@ -30,7 +30,8 @@
 </script>
 
 <script lang="ts">
-	import { PauseIcon, PlayIcon } from "phosphor-svelte";
+	import PauseIcon from "phosphor-svelte/lib/PauseIcon";
+	import PlayIcon from "phosphor-svelte/lib/PlayIcon";
 	import { tick } from "svelte";
 
 	import { showErrorToast } from "$lib/api/error-toast";

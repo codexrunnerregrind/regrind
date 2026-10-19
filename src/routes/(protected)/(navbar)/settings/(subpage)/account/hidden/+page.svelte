@@ -3,7 +3,10 @@
 </script>
 
 <script lang="ts">
-	import { getHiddenUsers, unhideUser } from "$lib/api/browse/hides";
+	import {
+		getHiddenUserIdsNewestFirst,
+		unhideUser,
+	} from "$lib/api/browse/hides";
 	import ProfileList from "$lib/components/profile-list/ProfileList.svelte";
 </script>
 
@@ -18,8 +21,7 @@
 	reach for you, so most entries here show only a profile ID.
 </p>
 <ProfileList
-	loadIds={async () =>
-		(await getHiddenUsers()).map(({ profileId }) => profileId)}
+	loadIds={getHiddenUserIdsNewestFirst}
 	lift={({ profileId }) => unhideUser({ profileId })}
 	{scroll}
 	actionLabel="Unhide"

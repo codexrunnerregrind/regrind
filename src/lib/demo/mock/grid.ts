@@ -42,6 +42,10 @@ export function num(value: string | null): number | undefined {
 export type DemoShortProfile = z.infer<typeof profileShortSchema> &
 	z.infer<typeof profileRightNowSchema>;
 
+function isNewId(id: number): boolean {
+	return id % 5 === 0;
+}
+
 export function buildShortProfile(seed: DemoSeed): DemoShortProfile {
 	const photos = photosOf(seed.id);
 	return {
@@ -60,7 +64,7 @@ export function buildShortProfile(seed: DemoSeed): DemoShortProfile {
 		showDistance: seed.distanceM !== null,
 		approximateDistance: seed.distanceM !== null && seed.distanceM > 1000,
 		lastChatTimestamp: seed.unread > 0 ? NOW - 30 * MINUTE : null,
-		isNew: seed.id % 5 === 0,
+		isNew: isNewId(seed.id),
 		lastUpdatedTime: NOW - ((seed.id % 6) + 1) * DAY,
 		medias: mediasOf(seed),
 		rightNowDistance: null,
@@ -71,7 +75,7 @@ export function buildFullProfile(seed: DemoSeed): Profile {
 	return {
 		...buildShortProfile(seed),
 		meetAt: [],
-		vaccines: [],
+		vaccines: seed.vaccines,
 		genders: null,
 		pronouns: null,
 		nsfw: null,
@@ -105,7 +109,7 @@ export function buildFullProfile(seed: DemoSeed): Profile {
 		isVisiting: false,
 		travelPlans: [],
 		isInAList: demoFavoriteOf({ profileId: seed.id, seed: seed.favorite }),
-		tribesImInto: null,
+		tribesImInto: seed.tribesImInto,
 		showVipBadge: false,
 		rightNowShareLocation: null,
 		rightNowMedias: [],
@@ -145,6 +149,7 @@ export function buildMaskedProfile(seed: DemoSeed): Profile {
 		isNew: false,
 		tapped: false,
 		grindrTribes: [],
+		tribesImInto: null,
 		lookingFor: [],
 		medias: [],
 		hashtags: [],
@@ -217,11 +222,13 @@ function isPartialId(id: number): boolean {
 function filteredGridIds(params: URLSearchParams): number[] {
 	const favorites = params.get("favorites") === "true";
 	const onlineOnly = params.get("onlineOnly") === "true";
+	const fresh = params.get("fresh") === "true";
 	const ageMin = num(params.get("ageMin"));
 	const ageMax = num(params.get("ageMax"));
 	if (
 		!favorites &&
 		!onlineOnly &&
+		!fresh &&
 		ageMin === undefined &&
 		ageMax === undefined
 	) {
@@ -235,6 +242,7 @@ function filteredGridIds(params: URLSearchParams): number[] {
 		)
 			return false;
 		if (onlineOnly && !seed.online) return false;
+		if (fresh && !isNewId(id)) return false;
 		if (ageMin !== undefined && (seed.age === null || seed.age < ageMin))
 			return false;
 		if (ageMax !== undefined && (seed.age === null || seed.age > ageMax))

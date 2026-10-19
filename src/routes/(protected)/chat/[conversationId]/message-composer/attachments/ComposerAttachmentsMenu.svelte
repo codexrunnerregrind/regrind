@@ -19,7 +19,10 @@
 
 	const FULLSIZE_TABS: Tab[] = ["media", "albums"];
 
-	let { open = $bindable() }: { open: boolean } = $props();
+	let {
+		open = $bindable(),
+		onCloseAutoFocus,
+	}: { open: boolean; onCloseAutoFocus?: (event: Event) => void } = $props();
 
 	type Tab = "media" | "albums" | "location";
 	// `actionLabel` lets a tab rename the confirm button — the albums tab takes a
@@ -129,6 +132,7 @@
 
 <Drawer.Root bind:open>
 	<Drawer.Content
+		{onCloseAutoFocus}
 		class={[
 			"mx-auto max-w-media-panel border-none bg-transparent p-0 shadow-none before:hidden",
 			{ "h-full": isFullsizeTab, "h-fit": !isFullsizeTab },

@@ -34,14 +34,24 @@
 	restoreScrollOnce({ container: () => container, state: views });
 </script>
 
-<div class="screen-nav-host">
+<main class="screen-nav-host">
+	{#if !views.loading && (views.views.length > 0 || !views.error)}
+		<DataRefreshControl
+			{container}
+			updating={views.refreshing}
+			position="top"
+			onrefresh={() => void views.refresh()}
+		/>
+	{/if}
 	<div
 		bind:this={container}
+		data-slot="views-scroller"
 		class="pull-scroller"
 		onscroll={() => (views.scrollY = container?.scrollTop ?? 0)}
 	>
 		<div
-			class="@container/photo-grid flex min-h-overscrollable w-full flex-col gap-3 pt-(--interest-header) pb-nav-clear"
+			data-refresh-content
+			class="@container/photo-grid min-h-overscrollable flex w-full flex-col gap-3 pt-(--interest-header) pb-nav-clear"
 		>
 			{#if views.loading}
 				<div
@@ -92,13 +102,5 @@
 			{/if}
 		</div>
 	</div>
-	{#if !views.loading && (views.views.length > 0 || !views.error)}
-		<DataRefreshControl
-			{container}
-			updating={views.refreshing}
-			position="top"
-			onrefresh={() => void views.refresh()}
-		/>
-	{/if}
 	<ScrollToTopButton {container} class="bottom-nav-clear" />
-</div>
+</main>

@@ -17,6 +17,7 @@ vi.mock("$lib/api/transport", async (importOriginal) => ({
 
 import { ApiError } from "$lib/api/api-error";
 import {
+	addDrawerMediaToAlbum,
 	createAlbum,
 	deleteAlbum,
 	deleteAlbumContent,
@@ -109,6 +110,19 @@ describe("getMyAlbums", () => {
 		fetchRestMock.mockResolvedValue(response({ albums: [album] }));
 
 		await expect(getMyAlbums()).resolves.toEqual([album]);
+	});
+});
+
+describe("addDrawerMediaToAlbum", () => {
+	it("adds drawer media to an album by id, never as fresh", async () => {
+		fetchRestMock.mockResolvedValue(response());
+
+		await addDrawerMediaToAlbum({ albumId: 900, mediaIds: [5, 6] });
+
+		expect(fetchRestMock).toHaveBeenCalledWith(
+			"/v1/albums/900/content/chat/list-by-id?isFresh=false",
+			{ method: "POST", body: { ids: [5, 6] } },
+		);
 	});
 });
 

@@ -15,6 +15,20 @@ vi.mock("$app/navigation", () => ({ onNavigate: vi.fn() }));
 vi.mock("$lib/chat/conversations-context.svelte", () => ({
 	getConversations: () => conversations,
 }));
+vi.mock("./send-media/send-media-offer.svelte", () => ({
+	getSendMediaOffer: () => ({ lend: () => {}, offer: async () => {} }),
+}));
+vi.mock("../conversation-state.svelte", () => ({
+	getConversationState: () => () => ({}),
+}));
+vi.mock("./composer-sheets-state.svelte", async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import("./composer-sheets-state.svelte")>();
+	return {
+		...actual,
+		getComposerSheets: () => new actual.ComposerSheetsState(),
+	};
+});
 
 vi.mock("../conversation-state.svelte", () => ({
 	getConversationState: () => () => ({

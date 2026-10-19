@@ -20,6 +20,7 @@ import { rightNowAttributionStatusSchema } from "$lib/model/right-now";
 import { arrayOfParsableEntries } from "$lib/model/tolerance";
 import {
 	type Profile,
+	PROFILE_PHOTO_AWAITING_REVIEW,
 	profileRightNowSchema,
 	profileSchema,
 	profileShortSchema,
@@ -370,19 +371,24 @@ export async function deleteProfilePhotos({
 	});
 }
 
-export async function getProfileUploadedPhotos() {
-	return await fetchRest("/v3.1/me/profile/images").then((res) =>
-		res.jsonParsed(
-			z.object({
-				medias: z.array(
-					z.object({
-						mediaHash: mediaHashPublicSchema,
-						type: z.int(),
-						state: z.int(),
-					}),
-				),
-			}),
-		),
+export async function getProfileUploadedPhotos({
+	selected,
+}: {
+	selected: boolean;
+}) {
+	return await fetchRest(`/v3.1/me/profile/images?selected=${selected}`).then(
+		(res) =>
+			res.jsonParsed(
+				z.object({
+					medias: z.array(
+						z.object({
+							mediaHash: mediaHashPublicSchema,
+							type: z.int(),
+							state: z.int(),
+						}),
+					),
+				}),
+			),
 	);
 }
 
@@ -448,8 +454,7 @@ export async function setProfilePhotos({
 	});
 	res.assertOk();
 	const cached = profiles.get(cacheProfileId);
-	if (!cached) return;
-	const byHash = new Map(cached.medias.map((m) => [m.mediaHash, m]));
+	const byHash = new Map((cached?.medias ?? []).map((m) => [m.mediaHash, m]));
 	mergeProfileEditIntoCaches({
 		cacheProfileId,
 		patch: {
@@ -461,7 +466,7 @@ export async function setProfilePhotos({
 						// A photo the moderators have not looked at yet: the states
 						// come back on the next fetch of the profile.
 						type: 1,
-						state: 0,
+						state: PROFILE_PHOTO_AWAITING_REVIEW,
 						reason: null,
 						takenOnGrindr: takenOnGrindrHashes.includes(mediaHash),
 						createdAt: null,

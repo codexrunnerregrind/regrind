@@ -1,4 +1,7 @@
-import { paneFrame } from "$lib/components/navigation/stack/motion";
+import {
+	paneFrame,
+	stackMotion,
+} from "$lib/components/navigation/stack/motion";
 import {
 	type PaneSnapshot,
 	snapshotPane,
@@ -67,9 +70,10 @@ export function showSwipeBackGhost(screen: HTMLElement): SwipeBackGhost | null {
 	screen.before(host);
 	snapshot.restore();
 
+	const motion = stackMotion();
 	const apply = (progress: number) => {
-		const frame = paneFrame({ progress, parallax: true });
-		host.style.transform = frame.back;
+		const frame = paneFrame({ progress, parallax: true, motion });
+		host.style.transform = frame.back.transform;
 		dim.style.opacity = String(frame.dim);
 	};
 	apply(0);

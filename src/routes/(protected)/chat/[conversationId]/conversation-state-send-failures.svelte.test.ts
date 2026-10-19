@@ -51,6 +51,19 @@ const profile = {
 };
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
+const updatePreviewMock = vi.fn();
+
+const delivered = (messageId: string, timestamp: number) => ({
+	messageId,
+	conversationId: CONVERSATION_ID,
+	senderId: PEER_ID,
+	timestamp,
+	type: "Text" as const,
+	body: { text: messageId },
+	unsent: false,
+	reactions: [],
+	replyToMessage: null,
+});
 
 function outbound(type: string, body: unknown): MessageDraft {
 	const message = { type, body } as unknown as Message;
@@ -65,11 +78,10 @@ function create() {
 		conversationId: CONVERSATION_ID,
 		ourProfileId: OUR_ID,
 		conversations: {
-			setActive: vi.fn(),
-			clearActive: vi.fn(),
+			setActive: vi.fn(() => vi.fn()),
 			getCachedConversation: vi.fn(() => undefined),
 			setCachedConversation: vi.fn(),
-			updatePreview: vi.fn(),
+			updatePreview: updatePreviewMock,
 			markRead: vi.fn(),
 			ensureLoaded: vi.fn(),
 			remove: vi.fn(() => ({ revert: vi.fn() })),
@@ -156,6 +168,134 @@ describe("ConversationState send failures", () => {
 		expect(state.messages.every((m) => m.status === "error")).toBe(true);
 	});
 
+	it("keeps the last delivered message as the preview when the newest failed one is deleted", async () => {
+		getConversationMock.mockResolvedValue({
+			messages: [delivered("server-1", 500)],
+			profile,
+			pageKey: null,
+			lastReadTimestamp: null,
+		});
+		sendMessageMock.mockRejectedValue(new Error("offline"));
+
+		const state = create();
+		await flush();
+		state.send([outbound("Text", { text: "older" })]);
+		state.send([outbound("Text", { text: "newer" })]);
+		await flush();
+		expect(updatePreviewMock).toHaveBeenLastCalledWith({
+			conversationId: CONVERSATION_ID,
+			preview: expect.objectContaining({
+				type: "Text",
+				text: "server-1",
+			}),
+			timestamp: 500,
+		});
+
+		updatePreviewMock.mockClear();
+		state.remove(state.messages[0]!.messageId);
+
+		expect(updatePreviewMock).not.toHaveBeenCalled();
+	});
+
+	it("moves the preview on when the delivered message under a failed one is deleted", async () => {
+		getConversationMock.mockResolvedValue({
+			messages: [delivered("server-2", 600), delivered("server-1", 500)],
+			profile,
+			pageKey: null,
+			lastReadTimestamp: null,
+		});
+		sendMessageMock.mockRejectedValue(new Error("offline"));
+
+		const state = create();
+		await flush();
+		state.send([outbound("Text", { text: "failed" })]);
+		await flush();
+		state.remove("server-2");
+
+		expect(updatePreviewMock).toHaveBeenLastCalledWith({
+			conversationId: CONVERSATION_ID,
+			preview: expect.objectContaining({ text: "server-1" }),
+			timestamp: 500,
+		});
+	});
+
+	it("keeps a newer pending message as the preview when an older send fails", async () => {
+		let rejectOlder!: (error: Error) => void;
+		sendMessageMock
+			.mockReturnValueOnce(
+				new Promise((_, reject) => {
+					rejectOlder = reject;
+				}),
+			)
+			.mockReturnValueOnce(new Promise(() => {}));
+
+		const state = create();
+		await flush();
+		state.send([outbound("Text", { text: "older" })]);
+		state.send([outbound("Text", { text: "newer" })]);
+		rejectOlder(new Error("offline"));
+		await flush();
+
+		expect(updatePreviewMock).toHaveBeenLastCalledWith({
+			conversationId: CONVERSATION_ID,
+			preview: expect.objectContaining({ text: "newer" }),
+			timestamp: expect.any(Number),
+		});
+	});
+
+	it("keeps a failed message out of the preview when a refresh brings new messages", async () => {
+		getConversationMock.mockResolvedValue({
+			messages: [delivered("server-1", 500)],
+			profile,
+			pageKey: null,
+			lastReadTimestamp: null,
+		});
+		sendMessageMock.mockRejectedValue(new Error("offline"));
+
+		const state = create();
+		await flush();
+		state.send([outbound("Text", { text: "failed" })]);
+		await flush();
+
+		getConversationMock.mockResolvedValue({
+			messages: [delivered("server-2", 600), delivered("server-1", 500)],
+			profile,
+			pageKey: null,
+			lastReadTimestamp: null,
+		});
+		await state.refresh();
+
+		expect(state.messages[0]?.status).toBe("error");
+		expect(updatePreviewMock).toHaveBeenLastCalledWith({
+			conversationId: CONVERSATION_ID,
+			preview: expect.objectContaining({ text: "server-2" }),
+			timestamp: 600,
+		});
+	});
+
+	it("keeps a failed message out of the preview when an older-stamped send lands under it", async () => {
+		const clock = vi.spyOn(Date, "now");
+		sendMessageMock
+			.mockRejectedValueOnce(new Error("offline"))
+			.mockResolvedValueOnce({ messageId: "server-1", timestamp: 900 });
+
+		const state = create();
+		await flush();
+		clock.mockReturnValue(1000);
+		state.send([outbound("Text", { text: "failed" })]);
+		await flush();
+		clock.mockReturnValue(2000);
+		state.send([outbound("Text", { text: "landed" })]);
+		await flush();
+
+		expect(state.messages.map((m) => m.status)).toEqual(["error", "sent"]);
+		expect(updatePreviewMock).toHaveBeenLastCalledWith({
+			conversationId: CONVERSATION_ID,
+			preview: expect.objectContaining({ text: "landed" }),
+			timestamp: 900,
+		});
+	});
+
 	it("keeps quiet when another message type hits the same limit", async () => {
 		sendMessageMock.mockRejectedValue(entitlementLimit());
 
@@ -176,5 +316,92 @@ describe("ConversationState send failures", () => {
 		await flush();
 
 		expect(toastMock.error).not.toHaveBeenCalled();
+	});
+
+	function uploadingPhoto() {
+		const upload = Promise.withResolvers<OutboundMessage>();
+		const draft: MessageDraft = {
+			outbound: () => upload.promise,
+			optimistic: {
+				type: "Image",
+				body: {
+					mediaId: 0,
+					url: "data:image/jpeg;base64,/9j/",
+					width: 4,
+					height: 3,
+					imageHash: "",
+					takenOnGrindr: false,
+					createdAt: 0,
+				},
+			},
+		};
+		return { draft, upload };
+	}
+
+	const uploaded: OutboundMessage = {
+		type: "Image",
+		body: { mediaId: 920_001 },
+	};
+
+	function sendAfterUploads(): OutboundMessage[] {
+		const sent: OutboundMessage[] = [];
+		sendMessageMock.mockImplementation(
+			async ({ message }: { message: MessageDraft["outbound"] }) => {
+				sent.push(
+					typeof message === "function" ? await message() : message,
+				);
+				return delivered("server-1", 1234);
+			},
+		);
+		return sent;
+	}
+
+	it("shows a photo as sending while it uploads, then sends what the upload returned", async () => {
+		const sent = sendAfterUploads();
+		const { draft, upload } = uploadingPhoto();
+		const state = create();
+		await flush();
+
+		state.send([draft]);
+		await flush();
+		expect(state.messages[0]?.status).toBe("pending");
+		expect(sent).toEqual([]);
+
+		upload.resolve(uploaded);
+		await flush();
+
+		expect(sent).toEqual([uploaded]);
+		expect(state.messages[0]?.status).toBe("sent");
+	});
+
+	it("marks the photo failed and sends nothing when its upload fails", async () => {
+		const sent = sendAfterUploads();
+		const { draft, upload } = uploadingPhoto();
+		const state = create();
+		await flush();
+
+		state.send([draft]);
+		upload.reject(new Error("offline"));
+		await flush();
+
+		expect(state.messages[0]?.status).toBe("error");
+		expect(sent).toEqual([]);
+	});
+
+	it("still sends a photo whose upload finishes after the chat closed", async () => {
+		const sent = sendAfterUploads();
+		const { draft, upload } = uploadingPhoto();
+		const state = create();
+		await flush();
+
+		state.send([draft]);
+		state.destroy();
+		upload.resolve(uploaded);
+		await flush();
+
+		expect(sent).toEqual([uploaded]);
+		expect(sendMessageMock).toHaveBeenCalledWith(
+			expect.objectContaining({ toUserId: PEER_ID }),
+		);
 	});
 });

@@ -1,3 +1,5 @@
+/* eslint max-lines: ["error", { "max": 660, "skipBlankLines": true, "skipComments": true }] -- One table of every mocked route. */
+
 import {
 	albumNameRequestSchema,
 	albumShareRequestSchema,
@@ -11,6 +13,7 @@ import {
 import { accountPreferencesUpdateSchema } from "$lib/model/settings/account";
 import { demoMeProfileId } from "./config";
 import {
+	demoAddToAlbum,
 	demoAlbumContent,
 	demoAlbumContentProcessing,
 	demoAlbumSharesFor,
@@ -32,18 +35,21 @@ import {
 	demoConversationMessages,
 	demoConversations,
 	demoDeleteConversation,
+	demoMessagesById,
 	demoSentMessage,
 	demoSetConversationMuted,
 	demoSetConversationPinned,
 	demoSingleMessage,
 } from "./mock/conversations";
-import { demoDrawerMedia } from "./mock/drawer";
+import { demoDeleteDrawerMedia, demoDrawerMedia } from "./mock/drawer";
 import {
 	demoDeleteFavoriteNote,
 	demoFavoriteNote,
 	demoSetFavoriteNote,
 } from "./mock/favorite-notes";
 import { demoSetFavorite } from "./mock/favorites";
+import { demoGaymojiManifest } from "./mock/gaymoji";
+import { demoGiphySearch, demoGiphyTrending } from "./mock/giphy";
 import {
 	buildFullProfile,
 	buildMaskedProfile,
@@ -128,9 +134,30 @@ export function demoCallMethod(method: string): unknown {
 			return false;
 		case "storage_backend":
 			return "keyring";
+		case "session_feature_flags":
+			return [];
 		default:
 			return null;
 	}
+}
+
+function demoExternalRoute({
+	path,
+	method,
+	params,
+}: {
+	path: string;
+	method: string;
+	params: URLSearchParams;
+}): DemoResponse {
+	if (method !== "GET") return { status: 405, body: null };
+	if (path === "api.giphy.com/v1/gifs/trending")
+		return ok(demoGiphyTrending(params));
+	if (path === "api.giphy.com/v1/gifs/search")
+		return ok(demoGiphySearch(params));
+	if (path === "cdns.grindr.com/grindr/chat/gaymoji")
+		return ok(demoGaymojiManifest());
+	return { status: 404, body: null };
 }
 
 export function demoRoute({
@@ -148,6 +175,9 @@ export function demoRoute({
 	const conversationId = segments[3] ?? "";
 	const messageId = segments[5] ?? "";
 
+	if (!rawPath.startsWith("/")) {
+		return demoExternalRoute({ path: rawPath, method, params });
+	}
 	if (method === "GET" && rawPath === "/v4/cascade") {
 		return ok(demoCascadeV4(params));
 	}
@@ -423,6 +453,15 @@ export function demoRoute({
 		demoDeleteAlbumContent(Number(segments[2]), Number(segments[4]));
 		return ok({});
 	}
+	if (
+		method === "POST" &&
+		segments[0] === "v4" &&
+		segments[2] === "conversation" &&
+		segments[4] === "message-by-id"
+	) {
+		const { messageIds = [] } = body as { messageIds?: string[] };
+		return ok(demoMessagesById({ conversationId, messageIds }));
+	}
 	if (method === "GET" && rawPath === "/v1/albums") {
 		return ok(demoMyAlbums());
 	}
@@ -459,6 +498,28 @@ export function demoRoute({
 			albumShareRequestSchema.parse(body),
 		);
 		return ok({});
+	}
+	if (
+		method === "POST" &&
+		segments[0] === "v1" &&
+		segments[1] === "albums" &&
+		segments[3] === "content" &&
+		segments[4] === "chat" &&
+		segments[5] === "list-by-id"
+	) {
+		const ids = (body as { ids?: number[] } | null)?.ids ?? [];
+		const drawer = new Map(
+			demoDrawerMedia().map((item) => [item.id, item]),
+		);
+		const added = demoAddToAlbum({
+			albumId: Number(segments[2]),
+			kinds: ids.map((id) =>
+				drawer.get(id)?.contentType.startsWith("video/")
+					? "video"
+					: "photo",
+			),
+		});
+		return added ? ok(null) : { status: 402, body: null };
 	}
 	if (method === "POST" && rawPath === "/v4/chat/message/send") {
 		return ok(demoSentMessage(body));
@@ -501,8 +562,12 @@ export function demoRoute({
 		demoDeleteConversation(conversationId);
 		return ok({});
 	}
-	if (method === "GET" && rawPath.startsWith("/v4/chat/media/drawer/")) {
+	if (method === "GET" && rawPath.startsWith("/v4/chat/media/drawer")) {
 		return ok(demoDrawerMedia());
+	}
+	if (method === "DELETE" && rawPath.startsWith("/v4/chat/media/drawer/")) {
+		demoDeleteDrawerMedia(Number(segments.at(-1)));
+		return ok({});
 	}
 	if (method === "GET" && rawPath === "/v3/places/search") {
 		return ok({ places: [] });

@@ -10,7 +10,7 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:tools": "bun x tsc --noEmit -p tsconfig.tools.json",
 		"check:config": "opengrind-config check",
-		"check:deps": "cargo deny --manifest-path src-tauri/Cargo.toml check && bun audit && bun audit --cwd docs",
+		"check:deps": "cargo deny --manifest-path src-tauri/Cargo.toml check && bun audit && bun audit --cwd docs --ignore=GHSA-vfj7-8cjw-p6xm",
 		"bump": "bun scripts/bump-version.ts",
 		"check:version": "bun scripts/check-version.ts",
 		"check:backup-rules": "bun scripts/check-backup-rules.ts",
@@ -29,6 +29,7 @@
 		"check:credits": "bun scripts/gen-credits.ts --check",
 		"check:credits-sync": "bun scripts/check-credits-sync.ts",
 		"check:credits-android": "bun scripts/check-android-credits.ts",
+		"package:linux": "podman build -t regrind-linux ci/linux && podman run --rm -v \"$PWD:/work\" regrind-linux sh ci/linux/build.sh",
 		"package:macos": "nix run .#build-macos --",
 		"lint": "svelte-kit sync && eslint --concurrency=2 .",
 		"preview": "vite preview",
@@ -40,17 +41,22 @@
 		"test:coverage": "svelte-kit sync && vitest run --coverage",
 		"test:unit": "svelte-kit sync && vitest run",
 		"test:e2e": "playwright test",
+		"test:e2e:guard": "playwright test -c playwright.guard.config.ts",
+		"test:live": "playwright test -c e2e-live/playwright.live.config.ts --project flows",
+		"test:live:sweep": "playwright test -c e2e-live/playwright.live.config.ts --project sweep",
+		"test:live:device": "playwright test -c e2e-live/playwright.live.config.ts --project device",
 		"dev:updater-server": "bun scripts/updater-release-server.ts",
 		"test:android": "cd src-tauri/gen/android && ./gradlew :app:testUniversalReleaseUnitTest",
 		"test:android-logic": "src-tauri/gen/android/gradlew -p src-tauri/android-logic test"
 	},
 	"overrides": {
-		"brace-expansion": "^5.0.9",
+		"brace-expansion": "^5.0.12",
 		"cookie": "^0.7.0",
-		"devalue": "^5.9.1",
+		"devalue": "^5.9.4",
 		"nanoid": "^3.3.18",
 		"postcss": "^8.5.24",
-		"postcss-selector-parser": "^7.1.3",
+		"postcss-selector-parser": "^7.1.6",
+		"source-map-js": "^1.2.2",
 		"valibot": "^1.4.2",
 		"vite": "^6.4.3"
 	},
@@ -68,7 +74,7 @@
 		"@tauri-apps/plugin-opener": "~2.5",
 		"@tauri-apps/plugin-os": "~2.3.2",
 		"agora-rtc-sdk-ng": "^4.24.8",
-		"brace-expansion": "^5.0.9",
+		"brace-expansion": "^5.0.12",
 		"date-fns": "^4.1.0",
 		"maplibre-gl": "^5",
 		"paneforge": "^1.0.2",
@@ -82,10 +88,11 @@
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {
+		"@axe-core/playwright": "^4.13.0",
 		"@fontsource-variable/ibm-plex-sans": "^5.2.8",
 		"@icons-pack/svelte-simple-icons": "^7.2.0",
 		"@internationalized/date": "^3.12.1",
-		"@opengrind/config": "^1.3.1",
+		"@opengrind/config": "^1.3.2",
 		"@playwright/test": "^1.61.1",
 		"@sveltejs/adapter-static": "^3.0.10",
 		"@sveltejs/kit": "^2.70.2",
@@ -104,7 +111,7 @@
 		"phosphor-svelte": "^3.1.0",
 		"prettier": "^3.8.3",
 		"shadcn-svelte": "^1.2.7",
-		"sharp": "^0.35.4",
+		"sharp": "^0.35.5",
 		"svelte": "^5.57.0",
 		"svelte-check": "^4.6.0",
 		"tailwind-merge": "^3.5.0",
@@ -118,6 +125,7 @@
 	"patchedDependencies": {
 		"vaul-svelte@1.0.0-next.7": "patches/vaul-svelte@1.0.0-next.7.patch",
 		"@sveltejs/kit@2.70.2": "patches/@sveltejs%2Fkit@2.70.2.patch",
-		"svelte-sonner@1.1.1": "patches/svelte-sonner@1.1.1.patch"
+		"svelte-sonner@1.1.1": "patches/svelte-sonner@1.1.1.patch",
+		"bits-ui@2.19.2": "patches/bits-ui@2.19.2.patch"
 	}
 }

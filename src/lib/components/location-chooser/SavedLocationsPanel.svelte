@@ -1,12 +1,10 @@
 <script lang="ts">
-	import {
-		BookmarkSimpleIcon,
-		CheckIcon,
-		PencilSimpleIcon,
-		StarIcon,
-		TrashIcon,
-		XIcon,
-	} from "phosphor-svelte";
+	import BookmarkSimpleIcon from "phosphor-svelte/lib/BookmarkSimpleIcon";
+	import CheckIcon from "phosphor-svelte/lib/CheckIcon";
+	import PencilSimpleIcon from "phosphor-svelte/lib/PencilSimpleIcon";
+	import StarIcon from "phosphor-svelte/lib/StarIcon";
+	import TrashIcon from "phosphor-svelte/lib/TrashIcon";
+	import XIcon from "phosphor-svelte/lib/XIcon";
 	import { tick } from "svelte";
 
 	import { showErrorToast } from "$lib/api/error-toast";

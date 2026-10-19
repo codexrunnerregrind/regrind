@@ -1,14 +1,11 @@
 <script lang="ts">
-	import {
-		CameraIcon,
-		EyesIcon,
-		GlobeStandIcon,
-		HeartbeatIcon,
-		HouseIcon,
-		SparkleIcon,
-		UsersIcon,
-		UsersThreeIcon,
-	} from "phosphor-svelte";
+	import CameraIcon from "phosphor-svelte/lib/CameraIcon";
+	import EyesIcon from "phosphor-svelte/lib/EyesIcon";
+	import GlobeStandIcon from "phosphor-svelte/lib/GlobeStandIcon";
+	import HouseIcon from "phosphor-svelte/lib/HouseIcon";
+	import SparkleIcon from "phosphor-svelte/lib/SparkleIcon";
+	import UsersIcon from "phosphor-svelte/lib/UsersIcon";
+	import UsersThreeIcon from "phosphor-svelte/lib/UsersThreeIcon";
 	import { untrack } from "svelte";
 
 	import {
@@ -24,8 +21,6 @@
 	import {
 		acceptNSFWPics,
 		ethnicities,
-		healthPractices,
-		hivStatuses,
 		lookingFor as lookingForLabels,
 		meetAt as meetAtLabels,
 		relationshipStatuses,
@@ -36,8 +31,6 @@
 	import BlockedProfile from "./BlockedProfile.svelte";
 	import Distance from "./Distance.svelte";
 	import Genders from "./fields/GendersPronouns.svelte";
-	import HivStatusIcon from "./fields/HivStatusIcon.svelte";
-	import LastTested from "./fields/LastTested.svelte";
 	import LookupField from "./fields/LookupField.svelte";
 	import Socials from "./fields/Socials.svelte";
 	import Height from "./HeightWeightBodyType.svelte";
@@ -46,6 +39,7 @@
 	import OnlineStatus from "./OnlineStatus.svelte";
 	import { ProfileState } from "./profile-state.svelte";
 	import ProfileAlbums from "./ProfileAlbums.svelte";
+	import ProfileHealth from "./ProfileHealth.svelte";
 	import ProfileNote from "./ProfileNote.svelte";
 	import ProfileRightNow from "./ProfileRightNow.svelte";
 	import ProfileTags from "./ProfileTags.svelte";
@@ -138,12 +132,13 @@
 			<BlockedProfile
 				profileId={profileState.profileId}
 				blockedByUs={error.blockedByUs}
-				onRefresh={() => profileState.markViewable()}
+				markViewable={() => profileState.markViewable()}
 			/>
 		{:else if error instanceof HiddenProfileError}
 			<HiddenProfile
 				profileId={profileState.profileId}
-				onRefresh={() => profileState.markViewable()}
+				changingViewability={profileState.changingViewability}
+				markViewable={() => profileState.markViewable()}
 			/>
 		{:else if error instanceof ProfileUnavailableError}
 			<NotFound />
@@ -208,12 +203,10 @@
 						ethnicity,
 						relationshipStatus,
 						grindrTribes,
+						tribesImInto,
 						lookingFor,
 						meetAt,
 						nsfw,
-						hivStatus,
-						lastTestedDate: lastTestedDateValue,
-						sexualHealth: sexualHealthValue,
 						socialNetworks,
 						medias,
 						isNew,
@@ -243,10 +236,11 @@
 						{/if}
 					</div>
 					<ProfileTopNavBar
-						ourProfileId={profileState.ourProfileId}
+						{ourProfile}
 						{profile}
-						onBlocked={() => profileState.markBlocked()}
-						onHidden={() => profileState.markHidden()}
+						changingViewability={profileState.changingViewability}
+						markBlocked={() => profileState.markBlocked()}
+						markHidden={() => profileState.markHidden()}
 						onFavorite={(isFavorite) =>
 							profileState.setFavorite(isFavorite)}
 					/>
@@ -335,9 +329,15 @@
 								/>
 							</div>
 						{/if}
-						{#if (lookingFor && lookingFor.length > 0) || (meetAt && meetAt.length > 0) || nsfw !== null}
+						{#if (tribesImInto && tribesImInto.length > 0) || (lookingFor && lookingFor.length > 0) || (meetAt && meetAt.length > 0) || nsfw !== null}
 							<div class="mt-5.5 flex flex-col gap-2.75">
 								<span class="section-label">Expectations</span>
+								<LookupField
+									icon={UsersThreeIcon}
+									label="I'm Into"
+									value={tribesImInto}
+									options={tribes}
+								/>
 								<LookupField
 									icon={EyesIcon}
 									weight="fill"
@@ -376,26 +376,7 @@
 									distance === null ? null : distance / 1000,
 							}}
 						/>
-						{#if hivStatus !== null || lastTestedDateValue !== null || (sexualHealthValue && sexualHealthValue.length > 0)}
-							<div class="mt-5.5 flex flex-col gap-2.75">
-								<span class="section-label">Health</span>
-								<LookupField
-									icon={HivStatusIcon}
-									label="HIV Status"
-									value={hivStatus}
-									options={hivStatuses}
-								/>
-								<LastTested
-									lastTestedDate={lastTestedDateValue}
-								/>
-								<LookupField
-									icon={HeartbeatIcon}
-									label="Health Practices"
-									value={sexualHealthValue}
-									options={healthPractices}
-								/>
-							</div>
-						{/if}
+						<ProfileHealth {profile} />
 						{#if socialNetworks && Object.keys(socialNetworks).length > 0}
 							<div class="mt-5.5 flex flex-col gap-2.75">
 								<span class="section-label">Socials</span>
@@ -414,7 +395,7 @@
 		<div
 			class="pointer-events-none absolute inset-0 mx-auto w-full max-w-200"
 		>
-			<CloseProfileButton />
+			<CloseProfileButton {active} />
 		</div>
 		<!-- No bottom bar here: it is rendered once by the pager, outside the
 		     sliding track, so it can stay viewport-fixed. See ProfilePager. -->

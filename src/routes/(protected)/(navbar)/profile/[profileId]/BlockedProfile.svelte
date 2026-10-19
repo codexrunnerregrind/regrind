@@ -1,20 +1,24 @@
 <script lang="ts">
-	import { ProhibitIcon } from "phosphor-svelte";
+	import ProhibitIcon from "phosphor-svelte/lib/ProhibitIcon";
 
 	import { unblockUser } from "$lib/api/browse/blocks";
-	import { showErrorToast } from "$lib/api/error-toast";
 	import { Button } from "$lib/components/ui/button";
 	import * as Empty from "$lib/components/ui/empty";
 	import Link from "$lib/components/ui/link/Link.svelte";
+	import {
+		applyViewabilityChange,
+		type PendingViewabilityChange,
+	} from "./profile-state.svelte";
 
 	let {
 		profileId,
 		blockedByUs,
-		onRefresh,
-	}: { profileId: number; blockedByUs: boolean; onRefresh: () => void } =
-		$props();
-
-	let submitting = $state(false);
+		markViewable,
+	}: {
+		profileId: number;
+		blockedByUs: boolean;
+		markViewable: () => PendingViewabilityChange;
+	} = $props();
 </script>
 
 <Empty.Root>
@@ -33,23 +37,12 @@
 			{#if blockedByUs}
 				<Button
 					variant="secondary"
-					disabled={submitting}
-					onclick={async () => {
-						if (submitting) return;
-						submitting = true;
-						try {
-							await unblockUser({ profileId });
-							onRefresh();
-						} catch (error) {
-							console.error(error);
-							showErrorToast({
-								label: "Failed to unblock user",
-								error,
-							});
-						} finally {
-							submitting = false;
-						}
-					}}>Unblock</Button
+					onclick={() =>
+						applyViewabilityChange({
+							change: markViewable,
+							request: () => unblockUser({ profileId }),
+							failureLabel: "Failed to unblock user",
+						})}>Unblock</Button
 				>
 			{:else}
 				If you know this is a bug in the app, <Link

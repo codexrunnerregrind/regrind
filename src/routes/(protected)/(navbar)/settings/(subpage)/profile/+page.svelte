@@ -1,10 +1,11 @@
 <script lang="ts">
+	import { refreshFeatureFlags } from "$lib/api/feature-flags-state.svelte";
 	import { getGenders } from "$lib/api/users/genders";
 	import { getProfile } from "$lib/api/users/profiles";
 	import { getPronouns } from "$lib/api/users/pronouns";
 	import { getTags } from "$lib/api/users/tags";
-	import { Skeleton } from "$lib/components/ui/skeleton";
 	import ProfileForm from "./ProfileForm.svelte";
+	import ProfileFormSkeleton from "./ProfileFormSkeleton.svelte";
 
 	const { data }: import("./$types").PageProps = $props();
 
@@ -23,6 +24,7 @@
 				console.error("Failed to load tags", error);
 				return [];
 			}),
+			refreshFeatureFlags(),
 		]);
 		return { profile, genders, pronouns, tags };
 	}
@@ -31,11 +33,7 @@
 </script>
 
 {#await loadPromise}
-	<div class="flex flex-col gap-3">
-		{#each Array.from({ length: 7 })}
-			<Skeleton class="h-12 w-full rounded-xl" />
-		{/each}
-	</div>
+	<ProfileFormSkeleton />
 {:then { profile, genders, pronouns, tags }}
 	<ProfileForm
 		{profile}

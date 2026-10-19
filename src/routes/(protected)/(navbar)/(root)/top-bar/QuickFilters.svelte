@@ -1,6 +1,8 @@
 <script lang="ts">
-	import { SlidersHorizontalIcon, StarIcon } from "phosphor-svelte";
+	import SlidersHorizontalIcon from "phosphor-svelte/lib/SlidersHorizontalIcon";
+	import StarIcon from "phosphor-svelte/lib/StarIcon";
 
+	import { genderFilterFlag } from "$lib/api/feature-flags-state.svelte";
 	import CommandCenterTrigger from "$lib/components/command-center/CommandCenterTrigger.svelte";
 	import {
 		ACTIVE_FILTER,
@@ -12,6 +14,7 @@
 	import { defaultFilters } from "$lib/model/browse/grid/filters";
 	import AgeQuickFilter from "./AgeQuickFilter.svelte";
 	import PositionQuickFilter from "./PositionQuickFilter.svelte";
+	import { sentFilterKeysWithoutQuickFilter } from "./quick-filters";
 
 	let {
 		openFilters = $bindable(),
@@ -22,6 +25,13 @@
 
 	const filters = $derived(gridState.filters.value ?? defaultFilters);
 	const { ageEnabled, positionEnabled, isFavorite } = $derived(filters);
+	const sheetOnlyFiltersOn = $derived(
+		sentFilterKeysWithoutQuickFilter({
+			filters,
+			genderFilterFlag: genderFilterFlag(),
+		}).length > 0 ||
+			(filters.usernameEnabled && filters.username.trim() !== ""),
+	);
 </script>
 
 <!-- Every "on" filter in this row uses the same inverted fill, whichever kind of
@@ -31,6 +41,7 @@
 	variant="secondary"
 	aria-label="All filters"
 	onclick={() => (openFilters.all = true)}
+	class={{ [ACTIVE_FILTER]: sheetOnlyFiltersOn }}
 >
 	<SlidersHorizontalIcon />
 </Button>

@@ -214,7 +214,7 @@
 					type="email"
 					placeholder="you@example.com"
 					required
-					autocomplete="email"
+					autocomplete="username"
 					bind:value={email}
 					disabled={submitting !== false}
 					class="h-13 rounded-xl border-border/60 px-4 text-base"

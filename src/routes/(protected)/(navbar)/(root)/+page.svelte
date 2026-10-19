@@ -89,6 +89,12 @@
 	}
 
 	restoreScrollOnce({ container: () => gridContainer, state: gridState });
+
+	$effect(() =>
+		gridState.onStartOver(() => {
+			if (gridContainer) gridContainer.scrollTop = 0;
+		}),
+	);
 </script>
 
 <svelte:head>
@@ -102,20 +108,6 @@
 	{:else}
 		<main class="screen-nav-host">
 			<TopBar search={favoriteSearch} searchHidden={hideSearch} />
-			<div
-				class="pull-scroller"
-				bind:this={gridContainer}
-				onscroll={onGridScroll}
-			>
-				<div
-					class={[
-						"@container/photo-grid flex min-h-overscrollable flex-col gap-4 pb-nav-clear",
-						{ "pt-28": searchable, "pt-17": !searchable },
-					]}
-				>
-					<Grid {geohash} search={favoriteSearch} />
-				</div>
-			</div>
 			{#if !gridState.loading && !gridState.error}
 				<DataRefreshControl
 					container={gridContainer}
@@ -124,6 +116,22 @@
 					onrefresh={() => void refreshGrid()}
 				/>
 			{/if}
+			<div
+				class="pull-scroller"
+				bind:this={gridContainer}
+				onscroll={onGridScroll}
+			>
+				<div
+					data-slot="grid-content"
+					data-refresh-content
+					class={[
+						"@container/photo-grid min-h-overscrollable flex flex-col gap-4 pb-nav-clear",
+						{ "pt-28": searchable, "pt-17": !searchable },
+					]}
+				>
+					<Grid {geohash} search={favoriteSearch} />
+				</div>
+			</div>
 			<ScrollToTopButton
 				container={gridContainer}
 				class="bottom-nav-clear"

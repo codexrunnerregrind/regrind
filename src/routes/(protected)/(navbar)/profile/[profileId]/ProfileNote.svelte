@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { NotePencilIcon } from "phosphor-svelte";
+	import NotePencilIcon from "phosphor-svelte/lib/NotePencilIcon";
 
 	import {
 		ensureFavoriteNote,

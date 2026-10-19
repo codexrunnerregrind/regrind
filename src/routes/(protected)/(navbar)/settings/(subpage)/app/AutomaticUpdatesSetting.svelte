@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ArrowsClockwiseIcon } from "phosphor-svelte";
+	import ArrowsClockwiseIcon from "phosphor-svelte/lib/ArrowsClockwiseIcon";
 	import { onMount } from "svelte";
 
 	import { showErrorToast } from "$lib/api/error-toast";

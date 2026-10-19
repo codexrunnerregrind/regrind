@@ -1,3 +1,5 @@
+/* eslint max-lines: ["error", { "max": 680, "skipBlankLines": true, "skipComments": true }] -- Keep the fetch snapshot beside its reconciliation. */
+
 import { createContext } from "svelte";
 import { toast } from "svelte-sonner";
 
@@ -17,19 +19,22 @@ import {
 import { withRegionGrant } from "$lib/entitlements/expiring-media-entitlement";
 import { previewFromMessage } from "$lib/model/messaging/message-preview";
 import { reconciler } from "$lib/util/reconcile";
+import { stopListening } from "$lib/ws.svelte";
 import type { ConversationsState } from "$lib/chat/conversations-state.svelte";
 import type {
 	ApiResponseMessage,
 	MessageDraft,
-	OutboundMessage,
 } from "$lib/model/messaging/messages";
 import type { ChatV1MessageDeletedEventPayload } from "$lib/ws.svelte";
 import { subscribeConversationRealtime } from "./conversation-realtime";
+import { DynamicMessagesRefresh } from "./dynamic-refresh";
 import {
 	matchPendingEcho,
 	mergeServerMessages,
 	type OptimisticMessage,
+	previewedMessage,
 	removeDuplicateMessages,
+	sentMessages,
 } from "./merge-messages";
 import { getConversation } from "./messages";
 import {
@@ -44,6 +49,16 @@ export type { OptimisticMessage };
 export type ConversationProfile = Awaited<
 	ReturnType<typeof getConversation>
 >["profile"];
+
+function asSent(message: ApiResponseMessage): OptimisticMessage {
+	return { ...message, status: "sent" };
+}
+
+type MessageDelivery = {
+	tempId: string;
+	message: MessageDraft["outbound"];
+	replyToMessageId?: string;
+};
 
 export class ConversationState {
 	messages: OptimisticMessage[] = $state([]);
@@ -77,10 +92,12 @@ export class ConversationState {
 	}
 
 	#conversations: ConversationsState;
+	#releaseActive: () => void;
 	#readReceipts = new ReadReceiptQueue({
 		markRead: (messageId) => this.#markRead(messageId),
 	});
 	#unsubscribeReconcile: () => void;
+	readonly dynamicRefresh: DynamicMessagesRefresh;
 
 	constructor({
 		conversationId,
@@ -94,8 +111,7 @@ export class ConversationState {
 		this.conversationId = conversationId;
 		this.ourProfileId = ourProfileId;
 		this.#conversations = conversations;
-		conversations.setActive(conversationId);
-		this.lastReadTimestamp = null;
+		this.#releaseActive = conversations.setActive(conversationId);
 		void this.#initialLoad();
 
 		this.#unsubscribeReconcile = reconciler.subscribe(() =>
@@ -118,6 +134,13 @@ export class ConversationState {
 					this.#handleMessageDeleted(payload),
 			}),
 		);
+		this.dynamicRefresh = new DynamicMessagesRefresh({
+			conversationId,
+			messages: () => this.messages,
+			commit: (messages) => this.#commitMessages(messages),
+			reconcile: () => this.#reconcileMessages(),
+			paused: () => this.error !== null,
+		});
 	}
 
 	#wsPromises: Promise<() => void>[] = [];
@@ -130,15 +153,12 @@ export class ConversationState {
 	destroy(): void {
 		if (this.#destroyed) return;
 		this.#destroyed = true;
-		this.#conversations.clearActive(this.conversationId);
-		for (const promise of this.#wsPromises) {
-			promise
-				.then((unlisten) => unlisten())
-				.catch((error) => console.error(error));
-		}
+		this.#releaseActive();
+		stopListening(this.#wsPromises);
 		this.#wsPromises = [];
 		this.#unsubscribeReconcile();
 		this.#readReceipts.destroy();
+		this.dynamicRefresh.destroy();
 	}
 
 	/**
@@ -165,8 +185,7 @@ export class ConversationState {
 			if (pending) {
 				this.#adoptServerVersion({
 					message: pending,
-					serverMessageId: incoming.messageId,
-					serverTimestamp: incoming.timestamp,
+					server: incoming,
 				});
 				return;
 			}
@@ -222,6 +241,7 @@ export class ConversationState {
 		}
 		this.refreshing = true;
 		this.#refreshRequestedSinceFetchStart = false;
+		const localIdsAtFetchStart = this.messages.map((m) => m.messageId);
 		try {
 			const result = await getConversation({
 				conversationId: this.conversationId,
@@ -234,6 +254,7 @@ export class ConversationState {
 			const { messages, fresh, changed } = mergeServerMessages({
 				local: this.messages,
 				server: result.messages,
+				localIdsAtFetchStart,
 			});
 
 			this.#advanceLastRead(result.lastReadTimestamp);
@@ -243,9 +264,7 @@ export class ConversationState {
 				return;
 			}
 
-			this.messages = messages;
-			this.#updatePreview(this.messages.at(0));
-			this.#syncCache();
+			this.#commitMessages(messages);
 
 			for (const m of fresh) {
 				if (m.senderId === this.ourProfileId) continue;
@@ -272,6 +291,12 @@ export class ConversationState {
 		}
 	}
 
+	#commitMessages(messages: OptimisticMessage[]): void {
+		this.messages = messages;
+		this.#updatePreview();
+		this.#syncCache();
+	}
+
 	#runRequestedRefresh(): void {
 		if (!this.#refreshRequestedSinceFetchStart) return;
 		this.#refreshRequestedSinceFetchStart = false;
@@ -293,10 +318,7 @@ export class ConversationState {
 			this.conversationId,
 		);
 		if (cached) {
-			this.messages = cached.messages.map((m) => ({
-				...m,
-				status: "sent" as const,
-			}));
+			this.messages = cached.messages.map(asSent);
 			this.profile = cached.profile;
 			this.pageKey = cached.pageKey;
 			this.lastReadTimestamp = cached.lastReadTimestamp;
@@ -313,7 +335,7 @@ export class ConversationState {
 			void this.#conversations.markRead(this.conversationId);
 			if (this.#destroyed) return;
 			this.messages = removeDuplicateMessages(
-				result.messages.map((m) => ({ ...m, status: "sent" as const })),
+				result.messages.map(asSent),
 			);
 			this.profile = result.profile;
 			this.pageKey = result.pageKey;
@@ -329,7 +351,9 @@ export class ConversationState {
 		}
 	}
 
-	async loadMore(): Promise<void> {
+	async loadMore({
+		commit = (apply) => apply(),
+	}: { commit?: (apply: () => void) => void } = {}): Promise<void> {
 		if (this.loadingMore || this.pageKey === null) return;
 		this.loadingMore = true;
 		try {
@@ -338,16 +362,16 @@ export class ConversationState {
 				pageKey: this.pageKey,
 			});
 			if (this.#destroyed) return;
-			this.messages = removeDuplicateMessages([
-				...this.messages,
-				...result.messages.map((m) => ({
-					...m,
-					status: "sent" as const,
-				})),
-			]);
-			this.pageKey = result.pageKey;
-			this.#advanceLastRead(result.lastReadTimestamp);
-			this.#syncCache();
+			commit(() => {
+				this.messages = removeDuplicateMessages([
+					...this.messages,
+					...result.messages.map(asSent),
+				]);
+				this.pageKey = result.pageKey;
+				this.loadingMore = false;
+				this.#advanceLastRead(result.lastReadTimestamp);
+				this.#syncCache();
+			});
 		} catch (error) {
 			if (this.#destroyed) return;
 			console.error(error);
@@ -418,6 +442,7 @@ export class ConversationState {
 			timestamp: Date.now(),
 			unsent: false,
 			reactions: [],
+			dynamic: false,
 			replyToMessage,
 			status: "pending" as const,
 		};
@@ -434,11 +459,7 @@ export class ConversationState {
 		tempId,
 		message,
 		replyToMessageId,
-	}: {
-		tempId: string;
-		message: OutboundMessage;
-		replyToMessageId?: string;
-	}): Promise<void> {
+	}: MessageDelivery): Promise<void> {
 		try {
 			// A region-gated refusal grants and sends again, unseen.
 			const toUserId = this.profile!.profileId;
@@ -448,11 +469,7 @@ export class ConversationState {
 			if (this.#destroyed) return;
 			const msg = this.messages.find((m) => m.messageId === tempId);
 			if (msg) {
-				this.#adoptServerVersion({
-					message: msg,
-					serverMessageId: sent.messageId,
-					serverTimestamp: sent.timestamp,
-				});
+				this.#adoptServerVersion({ message: msg, server: sent });
 			} else {
 				this.#syncCache();
 			}
@@ -464,6 +481,7 @@ export class ConversationState {
 				error,
 			);
 			if (
+				typeof message !== "function" &&
 				message.type === "ExpiringImage" &&
 				urn === "urn:gr:err:entitlement_limit"
 			) {
@@ -477,31 +495,24 @@ export class ConversationState {
 				msg.status = "error";
 				msg.sendError = error;
 			}
-			const latestSent = this.messages.find((m) => m.status === "sent");
-			this.#updatePreview(latestSent);
+			if (!this.#destroyed) this.#updatePreview();
 		}
 	}
 
 	#adoptServerVersion({
 		message,
-		serverMessageId,
-		serverTimestamp,
+		server,
 	}: {
 		message: OptimisticMessage;
-		serverMessageId: string;
-		serverTimestamp: number;
+		server: ApiResponseMessage;
 	}): void {
-		const wasNewestBeforeAdopting =
-			this.messages.at(0)?.messageId === message.messageId;
-		message.status = "sent";
-		message.messageId = serverMessageId;
-		message.timestamp = serverTimestamp;
+		const wasPreviewed =
+			previewedMessage(this.messages)?.messageId === message.messageId;
+		Object.assign(message, server, { status: "sent" as const });
 		this.#resortNewestFirst();
-		const newest = this.messages.at(0);
-		const isNewestAfterAdopting = newest?.messageId === serverMessageId;
-		if (wasNewestBeforeAdopting || isNewestAfterAdopting) {
-			this.#updatePreview(newest);
-		}
+		const isPreviewed =
+			previewedMessage(this.messages)?.messageId === server.messageId;
+		if (wasPreviewed || isPreviewed) this.#updatePreview();
 		this.#syncCache();
 	}
 
@@ -522,16 +533,10 @@ export class ConversationState {
 
 	#syncCache(): void {
 		if (!this.profile) return;
-		const cachedMessages: ApiResponseMessage[] = this.messages
-			.filter((m) => m.status === "sent")
-			.map(({ status: _status, ...rest }) => {
-				void _status;
-				return rest;
-			});
 		this.#conversations.setCachedConversation({
 			conversationId: this.conversationId,
 			data: {
-				messages: cachedMessages,
+				messages: sentMessages(this.messages),
 				profile: this.profile,
 				pageKey: this.pageKey,
 				lastReadTimestamp: this.lastReadTimestamp,
@@ -539,7 +544,7 @@ export class ConversationState {
 		});
 	}
 
-	#updatePreview(message: OptimisticMessage | undefined) {
+	#updatePreview(message = previewedMessage(this.messages)) {
 		this.#conversations.updatePreview({
 			conversationId: this.conversationId,
 			preview: previewFromMessage(message),
@@ -548,18 +553,19 @@ export class ConversationState {
 	}
 
 	remove(messageId: string) {
-		const isLatest = this.messages.at(0)?.messageId === messageId;
+		const previewed =
+			previewedMessage(this.messages)?.messageId === messageId;
 
 		let revert = () => {};
 		const index = this.messages.findIndex((m) => m.messageId === messageId);
 		const removed = this.messages[index];
 		if (removed) {
 			this.messages.splice(index, 1);
-			if (isLatest) this.#updatePreview(this.messages.at(0));
+			if (previewed) this.#updatePreview();
 			this.#syncCache();
 			const revertDeleteMessage = () => {
 				this.messages.splice(index, 0, removed);
-				if (isLatest) this.#updatePreview(removed);
+				if (previewed) this.#updatePreview(removed);
 				this.#syncCache();
 			};
 

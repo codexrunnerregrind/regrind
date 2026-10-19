@@ -2,7 +2,6 @@
 	import ImageIcon from "phosphor-svelte/lib/ImageIcon";
 
 	import LockIcon from "$lib/components/shared/LockIcon.svelte";
-	import { hapticImpact } from "$lib/platform/haptics";
 	import { longPressHandlers } from "$lib/util/long-press";
 	import AlbumContextMenu from "./AlbumContextMenu.svelte";
 
@@ -35,21 +34,11 @@
 	} = $props();
 
 	let tileElement: HTMLElement | null = $state(null);
-	let contextMenuOpen:
-		| false
-		| { x: number; y: number; width: number; height: number } =
-		$state(false);
+	let contextMenuOpen = $state(false);
 
 	function openContextMenu() {
 		if (!tileElement || !onRemove) return;
-		const rect = tileElement.getBoundingClientRect();
-		hapticImpact("medium");
-		contextMenuOpen = {
-			x: rect.x,
-			y: rect.y,
-			width: rect.width,
-			height: rect.height,
-		};
+		contextMenuOpen = true;
 	}
 
 	const longPress = $derived(
@@ -137,9 +126,9 @@
 	{@render tileContent()}
 </button>
 
-{#if contextMenuOpen && onRemove}
+{#if contextMenuOpen && onRemove && tileElement}
 	<AlbumContextMenu
-		{contextMenuOpen}
+		anchor={tileElement}
 		{removeLabel}
 		{onRemove}
 		style=""

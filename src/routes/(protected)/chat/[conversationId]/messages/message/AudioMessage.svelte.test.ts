@@ -56,6 +56,7 @@ function audioMessage({
 		timestamp: 1_700_000_000_000,
 		reactions,
 		unsent: false,
+		dynamic: false,
 		body: {
 			mediaId,
 			mediaHash: null,

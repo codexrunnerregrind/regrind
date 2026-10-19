@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { SortAscendingIcon } from "phosphor-svelte";
+	import SortAscendingIcon from "phosphor-svelte/lib/SortAscendingIcon";
 
 	import { Button } from "$lib/components/ui/button";
 	import { defaultRightNowFilters } from "$lib/model/browse/grid/filters";

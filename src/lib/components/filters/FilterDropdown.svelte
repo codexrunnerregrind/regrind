@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { CaretRightIcon, XIcon } from "phosphor-svelte";
+	import CaretRightIcon from "phosphor-svelte/lib/CaretRightIcon";
+	import XIcon from "phosphor-svelte/lib/XIcon";
 	import { expoOut } from "svelte/easing";
 	import type { TransitionConfig } from "svelte/transition";
 
@@ -34,15 +35,12 @@
 	const uid = $props.id();
 
 	const hide = instantWhenReducedMotion(
-		(node: HTMLDivElement): TransitionConfig => {
-			const height = node.scrollHeight;
-			return {
-				duration: 400,
-				css: (t: number, u: number) =>
-					`height: calc(${t} * ${height}px); opacity: ${t}; margin-top: calc(${u} * -8px)`,
-				easing: expoOut,
-			};
-		},
+		(): TransitionConfig => ({
+			duration: 400,
+			css: (t: number) =>
+				`grid-template-rows: minmax(0, ${t}fr); opacity: ${t}`,
+			easing: expoOut,
+		}),
 	);
 </script>
 
@@ -88,11 +86,10 @@
 		{/if}
 	</div>
 	{#if expanded}
-		<div
-			class={cn("shrink-0 overflow-clip px-3 pb-3", contentClass)}
-			transition:hide
-		>
-			{@render children?.()}
+		<div class="grid shrink-0 grid-cols-1 overflow-clip" transition:hide>
+			<div class={cn("px-3 pb-3", contentClass)}>
+				{@render children?.()}
+			</div>
 		</div>
 	{/if}
 </div>

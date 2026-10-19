@@ -1,10 +1,8 @@
 <script lang="ts">
-	import {
-		BellSlashIcon,
-		ChatCircleDotsIcon,
-		HandTapIcon,
-		WarningCircleIcon,
-	} from "phosphor-svelte";
+	import BellSlashIcon from "phosphor-svelte/lib/BellSlashIcon";
+	import ChatCircleDotsIcon from "phosphor-svelte/lib/ChatCircleDotsIcon";
+	import HandTapIcon from "phosphor-svelte/lib/HandTapIcon";
+	import WarningCircleIcon from "phosphor-svelte/lib/WarningCircleIcon";
 	import { onMount } from "svelte";
 	import { toast } from "svelte-sonner";
 

@@ -1,20 +1,38 @@
 // @vitest-environment jsdom
 
+/* eslint max-lines: ["error", { "max": 850 }] -- Voice, sheets and replies share one composer. */
+
 import { cleanup, fireEvent, render } from "@testing-library/svelte";
-import { tick } from "svelte";
+import { flushSync, tick } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Drafts } from "$lib/chat/drafts.svelte";
 import { draftFromMessage } from "$lib/model/messaging/messages";
+import {
+	backGestureEventHandlers,
+	runBackGestureHandlers,
+} from "$lib/platform/back-gesture-event.svelte";
 import { MAX_DURATION_MS } from "$lib/platform/voice-recorder.svelte";
+import { ComposerSheetsState } from "./composer-sheets-state.svelte";
 
-const { conversations } = vi.hoisted(() => ({
+const { conversations, composerSheets, conversationState } = vi.hoisted(() => ({
 	conversations: { drafts: null as Drafts | null },
+	composerSheets: { current: null as ComposerSheetsState | null },
+	conversationState: { conversationId: "a:1" },
 }));
 
 vi.mock("$app/navigation", () => ({ onNavigate: vi.fn() }));
 vi.mock("$lib/chat/conversations-context.svelte", () => ({
 	getConversations: () => conversations,
+}));
+vi.mock("./send-media/send-media-offer.svelte", () => ({
+	getSendMediaOffer: () => ({ lend: () => {}, offer: async () => {} }),
+}));
+vi.mock("./composer-sheets-state.svelte", async (importOriginal) => ({
+	...(await importOriginal<
+		typeof import("./composer-sheets-state.svelte")
+	>()),
+	getComposerSheets: () => composerSheets.current,
 }));
 
 // The reply bar names whose message it quotes, which reaches for the open
@@ -22,6 +40,7 @@ vi.mock("$lib/chat/conversations-context.svelte", () => ({
 // jsdom run has no business providing.
 vi.mock("../conversation-state.svelte", () => ({
 	getConversationState: () => () => ({
+		...conversationState,
 		ourProfileId: 1,
 		profile: { name: "Sam" },
 	}),
@@ -77,6 +96,12 @@ const A = "a:1";
 const B = "b:2";
 
 let drafts: Drafts;
+let sheets: ComposerSheetsState;
+
+beforeEach(() => {
+	sheets = new ComposerSheetsState();
+	composerSheets.current = sheets;
+});
 
 function renderComposer({
 	conversationId = A,
@@ -294,6 +319,155 @@ describe("MessageComposer reply bar", () => {
 		await tick();
 
 		expect(document.activeElement).toBe(textarea);
+	});
+
+	it("leaves focus behind a sheet open over its conversation when rebuilt with a reply armed", async () => {
+		sheets.setOpen({ conversationId: A, sheet: "stickers", open: true });
+
+		const { textarea } = renderComposer({ replyTo: quoted() });
+		await tick();
+
+		expect(document.activeElement).not.toBe(textarea);
+		expect(document.activeElement).toBe(document.body);
+	});
+
+	it("still takes focus with a reply armed while only another conversation has a sheet open", async () => {
+		sheets.setOpen({ conversationId: B, sheet: "stickers", open: true });
+
+		const { textarea } = renderComposer({ replyTo: quoted() });
+		await tick();
+
+		expect(document.activeElement).toBe(textarea);
+	});
+
+	it("does not take focus when the sheet over an armed reply closes, only for the next reply", async () => {
+		sheets.setOpen({ conversationId: A, sheet: "attachments", open: true });
+		const { textarea, rerender } = renderComposer({ replyTo: quoted() });
+		await tick();
+
+		sheets.setOpen({
+			conversationId: A,
+			sheet: "attachments",
+			open: false,
+		});
+		flushSync();
+		expect(document.activeElement).not.toBe(textarea);
+
+		await rerender({ replyTo: quoted({ messageId: "msg-next" }) } as never);
+		expect(document.activeElement).toBe(textarea);
+	});
+
+	it("lets a sheet that opened before the reply was armed take Back first", () => {
+		const closeSheet = vi.fn(() => false);
+		backGestureEventHandlers.set(closeSheet, "overlay");
+		const onCancelReply = vi.fn();
+		renderComposer({ replyTo: quoted(), onCancelReply });
+
+		expect(runBackGestureHandlers()).toBe(true);
+		expect(closeSheet).toHaveBeenCalledOnce();
+		expect(onCancelReply).not.toHaveBeenCalled();
+
+		backGestureEventHandlers.delete(closeSheet);
+		expect(runBackGestureHandlers()).toBe(true);
+		expect(onCancelReply).toHaveBeenCalledOnce();
+	});
+});
+
+describe("MessageComposer sheet triggers", () => {
+	beforeEach(() => {
+		drafts = new Drafts();
+		conversations.drafts = drafts;
+	});
+
+	afterEach(cleanup);
+
+	it("reaches the GIFs and stickers button before the text field, as it sits on screen", () => {
+		const { textarea, getByRole } = renderComposer();
+		const stickers = getByRole("button", { name: "GIFs and stickers" });
+
+		expect(
+			stickers.compareDocumentPosition(textarea) &
+				Node.DOCUMENT_POSITION_FOLLOWING,
+		).toBeTruthy();
+	});
+
+	it("opens the GIFs and stickers sheet for its own conversation", async () => {
+		const { getByRole } = renderComposer();
+
+		await fireEvent.click(
+			getByRole("button", { name: "GIFs and stickers" }),
+		);
+
+		expect(sheets.isOpen({ conversationId: A, sheet: "stickers" })).toBe(
+			true,
+		);
+		expect(sheets.isOpen({ conversationId: A, sheet: "attachments" })).toBe(
+			false,
+		);
+		expect(sheets.isOpen({ conversationId: B, sheet: "stickers" })).toBe(
+			false,
+		);
+	});
+
+	it("opens the attachments sheet for its own conversation", async () => {
+		const { getByRole } = renderComposer();
+
+		await fireEvent.click(getByRole("button", { name: "Add attachment" }));
+
+		expect(sheets.isOpen({ conversationId: A, sheet: "attachments" })).toBe(
+			true,
+		);
+		expect(sheets.isOpen({ conversationId: A, sheet: "stickers" })).toBe(
+			false,
+		);
+	});
+
+	it("opens the sheet for the conversation it switched to", async () => {
+		const { getByRole, rerender } = renderComposer();
+
+		await rerender({ conversationId: B });
+		await fireEvent.click(
+			getByRole("button", { name: "GIFs and stickers" }),
+		);
+
+		expect(sheets.isOpen({ conversationId: B, sheet: "stickers" })).toBe(
+			true,
+		);
+		expect(sheets.isOpen({ conversationId: A, sheet: "stickers" })).toBe(
+			false,
+		);
+	});
+
+	it("focuses the trigger of the sheet the sheets ask for", () => {
+		const { getByRole } = renderComposer();
+
+		sheets.composer?.focusTrigger({ sheet: "attachments" });
+		expect(document.activeElement).toBe(
+			getByRole("button", { name: "Add attachment" }),
+		);
+
+		sheets.composer?.focusTrigger({ sheet: "stickers" });
+		expect(document.activeElement).toBe(
+			getByRole("button", { name: "GIFs and stickers" }),
+		);
+	});
+
+	it("lends its conversation and context to the sheets until it goes away", () => {
+		const onSend = vi.fn();
+		const { unmount } = renderComposer({ onSend });
+
+		expect(sheets.composer?.conversationState()).toMatchObject(
+			conversationState,
+		);
+		expect(sheets.composer?.context()).toMatchObject({
+			conversationId: A,
+			disabled: false,
+			sendMessages: onSend,
+		});
+
+		unmount();
+
+		expect(sheets.composer).toBeNull();
 	});
 });
 

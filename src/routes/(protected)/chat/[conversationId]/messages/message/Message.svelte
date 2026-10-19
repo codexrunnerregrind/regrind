@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { ArrowBendUpLeftIcon } from "phosphor-svelte";
-	import { tick, untrack } from "svelte";
+	import ArrowBendUpLeftIcon from "phosphor-svelte/lib/ArrowBendUpLeftIcon";
+	import { untrack } from "svelte";
 	import { expoOut } from "svelte/easing";
 	import { scale } from "svelte/transition";
 
@@ -14,6 +14,8 @@
 	import AudioMessage from "./AudioMessage.svelte";
 	import { setMessageContext } from "./context";
 	import ExpiringImageMessage from "./ExpiringImageMessage.svelte";
+	import GaymojiMessage from "./GaymojiMessage.svelte";
+	import GiphyMessage from "./GiphyMessage.svelte";
 	import ImageMessage from "./ImageMessage.svelte";
 	import LocationMessage from "./LocationMessage.svelte";
 	import MessageContextMenu from "./MessageContextMenu.svelte";
@@ -83,10 +85,7 @@
 		timestamp: message.timestamp,
 	}));
 
-	let contextMenuOpen:
-		| false
-		| { x: number; y: number; width: number; height: number } =
-		$state(false);
+	let contextMenuOpen = $state(false);
 	let messageElement: HTMLElement | null = $state(null);
 	const bubbleCenterY = $derived.by(() => {
 		const el = messageElement;
@@ -127,25 +126,31 @@
 		"quotes",
 	];
 
+	// A message still sending has nothing to offer yet.
+	const hasMenuActions = $derived(
+		message.type === "Text" ||
+			[
+				onReply,
+				onDelete,
+				onUnsend,
+				onUnshareAlbum,
+				onCopyError,
+				onReport,
+			].some((action) => action !== undefined),
+	);
+
+	$effect(() => {
+		if (!hasMenuActions) contextMenuOpen = false;
+	});
+
 	function onContextMenu() {
-		if (!messageElement) return;
-		const rect = messageElement.getBoundingClientRect();
+		if (!messageElement || !hasMenuActions) return;
 		const computed = getComputedStyle(messageElement);
 		inheritedStyles = INHERITED_PROPS.map(
 			(prop) => `${prop}: ${computed.getPropertyValue(prop)}`,
 		).join("; ");
-		contextMenuOpen = {
-			x: rect.x,
-			y: rect.y,
-			width: rect.width,
-			height: rect.height,
-		};
-		tick()
-			.then(() => contextMenu?.showModal())
-			.catch((error) => console.error(error));
+		contextMenuOpen = true;
 	}
-
-	let contextMenu: HTMLDialogElement | null = $state(null);
 
 	// iOS WebKit never fires `contextmenu` on a touch long-press, so the native
 	// oncontextmenu handler alone leaves the menu unreachable on iOS. These
@@ -263,6 +268,10 @@
 			<ProfilePhotoReplyMessage message={message.body} />
 		{:else if message.type === "VideoCall"}
 			<VideoCallMessage {message} />
+		{:else if message.type === "Gaymoji"}
+			<GaymojiMessage message={message.body} />
+		{:else if message.type === "Giphy"}
+			<GiphyMessage message={message.body} />
 		{:else if message.type === "Unsent"}
 			<UnsentMessage />
 		{:else}
@@ -360,16 +369,18 @@
 	{/if}
 </div>
 
-{#if contextMenuOpen}
+{#if contextMenuOpen && messageElement}
 	<MessageContextMenu
-		{contextMenuOpen}
+		anchor={messageElement}
 		{content}
 		{isOut}
 		selectable={message.type === "Text"}
 		onClose={() => (contextMenuOpen = false)}
 		style={inheritedStyles}
 		textContent={message.type === "Text" ? message.body.text : undefined}
-		reactionAvailable={message.reactions.length === 0 && !isOut}
+		reactionAvailable={message.reactions.length === 0 &&
+			!isOut &&
+			!message.unsent}
 		{onDelete}
 		{onUnsend}
 		{onUnshareAlbum}

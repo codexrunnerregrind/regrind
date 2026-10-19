@@ -1,5 +1,5 @@
 <script>
-	import { UserIcon } from "phosphor-svelte";
+	import UserIcon from "phosphor-svelte/lib/UserIcon";
 
 	import { Button } from "$lib/components/ui/button";
 	import * as Kbd from "$lib/components/ui/kbd";

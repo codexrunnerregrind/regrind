@@ -1,3 +1,5 @@
+import { cubicOut } from "svelte/easing";
+
 /**
  * Smoothly scrolls the active screen's scroll container back to the top.
  *
@@ -86,4 +88,24 @@ export function revealFieldUnderKeyboard(el: HTMLElement): void {
 	};
 	const timer = setTimeout(settle, 400);
 	viewport?.addEventListener("resize", settle);
+}
+
+export function glideScrollTop({
+	element,
+	durationMs,
+	onLanded,
+}: {
+	element: HTMLElement;
+	durationMs: number;
+	onLanded: () => void;
+}): () => void {
+	const from = element.scrollTop;
+	const start = performance.now();
+	let frame = requestAnimationFrame(function step(now) {
+		const progress = Math.min(1, Math.max(0, now - start) / durationMs);
+		element.scrollTop = from * (1 - cubicOut(progress));
+		if (progress < 1) frame = requestAnimationFrame(step);
+		else onLanded();
+	});
+	return () => cancelAnimationFrame(frame);
 }

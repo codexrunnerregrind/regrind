@@ -46,8 +46,9 @@ When the matching `translate*` flag is `"true"`, the field holds a key rather th
 - `CHAT_EXPIRING_IMAGE_NOTIFICATION_BODY` — Sent you an expiring image
 - `CHAT_ALBUM_NOTIFICATION_BODY` — Shared their album
 - `CHAT_ALBUM_CONTENT_REACTION_NOTIFICATION_BODY` — Liked your album content
+- `CHAT_MESSAGE_REACTION_NOTIFICATION_BODY` — `<name>` tapped your message, with the name as the first `bodyArgs` item
 
-Other key families exist for A-List updates, Boost, album updates, Right Now, Discover and subscription offers.
+Other key families exist for A-List updates, Boost, album updates, Right Now, Discover, subscription offers, and online and activity alerts (`*_ONLINE_NOTIFICATION_*`, `UNREAD_CHATS_NOTIFICATION_*`, `VIEWED_PROFILE_NOTIFICATION_*`).
 
 A direct text message carries its text **in plaintext** with `translateBody` set to `"false"`; only media and system messages use a key.
 
@@ -60,11 +61,12 @@ A direct text message carries its text **in plaintext** with `translateBody` set
 - `grindr://fresh-albums?albumIds=<id,…>&albumProfileId=<profileId>` — album updates
 - `grindr://boost?action=<action>&source=<source>` — Boost results
 - `grindr://favorite-profile?profileID=<profileId>` — a favorite came online; the parameter is also spelled `profileId`
+- `grindr://growth-notification?type=<type>&profileID=<profileId>` — online and activity alerts; `type` is `favorite_online`, `tapped_online`, `recommended_online`, `multiple_favorites_online`, `unread_chats`, `viewed_profile` or `media_recipient_online`; `profileID` (also `profileId`) names the profile for the profile types
 
 Two actions are **cancel-only** and must never be rendered:
 
-- `grindr://clear?profileIds=<id,…>` — withdraw every notification whose `senderId` is listed, e.g. once the conversation was read elsewhere
-- `grindr://unsend?notificationId=<id>` — withdraw one notification, e.g. after the sender unsent the message
+- `grindr://clear?profileIds=<id,…>` — withdraw every notification whose `senderId` is listed
+- `grindr://unsend?notificationId=<id>` — withdraw one notification
 
 ## Channels
 
@@ -78,6 +80,7 @@ Two actions are **cancel-only** and must never be rendered:
 - `id_grindr_notifications_channel_promotions` — promotions
 - `id_grindr_notifications_channel_subscriptions` — subscriptions
 - `id_grindr_notifications_channel_video_chat` — video calls
+- `id_grindr_notifications_channel_ads` — ads
 - `event_calendar_channel_id` — event calendar
 
 ## Dedupe and grouping
@@ -109,19 +112,22 @@ The legacy shape dispatches on `notificationType` instead of an action:
 
 ## Polling instead of push
 
-A client without FCM can rebuild chat and tap notifications from two REST calls:
+A client without FCM can rebuild chat notifications over REST:
 
 - [Get conversations](/grindr-api/messaging/conversations#get-conversations), `POST /v4/inbox?page=<n>` — the next page exists while the response carries `nextPage`. Each `entries[].data` carries `conversationId`, `name`, `lastActivityTimestamp`, `unreadCount`, `muted`, `participants[].profileId` and a `preview` of the last message with `messageId`, `senderId`, `type` and `text`
-- [Get received taps](/grindr-api/interest/taps#get-received-taps), `GET /v2/taps/received` — each `profiles[]` entry carries `profileId`, `displayName` and `timestamp`
+
+Received taps can't be polled: every [Get received taps](/grindr-api/interest/taps#get-received-taps) call marks the caller online for 600 s, so Open Grind's poll leaves taps to FCM.
 
 `profileId` and `senderId` can arrive as a number or a numeric string. The peer of a conversation is the first participant that isn't the signed-in profile.
 
 `preview` holds only the last message, so several messages sent between two calls show up as one. When `preview.senderId` is the signed-in profile, the last message is the user's own and the unread messages are older than the preview; their content isn't in the response.
 
-`unreadCount` 0 is the only sign that a conversation was read elsewhere. The inbox has no unsend signal.
+`unreadCount` 0 is the only sign that a conversation was read elsewhere. The inbox has no unsend signal. Once a profile blocks another, the blocked profile gets `403` `urn:gr:err:unauthorized_action` for that conversation's messages and the conversation is cleared.
 
 Each case maps to a V2 payload:
 
 - An unread conversation — `action` `grindr://conversation?id=<conversationId>&senderId=<peer>`, `title` `name`, `body` `preview.text`. A preview without text maps to the `CHAT_*_NOTIFICATION_BODY` [text key](#text-keys) for its `preview.type`, e.g. `Image` to `CHAT_IMAGE_NOTIFICATION_BODY` and `Giphy` to `CHAT_GIF_NOTIFICATION_BODY`
+- A message from [Get messages in a conversation](/grindr-api/messaging/messages#get-messages-in-a-conversation) — the same payload with the message's `timestamp`, and `body` from `body.text`, `body.albumContentReply` or `body.photoContentReply`, else the text key for its `type`
 - A conversation read elsewhere — Grindr has no chat-scoped withdrawal: `grindr://clear?profileIds=<peer>` also withdraws that profile's tap notifications. Open Grind's poll emits its own `grindr://clear?conversationId=<conversationId>` instead, which the official client does not understand
-- A received tap — `action` `grindr://taps-inbox`, `title` `displayName`, `body` `TAP_NOTIFICATION_BODY`
+- A shown message that [Refresh messages](/grindr-api/messaging/conversations#refresh-messages) returns with `unsent: true` or no longer returns — `action` `grindr://unsend?notificationId=<id>`
+- A shown conversation after a block — the same request answers `403` `urn:gr:err:unauthorized_action`, and the poll emits `grindr://clear?conversationId=<conversationId>`. For notifications without a resolved message, checked with [Get messages in a conversation](/grindr-api/messaging/messages#get-messages-in-a-conversation).

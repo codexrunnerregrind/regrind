@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
-	import { DotsThreeIcon, ImageIcon, ProhibitIcon } from "phosphor-svelte";
+	import DotsThreeIcon from "phosphor-svelte/lib/DotsThreeIcon";
+	import ImageIcon from "phosphor-svelte/lib/ImageIcon";
+	import ProhibitIcon from "phosphor-svelte/lib/ProhibitIcon";
 	import { toast } from "svelte-sonner";
 
 	import { showErrorToast } from "$lib/api/error-toast";

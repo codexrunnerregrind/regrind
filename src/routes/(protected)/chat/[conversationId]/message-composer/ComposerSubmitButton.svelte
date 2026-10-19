@@ -1,5 +1,5 @@
 <script>
-	import { PaperPlaneRightIcon } from "phosphor-svelte";
+	import PaperPlaneRightIcon from "phosphor-svelte/lib/PaperPlaneRightIcon";
 
 	import { softKeyboardVisibility } from "$lib/platform/android-native-bridge";
 	import { keepKeyboard } from "./keep-keyboard";

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { PlusIcon, XIcon } from "phosphor-svelte";
+	import PlusIcon from "phosphor-svelte/lib/PlusIcon";
+	import XIcon from "phosphor-svelte/lib/XIcon";
 
 	import { savedPhrases } from "$lib/chat/saved-phrases.svelte";
 	import { Button } from "$lib/components/ui/button";

@@ -4,12 +4,102 @@ const COMPOSITING_OFF_VARS: [&str; 2] = [
 	"WEBKIT_DISABLE_DMABUF_RENDERER",
 ];
 
+#[cfg(any(target_os = "linux", test))]
+const ENVIRONMENT_DEFAULTS: [(&str, &str); 2] = [
+	// GTK 3 crashes on NVIDIA under Wayland without it:
+	// https://gitlab.gnome.org/GNOME/gtk/-/issues/8056
+	("__NV_DISABLE_EXPLICIT_SYNC", "1"),
+	// WebKitGTK 2.54's Skia compositor repaints stacked backdrop blurs 2^n
+	// times: https://bugs.webkit.org/show_bug.cgi?id=327701
+	("WEBKIT_USE_SKIA_FOR_COMPOSITION", "0"),
+];
+
+#[cfg(any(target_os = "linux", test))]
+fn defaults_to_apply(
+	is_set: impl Fn(&str) -> bool,
+) -> impl Iterator<Item = (&'static str, &'static str)> {
+	ENVIRONMENT_DEFAULTS
+		.into_iter()
+		.filter(move |(name, _)| !is_set(name))
+}
+
+#[cfg(target_os = "linux")]
+const MEDIA_PROTOCOLS_VAR: &str = "WEBKIT_GST_ALLOWED_URI_PROTOCOLS";
+
+#[cfg(any(target_os = "linux", test))]
+fn with_media_scheme(allowed: Option<&str>) -> Option<String> {
+	let scheme = crate::media::SCHEME;
+	match allowed.map(str::trim).filter(|list| !list.is_empty()) {
+		None => Some(scheme.to_owned()),
+		Some(list) if list.split(',').any(|entry| entry.trim() == scheme) => {
+			None
+		}
+		Some(list) => Some(format!("{list},{scheme}")),
+	}
+}
+
+#[cfg(target_os = "linux")]
+pub fn apply_environment_defaults() {
+	for (name, value) in
+		defaults_to_apply(|name| std::env::var_os(name).is_some())
+	{
+		std::env::set_var(name, value);
+	}
+	let allowed = std::env::var(MEDIA_PROTOCOLS_VAR).ok();
+	if let Some(protocols) = with_media_scheme(allowed.as_deref()) {
+		std::env::set_var(MEDIA_PROTOCOLS_VAR, protocols);
+	}
+}
+
+#[cfg(test)]
+mod environment_default_tests {
+	#[test]
+	fn applies_every_default_when_nothing_is_set() {
+		assert_eq!(
+			super::defaults_to_apply(|_| false).collect::<Vec<_>>(),
+			super::ENVIRONMENT_DEFAULTS
+		);
+	}
+
+	#[test]
+	fn keeps_a_value_the_user_already_set() {
+		assert_eq!(super::defaults_to_apply(|_| true).count(), 0);
+	}
+
+	#[test]
+	fn allows_the_media_scheme_when_nothing_else_is_allowed() {
+		assert_eq!(super::with_media_scheme(None).as_deref(), Some("ogmedia"));
+		assert_eq!(
+			super::with_media_scheme(Some(" ")).as_deref(),
+			Some("ogmedia")
+		);
+	}
+
+	#[test]
+	fn appends_the_media_scheme_to_protocols_the_user_allowed() {
+		assert_eq!(
+			super::with_media_scheme(Some("rtsp")).as_deref(),
+			Some("rtsp,ogmedia")
+		);
+	}
+
+	#[test]
+	fn leaves_a_list_that_already_allows_the_media_scheme() {
+		assert_eq!(super::with_media_scheme(Some("rtsp, ogmedia")), None);
+	}
+}
+
 #[cfg(target_os = "linux")]
 fn disabled_by_environment(read: impl Fn(&str) -> Option<String>) -> bool {
 	COMPOSITING_OFF_VARS
 		.iter()
 		.filter_map(|name| read(name))
 		.any(|value| !matches!(value.as_str(), "" | "0"))
+}
+
+#[tauri::command]
+pub async fn webview_engine() -> Option<String> {
+	tauri::webview_version().ok()
 }
 
 #[tauri::command]

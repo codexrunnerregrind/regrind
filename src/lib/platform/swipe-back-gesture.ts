@@ -1,4 +1,4 @@
-import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+import { runBackGestureHandlers } from "$lib/platform/back-gesture-event.svelte";
 import {
 	showSwipeBackGhost,
 	type SwipeBackGhost,
@@ -45,14 +45,6 @@ let settleAfterNavigation: (() => void) | null = null;
 /** Lets a committed swipe drop its snapshot once the page beneath rendered. */
 export function settleSwipeBack(): void {
 	settleAfterNavigation?.();
-}
-
-function runBackGestureHandlers(): boolean {
-	const handlers = [...backGestureEventHandlers];
-	for (let index = handlers.length - 1; index >= 0; index--) {
-		if (handlers[index]?.() !== true) return true;
-	}
-	return false;
 }
 
 function navigateBack() {

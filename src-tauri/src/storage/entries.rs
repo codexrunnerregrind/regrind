@@ -18,9 +18,8 @@ fn keyed(base: &str, profile_id: ProfileId) -> String {
 	format!("{base}:{profile_id}")
 }
 
-fn entry(key: &str) -> Result<keyring_core::Entry, AppError> {
-	keyring_core::Entry::new("open-grind", key)
-		.map_err(|e| AppError::Auth(e.to_string()))
+fn entry(key: &str) -> Result<super::Entry, AppError> {
+	super::entry(key)
 }
 
 /// Reads a msgpack secret. `Ok(None)` means there is nothing stored; a stored

@@ -1,5 +1,8 @@
 import { previewFromMessage } from "$lib/model/messaging/message-preview";
-import { type ApiResponseMessage } from "$lib/model/messaging/messages";
+import {
+	type ApiResponseMessage,
+	outboundMessageSchema,
+} from "$lib/model/messaging/messages";
 import type { AlbumExpirationType } from "$lib/model/messaging/albums";
 import type { Conversation } from "$lib/model/messaging/conversations";
 import {
@@ -20,6 +23,7 @@ import {
 } from "./conversation-seeds";
 import { demoDrawerMedia } from "./drawer";
 import { demoFavoriteOf } from "./favorites";
+import { demoGiphyMessageBody } from "./giphy";
 import { picsum } from "./picsum";
 import { lastOnlineOf, onlineUntilOf, photosOf, profileSeed } from "./profiles";
 import { demoRightNowOf } from "./right-now";
@@ -102,6 +106,7 @@ function buildMessage({
 					timestamp: timestamp - MINUTE,
 					reactions: [],
 					unsent: false,
+					dynamic: false,
 				};
 	const base = {
 		messageId,
@@ -110,6 +115,7 @@ function buildMessage({
 		timestamp,
 		reactions,
 		replyToMessage,
+		dynamic: false,
 	};
 	switch (message.kind) {
 		case "image":
@@ -257,6 +263,13 @@ function buildMessage({
 				unsent: false,
 			};
 		}
+		case "gif":
+			return {
+				type: "Giphy",
+				body: demoGiphyMessageBody(`message-${conv.withId}-${index}`),
+				...base,
+				unsent: false,
+			};
 		case "unsent":
 			return { type: "Unsent", body: null, ...base, unsent: true };
 		default:
@@ -429,6 +442,24 @@ export function demoSingleMessage({
 	return { message: message ?? null };
 }
 
+export function demoMessagesById({
+	conversationId,
+	messageIds,
+}: {
+	conversationId: string;
+	messageIds: string[];
+}) {
+	const conv = demoConversationById.get(conversationId);
+	const wanted = new Set(messageIds);
+	return {
+		messages: conv
+			? threadMessages(conv).filter((entry) =>
+					wanted.has(entry.messageId),
+				)
+			: [],
+	};
+}
+
 let demoSentCounter = 0;
 
 // Echoed-back sent messages, so a just-sent expiring image can still be
@@ -452,6 +483,7 @@ export function demoSentMessage(body: unknown): ApiResponseMessage {
 		timestamp,
 		unsent: false,
 		reactions: [],
+		dynamic: false,
 		replyToMessage:
 			sent.replyToMessageId === undefined
 				? null
@@ -561,6 +593,16 @@ export function demoSentMessage(body: unknown): ApiResponseMessage {
 			},
 			...overlay,
 		});
+	}
+	const sticker = outboundMessageSchema.safeParse({
+		type: sent.type,
+		body: sent.body,
+	});
+	if (
+		sticker.success &&
+		(sticker.data.type === "Giphy" || sticker.data.type === "Gaymoji")
+	) {
+		return remember({ ...sticker.data, ...overlay });
 	}
 	return {
 		type: "Text",

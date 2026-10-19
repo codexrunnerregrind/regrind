@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { ClockIcon, RulerIcon } from "phosphor-svelte";
+	import ClockIcon from "phosphor-svelte/lib/ClockIcon";
+	import RulerIcon from "phosphor-svelte/lib/RulerIcon";
 	import type z from "zod";
 
 	import RadioGroup from "$lib/components/ui/radio/RadioGroup.svelte";

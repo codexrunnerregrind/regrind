@@ -1,15 +1,17 @@
 <script lang="ts">
-	import {
-		FacebookLogoIcon,
-		InstagramLogoIcon,
-		XLogoIcon,
-	} from "phosphor-svelte";
+	import FacebookLogoIcon from "phosphor-svelte/lib/FacebookLogoIcon";
+	import InstagramLogoIcon from "phosphor-svelte/lib/InstagramLogoIcon";
+	import XLogoIcon from "phosphor-svelte/lib/XLogoIcon";
 	import { untrack } from "svelte";
 	import { toast } from "svelte-sonner";
 	import { expoOut } from "svelte/easing";
 	import { fly } from "svelte/transition";
 
 	import { showErrorToast } from "$lib/api/error-toast";
+	import {
+		isTagKeyOfferedNow,
+		isTribeOfferedNow,
+	} from "$lib/api/feature-flags-state.svelte";
 	import { ProfileModerationError } from "$lib/api/users/profile-moderation";
 	import {
 		deleteProfilePhotos,
@@ -32,13 +34,14 @@
 	import ComboField from "./fields/ComboField.svelte";
 	import DateField from "./fields/DateField.svelte";
 	import Field from "./fields/Field.svelte";
+	import HeightField from "./fields/HeightField.svelte";
 	import MultilineField from "./fields/MultilineField.svelte";
 	import MultiSelectField from "./fields/MultiSelectField.svelte";
-	import NumberField from "./fields/NumberField.svelte";
 	import SelectField from "./fields/SelectField.svelte";
 	import SocialField from "./fields/SocialField.svelte";
 	import SwitchRow from "./fields/SwitchRow.svelte";
 	import TextField from "./fields/TextField.svelte";
+	import WeightField from "./fields/WeightField.svelte";
 	import {
 		ageRange,
 		bodyTypeOptions,
@@ -48,7 +51,6 @@
 		ethnicityOptions,
 		fieldLimits,
 		healthOptions,
-		heightCmRange,
 		hivOptions,
 		lookingForOptions,
 		maxProfileGenders,
@@ -60,7 +62,6 @@
 		relationshipOptions,
 		tribeOptions,
 		vaccineOptions,
-		weightKgRange,
 	} from "./options";
 	import ProfilePicturesUpload from "./ProfilePicturesUpload.svelte";
 
@@ -86,7 +87,7 @@
 	const { options: pronounOptions, resolveLabel: resolvePronounLabel } =
 		untrack(() => buildPronounOptions(pronouns));
 	const { options: tagOptions, resolveLabel: resolveTagLabel } = untrack(() =>
-		buildTagOptions(tags),
+		buildTagOptions({ tags, isOffered: isTagKeyOfferedNow }),
 	);
 
 	const initial = untrack(() => $state.snapshot(profile));
@@ -94,7 +95,7 @@
 	let form = $state({
 		displayName: initial.displayName ?? "",
 		aboutMe: initial.aboutMe ?? "",
-		profileTags: [...initial.profileTags],
+		profileTags: initial.profileTags.filter(isTagKeyOfferedNow),
 		genderIds: [...(initial.genders ?? [])],
 		pronounIds: [...(initial.pronouns ?? [])],
 		age: initial.age ?? ageRange.min,
@@ -110,7 +111,7 @@
 		ethnicity: initial.ethnicity,
 		relationshipStatus: initial.relationshipStatus,
 		showTribes: initial.showTribes,
-		grindrTribes: [...initial.grindrTribes],
+		grindrTribes: initial.grindrTribes.filter(isTribeOfferedNow),
 		tribesImInto: [...(initial.tribesImInto ?? [])],
 		lookingFor: [...initial.lookingFor],
 		meetAt: [...(initial.meetAt ?? [])],
@@ -226,7 +227,11 @@
 	}
 </script>
 
-<form class="flex flex-col" onsubmit={(event) => event.preventDefault()}>
+<form
+	data-slot="profile-form"
+	class="flex flex-col"
+	onsubmit={(event) => event.preventDefault()}
+>
 	<fieldset disabled={saving} class="contents">
 		<SectionHeader>Photos</SectionHeader>
 		<SettingsGroup divider="none">
@@ -304,23 +309,8 @@
 				label="Show my position"
 				bind:checked={form.showPosition}
 			/>
-			<NumberField
-				label="Height"
-				bind:value={form.height}
-				min={heightCmRange.min}
-				max={heightCmRange.max}
-				unit="cm"
-				placeholder="—"
-			/>
-			<NumberField
-				label="Weight"
-				bind:value={form.weightKg}
-				min={weightKgRange.min}
-				max={weightKgRange.max}
-				step={0.5}
-				unit="kg"
-				placeholder="—"
-			/>
+			<HeightField bind:value={form.height} />
+			<WeightField bind:value={form.weightKg} />
 			<SelectField
 				label="Body type"
 				bind:value={form.bodyType}

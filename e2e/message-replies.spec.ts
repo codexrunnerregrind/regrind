@@ -2,16 +2,15 @@ import { expect, type Locator, type Page, test } from "@playwright/test";
 
 import {
 	captureInvokes,
+	INCOMING_ROW,
 	installTauriShim,
+	MESSAGE_ROW,
 	trackpadSwipe,
 	TrustedTouch,
 } from "./support/app";
 
 const CONVERSATION = "/chat/100001:123456000";
 const WITH_AN_UNSENT_MESSAGE = "/chat/100009:123456000";
-const MESSAGE_ROW = '[role="button"][tabindex="0"]';
-// only an incoming row pads its end, and only incoming rows swipe rightward
-const INCOMING_ROW = `${MESSAGE_ROW}.pe-3`;
 const SCROLLER = '[data-slot="messages-scroller"]';
 const QUOTE = '[data-slot="message-quote"]';
 const REPLIABLE = "consectetur adipiscing elit";
@@ -186,6 +185,47 @@ test("a touch drag past the trigger replies on lift", async ({ page }) => {
 	await expect(page.getByLabel("Cancel reply")).toBeVisible();
 });
 
+test("a touch platform's rows neither scroll sideways nor widen the conversation, and still reply to a swipe", async ({
+	page,
+}) => {
+	await openConversation(page, { platform: "android" });
+
+	const reached = await railOf(page.locator(MESSAGE_ROW)).evaluateAll(
+		(rails) =>
+			rails.map((rail) => {
+				rail.scrollLeft = rail.scrollWidth;
+				return rail.scrollLeft;
+			}),
+	);
+	expect(reached.length).toBeGreaterThan(0);
+	expect(new Set(reached)).toEqual(new Set([0]));
+
+	const row = page.locator(INCOMING_ROW).last();
+	await row.scrollIntoViewIfNeeded();
+	const rest = (await row.boundingBox())!;
+	const y = rest.y + rest.height / 2;
+	const touch = await TrustedTouch.attach(page);
+	await touch.drag(
+		page,
+		{ x: rest.x + 60, y },
+		{ x: rest.x + 200, y },
+		{ steps: 14, holdMs: 16, release: false },
+	);
+
+	expect((await row.boundingBox())!.x).toBeGreaterThan(rest.x + 64);
+	expect(
+		await page
+			.locator(SCROLLER)
+			.evaluate(
+				(scroller) => scroller.scrollWidth - scroller.clientWidth,
+			),
+	).toBe(0);
+
+	await touch.end();
+
+	await expect(page.getByLabel("Cancel reply")).toBeVisible();
+});
+
 test("a touch drag taps the actuator as it passes the trigger, once", async ({
 	page,
 }) => {
@@ -195,7 +235,7 @@ test("a touch drag taps the actuator as it passes the trigger, once", async ({
 	await swipeIncoming(page, 140);
 
 	await expect(page.getByLabel("Cancel reply")).toBeVisible();
-	expect(await taps()).toHaveLength(1);
+	expect(await taps()).toEqual([{ kind: "threshold" }]);
 });
 
 test("a touch drag that stops short of the trigger taps nothing", async ({

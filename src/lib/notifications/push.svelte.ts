@@ -4,6 +4,7 @@ import z from "zod";
 import { fetchRest } from "$lib/api/transport";
 import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
 import { isAndroidPlatform } from "$lib/platform/os";
+import { whileOpeningPushDeeplink } from "$lib/push/opening-deeplink";
 
 // Android-only Firebase Cloud Messaging registration. The native side (see
 // org.regrind.push) registers with Grindr's FCM sender and hands us the device
@@ -133,7 +134,7 @@ class PushService {
 		this.#onOpen = (event: Event) => {
 			const route = (event as CustomEvent<{ route?: string }>).detail
 				?.route;
-			if (route) void goto(route);
+			if (route) void whileOpeningPushDeeplink(() => goto(route));
 		};
 		window.addEventListener("regrind:push-open", this.#onOpen);
 
@@ -151,7 +152,7 @@ class PushService {
 		const opened = window.__REGRIND_PUSH_ROUTE;
 		if (opened) {
 			window.__REGRIND_PUSH_ROUTE = undefined;
-			void goto(opened);
+			void whileOpeningPushDeeplink(() => goto(opened));
 		}
 
 		// A token captured before this profile signed in is stashed on the

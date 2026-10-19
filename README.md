@@ -97,4 +97,4 @@ All the real work belongs to the [original project](https://git.opengrind.org/op
 
 ## License
 
-[MIT](./LICENSE), same as the original project.
+[MIT](./LICENSE), same as the original project. Logo, icons and other artwork: [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/), see [ARTWORK.md](./ARTWORK.md).

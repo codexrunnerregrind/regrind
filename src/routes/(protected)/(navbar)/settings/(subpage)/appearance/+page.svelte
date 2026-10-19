@@ -1,15 +1,13 @@
 <script lang="ts">
-	import {
-		AppWindowIcon,
-		CheckIcon,
-		DesktopIcon,
-		GridFourIcon,
-		ImageIcon,
-		MoonIcon,
-		PaperPlaneRightIcon,
-		SunIcon,
-		UsersThreeIcon,
-	} from "phosphor-svelte";
+	import AppWindowIcon from "phosphor-svelte/lib/AppWindowIcon";
+	import CheckIcon from "phosphor-svelte/lib/CheckIcon";
+	import DesktopIcon from "phosphor-svelte/lib/DesktopIcon";
+	import GridFourIcon from "phosphor-svelte/lib/GridFourIcon";
+	import ImageIcon from "phosphor-svelte/lib/ImageIcon";
+	import MoonIcon from "phosphor-svelte/lib/MoonIcon";
+	import PaperPlaneRightIcon from "phosphor-svelte/lib/PaperPlaneRightIcon";
+	import SunIcon from "phosphor-svelte/lib/SunIcon";
+	import UsersThreeIcon from "phosphor-svelte/lib/UsersThreeIcon";
 	import { onMount } from "svelte";
 
 	import {

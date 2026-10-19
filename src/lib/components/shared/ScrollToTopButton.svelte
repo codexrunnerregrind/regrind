@@ -1,7 +1,8 @@
 <script lang="ts">
 	import CaretUpIcon from "phosphor-svelte/lib/CaretUpIcon";
+	import { prefersReducedMotion } from "svelte/motion";
 
-	import { preferredScrollBehavior } from "$lib/util/reduced-motion";
+	import { glideScrollTop } from "$lib/util/scroll";
 	import { cn } from "$lib/util/utils";
 	import ScrollJumpButton from "./ScrollJumpButton.svelte";
 
@@ -15,16 +16,15 @@
 
 	const TOP_SLOP_PX = 16;
 	const DIRECTION_SLOP_PX = 4;
-	const GLIDE_TIMEOUT_MS = 1500;
+	const GLIDE_MS = 400;
 
 	let visible = $state(false);
 	let lastTop = 0;
-	let gliding = false;
-	let glideTimer: ReturnType<typeof setTimeout> | undefined;
+	let cancelGlide: (() => void) | null = null;
 
 	function releaseGlide() {
-		gliding = false;
-		clearTimeout(glideTimer);
+		cancelGlide?.();
+		cancelGlide = null;
 	}
 
 	function atTop(el: HTMLElement) {
@@ -39,14 +39,7 @@
 			const top = el.scrollTop;
 			const delta = top - lastTop;
 
-			if (gliding) {
-				if (top <= 1) {
-					releaseGlide();
-					visible = false;
-					lastTop = top;
-				}
-				return;
-			}
+			if (cancelGlide !== null) return;
 
 			if (atTop(el)) visible = false;
 			else if (delta <= -DIRECTION_SLOP_PX) visible = true;
@@ -57,7 +50,7 @@
 		};
 
 		const onScrollEnd = () => {
-			releaseGlide();
+			if (cancelGlide !== null) return;
 			if (atTop(el)) visible = false;
 			lastTop = el.scrollTop;
 		};
@@ -77,19 +70,29 @@
 		};
 	});
 
+	function landed(el: HTMLElement) {
+		cancelGlide = null;
+		visible = false;
+		lastTop = el.scrollTop;
+	}
+
 	function scrollToTop() {
 		const el = container;
 		if (!el) return;
+		releaseGlide();
 		visible = false;
-		gliding = true;
-		clearTimeout(glideTimer);
-		glideTimer = setTimeout(() => {
-			releaseGlide();
-			lastTop = el.scrollTop;
-		}, GLIDE_TIMEOUT_MS);
+		if (prefersReducedMotion.current) {
+			el.scrollTop = 0;
+			lastTop = 0;
+			return;
+		}
 		el.scrollTop = Math.min(el.scrollTop, el.clientHeight);
 		lastTop = el.scrollTop;
-		el.scroll({ top: 0, behavior: preferredScrollBehavior() });
+		cancelGlide = glideScrollTop({
+			element: el,
+			durationMs: GLIDE_MS,
+			onLanded: () => landed(el),
+		});
 	}
 </script>
 

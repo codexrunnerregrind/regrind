@@ -42,7 +42,7 @@ This method does not require installing Nix to your machine, but requires more d
 > [!IMPORTANT]
 > **The image is pinned to `linux/amd64`.** The Android NDK ships only an x86_64 host cross-compiler — also the canonical reproducible target — so the build always runs in an `x86_64-linux` environment.
 >
-> **Apple Silicon:** On Apple Silicon (arm64) macOS it runs under Docker Desktop's amd64 emulation. The universal (4-ABI) release build OOMs at Docker Desktop's default ~8 GB, so raise the memory limit to **at least 12 GB** (Settings &rarr; Resources &rarr; Memory) before building. Keep in mind, the Docker build on macOS will take about 3-4 hours on M1 Pro. Start with building a single ABI with `-e OPEN_GRIND_ANDROID_ABI=aarch64` to test if your Mac has enough resources. Apple Silicon Docker build reproduces the canonical release, a native `nix run .#build-android` on `aarch64-darwin` does not (different host toolchain).
+> **Apple Silicon:** the build runs under Docker Desktop's amd64 emulation and takes about 3-4 hours on an M1 Pro. The 4-ABI build OOMs at Docker Desktop's default ~8 GB, so raise the memory limit to **at least 12 GB** (Settings &rarr; Resources &rarr; Memory). To check your Mac first, build one ABI with `-e OPEN_GRIND_ANDROID_ABI=aarch64`.
 
 Prerequisites:
 
@@ -53,7 +53,7 @@ Prerequisites:
 1. Install Docker on your host system
 2. Build the thin image: `docker compose build`
 3. Build the apk: `docker compose run --rm build`
-4. Retrieve the apk from `src-tauri/gen/android/app/build/outputs/apk/universal/release/regrind-v<version>-android-unsigned.apk` on your host system
+4. Retrieve `regrind-v<version>-android[-<abi>]-unsigned.apk` from `src-tauri/gen/android/app/build/outputs/apk/*/release/` on your host system
 5. Follow [Sign Android build](#sign-android-build) steps to make the build installable on your Android device
 
 To clean-up Docker after that:
@@ -65,20 +65,20 @@ docker image rm regrind-build   # removes the thin image
 
 ### Build apk with Nix only (faster)
 
-Open Grind ships a [Nix flake](./flake.nix) that pins the entire Android toolchain — Rust, the JDK, the Android SDK, the NDK, Gradle, Bun, and Node.js — so any contributor on Linux or macOS can produce an identical build in an identical environment.
+Open Grind ships a [Nix flake](./flake.nix) that pins the entire Android toolchain — Rust, the JDK, the Android SDK, the NDK, Gradle, Bun, and Node.js — so a native build on x86_64 Linux reproduces the release. On Apple Silicon, only the [Docker build](#build-apk-with-nix-in-docker-easiest) does.
 
 - [Nix](https://nixos.org/download) >= 2.18
 - ~30 GB of disk space
 
 1. Install and configure Nix on your host system
 2. Run `nix run .#build-android`
-3. Retrieve the apk: `src-tauri/gen/android/app/build/outputs/apk/universal/release/regrind-v<version>-android-unsigned.apk` on your host system
+3. Retrieve `regrind-v<version>-android[-<abi>]-unsigned.apk` from `src-tauri/gen/android/app/build/outputs/apk/*/release/` on your host system
 
 > [!NOTE]
 > First time you run `nix develop` or `nix run` in Open Grind's repository, Nix will download and setup about 3 GB environment, which might take some time, depending on your internet connection speed.
 
 > [!NOTE]
-> If you use [direnv](https://direnv.net/), the bundled [.envrc](./.envrc) activates the dev shell automatically when you `cd` into the repository.
+> If you use [direnv](https://direnv.net/), the bundled [.envrc](./.envrc) activates the dev shell automatically when you `cd` into the repository. `nix run .#build-*` started from a dev shell drops its environment and keeps only `HOME`, `USER`, `LOGNAME`, `TERM`, locale, proxy and CA certificate variables, `CARGO_HOME`, `XWIN_CACHE_DIR`, `NODE_OPTIONS`, `OPEN_GRIND_*`, `MACOS_*` and the `PATH` entries outside the Nix store.
 
 ### Build apk manually (advanced)
 
@@ -156,16 +156,31 @@ refuses it. `bun scripts/minisign.ts keygen` creates the release key once, at
 - [Verify minisign signature](#verify-minisign-signature) to prove the APK was built by Open Grind developers
 - [Reproduce the release](./REPRODUCIBILITY.md#android) to prove the APK was built from the open source code
 
+### Verify Google Play install
+
+Google signs the APKs it delivers with its own key, so their signature says nothing about who built the code. The code transparency file inside them does: it lists the hash of every DEX file and native library, signed with a key only Open Grind developers hold.
+
+1. Connect the device with the app installed from Google Play and check it with [bundletool](https://github.com/google/bundletool/releases):
+
+```bash
+bundletool check-transparency --mode=connected_device --package-name=org.regrind
+```
+
+2. Compare the printed fingerprint of the code transparency key certificate with the one in [KEYS.md](./KEYS.md#platforms-signing).
+
+Code transparency covers code only. Resources, assets and the manifest are not part of it.
+
 ### Publish to Google Play
 
 The Play bundle removes the in-app updater, so it is built separately from the APK. Every release runs `play.yml`, which builds the bundle on several providers and publishes the verified `regrind-unsigned-play` artifact.
 
 1. Download the artifact from the `play` workflow run.
 
-2. Sign it with the Play upload key. The properties file has the same fields as [contrib/keystore.properties.example](./contrib/keystore.properties.example) and points at an RSA keystore:
+2. Add [code transparency](https://developer.android.com/guide/app-bundle/code-transparency) and sign it with the Play upload key. Each properties file has the same fields as [contrib/keystore.properties.example](./contrib/keystore.properties.example) and points at its own RSA keystore; the code transparency key needs at least 3072 bits. Signing fails unless the code transparency key is the one [KEYS.md](./KEYS.md) publishes:
 
 ```bash
 OPEN_GRIND_PLAY_KEYSTORE_PROPERTIES=~/.config/regrind/play-upload.properties \
+OPEN_GRIND_PLAY_TRANSPARENCY_KEYSTORE_PROPERTIES=~/.config/regrind/play-transparency.properties \
   nix develop .#play --command bun ci/sign.ts /path/to/regrind-v<version>-android-unsigned.aab
 ```
 
@@ -411,7 +426,9 @@ podman build -t regrind-linux ci/linux
 podman run --rm -v "$PWD:/work" regrind-linux sh ci/linux/build.sh
 ```
 
-The result is `src-tauri/target/release/bundle/deb/regrind-v<version>-linux-<arch>.deb` and `src-tauri/target/release/bundle/appimage/regrind-v<version>-linux-<arch>.AppImage`.
+`bun run package:linux` runs both. Docker takes the same two commands with `docker` in place of `podman`.
+
+The result is `src-tauri/target/release/bundle/deb/regrind-v<version>-linux-<arch>.deb` and `src-tauri/target/release/bundle/appimage/regrind-v<version>-linux-<arch>.AppImage`. Each run empties both directories first, so they only ever hold the latest build.
 
 The script repacks what `tauri build` generated with `dpkg-deb` under `SOURCE_DATE_EPOCH`, because tauri-bundler writes clock mtimes and unsorted entries ([tauri#13612](https://github.com/tauri-apps/tauri/issues/13612)).
 
@@ -473,7 +490,7 @@ A macOS build needs a Mac. Nix pins the toolchain and remaps the build paths the
 nix run .#build-macos
 ```
 
-This builds a universal app, signs it, and writes the release zip to `src-tauri/target/release/artifacts/`. The signature is not reproducible without the key, so [reproducing a release](./REPRODUCIBILITY.md#macos) strips it from both sides. The build always enables the `keychain` feature, ad-hoc builds therefore cannot read back credentials an earlier build wrote. A release build refuses to run from anywhere but `/Applications` or `~/Applications`. Debug builds do not reproduce; the release profile is the default, `nix run .#build-macos -- --debug` to opt out.
+This builds a universal app, signs it ad-hoc unless `MACOS_SIGN_IDENTITY` is set, and writes the release zip to `src-tauri/target/release/artifacts/`. The ad-hoc zip [reproduces](./REPRODUCIBILITY.md#macos) byte for byte. The build always enables the `keychain` feature, ad-hoc builds therefore cannot read back credentials an earlier build wrote. A release build refuses to run from anywhere but `/Applications` or `~/Applications`. Debug builds do not reproduce; the release profile is the default, `nix run .#build-macos -- --debug` to opt out.
 
 ### Build for the App Store
 
@@ -490,7 +507,7 @@ The default build uses two private macOS APIs: WebKit's `_setUseSystemAppearance
 | `MACOS_SIGN_IDENTITY`  | `-`     | `-` is ad-hoc                                                  |
 | `MACOS_NOTARY_PROFILE` | unset   | `notarytool` keychain profile; when set, notarizes and staples |
 
-`src-tauri/entitlements.plist` is passed to `codesign` when it exists.
+`src-tauri/entitlements.plist` is passed to the signer when it exists. Ad-hoc builds are signed by the pinned `rcodesign`, Developer ID builds by macOS `codesign`.
 
 For distribution, store the notary credentials once, then build:
 

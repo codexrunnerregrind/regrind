@@ -73,6 +73,31 @@ describe("VideoPlayer", () => {
 		expect(player().controls()).not.toBeNull();
 	});
 
+	it("shows the first frame when there is no cover", () => {
+		const { video } = player();
+		expect(video.hasAttribute("poster")).toBe(false);
+		expect(video.getAttribute("src")).toBe(`${SRC}#t=0.001`);
+	});
+
+	it("keeps the cover as the poster and the source as given", () => {
+		const { container } = render(VideoPlayer, {
+			props: { src: SRC, poster: "ogmedia://media/a.cover" },
+		});
+		const video = container.querySelector("video");
+		expect(video?.getAttribute("poster")).toBe("ogmedia://media/a.cover");
+		expect(video?.getAttribute("src")).toBe(SRC);
+	});
+
+	it("plays once unless asked to loop", () => {
+		expect(player().video.loop).toBe(false);
+		cleanup();
+
+		const { container } = render(VideoPlayer, {
+			props: { src: SRC, poster: null, loop: true },
+		});
+		expect(container.querySelector("video")?.loop).toBe(true);
+	});
+
 	it("keeps the controls up while a mouse moves onto them", async () => {
 		const { video, controls } = player();
 
@@ -225,5 +250,41 @@ describe("VideoPlayer", () => {
 
 		expect(ready).toBe(1);
 		expect(failures).toHaveLength(0);
+	});
+
+	it("releases its source once it is gone", () => {
+		const { video } = player();
+		const sourcesAtLoad: (string | null)[] = [];
+		video.load = () => {
+			sourcesAtLoad.push(video.getAttribute("src"));
+		};
+
+		cleanup();
+
+		expect(sourcesAtLoad).toEqual([null]);
+	});
+
+	it("keeps one seek in flight and applies only the newest queued target", async () => {
+		const { container, video } = player();
+		let seeking = false;
+		Object.defineProperty(video, "seeking", { get: () => seeking });
+		Object.defineProperty(video, "duration", {
+			value: 60,
+			configurable: true,
+		});
+		await fireEvent(video, new Event("durationchange"));
+		const slider = container.querySelector<HTMLElement>('[role="slider"]')!;
+
+		await fireEvent.keyDown(slider, { key: "End" });
+		expect(video.currentTime).toBe(60);
+		seeking = true;
+		await fireEvent.keyDown(slider, { key: "Home" });
+		await fireEvent.keyDown(slider, { key: "ArrowRight" });
+		expect(video.currentTime).toBe(60);
+		expect(slider.getAttribute("aria-valuenow")).toBe("5");
+
+		seeking = false;
+		await fireEvent(video, new Event("seeked"));
+		expect(video.currentTime).toBe(5);
 	});
 });

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
-	import { PushPinIcon } from "phosphor-svelte";
-	import { tick } from "svelte";
+	import PushPinIcon from "phosphor-svelte/lib/PushPinIcon";
+	import { onDestroy, tick } from "svelte";
 
 	import { getConversations } from "$lib/chat/conversations-context.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
@@ -23,24 +23,31 @@
 	} from "$lib/chat/conversations-state.svelte";
 	import type { Conversation as ConversationEntry } from "$lib/model/messaging/conversations";
 	import AlbumsTab from "./AlbumsTab.svelte";
-	import Conversation from "./Conversation.svelte";
 	import ConversationsFilters from "./ConversationsFilters.svelte";
 	import ConversationsPagingTail from "./ConversationsPagingTail.svelte";
 	import ConversationsSelectionBar from "./ConversationsSelectionBar.svelte";
 	import DeleteConversationsDialog from "./DeleteConversationsDialog.svelte";
 	import LazyConversation from "./LazyConversation.svelte";
+	import { MountQueue } from "./mount-queue";
 
 	let {
 		covered = false,
+		filtersLocked = false,
 		class: className,
-	}: { covered?: boolean; class?: import("svelte/elements").ClassValue } =
-		$props();
+	}: {
+		covered?: boolean;
+		filtersLocked?: boolean;
+		class?: import("svelte/elements").ClassValue;
+	} = $props();
 
 	const EAGER_COUNT = 10;
 
 	const conversations: ConversationsState = getConversations();
 	const mobile = below("split");
 	const visibleEntries = $derived(conversations.visibleEntries);
+	const mountQueue = new MountQueue();
+
+	onDestroy(() => mountQueue.destroy());
 
 	$effect(() => {
 		if (!covered) conversations.noteListViewed();
@@ -142,7 +149,11 @@
 		}
 	});
 
-	dismissOnBackGesture({ active: () => selecting, dismiss: exitSelection });
+	dismissOnBackGesture({
+		active: () => selecting,
+		dismiss: exitSelection,
+		layer: "screen",
+	});
 	dismissOnBackGesture({
 		active: () => deleteDialogOpen,
 		dismiss: () => {
@@ -204,11 +215,7 @@
 			: undefined,
 		onRequestDelete: () => requestDelete([conversationId]),
 	}}
-	{#if eager}
-		<Conversation {...props} />
-	{:else}
-		<LazyConversation {...props} />
-	{/if}
+	<LazyConversation {...props} {eager} queue={mountQueue} />
 {/snippet}
 
 {#if selecting}
@@ -268,6 +275,7 @@
 				>
 					<ConversationsFilters
 						filters={conversations.filters}
+						locked={filtersLocked}
 						onchange={(selection) =>
 							conversations.setFilters(selection)}
 						class="pointer-events-auto h-9 items-center px-screen"
@@ -306,7 +314,8 @@
 					</div>
 				{:else}
 					<div
-						class="flex min-h-overscrollable shrink-0 flex-col gap-0 pb-nav-clear"
+						data-refresh-content
+						class="min-h-overscrollable flex shrink-0 flex-col gap-0 pb-nav-clear"
 					>
 						{#if pinnedEntries.length > 0}
 							<div

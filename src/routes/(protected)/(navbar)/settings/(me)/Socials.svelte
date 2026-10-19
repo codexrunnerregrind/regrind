@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CodeIcon } from "phosphor-svelte";
+	import CodeIcon from "phosphor-svelte/lib/CodeIcon";
 
 	import Link from "./LinkItem.svelte";
 </script>

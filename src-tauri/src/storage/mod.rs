@@ -1,4 +1,4 @@
-use crate::error::AppError;
+use std::sync::{Mutex, PoisonError};
 
 mod entries;
 #[cfg(any(
@@ -6,6 +6,7 @@ mod entries;
 	all(target_os = "macos", not(feature = "keychain"))
 ))]
 mod file_store;
+mod keyring;
 
 pub use entries::{
 	adopt_legacy_account, forget_account, now_unix, AccountIndex,
@@ -13,12 +14,7 @@ pub use entries::{
 	SigningKeyStorage,
 };
 
-const SERVICE: &str = "open-grind";
-
-pub(crate) fn entry(name: &str) -> Result<keyring_core::Entry, AppError> {
-	keyring_core::Entry::new(SERVICE, name)
-		.map_err(|e| AppError::Auth(e.to_string()))
-}
+pub(crate) use keyring::{entry, Entry};
 
 #[cfg(any(
 	target_os = "linux",
@@ -42,6 +38,27 @@ const HAS_FILE_STORE: bool = cfg!(any(
 ));
 
 pub fn init_keyring() -> StorageBackend {
+	static USABLE: Mutex<Option<StorageBackend>> = Mutex::new(None);
+	cached(&USABLE, probe_keyring)
+}
+
+// Held across the probe so concurrent callers never probe at once.
+fn cached(
+	usable: &Mutex<Option<StorageBackend>>,
+	probe: impl FnOnce() -> StorageBackend,
+) -> StorageBackend {
+	let mut usable = usable.lock().unwrap_or_else(PoisonError::into_inner);
+	if let Some(backend) = *usable {
+		return backend;
+	}
+	let backend = probe();
+	if backend != StorageBackend::Unavailable {
+		*usable = Some(backend);
+	}
+	backend
+}
+
+fn probe_keyring() -> StorageBackend {
 	let backend = match install_platform_store() {
 		Ok(()) => StorageBackend::Keyring,
 		Err(e) if HAS_FILE_STORE => {

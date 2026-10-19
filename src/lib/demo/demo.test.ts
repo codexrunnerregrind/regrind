@@ -66,6 +66,25 @@ describe("demo route data matches the real schemas", () => {
 		);
 	});
 
+	it("a fresh cascade lists only profiles the profile route marks as new", () => {
+		const newFlags = (query: string) => {
+			const { items } = cascadeV4ResponseSchema.parse(
+				route(`/v4/cascade?nearbyGeoHash=u00${query}`),
+			);
+			const { profiles } = route("/v3/profiles", "POST", {
+				targetProfileIds: items.flatMap((item) =>
+					"data" in item && "profileId" in item.data
+						? [item.data.profileId]
+						: [],
+				),
+			}) as { profiles: { isNew: boolean }[] };
+			return profiles.map((profile) => profile.isNew);
+		};
+
+		expect(newFlags("")).toContain(false);
+		expect(new Set(newFlags("&fresh=true"))).toEqual(new Set([true]));
+	});
+
 	it("full profile validates for an arbitrary id", () => {
 		const body = route("/v7/profiles/100123") as { profiles: unknown[] };
 		profileSchema.parse(body.profiles[0]);
@@ -235,6 +254,33 @@ describe("demo route data matches the real schemas", () => {
 		expect(response.status).toBe(200);
 	});
 
+	it("refreshes the requested messages of a demo thread", () => {
+		const inbox = route("/v4/inbox?page=1", "POST") as {
+			entries: { data: { conversationId: string } }[];
+		};
+		const id = inbox.entries[0]!.data.conversationId;
+		const thread = z
+			.array(apiResponseMessageSchema)
+			.parse(
+				(
+					route(
+						`/v5/chat/conversation/${id}/message?profile=true`,
+					) as { messages: unknown[] }
+				).messages,
+			);
+		const wanted = thread.slice(0, 2).map((m) => m.messageId);
+
+		const refreshed = z
+			.object({ messages: z.array(apiResponseMessageSchema) })
+			.parse(
+				route(`/v4/chat/conversation/${id}/message-by-id`, "POST", {
+					messageIds: [...wanted, "missing"],
+				}),
+			);
+
+		expect(refreshed.messages.map((m) => m.messageId)).toEqual(wanted);
+	});
+
 	it("paginated message requests are empty", () => {
 		const body = route(
 			"/v5/chat/conversation/100000:100001/message?profile=true&pageKey=x",
@@ -399,6 +445,25 @@ describe("demo route data matches the real schemas", () => {
 					entry.data.conversationId === starred.data.conversationId,
 			)?.data.favorite,
 		).toBe(true);
+	});
+
+	it("lists hides out of the order they were hidden in, like Grindr", () => {
+		const hiddenIds = [100901, 100902, 100903];
+		const listedIds = () =>
+			(
+				route("/v1/hides") as { hides: { profileId: number }[] }
+			).hides.map(({ profileId }) => profileId);
+
+		for (const profileId of hiddenIds)
+			route(`/v1/me/hides/${profileId}`, "POST");
+		const listed = listedIds();
+		for (const profileId of hiddenIds)
+			route(`/v1/hides/${profileId}`, "DELETE");
+
+		expect(listed.toSorted((a, b) => a - b)).toEqual(hiddenIds);
+		expect(listed).not.toEqual(hiddenIds);
+		expect(listed).not.toEqual(hiddenIds.toReversed());
+		expect(listedIds()).toEqual([]);
 	});
 
 	it("keeps every conversation peer's profile favorite in agreement with its row", () => {

@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { ArrowLeftIcon, ShieldIcon, XIcon } from "phosphor-svelte";
+	import ArrowLeftIcon from "phosphor-svelte/lib/ArrowLeftIcon";
+	import ShieldIcon from "phosphor-svelte/lib/ShieldIcon";
+	import XIcon from "phosphor-svelte/lib/XIcon";
 	import { untrack } from "svelte";
 
 	import { blockUser } from "$lib/api/browse/blocks";
@@ -19,20 +21,23 @@
 		reportReasonSchema,
 	} from "$lib/model/safety/reports";
 	import type { Profile } from "$lib/model/users/profiles";
+	import { showBlockFailure } from "./block-failure";
 	import { buildProfileReport } from "./report-request";
+
+	type ReportSubject = "profile" | "message";
 
 	let {
 		open = $bindable(),
 		profileId,
+		subject = "profile",
 		locations: presetLocations,
-		blockable = true,
-		onBlocked,
+		onBlock,
 	}: {
 		open: boolean;
 		profileId: Profile["profileId"];
+		subject?: ReportSubject;
 		locations?: ReportLocation[];
-		blockable?: boolean;
-		onBlocked?: () => void;
+		onBlock?: () => void;
 	} = $props();
 
 	const reasonLabels: Record<ReportReason, string> = {
@@ -56,16 +61,33 @@
 		RIGHT_NOW_TEXT: "Right Now Text",
 	};
 
+	const subjectCopy: Record<
+		ReportSubject,
+		{ title: string; description: string; reviewed: string }
+	> = {
+		profile: {
+			title: "Report profile",
+			description: "Send a report about this profile to Grindr.",
+			reviewed: "Grindr will review this profile.",
+		},
+		message: {
+			title: "Report message",
+			description:
+				"Send a report about this person's messages to Grindr.",
+			reviewed: "Grindr will review your report.",
+		},
+	};
+
 	const detailsLabel = "Details (optional)";
 
 	let reason = $state<ReportReason | null>(null);
 	let locations = $state<ReportLocation[]>([]);
 	let comment = $state("");
 	let submitting = $state(false);
-	let blocking = $state(false);
 	let submitted = $state(false);
 	let onDetails = $state(false);
 
+	const copy = $derived(subjectCopy[subject]);
 	const isSpam = $derived(reason === "SPAM");
 	const reasonChosen = $derived(reason !== null);
 	const wherePickerShown = $derived(!isSpam && presetLocations === undefined);
@@ -107,18 +129,18 @@
 		}
 	}
 
-	async function block() {
-		if (blocking) return;
-		blocking = true;
+	function block() {
+		open = false;
+		if (onBlock) onBlock();
+		else void blockInBackground();
+	}
+
+	async function blockInBackground() {
 		try {
 			await blockUser({ profileId });
-			open = false;
-			onBlocked?.();
 		} catch (error) {
 			console.error(error);
-			showErrorToast({ label: "Failed to block user", error });
-		} finally {
-			blocking = false;
+			showBlockFailure(error);
 		}
 	}
 </script>
@@ -150,7 +172,7 @@
 					</Button>
 				{/if}
 				<ResponsiveDialog.Title class="flex-1 text-left">
-					{submitted ? "Report submitted" : "Report profile"}
+					{submitted ? "Report submitted" : copy.title}
 				</ResponsiveDialog.Title>
 				<Button
 					variant="ghost"
@@ -163,7 +185,7 @@
 				</Button>
 			</div>
 			<ResponsiveDialog.Description class="sr-only">
-				Send a report about this profile to Grindr.
+				{copy.description}
 			</ResponsiveDialog.Description>
 		</ResponsiveDialog.Header>
 		{#if submitted}
@@ -172,27 +194,16 @@
 					data-slot="report-submitted"
 					class="flex flex-col items-center gap-2 py-4 text-center"
 				>
-					<p>Grindr will review this profile.</p>
-					{#if blockable}
-						<p class="text-sm text-muted-foreground">
-							You can block this profile so you stop seeing it.
-						</p>
-					{/if}
+					<p>{copy.reviewed}</p>
+					<p class="text-sm text-muted-foreground">
+						You can block this profile so you stop seeing it.
+					</p>
 				</div>
 			</ResponsiveDialog.Body>
 			<ResponsiveDialog.Footer>
-				{#if blockable}
-					<Button
-						variant="destructive"
-						disabled={blocking}
-						onclick={() => void block()}
-					>
-						{#if blocking}
-							<Spinner />
-						{/if}
-						Block profile
-					</Button>
-				{/if}
+				<Button variant="destructive" onclick={block}>
+					Block profile
+				</Button>
 				<Button variant="secondary" onclick={() => (open = false)}>
 					Done
 				</Button>
@@ -295,10 +306,11 @@
 				<ResponsiveDialog.Footer>
 					<Button
 						disabled={submitting || !reasonChosen}
+						aria-busy={submitting}
 						onclick={() => void submit()}
 					>
 						{#if submitting}
-							<Spinner />
+							<Spinner aria-hidden="true" />
 						{/if}
 						Submit report
 					</Button>

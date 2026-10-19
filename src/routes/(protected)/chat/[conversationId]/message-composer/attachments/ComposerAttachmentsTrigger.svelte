@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PaperclipIcon } from "phosphor-svelte";
+	import PaperclipIcon from "phosphor-svelte/lib/PaperclipIcon";
 	import { expoOut } from "svelte/easing";
 
 	import { scale } from "$lib/util/reduced-motion";
@@ -7,7 +7,10 @@
 	import { dropKeyboard, keepKeyboard } from "../keep-keyboard";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
 
-	let { onClick }: { onClick?: () => void } = $props();
+	let {
+		onClick,
+		ref = $bindable(null),
+	}: { onClick?: () => void; ref?: HTMLElement | null } = $props();
 
 	const { disabled } = $derived(getMessageComposerContext()());
 </script>
@@ -23,6 +26,7 @@
 	     it back — the keys go as the sheet comes up, which is the order the drawer
 	     wanted anyway. -->
 	<ComposerButton
+		bind:ref
 		aria-label="Add attachment"
 		onclick={() => {
 			dropKeyboard();
@@ -33,7 +37,7 @@
 		{disabled}
 	>
 		{#snippet icon({ ...props })}
-			<PaperclipIcon {...props} class="size-5" />
+			<PaperclipIcon {...props} class="size-5.5" />
 		{/snippet}
 	</ComposerButton>
 </div>

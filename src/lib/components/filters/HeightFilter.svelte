@@ -5,8 +5,10 @@
 	import {
 		HEIGHT_CM_MAX,
 		HEIGHT_CM_MIN,
+		rangeBoundTexts,
 	} from "$lib/model/browse/grid/filters";
 	import { formatHeight } from "$lib/util/units";
+	import { HEIGHT_STOPS, storedAfterMove } from "./unit-stops";
 
 	let {
 		checked = $bindable(),
@@ -14,12 +16,16 @@
 	}: { checked: boolean; value: number[] } = $props();
 
 	const units = $derived(preferencesSnapshot().units);
-	const min = $derived(value[0] ?? HEIGHT_CM_MIN);
-	const max = $derived(value[1] ?? HEIGHT_CM_MAX);
-	const label = $derived(
-		`${min === HEIGHT_CM_MIN ? "No min" : formatHeight(min, units)} - ${
-			max === HEIGHT_CM_MAX ? "No max" : formatHeight(max, units)
-		}`,
+	const stops = $derived(HEIGHT_STOPS[units]);
+	const shown = $derived(value.map((heightCm) => stops.toStop(heightCm)));
+	const [minText, maxText] = $derived(
+		rangeBoundTexts({
+			floor: HEIGHT_CM_MIN,
+			ceiling: HEIGHT_CM_MAX,
+			range: value,
+			format: formatHeight,
+			units,
+		}),
 	);
 </script>
 
@@ -35,22 +41,24 @@
 			}
 		}
 	}
-	endLabel={label}
+	endLabel={`${minText} - ${maxText}`}
 	contentClass="h-8 px-4"
 >
 	<Slider
 		type="multiple"
 		bind:value={
-			() => value,
-			(v: number[]) => {
+			() => shown,
+			(moved: number[]) => {
+				value = storedAfterMove({ stops, stored: value, moved });
 				// The full span is no filter at all; anything narrower is.
-				checked = v[0] !== HEIGHT_CM_MIN || v[1] !== HEIGHT_CM_MAX;
-				value = v;
+				checked =
+					value[0] !== HEIGHT_CM_MIN || value[1] !== HEIGHT_CM_MAX;
 			}
 		}
-		min={HEIGHT_CM_MIN}
-		max={HEIGHT_CM_MAX}
+		min={stops.first}
+		max={stops.last}
 		step={1}
+		thumbValueTexts={[minText, maxText]}
 		thumbLabels={["Minimum height", "Maximum height"]}
 	/>
 </FilterDropdown>

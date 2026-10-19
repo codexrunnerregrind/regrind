@@ -5,32 +5,36 @@
 		offset,
 		type Placement,
 		shift,
+		type VirtualElement,
 	} from "@floating-ui/dom";
+	import { type Snippet, untrack } from "svelte";
 
 	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
+	import { followViewportResizes } from "$lib/util/follow-viewport-resizes";
+	import { safeAreaInsets } from "$lib/util/safe-area";
 
 	let {
-		contextMenuOpen,
+		anchor,
 		style,
 		content,
 		onClose,
 		isOut = false,
 		selectable = false,
+		header,
 		children,
 	}: {
-		contextMenuOpen: {
-			x: number;
-			y: number;
-			width: number;
-			height: number;
-		};
-		style: string;
+		anchor: VirtualElement;
+		style?: string;
 		onClose: () => void;
 		isOut?: boolean;
 		selectable?: boolean;
-		content: import("svelte").Snippet<[boolean]>;
-		children?: import("svelte").Snippet<[Placement]>;
+		content: Snippet<[boolean]>;
+		header?: Snippet;
+		children?: Snippet;
 	} = $props();
+
+	const VIEWPORT_SETTLE_MS = 500;
+	const EDGE_GAP_PX = 8;
 
 	const preferredPlacement: Placement = $derived(
 		isOut ? "left-start" : "right-start",
@@ -42,34 +46,62 @@
 	);
 
 	let contextMenuDialog: HTMLDialogElement | null = $state(null);
-	let contextMenuTrigger: HTMLDivElement | null = $state(null);
 	let contextMenuList: HTMLDivElement | null = $state(null);
-	let contextMenuListPosition: {
-		x: number;
-		y: number;
-		placement: Placement;
-	} = $state({ x: 0, y: 0, placement: "right-start" });
+	let contextMenuItems: HTMLDivElement | null = $state(null);
+	let contextMenuListPosition = $state({ x: 0, y: 0 });
+	let liftedBox = $state(untrack(() => anchor.getBoundingClientRect()));
 
 	dismissOnBackGesture({
 		active: () => true,
 		dismiss: () => contextMenuDialog?.close(),
 	});
 
+	function safeAreaPadding() {
+		const { top, right, bottom, left } = safeAreaInsets();
+		return {
+			top: top + EDGE_GAP_PX,
+			right: right + EDGE_GAP_PX,
+			bottom: bottom + EDGE_GAP_PX,
+			left: left + EDGE_GAP_PX,
+		};
+	}
+
 	$effect(() => {
-		if (!contextMenuTrigger || !contextMenuList) return;
-		computePosition(contextMenuTrigger, contextMenuList, {
-			placement: preferredPlacement,
-			middleware: [
-				offset(8),
-				flip({ fallbackPlacements, fallbackStrategy: "bestFit" }),
-				shift({ padding: 8 }),
-			],
-			strategy: "fixed",
-		})
-			.then(({ x, y, placement }) => {
-				contextMenuListPosition = { x, y, placement };
+		const list = contextMenuList;
+		if (!list) return;
+		const place = () => {
+			liftedBox = anchor.getBoundingClientRect();
+			const padding = safeAreaPadding();
+			computePosition(anchor, list, {
+				placement: preferredPlacement,
+				middleware: [
+					offset(({ placement }) => ({
+						mainAxis: EDGE_GAP_PX,
+						alignmentAxis:
+							placement.startsWith("left") ||
+							placement.startsWith("right")
+								? -(contextMenuItems?.offsetTop ?? 0)
+								: 0,
+					})),
+					flip({
+						fallbackPlacements,
+						fallbackStrategy: "bestFit",
+						padding,
+					}),
+					shift({ padding, crossAxis: true }),
+				],
+				strategy: "fixed",
 			})
-			.catch((error) => console.error(error));
+				.then(({ x, y }) => {
+					contextMenuListPosition = { x, y };
+				})
+				.catch((error) => console.error(error));
+		};
+		place();
+		return followViewportResizes({
+			settleMs: VIEWPORT_SETTLE_MS,
+			onFrame: place,
+		});
 	});
 
 	$effect(() => {
@@ -84,13 +116,6 @@
 	});
 </script>
 
-<svelte:window
-	onresize={() => {
-		if (contextMenuOpen) {
-			contextMenuDialog?.close();
-		}
-	}}
-/>
 <dialog
 	class="menu-scrim fixed top-0 left-0 z-9999 size-full max-h-none max-w-none bg-transparent"
 	bind:this={contextMenuDialog}
@@ -102,15 +127,16 @@
 			contextMenuDialog.close();
 		}
 	}}
-	onclose={() => onClose()}
+	onclose={(event) => {
+		if (event.currentTarget.isConnected) onClose();
+	}}
 >
 	<div
-		bind:this={contextMenuTrigger}
 		class="absolute"
-		style:left="{contextMenuOpen.x}px"
-		style:top="{contextMenuOpen.y}px"
-		style:width="{contextMenuOpen.width}px"
-		style:height="{contextMenuOpen.height}px"
+		style:left="{liftedBox.x}px"
+		style:top="{liftedBox.y}px"
+		style:width="{liftedBox.width}px"
+		style:height="{liftedBox.height}px"
 		{style}
 		inert={!selectable}
 	>
@@ -118,10 +144,14 @@
 	</div>
 	<div
 		bind:this={contextMenuList}
+		data-slot="context-menu-list"
 		class="fixed flex flex-col"
 		style:left="{contextMenuListPosition.x}px"
 		style:top="{contextMenuListPosition.y}px"
 	>
-		{@render children?.(contextMenuListPosition.placement)}
+		{@render header?.()}
+		<div bind:this={contextMenuItems}>
+			{@render children?.()}
+		</div>
 	</div>
 </dialog>

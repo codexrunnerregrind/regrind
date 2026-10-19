@@ -1,12 +1,10 @@
 <script lang="ts">
-	import {
-		EnvelopeIcon,
-		EyeSlashIcon,
-		KeyIcon,
-		ProhibitIcon,
-		ShieldCheckIcon,
-		TrashIcon,
-	} from "phosphor-svelte";
+	import EnvelopeIcon from "phosphor-svelte/lib/EnvelopeIcon";
+	import EyeSlashIcon from "phosphor-svelte/lib/EyeSlashIcon";
+	import KeyIcon from "phosphor-svelte/lib/KeyIcon";
+	import ProhibitIcon from "phosphor-svelte/lib/ProhibitIcon";
+	import ShieldCheckIcon from "phosphor-svelte/lib/ShieldCheckIcon";
+	import TrashIcon from "phosphor-svelte/lib/TrashIcon";
 	import { toast } from "svelte-sonner";
 
 	import ToastUnimplemented from "$lib/components/feedback/ToastUnimplemented.svelte";

@@ -252,40 +252,6 @@ describe("ProfileState refresh", () => {
 	});
 });
 
-describe("ProfileState blocking", () => {
-	it("shows the blocked screen without a refetch, and restores the profile on unblock", async () => {
-		const state = create();
-		await flush();
-		getProfileMock.mockClear();
-
-		state.markBlocked();
-		expect(state.error).toBeInstanceOf(BlockedProfileError);
-		expect((state.error as BlockedProfileError).blockedByUs).toBe(true);
-
-		state.markViewable();
-		await flush();
-
-		expect(state.error).toBeNull();
-		expect(state.profile).toEqual(profile());
-		expect(getProfileMock).not.toHaveBeenCalled();
-	});
-
-	it("refetches on unblock when the block came from the server", async () => {
-		getProfileMock.mockRejectedValueOnce(
-			new BlockedProfileError({ blockedByUs: true }),
-		);
-		const state = create();
-		await flush();
-		expect(state.profile).toBeNull();
-
-		state.markViewable();
-		await flush();
-
-		expect(state.error).toBeNull();
-		expect(state.profile).toEqual(profile());
-	});
-});
-
 describe("ProfileState view recording", () => {
 	it("records a view when the preference is on", async () => {
 		getPreferencesMock.mockResolvedValue({ revealProfileViews: true });

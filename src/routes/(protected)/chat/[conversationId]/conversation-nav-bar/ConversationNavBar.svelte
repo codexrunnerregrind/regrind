@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ArrowLeftIcon } from "phosphor-svelte";
+	import ArrowLeftIcon from "phosphor-svelte/lib/ArrowLeftIcon";
 
 	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
 	import { Skeleton } from "$lib/components/ui/skeleton";
@@ -17,6 +17,7 @@
 	bgClass="bg-linear-to-b max-split:from-background split:from-card to-transparent split:[--pblur-flat:var(--color-card)]"
 	contentClass="flex items-center h-full"
 	tag="nav"
+	aria-label="Conversation"
 >
 	<a
 		href="/chat"

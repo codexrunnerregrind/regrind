@@ -104,6 +104,10 @@ export default defineConfig({
 							text: "Video codecs on Linux",
 							link: "/guides/codecs",
 						},
+						{
+							text: "Blocking and hiding",
+							link: "/guides/blocking-and-hiding-profiles",
+						},
 						{ text: "FAQ", link: "/guides/faq" },
 						{
 							text: "Grindr API bypasses",

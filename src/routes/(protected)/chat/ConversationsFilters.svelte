@@ -18,10 +18,13 @@
 	let {
 		filters,
 		onchange,
+		locked = false,
 		class: className,
 	}: {
 		filters: ConversationFilters;
 		onchange: (selection: Partial<ConversationFilterSelection>) => void;
+		/** Inert while the chat above slides away. */
+		locked?: boolean;
 		class?: import("svelte/elements").ClassValue;
 	} = $props();
 
@@ -54,7 +57,11 @@
      holding the pills that switch on the spot. Then come the two that carry a
      value of their own and open a sheet, so the row does not alternate between
      the two behaviours. -->
-<div class={["scrollbar-thin flex gap-0.5 overflow-x-auto", className]}>
+<div
+	class={["scrollbar-thin flex gap-0.5 overflow-x-auto", className]}
+	data-scroll-intent="x"
+	inert={locked}
+>
 	<Button
 		variant="secondary"
 		aria-label="Favorites"

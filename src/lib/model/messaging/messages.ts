@@ -29,7 +29,7 @@ const messageOverlayBaseSchema = z.object({
 		),
 		fallback: [],
 	}),
-	dynamic: unmodeledSchema,
+	dynamic: serverDefault({ value: z.boolean(), fallback: false }),
 	chat1Type: unmodeledSchema,
 	replyPreview: unmodeledSchema,
 });
@@ -492,9 +492,12 @@ export const outboundMessageSchema = z.discriminatedUnion("type", [
 
 export type OutboundMessage = z.infer<typeof outboundMessageSchema>;
 
-export type MessageDraft = { outbound: OutboundMessage; optimistic: Message };
+export type MessageDraft = {
+	outbound: OutboundMessage | (() => Promise<OutboundMessage>);
+	optimistic: Message;
+};
 
-type SharedShapeMessage = Extract<
+export type SharedShapeMessage = Extract<
 	Message,
 	{ type: "Text" | "Location" | "Gaymoji" | "Giphy" | "ProfilePhotoReply" }
 >;

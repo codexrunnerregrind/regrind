@@ -200,7 +200,8 @@
 			<ConversationError />
 		{:else}
 			<div
-				class="flex min-h-overscrollable shrink-0 flex-col justify-end gap-1"
+				data-refresh-content
+				class="min-h-overscrollable flex shrink-0 flex-col justify-end gap-1"
 				bind:this={content}
 			>
 				<ConversationPaginationSentinel {container} />

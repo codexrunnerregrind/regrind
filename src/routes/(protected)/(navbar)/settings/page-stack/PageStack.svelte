@@ -4,10 +4,15 @@
 	import { prefersReducedMotion } from "svelte/motion";
 	import type { Attachment } from "svelte/attachments";
 
-	import { STACK_Z } from "$lib/components/navigation/stack/motion";
+	import {
+		STACK_Z,
+		stackMotion,
+	} from "$lib/components/navigation/stack/motion";
 	import { trackScrolled } from "$lib/components/navigation/stack/snapshot";
 	import { paneSurface } from "$lib/components/navigation/stack/surface";
 	import { attachSystemBackGesture } from "$lib/platform/system-back-gesture";
+	import { earlierPathnames } from "$lib/util/history";
+	import { pushedFromChain } from "./hierarchy";
 	import { PageStackState } from "./page-stack-state.svelte";
 
 	let {
@@ -18,6 +23,8 @@
 	let pane: HTMLElement | null = $state(null);
 	let dim: HTMLElement | null = $state(null);
 
+	const motion = stackMotion();
+
 	const stack: PageStackState = new PageStackState({
 		surface: paneSurface({
 			panes: () => {
@@ -27,10 +34,16 @@
 					: { front: ghost, back: pane, dim };
 			},
 			parallax: () => !prefersReducedMotion.current,
+			motion,
 		}),
+		motion,
 		livePane: () => pane,
 		reducedMotion: () => prefersReducedMotion.current,
 		scope: untrack(() => scope),
+		pushedFrom: pushedFromChain({
+			pathname: location.pathname,
+			earlier: earlierPathnames(),
+		}),
 	});
 
 	const liveZ = $derived(
@@ -58,7 +71,10 @@
 		bind:this={pane}
 		{@attach trackScrolled}
 		data-slot="page-stack-pane"
-		class="fixed inset-0 bg-background pt-(--safe-area-top) pb-(--content-pb)"
+		class={[
+			"fixed inset-0 bg-background pt-(--safe-area-top) pb-(--content-pb)",
+			{ "shadow-(--stack-edge)": motion.edge },
+		]}
 		style:z-index={liveZ}
 	>
 		{@render children?.()}
@@ -67,7 +83,7 @@
 		<div
 			bind:this={dim}
 			data-slot="page-stack-dim"
-			class="pointer-events-none fixed inset-0 bg-black opacity-0"
+			class="pointer-events-none fixed inset-0 bg-[rgb(0_0_0/var(--stack-scrim))] opacity-0"
 			style:z-index={STACK_Z.dim}
 		></div>
 	{/if}

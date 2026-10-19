@@ -13,7 +13,7 @@
 
 <script lang="ts">
 	import { beforeNavigate } from "$app/navigation";
-	import { FolderOpenIcon } from "phosphor-svelte";
+	import FolderOpenIcon from "phosphor-svelte/lib/FolderOpenIcon";
 	import { toast } from "svelte-sonner";
 
 	import { showErrorToast } from "$lib/api/error-toast";

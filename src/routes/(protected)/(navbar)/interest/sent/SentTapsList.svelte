@@ -37,14 +37,23 @@
 	}
 </script>
 
-<div class="screen-nav-host">
+<main class="screen-nav-host">
+	{#if !taps.loading && !taps.error}
+		<DataRefreshControl
+			{container}
+			updating={taps.refreshing}
+			position="top"
+			onrefresh={() => void taps.refresh()}
+		/>
+	{/if}
 	<div
 		bind:this={container}
 		class="pull-scroller"
 		onscroll={() => (taps.scrollY = container?.scrollTop ?? 0)}
 	>
 		<div
-			class="mx-auto flex min-h-overscrollable w-full max-w-120 flex-col gap-0 px-0 pt-(--interest-header) pb-nav-clear"
+			data-refresh-content
+			class="mx-auto min-h-overscrollable flex w-full max-w-120 flex-col gap-0 px-0 pt-(--interest-header) pb-nav-clear"
 		>
 			{#if taps.loading}
 				{#each Array(8)}
@@ -79,13 +88,5 @@
 			{/if}
 		</div>
 	</div>
-	{#if !taps.loading && !taps.error}
-		<DataRefreshControl
-			{container}
-			updating={taps.refreshing}
-			position="top"
-			onrefresh={() => void taps.refresh()}
-		/>
-	{/if}
 	<ScrollToTopButton {container} class="bottom-nav-clear" />
-</div>
+</main>

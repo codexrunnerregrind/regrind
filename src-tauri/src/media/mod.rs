@@ -1,10 +1,15 @@
 mod buffered;
 mod cache;
+#[cfg(target_os = "linux")]
+mod element;
+mod failures;
 mod flight;
 mod range;
 mod registry;
 mod requested;
 mod response;
+mod session;
+mod sessioned;
 mod stream;
 mod target;
 mod upstream;
@@ -12,49 +17,77 @@ mod windowed;
 
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
 
 use grindr::MediaFetcher;
 use tauri::async_runtime::JoinHandle;
 use tauri::http::{header, Method, Request, Response, StatusCode};
-use tauri::{AppHandle, Runtime, UriSchemeContext, UriSchemeResponder};
+use tauri::{
+	AppHandle, Manager, Runtime, UriSchemeContext, UriSchemeResponder,
+};
 use tokio::sync::{Mutex, Semaphore};
 
+use crate::state::AppState;
 use crate::storage::ProfileId;
 
 use buffered::serve_buffered;
-use cache::{scope_of, CachedMedia, MediaCache};
+use cache::{cache_key, scope_of, CachedMedia, MediaCache};
+use failures::{target_path_of, Failures, MediaFailure};
 use flight::Flights;
 use registry::unregister_stream;
+use requested::Requested;
 use response::refused;
+use sessioned::{answers_whole, serve_sessioned, Sessions};
 use stream::serve_streamed;
 use target::{decode_target, Target};
 use upstream::{detail_of, fetch};
 use windowed::Windowed;
+
+#[cfg(target_os = "linux")]
+pub use element::{serve_element_opens, WEBKIT_EXTENSIONS};
 
 pub const SCHEME: &str = "ogmedia";
 
 const MAX_MEDIA_BYTES: usize = 16 * 1024 * 1024;
 const OFFICIAL_APP_REQUESTS_PER_HOST: usize = 20;
 const STREAMING_PLATFORM: bool = cfg!(target_os = "android");
+const ANDROID_ANSWER_DEADLINE: Duration = Duration::from_secs(25);
+const RETRIED_HEADERS_DEADLINE: Duration = Duration::from_secs(45);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Host {
+	AndroidWebView,
+	WkWebView,
+	WholeBodies,
+}
+
+const HOST: Host = if cfg!(target_os = "android") {
+	Host::AndroidWebView
+} else if cfg!(target_os = "macos") {
+	Host::WkWebView
+} else {
+	Host::WholeBodies
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Delivery {
 	Buffered,
 	Streamed,
+	Sessioned,
 }
 
 impl Delivery {
-	fn pick(
-		streaming_platform: bool,
-		fetcher: MediaFetcher,
-		range: Option<&str>,
-	) -> Self {
-		let plays_or_seeks =
-			fetcher == MediaFetcher::MediaPlayer || range.is_some();
-		if streaming_platform && plays_or_seeks {
-			Self::Streamed
-		} else {
-			Self::Buffered
+	fn pick(host: Host, fetcher: MediaFetcher, range: Option<&str>) -> Self {
+		let video = fetcher == MediaFetcher::MediaPlayer;
+		match host {
+			Host::AndroidWebView if video || range.is_some() => Self::Streamed,
+			Host::WkWebView
+				if video && !answers_whole(Requested::parse(range)) =>
+			{
+				Self::Streamed
+			}
+			Host::WkWebView | Host::WholeBodies if video => Self::Sessioned,
+			_ => Self::Buffered,
 		}
 	}
 }
@@ -74,9 +107,11 @@ pub async fn fetch_for_download<R: Runtime>(
 pub struct MediaProxy {
 	cache: Mutex<MediaCache>,
 	windowed: Mutex<Windowed>,
+	failures: Mutex<Failures>,
 	flights: Flights,
 	fetches: Arc<Semaphore>,
 	pumps: Mutex<HashMap<u64, JoinHandle<()>>>,
+	sessions: Sessions,
 }
 
 impl Default for MediaProxy {
@@ -84,9 +119,11 @@ impl Default for MediaProxy {
 		Self {
 			cache: Mutex::default(),
 			windowed: Mutex::default(),
+			failures: Mutex::default(),
 			flights: Flights::default(),
 			fetches: Arc::new(Semaphore::new(OFFICIAL_APP_REQUESTS_PER_HOST)),
 			pumps: Mutex::default(),
+			sessions: Sessions::default(),
 		}
 	}
 }
@@ -102,8 +139,10 @@ impl MediaProxy {
 			pump.abort();
 			unregister_stream(id);
 		}
+		self.sessions.clear();
 		self.cache.lock().await.clear();
 		self.windowed.lock().await.clear();
+		self.failures.lock().await.clear();
 		self.flights.clear().await;
 	}
 
@@ -115,6 +154,24 @@ impl MediaProxy {
 		self.cache.lock().await.clear_scope(&scope);
 		self.windowed.lock().await.clear_scope(&scope);
 	}
+
+	async fn failure_of(
+		&self,
+		profile_id: Option<ProfileId>,
+		src: &str,
+	) -> Option<MediaFailure> {
+		let Target { url, .. } = decode_target(target_path_of(src)?)?;
+		self.failures.lock().await.get(&cache_key(profile_id, &url))
+	}
+}
+
+#[tauri::command]
+pub async fn media_failure(
+	app: AppHandle,
+	src: String,
+) -> Option<MediaFailure> {
+	let profile_id = app.state::<AppState>().active_profile_id();
+	app.state::<MediaProxy>().failure_of(profile_id, &src).await
 }
 
 pub fn handle<R: Runtime>(
@@ -152,7 +209,7 @@ async fn serve<R: Runtime>(
 		return refused(StatusCode::BAD_REQUEST);
 	};
 	let range = range.as_deref();
-	let delivery = Delivery::pick(STREAMING_PLATFORM, fetcher, range);
+	let delivery = Delivery::pick(HOST, fetcher, range);
 	serve_by(delivery, app, &url, fetcher, range, is_head).await
 }
 
@@ -167,6 +224,9 @@ async fn serve_by<R: Runtime>(
 	match delivery {
 		Delivery::Streamed if !is_head => {
 			serve_streamed(app, url, fetcher, range).await
+		}
+		Delivery::Sessioned => {
+			serve_sessioned(app, url, fetcher, range, is_head).await
 		}
 		Delivery::Streamed | Delivery::Buffered => {
 			serve_buffered(app, url, fetcher, range, is_head).await
@@ -220,6 +280,48 @@ mod tests {
 		name: impl header::AsHeaderName,
 	) -> Option<&str> {
 		response.headers().get(name).and_then(|v| v.to_str().ok())
+	}
+
+	const VIDEO_URL: &str =
+		"https://d3.cloudfront.net/v.mp4?Expires=1&Signature=S";
+	const TWO_HEADER_WAITS: Duration = Duration::from_secs(40);
+
+	async fn assert_waits_out_a_retried_header_wait(delivery: Delivery) {
+		let app = app_without_a_client();
+		let slots = Arc::clone(&app.state::<MediaProxy>().fetches);
+		let _taken = slots
+			.acquire_many_owned(OFFICIAL_APP_REQUESTS_PER_HOST as u32)
+			.await
+			.unwrap();
+		let started = tokio::time::Instant::now();
+		let opening = serve_by(
+			delivery,
+			app.handle(),
+			VIDEO_URL,
+			grindr::MediaFetcher::MediaPlayer,
+			None,
+			false,
+		);
+		tokio::pin!(opening);
+
+		let early = tokio::time::timeout(TWO_HEADER_WAITS, &mut opening).await;
+
+		assert!(
+			early.is_err(),
+			"{delivery:?} gave up during the crate's retry"
+		);
+		assert_eq!(opening.await.status(), StatusCode::GATEWAY_TIMEOUT);
+		assert!(started.elapsed() >= RETRIED_HEADERS_DEADLINE);
+	}
+
+	#[tokio::test(start_paused = true)]
+	async fn a_desktop_video_stream_waits_out_a_retried_header_wait() {
+		assert_waits_out_a_retried_header_wait(Delivery::Streamed).await;
+	}
+
+	#[tokio::test(start_paused = true)]
+	async fn a_desktop_video_session_waits_out_a_retried_header_wait() {
+		assert_waits_out_a_retried_header_wait(Delivery::Sessioned).await;
 	}
 
 	#[tokio::test]
@@ -398,13 +500,86 @@ mod tests {
 		let proxy = app.state::<MediaProxy>();
 		cache(&app, PHOTO, b"webpbytes").await;
 		proxy.windowed.lock().await.always(PHOTO.to_owned());
+		proxy
+			.failures
+			.lock()
+			.await
+			.record(PHOTO, MediaFailure::of_status(502, PHOTO));
 		drop(proxy.flights.acquire(PHOTO).await);
 
 		proxy.forget_everything().await;
 
 		assert!(proxy.cache.lock().await.get(PHOTO).is_none());
 		assert!(proxy.windowed.lock().await.is_empty());
+		assert!(proxy.failures.lock().await.is_empty());
 		assert!(proxy.flights.is_empty().await);
+	}
+
+	fn ogmedia_src(url: &str) -> String {
+		use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
+		format!("http://ogmedia.localhost/i{}", URL_SAFE_NO_PAD.encode(url))
+	}
+
+	fn upstream(status: u16) -> grindr::MediaResponse {
+		grindr::MediaResponse {
+			status,
+			content_type: Some("image/jpeg".to_owned()),
+			content_range: None,
+			accept_ranges: None,
+			body: grindr::Bytes::from_static(b"jpegbytes"),
+		}
+	}
+
+	#[tokio::test]
+	async fn a_refused_signature_is_remembered_for_its_renewal_until_a_load_succeeds(
+	) {
+		let old = "https://d3.cloudfront.net/a.jpg?Expires=1&Signature=OLD";
+		let renewed = "https://d3.cloudfront.net/a.jpg?Expires=2&Signature=NEW";
+		let app = app_without_a_client();
+		let proxy = app.state::<MediaProxy>();
+
+		buffered::settle(
+			&proxy,
+			&cache_key(None, old),
+			old,
+			upstream(403),
+			None,
+			false,
+		)
+		.await;
+		let failure = proxy.failure_of(None, &ogmedia_src(renewed)).await;
+		buffered::settle(
+			&proxy,
+			&cache_key(None, renewed),
+			renewed,
+			upstream(200),
+			None,
+			false,
+		)
+		.await;
+
+		assert_eq!(failure.and_then(|failure| failure.status), Some(403));
+		assert!(proxy
+			.failure_of(None, &ogmedia_src(renewed))
+			.await
+			.is_none());
+	}
+
+	#[tokio::test]
+	async fn a_refused_image_leaves_its_failure_for_the_page_to_read() {
+		let app = app_without_a_client();
+		let src = format!("{}?retry=1", ogmedia_src(PHOTO));
+
+		serve(app.handle(), image(PHOTO), None, false).await;
+		let failure = app.state::<MediaProxy>().failure_of(None, &src).await;
+
+		assert_eq!(
+			failure.map(|failure| (failure.kind, failure.host)),
+			Some((
+				failures::FailureKind::NotReady,
+				"cdns.grindr.com".to_owned()
+			))
+		);
 	}
 
 	#[tokio::test]
@@ -416,20 +591,47 @@ mod tests {
 		assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 	}
 
-	#[test]
-	fn only_a_video_or_a_seek_streams_and_only_on_a_streaming_platform() {
-		let video = grindr::MediaFetcher::MediaPlayer;
-		let image = grindr::MediaFetcher::ImageLoader;
+	const VIDEO: MediaFetcher = MediaFetcher::MediaPlayer;
+	const IMAGE: MediaFetcher = MediaFetcher::ImageLoader;
 
-		assert_eq!(Delivery::pick(true, video, None), Delivery::Streamed);
+	#[test]
+	fn android_streams_every_video_and_every_seek() {
+		let host = Host::AndroidWebView;
+
+		assert_eq!(Delivery::pick(host, VIDEO, None), Delivery::Streamed);
 		assert_eq!(
-			Delivery::pick(true, image, Some("bytes=0-")),
+			Delivery::pick(host, IMAGE, Some("bytes=0-")),
 			Delivery::Streamed
 		);
-		assert_eq!(Delivery::pick(true, image, None), Delivery::Buffered);
+		assert_eq!(Delivery::pick(host, IMAGE, None), Delivery::Buffered);
+	}
+
+	#[test]
+	fn a_wkwebview_video_read_small_enough_to_answer_whole_uses_a_session() {
+		let host = Host::WkWebView;
+
 		assert_eq!(
-			Delivery::pick(false, video, Some("bytes=0-")),
+			Delivery::pick(host, VIDEO, Some("bytes=65536-131071")),
+			Delivery::Sessioned
+		);
+		assert_eq!(
+			Delivery::pick(host, VIDEO, Some("bytes=0-")),
+			Delivery::Streamed
+		);
+		assert_eq!(Delivery::pick(host, VIDEO, None), Delivery::Streamed);
+		assert_eq!(
+			Delivery::pick(host, IMAGE, Some("bytes=0-")),
 			Delivery::Buffered
 		);
+	}
+
+	#[test]
+	fn a_webview_taking_whole_bodies_reads_every_video_through_a_session() {
+		let host = Host::WholeBodies;
+
+		for range in [None, Some("bytes=0-"), Some("bytes=10-20")] {
+			assert_eq!(Delivery::pick(host, VIDEO, range), Delivery::Sessioned);
+		}
+		assert_eq!(Delivery::pick(host, IMAGE, None), Delivery::Buffered);
 	}
 }

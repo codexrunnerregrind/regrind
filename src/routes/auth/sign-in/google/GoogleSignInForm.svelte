@@ -31,6 +31,7 @@
 		addonPublishedHere,
 		addonUpdates,
 	} from "$lib/updates/addon.svelte";
+	import { installedFromFdroid } from "$lib/updates/capability.svelte";
 	import { manualInstallHref } from "$lib/updates/manual-install";
 	import {
 		googleSignInView,
@@ -201,6 +202,11 @@
 						{:else if view === "install"}
 							Download and install the {@render companionLink()} to
 							sign in with Google
+							{#if installedFromFdroid()}
+								<span class="mt-2 block">
+									This add-on bypasses F-Droid's checks
+								</span>
+							{/if}
 						{:else if view === "continue"}
 							Continue in the {@render companionLink()} to sign in with
 							Google
@@ -265,7 +271,11 @@
 							type="submit"
 							class="w-full"
 							disabled={submitting || token.trim().length === 0}
+							aria-busy={submitting}
 						>
+							{#if submitting}
+								<Spinner aria-hidden="true" />
+							{/if}
 							Sign in
 						</Button>
 					{/if}

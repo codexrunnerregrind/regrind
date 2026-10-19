@@ -92,12 +92,12 @@ const TYPE_LABELS: Record<string, string> = {
 	Image: "Photo",
 	Location: "Location",
 	NonExpiringVideo: "Video",
-	PrivateVideo: "Video",
+	PrivateVideo: "Expiring video",
 	ProfileLink: "Profile",
 	ProfilePhotoReply: "Photo",
 	RightNowRequest: "Right Now",
 	Unsent: "Unsent message",
-	Video: "Video",
+	Video: "Expiring video",
 	VideoCall: "Video call",
 };
 

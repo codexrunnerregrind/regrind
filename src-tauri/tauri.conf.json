@@ -15,7 +15,7 @@
 			{
 				"label": "main",
 				"title": "ReGrind",
-				"width": 1000,
+				"width": 1056,
 				"height": 800,
 				"minWidth": 320,
 				"minHeight": 300,
@@ -27,7 +27,7 @@
 			}
 		],
 		"security": {
-			"csp": "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'self' 'unsafe-inline'; img-src 'self' data: blob: ogmedia: http://ogmedia.localhost https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com https://cdns.grindr.com https://*.cloudfront.net https://*.giphy.com https://api.dicebear.com https://picsum.photos https://*.picsum.photos; media-src 'self' blob: ogmedia: http://ogmedia.localhost https://cdns.grindr.com https://*.cloudfront.net https://*.giphy.com https://test-videos.co.uk; connect-src 'self' ipc: http://ipc.localhost https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com https://*.agora.io wss://*.agora.io https://*.sd-rtn.com wss://*.sd-rtn.com https://*.agoraio.cn wss://*.agoraio.cn; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"
+			"csp": "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'self' 'unsafe-inline'; img-src 'self' data: blob: ogmedia: http://ogmedia.localhost https://ogmedia.localhost https://tile.openstreetmap.org https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com https://cdns.grindr.com https://*.cloudfront.net https://*.giphy.com https://api.dicebear.com https://picsum.photos https://*.picsum.photos; media-src 'self' blob: ogmedia: http://ogmedia.localhost https://ogmedia.localhost https://cdns.grindr.com https://*.cloudfront.net https://*.giphy.com https://test-videos.co.uk; connect-src 'self' ipc: http://ipc.localhost https://ipc.localhost https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com https://*.agora.io wss://*.agora.io https://*.sd-rtn.com wss://*.sd-rtn.com https://*.agoraio.cn wss://*.agoraio.cn; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"
 		}
 	},
 	"bundle": {
@@ -55,7 +55,8 @@
 			"deb": {
 				"depends": [
 					"libsoup-3.0-0",
-					"librsvg2-2"
+					"librsvg2-2",
+					"libgstreamer1.0-0"
 				],
 				"recommends": [
 					"libayatana-appindicator3-1",
@@ -70,6 +71,9 @@
 				"installMode": "currentUser",
 				"installerHooks": "installer-hooks.nsh"
 			}
+		},
+		"macOS": {
+			"minimumSystemVersion": "11.6"
 		},
 		"android": {
 			"autoIncrementVersionCode": false,

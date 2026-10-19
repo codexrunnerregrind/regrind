@@ -37,7 +37,7 @@
 	     out of it, uncounted in scrollHeight and hidden under the navbar. The
 	     navbar clearance rides here rather than on the scroller for the same
 	     reason it does on the Messages tab. -->
-	<div class="flex min-h-overscrollable shrink-0 flex-col pb-nav-clear">
+	<div class="min-h-overscrollable flex shrink-0 flex-col pb-nav-clear">
 		<SharedAlbumsGrid onOpenMyAlbums={openMyAlbums} />
 	</div>
 </div>

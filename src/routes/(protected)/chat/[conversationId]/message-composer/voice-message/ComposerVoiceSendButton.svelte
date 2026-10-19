@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PaperPlaneRightIcon } from "phosphor-svelte";
+	import PaperPlaneRightIcon from "phosphor-svelte/lib/PaperPlaneRightIcon";
 
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
 	import PrimaryComposerButton from "../PrimaryComposerButton.svelte";

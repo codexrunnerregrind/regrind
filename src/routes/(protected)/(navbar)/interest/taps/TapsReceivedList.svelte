@@ -14,11 +14,9 @@
 
 	let { ourProfileId }: { ourProfileId: number } = $props();
 
-	const taps = untrack(() => {
-		const state = getTapsState(ourProfileId);
-		state.load();
-		return state;
-	});
+	const taps = untrack(() => getTapsState(ourProfileId));
+
+	$effect(() => taps.attachView());
 
 	$effect(() => {
 		if (taps.hasUnseen) taps.markViewed();
@@ -44,14 +42,24 @@
 	}
 </script>
 
-<div class="screen-nav-host">
+<main class="screen-nav-host">
+	{#if !taps.loading && (taps.taps.length > 0 || !taps.error)}
+		<DataRefreshControl
+			{container}
+			updating={taps.refreshing}
+			position="top"
+			onrefresh={() => void taps.refresh()}
+		/>
+	{/if}
 	<div
 		bind:this={container}
+		data-slot="taps-scroller"
 		class="pull-scroller"
 		onscroll={() => (taps.scrollY = container?.scrollTop ?? 0)}
 	>
 		<div
-			class="mx-auto flex min-h-overscrollable w-full max-w-120 flex-col gap-0 px-0 pt-(--interest-header) pb-nav-clear"
+			data-refresh-content
+			class="mx-auto min-h-overscrollable flex w-full max-w-120 flex-col gap-0 px-0 pt-(--interest-header) pb-nav-clear"
 		>
 			{#if taps.loading}
 				{#each Array(8)}
@@ -86,13 +94,5 @@
 			{/if}
 		</div>
 	</div>
-	{#if !taps.loading && (taps.taps.length > 0 || !taps.error)}
-		<DataRefreshControl
-			{container}
-			updating={taps.refreshing}
-			position="top"
-			onrefresh={() => void taps.refresh()}
-		/>
-	{/if}
 	<ScrollToTopButton {container} class="bottom-nav-clear" />
-</div>
+</main>

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { HouseIcon } from "phosphor-svelte";
+	import HouseIcon from "phosphor-svelte/lib/HouseIcon";
 	import type z from "zod";
 
 	import RadioGroup from "$lib/components/ui/radio/RadioGroup.svelte";

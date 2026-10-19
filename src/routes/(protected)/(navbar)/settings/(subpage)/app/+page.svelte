@@ -1,15 +1,14 @@
 <script lang="ts">
-	import {
-		BroadcastIcon,
-		ChecksIcon,
-		DeviceMobileIcon,
-		ExportIcon,
-		EyeIcon,
-		HeartIcon,
-		LockKeyIcon,
-		TrayArrowDownIcon,
-		VibrateIcon,
-	} from "phosphor-svelte";
+	import BroadcastIcon from "phosphor-svelte/lib/BroadcastIcon";
+	import ChecksIcon from "phosphor-svelte/lib/ChecksIcon";
+	import DeviceMobileIcon from "phosphor-svelte/lib/DeviceMobileIcon";
+	import ExportIcon from "phosphor-svelte/lib/ExportIcon";
+	import EyeIcon from "phosphor-svelte/lib/EyeIcon";
+	import GifIcon from "phosphor-svelte/lib/GifIcon";
+	import HeartIcon from "phosphor-svelte/lib/HeartIcon";
+	import LockKeyIcon from "phosphor-svelte/lib/LockKeyIcon";
+	import TrayArrowDownIcon from "phosphor-svelte/lib/TrayArrowDownIcon";
+	import VibrateIcon from "phosphor-svelte/lib/VibrateIcon";
 	import { toast } from "svelte-sonner";
 
 	import ToastUnimplemented from "$lib/components/feedback/ToastUnimplemented.svelte";
@@ -87,6 +86,15 @@
 	>
 		{#snippet icon()}
 			<EyeIcon weight="fill" />
+		{/snippet}
+	</PreferenceSwitchSetting>
+	<PreferenceSwitchSetting
+		preference="giphyConsent"
+		title="GIF search via GIPHY"
+		description="Search and load GIFs from GIPHY in chats. GIPHY sees your IP address, what you search for and that the requests come from a Grindr app."
+	>
+		{#snippet icon()}
+			<GifIcon weight="fill" />
 		{/snippet}
 	</PreferenceSwitchSetting>
 </SettingsGroup>

@@ -1,4 +1,4 @@
-import { isFilterableTribe } from "$lib/model/browse/grid/filters";
+import { isTribeOfferedNow } from "$lib/api/feature-flags-state.svelte";
 import {
 	acceptNSFWPics,
 	bodyTypes,
@@ -13,17 +13,20 @@ export type OptionFilterDefinition = {
 	id: string;
 	label: string;
 	table: Record<number, string>;
+	isOffered?: (id: number) => boolean;
 };
 
 export const optionFilters = {
 	tribes: {
 		id: "tribes",
-		label: "Tribes",
-		table: Object.fromEntries(
-			Object.entries(tribes).filter(([id]) =>
-				isFilterableTribe(Number(id)),
-			),
-		),
+		label: "Their Tribes",
+		table: tribes,
+		isOffered: isTribeOfferedNow,
+	},
+	tribesImInto: {
+		id: "tribes-im-into",
+		label: "Tribes They're Into",
+		table: tribes,
 	},
 	bodyTypes: { id: "body-type", label: "Body Type", table: bodyTypes },
 	relationshipStatuses: {

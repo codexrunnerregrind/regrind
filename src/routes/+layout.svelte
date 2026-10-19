@@ -4,7 +4,7 @@
 
 	import "../layout.css";
 	import { afterNavigate, beforeNavigate } from "$app/navigation";
-	import { IconContext } from "phosphor-svelte";
+	import IconContext from "phosphor-svelte/lib/IconContext";
 	import { onMount } from "svelte";
 	import { toast, Toaster } from "svelte-sonner";
 
@@ -24,9 +24,13 @@
 		applyBackGestureHandler,
 		registerAndroidBackButtonListener,
 	} from "$lib/platform/android-native-bridge";
+	import { blockNativeMenu } from "$lib/platform/block-native-menu";
 	import { blockZoom } from "$lib/platform/block-zoom";
+	import { trackHoverPointer } from "$lib/platform/hover-pointer";
+	import { keepLinksInApp } from "$lib/platform/in-app-links";
 	import { applyKeyboardInset } from "$lib/platform/keyboard-inset";
 	import { isAndroidPlatform, isMobilePlatform } from "$lib/platform/os";
+	import { installScrollGestureBridge } from "$lib/platform/scroll-gesture";
 	import {
 		applySwipeBackGesture,
 		settleSwipeBack,
@@ -39,11 +43,15 @@
 	import { updatesSelfManaged } from "$lib/updates/capability.svelte";
 	import { startUpdateWatch } from "$lib/updates/updates-manager";
 	import {
+		bottomBlurBarClearance,
 		bottomChromeClearance,
+		screenChromeCovered,
+		topBlurBarClearance,
 		topChromeClearance,
 	} from "$lib/util/screen-chrome.svelte";
 
 	onMount(() => {
+		installScrollGestureBridge();
 		if (env.PUBLIC_TEST_INSETS) {
 			window.__AndroidInsets = {
 				top() {
@@ -70,6 +78,9 @@
 			? trackScreenScroll(screen)
 			: () => {};
 		const releaseTheme = initTheme();
+		const releaseNativeMenuBlock = blockNativeMenu();
+		const releaseHoverPointer = trackHoverPointer();
+		const releaseInAppLinks = keepLinksInApp();
 		if (isAndroidPlatform()) {
 			void registerAndroidBackButtonListener().catch((error) => {
 				console.error("Failed to register back button listener", error);
@@ -91,6 +102,9 @@
 			releaseSwipeBack();
 			releaseScreenScroll();
 			releaseTheme();
+			releaseNativeMenuBlock();
+			releaseHoverPointer();
+			releaseInAppLinks();
 		};
 	});
 
@@ -139,10 +153,17 @@
 		};
 	});
 
-	const toastOffset = $derived({
-		top: `calc(max(var(--safe-area-top), ${topChromeClearance()}px) + 0.5rem)`,
-		bottom: `calc(max(var(--safe-area-bottom), ${bottomChromeClearance()}px) + 0.5rem)`,
-	});
+	const toastOffset = $derived(
+		screenChromeCovered()
+			? {
+					top: "calc(var(--safe-area-top) + 0.5rem)",
+					bottom: "calc(var(--safe-area-bottom) + 0.5rem)",
+				}
+			: {
+					top: `calc(max(var(--safe-area-top), ${topChromeClearance()}px, ${topBlurBarClearance()}px + var(--bar-content-gap)) + 0.5rem)`,
+					bottom: `calc(max(var(--safe-area-bottom), ${bottomChromeClearance()}px, ${bottomBlurBarClearance()}px + var(--bar-content-gap)) + 0.5rem)`,
+				},
+	);
 </script>
 
 <svelte:head>
@@ -150,8 +171,9 @@
 	<link rel="icon" href={faviconSvg} type="image/svg+xml" />
 </svelte:head>
 <div
+	data-slot="safe-area-strip"
 	class={[
-		"fixed inset-x-0 top-0 z-150000",
+		"fixed inset-x-0 top-0 z-safe-area",
 		{
 			"bg-background/50": !env.PUBLIC_TEST_INSETS,
 			"bg-red-900": env.PUBLIC_TEST_INSETS,
@@ -160,8 +182,9 @@
 	style:height="var(--safe-area-top)"
 ></div>
 <div
+	data-slot="safe-area-strip"
 	class={[
-		"fixed inset-x-0 bottom-0 z-150000",
+		"fixed inset-x-0 bottom-0 z-safe-area",
 		{
 			"bg-background/50": !env.PUBLIC_TEST_INSETS,
 			"bg-red-900": env.PUBLIC_TEST_INSETS,
@@ -170,13 +193,15 @@
 	style:height="var(--safe-area-bottom)"
 ></div>
 <IconContext values={{ "aria-hidden": true }}>
-	<Toaster
-		position="bottom-center"
-		offset={toastOffset}
-		mobileOffset={toastOffset}
-		toastOptions={{ class: "toast" }}
-		expand
-	/>
+	<div data-slot="toast-host" class="contents">
+		<Toaster
+			position="bottom-center"
+			offset={toastOffset}
+			mobileOffset={toastOffset}
+			toastOptions={{ class: "toast" }}
+			expand
+		/>
+	</div>
 	<div id="screen-nav-root" bind:this={screen}>
 		{@render children?.()}
 	</div>

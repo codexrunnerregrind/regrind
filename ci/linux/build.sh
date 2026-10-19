@@ -20,20 +20,21 @@ cd /work
 # keep the cache on the mounted filesystem and copy instead of hardlinking.
 export BUN_INSTALL_CACHE_DIR="${BUN_INSTALL_CACHE_DIR:-/work/.bun-cache}"
 bun install --frozen-lockfile --backend copyfile
-bun run tauri build --bundles deb
 
 out="/work/src-tauri/target/release"
 bin="$out/regrind"
+rm -rf "$out/bundle/deb" "$out/bundle/appimage"
+bun run tauri build --bundles deb
 
 # tauri-bundler walks directories unsorted and stamps wall-clock mtimes into
 # both tars and the ar header, so the .deb never reproduces as built:
 # https://github.com/tauri-apps/tauri/issues/13612
 set -- "$out"/bundle/deb/*.deb
+[ -e "$1" ] || set --
 [ "$#" -eq 1 ] || { echo "FATAL: expected one .deb, found $#" >&2; exit 1; }
 bundled=$1
 work=$(mktemp -d)
 dpkg-deb --raw-extract "$bundled" "$work/root"
-LC_ALL=C sort -k2 -o "$work/root/DEBIAN/md5sums" "$work/root/DEBIAN/md5sums"
 find "$work/root" -exec touch -h -d "@$SOURCE_DATE_EPOCH" {} +
 # tauri-bundler sums directory entry sizes into Installed-Size, and those are
 # filesystem-specific; policy defines it from file sizes plus 1 KiB per directory:
@@ -43,6 +44,13 @@ dirs=$(cd "$work/root" && find . -path ./DEBIAN -prune -o -type d -print | wc -l
 sed -i "s/^Installed-Size: .*/Installed-Size: $((files_kib + dirs))/" "$work/root/DEBIAN/control"
 . ci/version.sh
 version=$(json_version src-tauri/tauri.conf.json)
+control_version=$(deb_version "$version")
+# apt users installed 0.1.0-beta.5.1 before deb_version existed, so nothing may sort below it
+dpkg --compare-versions "$control_version" gt 0.1.0-beta.5.1 || {
+	echo "FATAL: deb version $control_version would not upgrade 0.1.0-beta.5.1" >&2
+	exit 1
+}
+sed -i "s/^Version: .*/Version: $control_version/" "$work/root/DEBIAN/control"
 case "$(uname -m)" in aarch64) arch=arm64 ;; *) arch=$(uname -m) ;; esac
 deb="$out/bundle/deb/regrind-v$version-linux-$arch.deb"
 dpkg-deb --root-owner-group -Zgzip -z9 --uniform-compression -b "$work/root" "$deb"
@@ -83,17 +91,17 @@ cp "$largest_icon" "$appdir/.DirIcon"
 
 cat > "$appdir/AppRun" <<'APPRUN'
 #!/bin/sh
-bin="$(dirname "$(readlink -f "$0")")/usr/bin/open-grind"
+bin="$(dirname "$(readlink -f "$0")")/usr/bin/regrind"
 
 if LD_TRACE_LOADED_OBJECTS=1 "$bin" 2>/dev/null | grep -q 'libwebkit2gtk-4.1.so.0 => not found'; then
-	missing="Open Grind needs WebKitGTK 4.1, which is not installed.
+	missing="ReGrind needs WebKitGTK 4.1, which is not installed.
 
-Install libwebkit2gtk-4.1-0 (Debian, Ubuntu), webkit2gtk-4.1 (Arch), webkit2gtk4.1 (Fedora) or libwebkit2gtk-4_1-0 (openSUSE), then start Open Grind again."
+Install libwebkit2gtk-4.1-0 (Debian, Ubuntu), webkit2gtk-4.1 (Arch), webkit2gtk4.1 (Fedora) or libwebkit2gtk-4_1-0 (openSUSE), then start ReGrind again."
 	echo "$missing" >&2
 	zenity --error --no-wrap --text="$missing" 2>/dev/null ||
 		kdialog --error "$missing" 2>/dev/null ||
 		xmessage -center "$missing" 2>/dev/null ||
-		notify-send "Open Grind" "$missing" 2>/dev/null ||
+		notify-send "ReGrind" "$missing" 2>/dev/null ||
 		true
 	exit 1
 fi
@@ -108,7 +116,7 @@ sqfs=$(mktemp -u)
 mksquashfs "$appdir" "$sqfs" -comp zstd -b 128K -noappend -no-progress -no-xattrs \
 	-all-root -processors 1
 mkdir -p "$out/bundle/appimage"
-appimage="$out/bundle/appimage/open-grind-v$version-linux-$arch.AppImage"
+appimage="$out/bundle/appimage/regrind-v$version-linux-$arch.AppImage"
 cat "$runtime" "$sqfs" > "$appimage"
 chmod 0755 "$appimage"
 rm -rf "$sqfs" "$(dirname "$appdir")"

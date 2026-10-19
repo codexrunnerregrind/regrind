@@ -18,8 +18,12 @@
 	import { withRegionGrant } from "$lib/entitlements/expiring-media-entitlement";
 	import { openExternalLink } from "$lib/platform/link-opener";
 	import type { ApiResponseMessage } from "$lib/model/messaging/messages";
-	import { getConversationState } from "../conversation-state.svelte";
+	import {
+		getConversationState,
+		type OptimisticMessage,
+	} from "../conversation-state.svelte";
 	import { processMessages } from "../messages";
+	import { setMediaRenewal } from "./message/media-renewal";
 	import Message from "./message/Message.svelte";
 
 	let { seenMessageIds }: { seenMessageIds: Set<string> } = $props();
@@ -28,6 +32,7 @@
 	let reportProfileId = $state<number | null>(null);
 
 	const conversationState = $derived(getConversationState()());
+	setMediaRenewal(() => conversationState.dynamicRefresh.renewMedia());
 
 	const ALBUM_MESSAGE_TYPES = ["Album", "ExpiringAlbum", "ExpiringAlbumV2"];
 
@@ -60,16 +65,35 @@
 		return albumId;
 	}
 
-	const messages = $derived(
-		processMessages({
-			messages: conversationState.messages,
-			ourProfileId: conversationState.ourProfileId,
-		}),
+	// Layout is looked up by id so an unchanged message keeps its props.
+	const layoutByMessageId = $derived(
+		new Map(
+			processMessages({
+				messages: conversationState.messages,
+				ourProfileId: conversationState.ourProfileId,
+			}).map((layout) => [layout.messageId, layout] as const),
+		),
 	);
 
 	// Oldest first, the way they are read down the screen — which is also the
 	// order a run of voice notes plays in.
-	const rendered = $derived(messages.toReversed());
+	const rendered = $derived(conversationState.messages.toReversed());
+
+	// A failed send never reached the server, so it only goes locally.
+	async function deleteForMe(message: OptimisticMessage) {
+		const { revert } = conversationState.remove(message.messageId);
+		if (message.status === "error") return;
+		try {
+			await deleteMessageForMe({
+				conversationId: conversationState.conversationId,
+				messageId: message.messageId,
+			});
+		} catch (error) {
+			console.error(error);
+			showErrorToast({ label: "Failed to delete message", error });
+			revert();
+		}
+	}
 
 	function reportUnsendFailure(error: unknown) {
 		if (tieredFeature(error) === "UnsentMessage") {
@@ -92,17 +116,20 @@
 {#each rendered as message, index (message.messageId)}
 	{@const isOut = message.senderId === conversationState.ourProfileId}
 	{@const after = rendered[index + 1]}
+	{@const delivered = message.status === "sent"}
+	{@const layout = layoutByMessageId.get(message.messageId)}
 	<Message
 		{message}
 		nextAudioMessageId={after?.type === "Audio"
 			? after.messageId
 			: undefined}
 		{isOut}
-		indexInStack={message.indexInStack}
-		stackLength={message.stackLength}
-		dayStart={message.dayStart}
+		indexInStack={layout?.indexInStack ?? 0}
+		stackLength={layout?.stackLength ?? 1}
+		dayStart={layout?.dayStart}
 		status={message.status}
-		isRead={isOut && message.messageId === messages[0]?.messageId
+		isRead={isOut &&
+		message.messageId === conversationState.messages[0]?.messageId
 			? conversationState.lastReadTimestamp === message.timestamp
 			: null}
 		onVisible={!isOut
@@ -111,23 +138,10 @@
 					conversationState.reportRead(message);
 				}
 			: undefined}
-		onDelete={async () => {
-			let revert: (() => void) | undefined;
-			try {
-				({ revert } = conversationState.remove(message.messageId));
-				await deleteMessageForMe({
-					conversationId: conversationState.conversationId,
-					messageId: message.messageId,
-				});
-			} catch (error) {
-				console.error(error);
-				showErrorToast({ label: "Failed to delete message", error });
-				revert?.();
-			}
-		}}
-		onReply={message.status !== "pending" &&
-		message.status !== "error" &&
-		!message.unsent
+		onDelete={message.status === "pending"
+			? undefined
+			: () => void deleteForMe(message)}
+		onReply={delivered && !message.unsent
 			? () => conversationState.setReplyTo(message)
 			: undefined}
 		onReport={!isOut && conversationState.profile
@@ -137,18 +151,23 @@
 					reportOpen = reportProfileId !== null;
 				}
 			: undefined}
-		onReact={async (reactionType: number) => {
-			try {
-				await conversationState.reactTo({
-					messageId: message.messageId,
-					reactionType,
-				});
-			} catch (error) {
-				console.error(error);
-				showErrorToast({ label: "Failed to react to message", error });
-			}
-		}}
-		onUnsend={isOut && !message.unsent
+		onReact={delivered
+			? async (reactionType: number) => {
+					try {
+						await conversationState.reactTo({
+							messageId: message.messageId,
+							reactionType,
+						});
+					} catch (error) {
+						console.error(error);
+						showErrorToast({
+							label: "Failed to react to message",
+							error,
+						});
+					}
+				}
+			: undefined}
+		onUnsend={isOut && delivered && !message.unsent
 			? async () => {
 					let revert: (() => void) | undefined;
 					try {
@@ -214,6 +233,7 @@
 	<ReportSheet
 		bind:open={reportOpen}
 		profileId={reportProfileId}
+		subject="message"
 		locations={["CHAT_MESSAGE"]}
 	/>
 {/if}

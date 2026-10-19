@@ -25,6 +25,7 @@ export type DemoMessage = {
 			expired?: boolean;
 	  }
 	| { kind: "unsent" }
+	| { kind: "gif" }
 );
 
 export type DemoConversation = {
@@ -53,6 +54,7 @@ export const demoConversationSeeds: DemoConversation[] = [
 				reactions: 1,
 			},
 			{ fromMe: false, text: "Sed do eiusmod tempor incididunt?" },
+			{ fromMe: false, kind: "gif" },
 			{ fromMe: false, kind: "album", albumId: 5001, unseen: true },
 			{
 				fromMe: true,
@@ -94,6 +96,7 @@ export const demoConversationSeeds: DemoConversation[] = [
 		lastActivityAgo: 1,
 		messages: [
 			{ fromMe: true, text: "Hi, how are you?" },
+			{ fromMe: true, kind: "gif" },
 			{ fromMe: true, kind: "expiringImage" },
 			{ fromMe: false, kind: "expiringImage", expired: true },
 			{ fromMe: false, text: "Did you catch it? 👀" },

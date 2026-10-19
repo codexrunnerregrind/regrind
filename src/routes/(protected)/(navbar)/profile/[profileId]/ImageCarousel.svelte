@@ -2,7 +2,6 @@
 	import "photoswipe/style.css";
 	import { goto } from "$app/navigation";
 	import { format } from "date-fns";
-	import { UserIcon } from "phosphor-svelte";
 	import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
 	import { sendTap } from "$lib/api/interest/taps";
@@ -15,6 +14,7 @@
 		type MediaViewerActions,
 		registerMediaViewerChrome,
 	} from "$lib/chat/media-viewer-chrome";
+	import UserSilhouette from "$lib/components/profile/UserSilhouette.svelte";
 	import { TapType } from "$lib/model/interest/taps";
 	import { profileMediaUrl } from "$lib/util/media";
 	import {
@@ -23,6 +23,7 @@
 		applyPhotoSwipeThumbDimensions,
 		applyPhotoSwipeViewportSync,
 	} from "$lib/util/photoswipe";
+	import { devicePixelHeight } from "./device-pixel-height";
 	import ImageCarouselItem from "./ImageCarouselItem.svelte";
 
 	let {
@@ -203,10 +204,13 @@
 	let indicatorHeight = $state(BULLET_SIZE_PX);
 </script>
 
-<div class="relative aspect-3/4 h-auto max-h-photo w-full">
+<div
+	class="relative aspect-3/4 h-auto max-h-photo w-full"
+	{@attach devicePixelHeight}
+>
 	{#if medias.length}
 		<div
-			class="carousel relative flex size-full max-h-[inherit] snap-y snap-mandatory flex-col overflow-auto *:snap-center"
+			class="carousel relative flex size-full max-h-(--device-pixel-height) snap-y snap-mandatory flex-col overflow-auto *:snap-center"
 			bind:this={gallery}
 			onscroll={() => {
 				if (!gallery) return;
@@ -255,9 +259,7 @@
 		</div>
 	{:else}
 		<div class="absolute size-full bg-media-placeholder">
-			<UserIcon
-				weight="fill"
-				color="var(--color-stone-400)"
+			<UserSilhouette
 				class="absolute top-1/2 left-1/2 size-3/4 -translate-1/2"
 			/>
 		</div>

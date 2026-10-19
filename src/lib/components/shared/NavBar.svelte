@@ -2,7 +2,7 @@
 	import { page } from "$app/state";
 	import { untrack } from "svelte";
 
-	import { getProfile } from "$lib/api/users/profiles";
+	import { getProfile, onProfileEdit } from "$lib/api/users/profiles";
 	import { getOrCreateConversationsState } from "$lib/chat/conversations-context.svelte";
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
 	import { navTabs } from "$lib/components/shared/nav-tabs";
@@ -45,10 +45,20 @@
 
 	// The "You" tab wears the user's own first photo when they have one, so the
 	// generic glyph is only a fallback. A failed fetch falls back the same way.
-	const ourAvatarHash = $derived(
-		getProfile(ourProfileId).then(
-			(profile) => profile.medias[0]?.mediaHash,
+	let ourAvatarHash = $state(
+		untrack(() =>
+			getProfile(ourProfileId).then(
+				(profile) => profile.medias[0]?.mediaHash,
+			),
 		),
+	);
+
+	$effect(() =>
+		onProfileEdit(({ profileId, patch }) => {
+			if (profileId !== ourProfileId || patch.medias === undefined)
+				return;
+			ourAvatarHash = Promise.resolve(patch.medias[0]?.mediaHash);
+		}),
 	);
 
 	// Which tab the pill sits over. A route no tab claims (there is none today,
@@ -79,6 +89,7 @@
      directly on top of this bar). The capsule floats *inside* that box, so
      switching shapes never moves anything else on the screen. -->
 <nav
+	aria-label="Main"
 	class={[
 		"fixed bottom-0 z-50 flex h-[calc(var(--nav-height)+var(--safe-area-bottom,0px))] w-full pb-(--safe-area-bottom)",
 		{

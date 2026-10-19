@@ -1,5 +1,6 @@
 import z from "zod";
 
+import { type Gender, primaryGenderRank } from "$lib/model/users/genders";
 import {
 	AcceptNSFWPics,
 	BodyType,
@@ -15,7 +16,7 @@ import {
 	tagsOf,
 	tagTextByKey,
 } from "$lib/model/users/tags";
-import type { Gender } from "$lib/model/users/genders";
+import type { UnitSystem } from "$lib/util/units";
 
 export const filterIsFavoriteSchema = z.boolean();
 export const filterIsOnlineSchema = z.boolean();
@@ -41,6 +42,23 @@ export const isFullRange = ({
 	max: number;
 }) => from === min && to === max;
 
+export const rangeBoundTexts = ({
+	floor,
+	ceiling,
+	range: [min = floor, max = ceiling],
+	format,
+	units,
+}: {
+	floor: number;
+	ceiling: number;
+	range: number[];
+	format: (value: number, units: UnitSystem) => string;
+	units: UnitSystem;
+}): [string, string] => [
+	min === floor ? "No min" : format(min, units),
+	max === ceiling ? "No max" : format(max, units),
+];
+
 export const AGE_MIN = 18;
 export const AGE_MAX = 99;
 
@@ -59,11 +77,21 @@ export const GENDER_ASK_ME = 62;
 
 export const isFilterableGenderId = (id: number) => id !== GENDER_ASK_ME;
 
-export const isFilterableGender = (
-	gender: Gender,
-): gender is Gender & { sortFilter: number } =>
-	typeof gender.sortFilter === "number" &&
-	isFilterableGenderId(gender.genderId);
+export const isFilterableGender = ({
+	genderId,
+	displayGroup,
+}: Pick<Gender, "genderId" | "displayGroup">) =>
+	displayGroup > 0 && isFilterableGenderId(genderId);
+
+type SortableFilterGender = Pick<Gender, "genderId" | "sortFilter">;
+
+export const compareFilterGenders = (
+	a: SortableFilterGender,
+	b: SortableFilterGender,
+) =>
+	primaryGenderRank(a.genderId) - primaryGenderRank(b.genderId) ||
+	(a.sortFilter ?? Infinity) - (b.sortFilter ?? Infinity) ||
+	a.genderId - b.genderId;
 
 export const filterUsernameEnabledSchema = z.boolean();
 export const filterUsernameSchema = z.string();
@@ -86,12 +114,13 @@ export function usernameMatches(
 export const filterTagsEnabledSchema = z.boolean();
 export const filterTagsSchema = z.array(z.string());
 
-const TAG_KEYS_MOVED_TO_GENDERS = ["ftm", "mtf"];
-
-export const isFilterableTagKey = (key: string) =>
-	!TAG_KEYS_MOVED_TO_GENDERS.includes(key);
-
-export function tagCatalog(languages: ProfileTagsResponse) {
+export function tagCatalog({
+	languages,
+	isOffered = () => true,
+}: {
+	languages: ProfileTagsResponse;
+	isOffered?: (key: string) => boolean;
+}) {
 	const textByKey = tagTextByKey(languages);
 	const textsByKey = new Map<string, string[]>();
 	const keyByText = new Map<string, string>();
@@ -104,13 +133,11 @@ export function tagCatalog(languages: ProfileTagsResponse) {
 		categories: (languages[0]?.categoryCollection ?? []).map(
 			(category) => ({
 				...category,
-				tags: category.tags.filter(({ key }) =>
-					isFilterableTagKey(key),
-				),
+				tags: category.tags.filter(({ key }) => isOffered(key)),
 			}),
 		),
 		flat: [...textByKey]
-			.filter(([key]) => isFilterableTagKey(key))
+			.filter(([key]) => isOffered(key))
 			.map(([key, text]) => ({
 				key,
 				text,
@@ -146,8 +173,6 @@ export const filterTribesEnabledSchema = z.boolean();
 export const FilterTribe = { ...Tribe, NotSpecified: -1 } as const;
 export type FilterTribeId = (typeof FilterTribe)[keyof typeof FilterTribe];
 export const filterTribesSchema = z.array(z.enum(FilterTribe));
-
-export const isFilterableTribe = (id: number) => id !== Tribe.Trans;
 
 export const filterBodyTypeEnabledSchema = z.boolean();
 export const FilterBodyType = { ...BodyType, NotSpecified: -1 } as const;
@@ -245,6 +270,9 @@ export const gridSearchFiltersSchema = z.object({
 	tribesEnabled: filterTribesEnabledSchema.default(false),
 	tribes: filterTribesSchema.default([]),
 
+	tribesImIntoEnabled: filterTribesEnabledSchema.default(false),
+	tribesImInto: filterTribesSchema.default([]),
+
 	bodyTypesEnabled: filterBodyTypeEnabledSchema.default(false),
 	bodyTypes: filterBodyTypeSchema.default([]),
 
@@ -319,6 +347,7 @@ const ACTIVE_FILTER_FLAGS = [
 	"positionEnabled",
 	"photosEnabled",
 	"tribesEnabled",
+	"tribesImIntoEnabled",
 	"bodyTypesEnabled",
 	"heightEnabled",
 	"weightEnabled",

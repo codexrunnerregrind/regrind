@@ -1,6 +1,6 @@
 package org.opengrind.addon
 
-import org.opengrind.R
+import org.regrind.R
 
 object AddonNames {
 	fun resourceOf(addonPackage: String?): Int = when (addonPackage) {

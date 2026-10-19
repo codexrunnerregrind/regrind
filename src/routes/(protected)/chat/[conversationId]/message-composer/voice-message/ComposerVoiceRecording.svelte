@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { TrashIcon } from "phosphor-svelte";
+	import TrashIcon from "phosphor-svelte/lib/TrashIcon";
 	import { fade } from "svelte/transition";
 
 	import { formatMediaDuration } from "$lib/util/format-time";

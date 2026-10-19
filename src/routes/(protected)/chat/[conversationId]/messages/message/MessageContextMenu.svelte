@@ -1,14 +1,12 @@
 <script lang="ts">
 	import { writeText } from "@tauri-apps/plugin-clipboard-manager";
-	import {
-		ArrowBendUpLeftIcon,
-		ArrowUUpLeftIcon,
-		CopyIcon,
-		FlagIcon,
-		FolderSimpleMinusIcon,
-		TrashIcon,
-		WarningCircleIcon,
-	} from "phosphor-svelte";
+	import ArrowBendUpLeftIcon from "phosphor-svelte/lib/ArrowBendUpLeftIcon";
+	import ArrowUUpLeftIcon from "phosphor-svelte/lib/ArrowUUpLeftIcon";
+	import CopyIcon from "phosphor-svelte/lib/CopyIcon";
+	import FlagIcon from "phosphor-svelte/lib/FlagIcon";
+	import FolderSimpleMinusIcon from "phosphor-svelte/lib/FolderSimpleMinusIcon";
+	import TrashIcon from "phosphor-svelte/lib/TrashIcon";
+	import WarningCircleIcon from "phosphor-svelte/lib/WarningCircleIcon";
 	import { toast } from "svelte-sonner";
 	import type { ComponentProps } from "svelte";
 
@@ -41,17 +39,13 @@
 </script>
 
 <ContextMenu {...props}>
-	{#snippet children(placement)}
+	{#snippet header()}
 		{#if reactionAvailable}
 			<!-- a cursor cannot double-tap, so it gets the reaction itself
 			     where a touchscreen gets the hint -->
 			<span
 				class={[
 					"mb-2 block w-45 text-center text-foreground/50 text-shadow-sm can-hover:hidden",
-					{
-						"-mt-8": !placement.startsWith("bottom"),
-						"mt-1": placement.startsWith("bottom"),
-					},
 				]}
 			>
 				Double tap to <img
@@ -69,10 +63,6 @@
 				aria-label="React with fire"
 				class={[
 					"mb-2 hidden self-start rounded-full bg-black/80 can-hover:inline-flex",
-					{
-						"-mt-8": !placement.startsWith("bottom"),
-						"mt-1": placement.startsWith("bottom"),
-					},
 				]}
 				onclick={() => {
 					onReact?.(1);
@@ -88,91 +78,93 @@
 				/>
 			</Button>
 		{/if}
-		<div
-			class="flex w-45 flex-col rounded-xl bg-black/80 p-1 *:justify-start *:active:translate-y-0!"
-		>
-			{#if onReply}
-				<Button
-					variant="ghost"
-					onclick={() => {
-						onReply();
-						props.onClose();
-					}}
-				>
-					<ArrowBendUpLeftIcon /> Reply
-				</Button>
-			{/if}
-			{#if textContent !== undefined}
-				<Button
-					variant="ghost"
-					onclick={() => {
-						writeText(textContent)
-							.then(() => {
-								toast.success("Message copied to clipboard");
-								props.onClose();
-							})
-							.catch((error) => console.error(error));
-					}}
-				>
-					<CopyIcon /> Copy message
-				</Button>
-			{/if}
-			{#if onCopyError}
-				<Button
-					variant="ghost"
-					onclick={() => {
-						onCopyError();
-						props.onClose();
-					}}
-				>
-					<WarningCircleIcon /> Copy error
-				</Button>
-			{/if}
+	{/snippet}
+	<div
+		class="flex w-45 flex-col rounded-xl bg-black/80 p-1 *:justify-start *:active:translate-y-0!"
+	>
+		{#if onReply}
 			<Button
 				variant="ghost"
 				onclick={() => {
-					onDelete?.();
+					onReply();
+					props.onClose();
+				}}
+			>
+				<ArrowBendUpLeftIcon /> Reply
+			</Button>
+		{/if}
+		{#if textContent !== undefined}
+			<Button
+				variant="ghost"
+				onclick={() => {
+					writeText(textContent)
+						.then(() => {
+							toast.success("Message copied to clipboard");
+							props.onClose();
+						})
+						.catch((error) => console.error(error));
+				}}
+			>
+				<CopyIcon /> Copy message
+			</Button>
+		{/if}
+		{#if onCopyError}
+			<Button
+				variant="ghost"
+				onclick={() => {
+					onCopyError();
+					props.onClose();
+				}}
+			>
+				<WarningCircleIcon /> Copy error
+			</Button>
+		{/if}
+		{#if onDelete}
+			<Button
+				variant="ghost"
+				onclick={() => {
+					onDelete();
 					props.onClose();
 				}}
 			>
 				<TrashIcon />
 				Delete for me
 			</Button>
-			{#if onUnsend}
-				<Button
-					variant="ghost"
-					onclick={() => {
-						onUnsend();
-						props.onClose();
-					}}
-				>
-					<ArrowUUpLeftIcon />
-					Unsend message
-				</Button>
-			{/if}
-			{#if onUnshareAlbum}
-				<Button
-					variant="ghost"
-					onclick={() => {
-						onUnshareAlbum();
-						props.onClose();
-					}}
-				>
-					<FolderSimpleMinusIcon />
-					Unshare album
-				</Button>
-			{/if}
-			{#if onReport}
-				<Button
-					variant="ghost"
-					onclick={() => {
-						props.onClose();
-						onReport();
-					}}
-				>
-					<FlagIcon /> Report
-				</Button>
-			{/if}
-		</div>
-	{/snippet}
+		{/if}
+		{#if onUnsend}
+			<Button
+				variant="ghost"
+				onclick={() => {
+					onUnsend();
+					props.onClose();
+				}}
+			>
+				<ArrowUUpLeftIcon />
+				Unsend message
+			</Button>
+		{/if}
+		{#if onUnshareAlbum}
+			<Button
+				variant="ghost"
+				onclick={() => {
+					onUnshareAlbum();
+					props.onClose();
+				}}
+			>
+				<FolderSimpleMinusIcon />
+				Unshare album
+			</Button>
+		{/if}
+		{#if onReport}
+			<Button
+				variant="ghost"
+				onclick={() => {
+					props.onClose();
+					onReport();
+				}}
+			>
+				<FlagIcon /> Report
+			</Button>
+		{/if}
+	</div>
 </ContextMenu>

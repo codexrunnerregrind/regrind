@@ -1,11 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { setVisibility } from "$lib/test/visibility";
+
 const {
 	callMethodMock,
 	connectedHandlers,
 	droppedHandlers,
 	undeliveredHandlers,
 	rejectedHandlers,
+	isMobilePlatformMock,
+	awaitEntitlementGrantMock,
 } = vi.hoisted(() => ({
 	callMethodMock: vi.fn(() =>
 		Promise.resolve({ profileId: 1, expiresAt: null, stale: false }),
@@ -14,11 +18,17 @@ const {
 	droppedHandlers: [] as ((skipped: number) => void)[],
 	undeliveredHandlers: [] as ((event: unknown) => void)[],
 	rejectedHandlers: [] as ((eventType: string) => void)[],
+	isMobilePlatformMock: vi.fn(() => false),
+	awaitEntitlementGrantMock: vi.fn(() => Promise.resolve()),
 }));
 
 vi.mock("$lib/api/methods", async (importOriginal) => ({
 	...(await importOriginal<typeof import("$lib/api/methods")>()),
 	callMethod: callMethodMock,
+}));
+vi.mock("$lib/platform/os", () => ({ isMobilePlatform: isMobilePlatformMock }));
+vi.mock("$lib/entitlements/expiring-media-entitlement", () => ({
+	awaitEntitlementGrant: awaitEntitlementGrantMock,
 }));
 vi.mock("$lib/ws.svelte", () => ({
 	notificationUndeliveredEventSchema: {},
@@ -42,6 +52,9 @@ vi.mock("$lib/ws.svelte", () => ({
 		},
 	},
 }));
+
+const SECOND_MS = 1000;
+const MINUTE_MS = 60 * SECOND_MS;
 
 const flushMockSubscriptions = () => vi.advanceTimersByTimeAsync(0);
 
@@ -73,6 +86,13 @@ function reconnect() {
 	const [handler] = connectedHandlers;
 	if (!handler) throw new Error("nothing subscribed to ws:connected");
 	handler();
+}
+
+async function hideFor(awayMs: number) {
+	setVisibility("hidden");
+	await vi.advanceTimersByTimeAsync(awayMs);
+	setVisibility("visible");
+	await flushMockSubscriptions();
 }
 
 describe("Reconciler resync after dropped websocket events", () => {
@@ -189,5 +209,214 @@ describe("Reconciler resync after an undelivered notification", () => {
 		await vi.advanceTimersByTimeAsync(0);
 
 		expect(handler).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe("Reconciler on returning to the app", () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+		isMobilePlatformMock.mockReturnValue(false);
+	});
+
+	it("leaves desktop data alone when the window was hidden for under five minutes", async () => {
+		const reconciler = await freshReconciler();
+		const handler = vi.fn();
+		reconciler.subscribe(handler);
+
+		await hideFor(5 * MINUTE_MS - SECOND_MS);
+
+		expect(handler).not.toHaveBeenCalled();
+	});
+
+	it("reconciles on desktop once the window was hidden for five minutes", async () => {
+		const reconciler = await freshReconciler();
+		const handler = vi.fn();
+		reconciler.subscribe(handler);
+
+		await hideFor(5 * MINUTE_MS);
+
+		expect(handler).toHaveBeenCalledTimes(1);
+	});
+
+	it("measures each desktop absence on its own instead of adding short ones up", async () => {
+		const reconciler = await freshReconciler();
+		const handler = vi.fn();
+		reconciler.subscribe(handler);
+
+		await hideFor(3 * MINUTE_MS);
+		await vi.advanceTimersByTimeAsync(10 * MINUTE_MS);
+		await hideFor(3 * MINUTE_MS);
+		expect(handler).not.toHaveBeenCalled();
+
+		await hideFor(5 * MINUTE_MS);
+		expect(handler).toHaveBeenCalledTimes(1);
+	});
+
+	it("reconciles on mobile after any absence, however short", async () => {
+		isMobilePlatformMock.mockReturnValue(true);
+		const reconciler = await freshReconciler();
+		const handler = vi.fn();
+		reconciler.subscribe(handler);
+
+		await hideFor(3 * SECOND_MS);
+
+		expect(handler).toHaveBeenCalledTimes(1);
+	});
+
+	it("reconciles a hidden desktop window on a websocket reconnect and not again on a quick return", async () => {
+		const reconciler = await freshReconciler();
+		const handler = vi.fn();
+		reconciler.subscribe(handler);
+		reconnect();
+
+		setVisibility("hidden");
+		await vi.advanceTimersByTimeAsync(30 * SECOND_MS);
+		reconnect();
+		await flushMockSubscriptions();
+		expect(handler).toHaveBeenCalledTimes(1);
+
+		await vi.advanceTimersByTimeAsync(3 * SECOND_MS);
+		setVisibility("visible");
+		await flushMockSubscriptions();
+		expect(handler).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe("Reconciler causes", () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+		vi.spyOn(console, "warn").mockImplementation(() => undefined);
+		isMobilePlatformMock.mockReturnValue(true);
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+		vi.restoreAllMocks();
+		isMobilePlatformMock.mockReturnValue(false);
+	});
+
+	async function subscribed() {
+		const reconciler = await freshReconciler();
+		const handler = vi.fn();
+		const onFoldedResume = vi.fn();
+		reconciler.subscribe(handler, { onFoldedResume });
+		reconnect();
+		return { handler, onFoldedResume };
+	}
+
+	it("tells handlers what started each reconcile", async () => {
+		const { handler, onFoldedResume } = await subscribed();
+
+		reconnect();
+		await flushMockSubscriptions();
+		await vi.advanceTimersByTimeAsync(2 * SECOND_MS);
+		dropEvents(1);
+		await flushMockSubscriptions();
+		await vi.advanceTimersByTimeAsync(2 * SECOND_MS);
+		await hideFor(SECOND_MS);
+
+		expect(handler.mock.calls).toEqual([
+			["reconnect"],
+			["resync"],
+			["resume"],
+		]);
+		expect(onFoldedResume).not.toHaveBeenCalled();
+	});
+
+	it("hands a return to the app right after a reconnect only to the catch-up handlers", async () => {
+		const { handler, onFoldedResume } = await subscribed();
+
+		setVisibility("hidden");
+		await vi.advanceTimersByTimeAsync(10 * SECOND_MS);
+		reconnect();
+		await flushMockSubscriptions();
+		setVisibility("visible");
+		await flushMockSubscriptions();
+
+		expect(handler.mock.calls).toEqual([["reconnect"]]);
+		expect(onFoldedResume).toHaveBeenCalledOnce();
+	});
+
+	it("lets a folded return catch up only once the round it folds into handed its handlers out", async () => {
+		const { handler, onFoldedResume } = await subscribed();
+		const order: string[] = [];
+		handler.mockImplementation(() => void order.push("round"));
+		onFoldedResume.mockImplementation(() => void order.push("catch-up"));
+		setVisibility("hidden");
+		await vi.advanceTimersByTimeAsync(10 * SECOND_MS);
+		let answerSession!: () => void;
+		callMethodMock.mockImplementationOnce(
+			() =>
+				new Promise((resolve) => {
+					answerSession = () =>
+						resolve({
+							profileId: 1,
+							expiresAt: null,
+							stale: false,
+						});
+				}),
+		);
+		reconnect();
+		await flushMockSubscriptions();
+		setVisibility("visible");
+		await flushMockSubscriptions();
+		expect(order).toEqual([]);
+
+		answerSession();
+		await flushMockSubscriptions();
+
+		expect(order).toEqual(["round", "catch-up"]);
+	});
+
+	it("drops a reconnect that follows a return to the app", async () => {
+		const { handler, onFoldedResume } = await subscribed();
+
+		await hideFor(SECOND_MS);
+		reconnect();
+		await flushMockSubscriptions();
+
+		expect(handler.mock.calls).toEqual([["resume"]]);
+		expect(onFoldedResume).not.toHaveBeenCalled();
+	});
+
+	it("drops a second return to the app inside the throttle window", async () => {
+		const { handler, onFoldedResume } = await subscribed();
+
+		await hideFor(SECOND_MS);
+		await hideFor(SECOND_MS / 2);
+
+		expect(handler.mock.calls).toEqual([["resume"]]);
+		expect(onFoldedResume).not.toHaveBeenCalled();
+	});
+});
+
+describe("Reconciler while the profile is away from home", () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+	});
+
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
+	it("refetches only once the profile is back home", async () => {
+		const backHome = Promise.withResolvers<void>();
+		awaitEntitlementGrantMock.mockReturnValueOnce(backHome.promise);
+		const reconciler = await freshReconciler();
+		const handler = vi.fn();
+		reconciler.subscribe(handler);
+
+		reconnect();
+		reconnect();
+		await flushMockSubscriptions();
+		expect(handler).not.toHaveBeenCalled();
+
+		backHome.resolve();
+		await flushMockSubscriptions();
+		expect(handler).toHaveBeenCalledOnce();
 	});
 });

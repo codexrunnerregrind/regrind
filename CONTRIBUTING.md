@@ -61,7 +61,7 @@ Projects reference:
     ```
 
     - Run with `PUBLIC_ENABLE_BLUR_EFFECTS=1` to blur all avatars in the app.
-    - Run with `PUBLIC_ENABLE_DEMO=1` to switch to SFW mock data.
+    - Run with `OPEN_GRIND_DEMO=1` to switch to SFW mock data.
 
 ### Project structure
 
@@ -87,7 +87,7 @@ const securityHeaders = {
 	requireRealDeviceInfo: "true",
 	"L-Time-Zone": "Europe/Madrid",
 	"User-Agent":
-		"grindr3/26.17.0.181424;181424;Free;Android 13;Pixel 7;Google",
+		"grindr3/26.20.0.187695;187695;Free;Android 13;Pixel 7;Google",
 	"L-Device-Info":
 		"1fAf9fB2aFfd47Fd;GLOBAL;2;3543028095;2400x1080;a1b2c3d4-e5f6-7890-abcd-ef1234567890",
 	// modify L-Device-Info values randomly if you're getting ACCOUNT_BANNED at sign-in
@@ -163,7 +163,7 @@ Never select on Tailwind utility classes, tag shape, or computed style: `div.abs
 
 Open Grind adopts semver and uses it for canonical version names, i.e. `vMAJOR.MINOR.PATCH` with optional `-TAG` or `-TAG.X` semver metadata (where `MAJOR`, `MINOR`, `PATCH` and `X` are non-negative integers), e.g. `v0.1.0`, `v1.0.0-rc` or `v1.2.3-beta.1`.
 
-Android version code is calculated using `major * 1000000 + minor * 1000 + patch`, but for pre-mvp (v0.1.0) this convention is broken:
+Android version code is `major * 10000000 + minor * 100000 + patch * 1000`, and `-rc.N` is `release - 1000 + 10 * N`. Per-ABI APKs add their last digit from `opengrind.android.abiVersionCodeOffsets` in [gradle.properties](./src-tauri/gen/android/gradle.properties). For pre-mvp (v0.1.0) this convention is broken:
 
 ```
 v0.1.0-alpha.1  = 1000
@@ -177,19 +177,22 @@ v0.1.0-beta.3   = 1030 (due to error, the actual release is 1020)
 v0.1.0-beta.4   = 1040 (error fixed, actual release jumps from 1020 to 1040)
 v0.1.0-beta.4.1 = 1041
 v0.1.0-beta.5   = 1050
+v0.1.0-beta.5.1 = 1051
+v0.1.0-rc.1     = 11000
+v0.1.0-rc.2     = 12000
 ```
 
 Post-mvp versioning:
 
 ```
-v0.2.0      =    2000
-v0.2.1      =    2001
-v0.3.0-rc.1 =    3000
-v0.3.0      =    3000
-v0.123.0    =  123000
-v1.0.0      = 1000000
-v1.1.0      = 1001000
-v1.123.0    = 1123000
+v0.2.0      =   200000
+v0.2.1      =   201000
+v0.3.0-rc.1 =   299010
+v0.3.0      =   300000
+v0.123.0    = 12300000
+v1.0.0      = 10000000
+v1.1.0      = 10100000
+v1.123.0    = 22300000
 ```
 
 ## Submitting your changes
@@ -206,6 +209,7 @@ Before opening a pull request, run the same checks CI runs:
 End-to-end tests are a separate tier:
 
 - `bun run test:e2e` — Playwright. One-time setup: `bunx playwright install chromium`. It drives the web build and runs the browser serially, which is why it stays out of `bun run test`.
+- `bun run test:e2e:guard` — the layout guard. It builds the web demo for production, then checks every signed-in page and the 404 page at a phone and a desktop size: the bars can't scroll and stay see-through in every blur mode, nothing overflows, and the page structure passes axe. About 5 minutes, build included.
 - `bun run test:android` — JUnit tests for the Android sources. Needs the Android SDK and the Gradle files that `bun run tauri android build` generates, which is why it stays out of `bun run test`.
 
 Local updater testing:

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CheckIcon } from "phosphor-svelte";
+	import CheckIcon from "phosphor-svelte/lib/CheckIcon";
 	import { getContext } from "svelte";
 	import type { Snippet } from "svelte";
 

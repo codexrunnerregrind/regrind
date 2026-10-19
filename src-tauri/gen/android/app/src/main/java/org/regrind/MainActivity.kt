@@ -7,6 +7,8 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.view.MotionEvent
+import android.view.View
 import android.view.ViewGroup
 import android.webkit.JavascriptInterface
 import android.webkit.WebView
@@ -19,7 +21,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import io.crates.keyring.Keyring
 import java.lang.ref.WeakReference
 import org.json.JSONObject
 import org.regrind.push.NotificationPermission
@@ -46,6 +47,7 @@ class MainActivity : TauriActivity() {
 	private var shownWebViewWarning = false
 	private val mainHandler = Handler(Looper.getMainLooper())
 	private var pendingPushRoute: String? = null
+	private val hoverRepair = WebViewHoverRepair(context = this, webView = { webViewRef })
 
 	override val handleBackNavigation = false
 
@@ -142,7 +144,6 @@ class MainActivity : TauriActivity() {
 
 	override fun onCreate(savedInstanceState: Bundle?) {
 		enableEdgeToEdge()
-		Keyring.initializeNdkContext(applicationContext)
 		activityRef = WeakReference(this)
 		PushHub.loadPrefs(applicationContext)
 		PushFirebase.initialize(this)
@@ -161,7 +162,7 @@ class MainActivity : TauriActivity() {
 			isAppearanceLightNavigationBars = false
 		}
 		
-		ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { view, insets ->
+		ViewCompat.setOnApplyWindowInsetsListener(findViewById<View>(android.R.id.content)) { view, insets ->
 			val bars = insets.getInsets(
 				WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
 			)
@@ -227,17 +228,28 @@ class MainActivity : TauriActivity() {
 		// there is nothing listening, and the event is not for a foreign page.
 		val script =
 			"(function(){" +
-				"if (String(location.href).indexOf('localhost') === -1) return;" +
+				"if (!$IS_APP_DOCUMENT) return;" +
 				"window.dispatchEvent(new CustomEvent('regrind:notification-permission'," +
 				" { detail: $state }));" +
 				"})();"
 		runOnUiThread { webView.evaluateJavascript(script, null) }
 	}
 
+	override fun dispatchGenericMotionEvent(event: MotionEvent): Boolean {
+		hoverRepair.observe(event)
+		return super.dispatchGenericMotionEvent(event)
+	}
+
+	override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+		hoverRepair.observe(event)
+		return super.dispatchTouchEvent(event)
+	}
+
 	override fun onWebViewCreate(webView: WebView) {
 		super.onWebViewCreate(webView)
 		webViewRef = webView
 		webView.settings.setGeolocationEnabled(false)
+		webView.isHapticFeedbackEnabled = false
 		webView.addJavascriptInterface(InsetsInterface(), "__AndroidInsets")
 		webView.addJavascriptInterface(BackInterface(), "__AndroidBack")
 		webView.addJavascriptInterface(PushInterface(), "__RegrindPush")
@@ -292,7 +304,7 @@ class MainActivity : TauriActivity() {
 		val quoted = JSONObject.quote(route)
 		val script =
 			"(function(){" +
-				"if (String(location.href).indexOf('localhost') === -1) return 'retry';" +
+				"if (!$IS_APP_DOCUMENT) return 'retry';" +
 				"var r = $quoted;" +
 				"window.__REGRIND_PUSH_ROUTE = r;" +
 				"window.dispatchEvent(new CustomEvent('regrind:push-open', { detail: { route: r } }));" +
@@ -330,7 +342,7 @@ class MainActivity : TauriActivity() {
 		val quoted = JSONObject.quote(reason)
 		val script =
 			"(function(){" +
-				"if (String(location.href).indexOf('localhost') === -1) return 'retry';" +
+				"if (!$IS_APP_DOCUMENT) return 'retry';" +
 				"var r = $quoted;" +
 				"window.__REGRIND_FCM_UNAVAILABLE = r;" +
 				"window.dispatchEvent(new CustomEvent('regrind:fcm-token-error'," +
@@ -358,7 +370,7 @@ class MainActivity : TauriActivity() {
 		val quoted = JSONObject.quote(token)
 		val script =
 			"(function(){" +
-				"if (String(location.href).indexOf('localhost') === -1) return 'retry';" +
+				"if (!$IS_APP_DOCUMENT) return 'retry';" +
 				"var t = $quoted;" +
 				"try { localStorage.setItem('regrind:fcm-token', t); } catch (e) { return 'retry'; }" +
 				"window.__REGRIND_FCM_TOKEN = t;" +
@@ -380,6 +392,9 @@ class MainActivity : TauriActivity() {
 	companion object {
 		private const val FCM_DISPATCH_ATTEMPTS = 25
 		private const val FCM_DISPATCH_RETRY_MS = 400L
+		// Release builds serve the app from app.opengrind.org (see app_origin.rs).
+		private const val IS_APP_DOCUMENT =
+			"(location.hostname === 'app.opengrind.org' || String(location.href).indexOf('localhost') !== -1)"
 
 		private var activityRef: WeakReference<MainActivity>? = null
 		private var latestFcmToken: String? = null

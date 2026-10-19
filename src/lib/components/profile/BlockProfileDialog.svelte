@@ -10,18 +10,26 @@
 		profileId,
 		name = null,
 		onBlocked,
+		onConfirm,
 	}: {
 		open?: boolean;
 		profileId: number;
 		// Shown in the title when we know it, so it's clear who is being blocked.
 		name?: string | null;
 		onBlocked?: () => void;
+		/** Takes over the block, e.g. to show it optimistically; the dialog just closes. */
+		onConfirm?: () => void;
 	} = $props();
 
 	let blocking = $state(false);
 
 	async function confirm() {
 		if (blocking) return;
+		if (onConfirm) {
+			open = false;
+			onConfirm();
+			return;
+		}
 		blocking = true;
 		try {
 			await blockUser({ profileId });

@@ -151,9 +151,19 @@ fn build_candidate(
 	version: &Version,
 	payload_suffix: &str,
 ) -> Result<Candidate, UpdateError> {
-	let wanted = component.payload_name(&release.tag_name, payload_suffix);
-	let Some(payload) =
-		release.assets.iter().find(|asset| asset.name == wanted)
+	// A release without per-ABI APKs still carries the universal one.
+	let universal = payload_suffix
+		.starts_with("-android-")
+		.then_some("-android.apk");
+	let Some((wanted, payload)) = [Some(payload_suffix), universal]
+		.into_iter()
+		.flatten()
+		.map(|suffix| component.payload_name(&release.tag_name, suffix))
+		.find_map(|wanted| {
+			let payload =
+				release.assets.iter().find(|asset| asset.name == wanted)?;
+			Some((wanted, payload))
+		})
 	else {
 		return Err(UpdateError::NoArtifact);
 	};
@@ -240,6 +250,17 @@ mod tests {
 		channel: Channel,
 	) -> Option<Candidate> {
 		newest_upgrade(index, &APP, baseline, channel, ".apk").unwrap()
+	}
+
+	#[test]
+	fn an_abi_without_its_own_apk_takes_the_universal_one() {
+		let universal =
+			release("v9.0.0", false).replace(".apk", "-android.apk");
+		let found =
+			upgrade(&index(&[&universal]), "1.0.0", "-android-arm64-v8a.apk")
+				.unwrap()
+				.unwrap();
+		assert_eq!(found.payload.name, "regrind-v9.0.0-android.apk");
 	}
 
 	#[test]

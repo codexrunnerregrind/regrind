@@ -196,6 +196,7 @@ const bundledOutsideNodeModules: ManualEntry[] = [
 		id: "fastdoubleparser",
 		name: "FastDoubleParser (shaded into jackson-core)",
 		ecosystem: "android",
+		platform: "android",
 		spdx: "MIT",
 		url: "https://github.com/wrandelshofer/FastDoubleParser",
 		texts: ["fastdoubleparser-notice.txt"],
@@ -204,6 +205,7 @@ const bundledOutsideNodeModules: ManualEntry[] = [
 		id: "tbuktu-bigint",
 		name: "bigint (shaded into FastDoubleParser)",
 		ecosystem: "android",
+		platform: "android",
 		spdx: "BSD-2-Clause",
 		url: "https://github.com/tbuktu/bigint",
 		texts: ["bigint-license.txt"],
@@ -237,6 +239,7 @@ export const collectManualCredits = async (): Promise<CreditsChunk> => {
 			name: coordinate,
 			version,
 			ecosystem: "android",
+			platform: "android",
 			spdx: "Apache-2.0",
 			url: homepageOf(coordinate),
 			texts: [

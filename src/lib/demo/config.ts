@@ -12,8 +12,10 @@ function demoOverride(): boolean | undefined {
 }
 
 export const demoEnabled =
-	!("VITEST" in import.meta) &&
-	(demoOverride() ?? "PUBLIC_ENABLE_DEMO" in env);
+	!import.meta.env.VITEST &&
+	(demoOverride() ??
+		("PUBLIC_ENABLE_DEMO" in env ||
+			import.meta.env.OPEN_GRIND_DEMO === "1"));
 
 /**
  * Flip demo mode and reload. Everything downstream reads `demoEnabled` once at

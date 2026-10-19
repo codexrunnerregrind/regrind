@@ -4,10 +4,14 @@
 
 	import { reportAccountProfile } from "$lib/api/accounts.svelte";
 	import CommandCenter from "$lib/components/command-center/CommandCenter.svelte";
+	import MediaDropOverlay from "$lib/components/shared/MediaDropOverlay.svelte";
 	import VideoCallOverlay from "$lib/components/video-call/VideoCallOverlay.svelte";
 	import { notifications } from "$lib/notifications/notifications.svelte";
 	import { push } from "$lib/notifications/push.svelte";
+	import { listenForKeyboardMedia } from "$lib/platform/keyboard-media.svelte";
+	import { listenForMedia } from "$lib/platform/media-intake.svelte";
 	import { startOnlineHeartbeat } from "$lib/presence/online-heartbeat";
+	import { retryBrokenMediaWhenOnline } from "$lib/util/media-retry-signals";
 	import { videoCall } from "$lib/video-call/call-state.svelte";
 
 	let { data, children }: import("./$types").LayoutProps = $props();
@@ -36,8 +40,12 @@
 	afterNavigate(() => push.setActiveRoute(page.url.pathname));
 
 	$effect(() => startOnlineHeartbeat());
+	$effect(() => retryBrokenMediaWhenOnline());
+	$effect(() => listenForMedia());
+	$effect(() => listenForKeyboardMedia());
 </script>
 
 {@render children()}
 <CommandCenter />
 <VideoCallOverlay />
+<MediaDropOverlay />

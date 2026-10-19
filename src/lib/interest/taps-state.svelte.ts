@@ -35,8 +35,14 @@ registerAccountCache({
 	},
 });
 
+type IncomingTapHandler = (tap: {
+	senderId: number;
+	senderName: string | null;
+}) => void;
+
 export class TapsState extends ReconcilingListState<TapProfile, TapsSnapshot> {
 	readonly ourProfileId: number;
+	readonly #onIncomingTap: IncomingTapHandler | undefined;
 
 	#all: TapProfile[] = $state([]);
 	#lastViewedAt = $state(0);
@@ -47,7 +53,7 @@ export class TapsState extends ReconcilingListState<TapProfile, TapsSnapshot> {
 	#unsubscribeViewability = onProfileViewabilityChange(
 		({ profileId, viewable }) => {
 			if (viewable) {
-				void this.refresh();
+				void this.refreshOrDefer({ attended: false });
 				return;
 			}
 			this.#all = this.#all.filter((tap) => tap.profileId !== profileId);
@@ -58,12 +64,20 @@ export class TapsState extends ReconcilingListState<TapProfile, TapsSnapshot> {
 		this.setFavorite({ profileId, isFavorite: patch.isFavorite });
 	});
 
-	constructor({ ourProfileId }: { ourProfileId: number }) {
+	constructor({
+		ourProfileId,
+		onIncomingTap,
+	}: {
+		ourProfileId: number;
+		onIncomingTap?: IncomingTapHandler;
+	}) {
 		super({
 			pageSize: PAGE_SIZE,
 			refreshErrorLabel: "Failed to refresh taps",
+			marksOnline: true,
 		});
 		this.ourProfileId = ourProfileId;
+		this.#onIncomingTap = onIncomingTap;
 		this.#lastViewedAt = tapsLastViewed.load(ourProfileId);
 		this.start();
 	}
@@ -169,6 +183,10 @@ export class TapsState extends ReconcilingListState<TapProfile, TapsSnapshot> {
 			(event) => {
 				const tap = event.payload;
 				if (tap.recipientId !== this.ourProfileId) return;
+				this.#onIncomingTap?.({
+					senderId: tap.senderId,
+					senderName: tap.senderDisplayName,
+				});
 				this.upsert({
 					distance: null,
 					profileImageMediaHash: tap.senderProfileImageHash,

@@ -2,12 +2,10 @@
 	import "photoswipe/style.css";
 	import { goto } from "$app/navigation";
 	import { env } from "$env/dynamic/public";
-	import {
-		ChatIcon,
-		ClockIcon,
-		HouseIcon,
-		NavigationArrowIcon,
-	} from "phosphor-svelte";
+	import ChatIcon from "phosphor-svelte/lib/ChatIcon";
+	import ClockIcon from "phosphor-svelte/lib/ClockIcon";
+	import HouseIcon from "phosphor-svelte/lib/HouseIcon";
+	import NavigationArrowIcon from "phosphor-svelte/lib/NavigationArrowIcon";
 	import { untrack } from "svelte";
 	import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
@@ -158,7 +156,7 @@
 					return false;
 				};
 				lightbox.on("beforeOpen", () => {
-					backGestureEventHandlers.add(onBackGesture);
+					backGestureEventHandlers.set(onBackGesture, "overlay");
 				});
 				lightbox.on("close", () => {
 					backGestureEventHandlers.delete(onBackGesture);

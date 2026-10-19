@@ -5,10 +5,10 @@
 	} from "$lib/api/users/favorite-notes-state.svelte";
 	import { getProfileGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
+	import PagingSentinel from "$lib/components/shared/PagingSentinel.svelte";
 	import { gridState } from "$lib/grid/grid-state.svelte";
 	import { usernameMatches } from "$lib/model/browse/grid/filters";
 	import { armProfileDeck } from "$lib/profile/profile-deck";
-	import { observeIntersection } from "$lib/util/observe-intersection";
 	import { virtualGrid } from "$lib/util/virtual-grid.svelte";
 	import type { FavoriteSearch } from "$lib/favorites/favorite-search.svelte";
 	import type { GridProfile } from "$lib/grid/grid";
@@ -23,21 +23,6 @@
 		$props();
 
 	let gridElement: HTMLElement | null = $state(null);
-
-	function dedupe(items: readonly GridProfile[]): GridProfile[] {
-		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local to this call, never mutated afterwards
-		const byId = new Map<number, GridProfile>();
-		for (const item of items) {
-			const existing = byId.get(item.id);
-			if (
-				!existing ||
-				(existing.type === "lazy" && item.type === "rendered")
-			) {
-				byId.set(item.id, item);
-			}
-		}
-		return [...byId.values()];
-	}
 
 	// The cascade has no server-side name search, so the username filter is
 	// applied to what has been loaded. Unresolved cells are kept — their name is
@@ -54,7 +39,7 @@
 		);
 	}
 
-	const gridProfiles = $derived(matchUsername(dedupe(gridState.items)));
+	const gridProfiles = $derived(matchUsername(gridState.profiles));
 
 	// Opening a profile hands it the rest of the cascade, so the profile screen
 	// can swipe between them in the order they are shown here. Armed per tap
@@ -63,10 +48,8 @@
 		armProfileDeck(profileId, {
 			ids: gridProfiles.map((item) => item.id),
 			extend: async () => {
-				await gridState.loadMore();
-				return matchUsername(dedupe(gridState.items)).map(
-					(item) => item.id,
-				);
+				await gridState.paging.run();
+				return matchUsername(gridState.profiles).map((item) => item.id);
 			},
 		});
 	}
@@ -84,7 +67,7 @@
 	});
 
 	const pendingSkeletons = $derived(
-		gridState.loadingMore ? PAGE_SKELETONS : 0,
+		gridState.paging.running ? PAGE_SKELETONS : 0,
 	);
 	const view = virtualGrid({
 		grid: () => gridElement,
@@ -104,12 +87,7 @@
 		gridState.load(geohash);
 	});
 
-	$effect(() => {
-		gridState.viewActive = true;
-		return () => {
-			gridState.viewActive = false;
-		};
-	});
+	$effect(() => gridState.attachView());
 </script>
 
 <!-- The sentinel and the status line sit outside the grid: only cells may be
@@ -215,17 +193,22 @@
 		{/if}
 	</div>
 	<div role="status" class="sr-only">
-		{#if gridState.loadingMore}
-			Loading more profiles
-		{/if}
+		{gridState.paging.running
+			? "Loading more profiles"
+			: gridState.paging.failure
+				? "Failed to load more profiles"
+				: ""}
 	</div>
 	{#if !search.active && gridState.nextPage !== 0 && gridState.nextPage !== null}
-		<div
+		{#if gridState.paging.failure}
+			<ApiErrorDisplay
+				error={gridState.paging.failure}
+				onRetry={() => gridState.paging.retry()}
+			/>
+		{/if}
+		<PagingSentinel
+			paging={gridState.paging}
 			class="pointer-events-none absolute inset-x-0 bottom-0 h-px"
-			use:observeIntersection={{
-				handle: () => gridState.loadMore(),
-				rootMargin: "400px",
-			}}
-		></div>
+		/>
 	{/if}
 </div>

@@ -104,6 +104,15 @@ export class ConversationFilters {
 		);
 	}
 
+	// Only the unread filter (or none) is on, so a chat dropping out was read.
+	get dropsOnlyReadChats(): boolean {
+		return (
+			this.active.every((key) => key === "unread") &&
+			this.distanceMetres === null &&
+			this.positions.length === 0
+		);
+	}
+
 	snapshot(): ConversationFilterSelection {
 		return {
 			active: [...this.active],

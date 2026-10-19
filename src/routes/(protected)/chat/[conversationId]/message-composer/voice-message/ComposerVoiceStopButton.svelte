@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { StopIcon } from "phosphor-svelte";
+	import StopIcon from "phosphor-svelte/lib/StopIcon";
 
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
 	import PrimaryComposerButton from "../PrimaryComposerButton.svelte";

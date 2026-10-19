@@ -2,10 +2,7 @@ import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { NavigationTarget } from "@sveltejs/kit";
 
-import {
-	CANCEL_EASING,
-	COMMIT_EASING,
-} from "$lib/components/navigation/stack/motion";
+import { stackMotion } from "$lib/components/navigation/stack/motion";
 import {
 	fakeSurface,
 	flushMicrotasks,
@@ -17,6 +14,8 @@ import { LiveStackState } from "./live-stack-state.svelte";
 const LIST = "/chat";
 const FIRST = "/chat/1:2";
 const SECOND = "/chat/3:4";
+
+const motion = stackMotion({ platform: "android" });
 
 function makeStack({
 	reducedMotion = false,
@@ -30,6 +29,7 @@ function makeStack({
 
 	const stack = new LiveStackState({
 		surface,
+		motion,
 		top: () => top,
 		keyOf: (target: NavigationTarget) => keyOf(target.url.pathname),
 		scope: LIST,
@@ -75,6 +75,16 @@ async function navigate(
 	await flushMicrotasks();
 }
 
+function releasedSwipe({ progress }: { progress: number }) {
+	const back = vi.fn();
+	vi.stubGlobal("history", { back });
+	const harness = makeStack({ startAt: FIRST });
+	harness.stack.beginSwipeBack();
+	harness.stack.trackSwipeBack(progress);
+	harness.stack.commitSwipeBack();
+	return { ...harness, back };
+}
+
 beforeEach(() => {
 	vi.useFakeTimers({
 		toFake: [
@@ -113,7 +123,7 @@ describe("LiveStackState opening a sheet", () => {
 		expect(animations.at(-1)).toMatchObject({
 			from: 1,
 			to: 0,
-			easing: COMMIT_EASING,
+			easing: motion.commitEasing,
 		});
 
 		await settleLast(animations);
@@ -194,6 +204,57 @@ describe("LiveStackState closing a sheet", () => {
 		expect(harness.animations.at(-1)).toMatchObject({ from: 0, to: 1 });
 	});
 
+	it("cuts the leaving sheet when another one opens mid slide-out and slides the new one in from off screen", async () => {
+		const harness = await opened();
+		const { stack, animations, applied } = harness;
+		await navigate(harness, { from: FIRST, to: LIST });
+		animations.at(-1)!.reached = 0.6;
+
+		const afterUpdate = await stack.navigate(
+			navigationEvent({ from: LIST, to: SECOND }),
+		);
+		expect(stack.leaving).toBeNull();
+		expect(stack.sheetKey).toBeNull();
+		expect(applied.at(-1)).toBe(1);
+
+		harness.arrive(SECOND);
+		afterUpdate?.();
+		vi.advanceTimersToNextFrame();
+		await flushMicrotasks();
+		expect(stack.sheetKey).toBe("3:4");
+		expect(animations.at(-1)).toMatchObject({ from: 1, to: 0 });
+
+		await settleLast(animations);
+		expect(stack.covered).toBe(true);
+	});
+
+	it("brings the leaving sheet back live from where it had reached when it is reopened mid slide-out", async () => {
+		const harness = await opened();
+		const { stack, animations } = harness;
+		await navigate(harness, { from: FIRST, to: LIST });
+		animations.at(-1)!.reached = 0.6;
+
+		const afterUpdate = await stack.navigate(
+			navigationEvent({ from: LIST, to: FIRST }),
+		);
+		expect(stack.sheetKey, "stays mounted until the route arrives").toBe(
+			"1:2",
+		);
+
+		harness.arrive(FIRST);
+		afterUpdate?.();
+		expect(stack.leaving).toBeNull();
+		expect(stack.sheetKey).toBe("1:2");
+
+		vi.advanceTimersToNextFrame();
+		await flushMicrotasks();
+		expect(animations.at(-1)).toMatchObject({ from: 0.6, to: 0 });
+		expect(stack.covered).toBe(false);
+
+		await settleLast(animations);
+		expect(stack.covered).toBe(true);
+	});
+
 	it("ignores the settle of a navigation that a newer one replaced", async () => {
 		const harness = await opened();
 		const { stack, animations } = harness;
@@ -263,24 +324,37 @@ describe("LiveStackState back gesture", () => {
 		expect(animations.at(-1)).toMatchObject({
 			from: 0.3,
 			to: 0,
-			easing: CANCEL_EASING,
+			easing: motion.cancelEasing,
 		});
 		await settleLast(animations);
 		expect(stack.covered).toBe(true);
 	});
 
-	it("goes back once on commit and does not animate the pop again", async () => {
-		const back = vi.fn();
-		vi.stubGlobal("history", { back });
-		const harness = makeStack({ startAt: FIRST });
-		const { stack, animations } = harness;
-
-		stack.beginSwipeBack();
-		stack.trackSwipeBack(0.6);
-		stack.commitSwipeBack();
+	it("goes back at the lift, and the pop that lands mid-slide rides the running slide instead of animating again", async () => {
+		const harness = releasedSwipe({ progress: 0.6 });
+		const { stack, animations, back } = harness;
+		expect(back).toHaveBeenCalledOnce();
 		expect(animations.at(-1)).toMatchObject({ from: 0.6, to: 1 });
+
+		const count = animations.length;
+		await navigate(harness, { from: FIRST, to: LIST });
+		expect(animations).toHaveLength(count);
+		expect(stack.leaving).toBe("1:2");
+		expect(stack.sheetKey).toBe("1:2");
+		expect(stack.moving).toBe(true);
+
+		await settleLast(animations);
+		expect(stack.sheetKey).toBeNull();
+		expect(stack.moving).toBe(false);
+		expect(back).toHaveBeenCalledOnce();
+	});
+
+	it("rests on the base at once when the pop lands after the committed slide has ended", async () => {
+		const harness = releasedSwipe({ progress: 0.6 });
+		const { stack, animations, back } = harness;
 		await settleLast(animations);
 		expect(back).toHaveBeenCalledOnce();
+		expect(stack.sheetKey).toBe("1:2");
 		expect(stack.covered).toBe(false);
 
 		const count = animations.length;
@@ -290,62 +364,85 @@ describe("LiveStackState back gesture", () => {
 		expect(stack.moving).toBe(false);
 	});
 
-	it("goes back at once when a new swipe starts before the committed one has slid out, and leaves the new swipe to the system", async () => {
-		const back = vi.fn();
-		vi.stubGlobal("history", { back });
-		const harness = makeStack({ startAt: FIRST });
-		const { stack, animations, applied } = harness;
-
-		stack.beginSwipeBack();
-		stack.trackSwipeBack(0.4);
-		stack.commitSwipeBack();
-		expect(back).not.toHaveBeenCalled();
+	it("leaves a new swipe to the system while the committed one is still sliding out, without going back twice or cutting the slide", async () => {
+		const harness = releasedSwipe({ progress: 0.4 });
+		const { stack, animations, applied, back } = harness;
+		const appliedAtLift = applied.length;
 
 		expect(stack.beginSwipeBack()).toBe(false);
-		expect(back).toHaveBeenCalledOnce();
-		expect(applied.at(-1)).toBe(1);
+		expect(applied).toHaveLength(appliedAtLift);
 
 		const count = animations.length;
 		await navigate(harness, { from: FIRST, to: LIST });
+		expect(stack.beginSwipeBack()).toBe(false);
 		expect(animations).toHaveLength(count);
+		expect(stack.sheetKey).toBe("1:2");
+
+		await settleLast(animations);
 		expect(stack.sheetKey).toBeNull();
 		expect(back).toHaveBeenCalledOnce();
 	});
 
-	it("drops the committed back when another navigation lands before the slide ends", async () => {
-		const back = vi.fn();
-		vi.stubGlobal("history", { back });
-		const harness = makeStack({ startAt: FIRST });
+	it("opens another sheet over a committed swipe that is still sliding out", async () => {
+		const harness = releasedSwipe({ progress: 0.4 });
 		const { stack, animations } = harness;
+		await navigate(harness, { from: FIRST, to: LIST });
 
-		stack.beginSwipeBack();
-		stack.trackSwipeBack(0.4);
-		stack.commitSwipeBack();
-		await navigate(harness, { from: FIRST, to: SECOND });
+		await navigate(harness, { from: LIST, to: SECOND });
+
+		expect(stack.leaving).toBeNull();
+		expect(stack.sheetKey).toBe("3:4");
+		expect(animations.at(-1)).toMatchObject({ from: 1, to: 0 });
 		await settleLast(animations);
-
-		expect(stack.beginSwipeBack()).toBe(true);
-		expect(back).not.toHaveBeenCalled();
+		expect(stack.covered).toBe(true);
 	});
 
-	it("slides the sheet back when the committed Back never navigates", async () => {
-		vi.stubGlobal("history", { back: vi.fn() });
-		const harness = makeStack({ startAt: FIRST });
+	it("reopens the swiped-away sheet live from where its slide-out had reached", async () => {
+		const harness = releasedSwipe({ progress: 0.4 });
 		const { stack, animations } = harness;
+		await navigate(harness, { from: FIRST, to: LIST });
+		animations.at(-1)!.reached = 0.8;
 
-		stack.beginSwipeBack();
-		stack.trackSwipeBack(0.6);
-		stack.commitSwipeBack();
+		await navigate(harness, { from: LIST, to: FIRST });
+
+		expect(stack.leaving).toBeNull();
+		expect(stack.sheetKey).toBe("1:2");
+		expect(animations.at(-1)).toMatchObject({ from: 0.8, to: 0 });
+	});
+
+	it("forgets the committed back when another navigation lands first, so a later pop animates", async () => {
+		const harness = releasedSwipe({ progress: 0.4 });
+		const { stack, animations, back } = harness;
+		await navigate(harness, { from: FIRST, to: SECOND });
+		expect(stack.sheetKey).toBe("3:4");
+		expect(stack.covered).toBe(true);
+
+		const count = animations.length;
+		vi.advanceTimersByTime(1000);
+		expect(animations).toHaveLength(count);
+
+		await navigate(harness, { from: SECOND, to: LIST });
+		expect(animations.at(-1)).toMatchObject({ from: 0, to: 1 });
+		expect(stack.leaving).toBe("3:4");
+		expect(back).toHaveBeenCalledOnce();
+	});
+
+	it("slides the sheet back when the committed Back never navigates, and animates the pop that comes late", async () => {
+		const harness = releasedSwipe({ progress: 0.6 });
+		const { stack, animations } = harness;
 		await settleLast(animations);
 
 		vi.advanceTimersByTime(1000);
 		expect(animations.at(-1)).toMatchObject({
 			from: 1,
 			to: 0,
-			easing: CANCEL_EASING,
+			easing: motion.cancelEasing,
 		});
 		await settleLast(animations);
 		expect(stack.covered).toBe(true);
+
+		await navigate(harness, { from: FIRST, to: LIST });
+		expect(animations.at(-1)).toMatchObject({ from: 0, to: 1 });
 	});
 
 	it("settles a committed swipe instantly under reduced motion", () => {
@@ -358,5 +455,102 @@ describe("LiveStackState back gesture", () => {
 		stack.commitSwipeBack();
 
 		expect(animations.at(-1)).toMatchObject({ duration: 0 });
+	});
+});
+
+describe("LiveStackState back gesture during the slide-in", () => {
+	async function slidingIn() {
+		const harness = makeStack();
+		await navigate(harness, { from: LIST, to: FIRST });
+		const slideIn = harness.animations.at(-1)!;
+		slideIn.reached = 0.7;
+		return { ...harness, slideIn };
+	}
+
+	it("picks the sheet up where the slide-in has reached and lets the finger drive the rest of the way", async () => {
+		const { stack, applied, slideIn } = await slidingIn();
+
+		expect(stack.beginSwipeBack()).toBe(true);
+		expect(applied.at(-1)).toBe(0.7);
+		expect(stack.covered).toBe(false);
+
+		stack.trackSwipeBack(0.5);
+		expect(applied.at(-1)).toBeCloseTo(0.85);
+
+		slideIn.reached = 0;
+		stack.trackSwipeBack(0.5);
+		expect(applied.at(-1)).toBe(0.5);
+	});
+
+	it("commits from where the picked-up sheet is, goes back once at the lift and lets that slide carry the pop", async () => {
+		const back = vi.fn();
+		vi.stubGlobal("history", { back });
+		const harness = await slidingIn();
+		const { stack, animations } = harness;
+
+		stack.beginSwipeBack();
+		stack.trackSwipeBack(0.5);
+		stack.commitSwipeBack();
+		expect(back).toHaveBeenCalledOnce();
+		expect(animations.at(-1)).toMatchObject({
+			from: expect.closeTo(0.85),
+			to: 1,
+			easing: motion.commitEasing,
+		});
+
+		const count = animations.length;
+		await navigate(harness, { from: FIRST, to: LIST });
+		expect(animations).toHaveLength(count);
+		expect(stack.sheetKey).toBe("1:2");
+
+		await settleLast(animations);
+		expect(stack.sheetKey).toBeNull();
+		expect(stack.moving).toBe(false);
+		expect(back).toHaveBeenCalledOnce();
+	});
+
+	it("finishes the slide-in when the gesture is canceled", async () => {
+		const { stack, animations } = await slidingIn();
+
+		stack.beginSwipeBack();
+		stack.trackSwipeBack(0.5);
+		stack.cancelSwipeBack();
+
+		expect(animations.at(-1)).toMatchObject({
+			from: expect.closeTo(0.85),
+			to: 0,
+			easing: motion.cancelEasing,
+		});
+		await settleLast(animations);
+		expect(stack.covered).toBe(true);
+	});
+
+	it("picks the sheet up again while a canceled gesture slides it back", async () => {
+		const { stack, applied, animations } = await slidingIn();
+		stack.beginSwipeBack();
+		stack.trackSwipeBack(0.5);
+		stack.cancelSwipeBack();
+		animations.at(-1)!.reached = 0.3;
+
+		expect(stack.beginSwipeBack()).toBe(true);
+		expect(applied.at(-1)).toBe(0.3);
+	});
+
+	it("leaves the gesture to the system before the sheet starts sliding in", async () => {
+		const harness = makeStack();
+		await harness.stack.navigate(
+			navigationEvent({ from: LIST, to: FIRST }),
+		);
+		harness.arrive(FIRST);
+
+		expect(harness.stack.beginSwipeBack()).toBe(false);
+	});
+
+	it("leaves the gesture to the system while a committed Back that has slid out is still on its way", async () => {
+		const { stack, animations, back } = releasedSwipe({ progress: 0.6 });
+		await settleLast(animations);
+
+		expect(stack.beginSwipeBack()).toBe(false);
+		expect(back).toHaveBeenCalledOnce();
 	});
 });

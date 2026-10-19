@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ImagesIcon } from "phosphor-svelte";
+	import ImagesIcon from "phosphor-svelte/lib/ImagesIcon";
 
 	import { showErrorToast } from "$lib/api/error-toast";
 	import { getSingleMessage } from "$lib/api/messaging/messages";
@@ -141,8 +141,9 @@
 
 {#if message.viewsRemaining === undefined || message.viewsRemaining === null || message.viewsRemaining > 0}
 	<button
+		data-slot="expiring-image-message"
 		class={[
-			"flex w-50 items-center gap-2 px-4 py-3 text-start font-medium",
+			"flex w-fit items-center gap-2 px-4 py-3 text-start font-medium",
 			className,
 			contentClass,
 			"border border-border bg-input",
@@ -155,16 +156,20 @@
 		disabled={phase !== "idle"}
 		{@attach media.attach}
 	>
-		<ImagesIcon size={24} weight="fill" />
+		<ImagesIcon size={24} weight="fill" class="shrink-0" />
 		<span>Expiring image</span>
 		{@render media.adornments?.()}
 	</button>
 {:else}
-	<div class={["h-12 w-50", className, contentClass]} {@attach media.attach}>
+	<div
+		data-slot="expiring-image-message-expired"
+		class={["w-fit", className, contentClass]}
+		{@attach media.attach}
+	>
 		<LockedMedia
 			class={[
 				media.cornerClass,
-				"gap-2 font-medium text-media-placeholder-foreground",
+				"gap-2 px-4 py-3 font-medium text-media-placeholder-foreground",
 			]}
 			size="sm"
 		>

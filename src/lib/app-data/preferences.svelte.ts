@@ -58,6 +58,7 @@ const preferencesSchema = z.object({
 	// The manually-picked ("mock") location. Preserved across mode switches so
 	// returning from current-location mode restores the last picked spot.
 	geohash: geohashSchema.nullable().default(null),
+	giphyConsent: z.boolean().default(false),
 	hapticFeedback: z.boolean().default(true),
 	// The last detected live GPS location, used while `usingCurrentLocation` is
 	// true. Kept separate from `geohash` so switching modes never clobbers the

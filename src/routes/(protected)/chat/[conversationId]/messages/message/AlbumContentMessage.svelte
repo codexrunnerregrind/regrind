@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ImagesIcon } from "phosphor-svelte";
+	import ImagesIcon from "phosphor-svelte/lib/ImagesIcon";
 
 	import { myAlbumCoverUrl } from "$lib/chat/my-albums";
 	import { paywallCoverUrl } from "$lib/chat/paywall-covers";

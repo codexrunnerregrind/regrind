@@ -6,7 +6,10 @@
 	import type { NavigationTarget } from "@sveltejs/kit";
 	import type { Attachment } from "svelte/attachments";
 
-	import { STACK_Z } from "$lib/components/navigation/stack/motion";
+	import {
+		STACK_Z,
+		stackMotion,
+	} from "$lib/components/navigation/stack/motion";
 	import { paneSurface } from "$lib/components/navigation/stack/surface";
 	import {
 		softKeyboardHidden,
@@ -27,7 +30,7 @@
 		keyOf: (
 			target: Pick<NavigationTarget, "params" | "route" | "url">,
 		) => string | null;
-		base: Snippet<[{ covered: boolean }]>;
+		base: Snippet<[{ covered: boolean; uncovering: boolean }]>;
 		sheet: Snippet<[string, { leaving: boolean }]>;
 	} = $props();
 
@@ -37,11 +40,15 @@
 	let sheetPane: HTMLElement | null = null;
 	let dim: HTMLElement | null = $state(null);
 
+	const motion = stackMotion();
+
 	const stack: LiveStackState = new LiveStackState({
 		surface: paneSurface({
 			panes: () => ({ front: sheetPane, back: basePane, dim }),
 			parallax: () => !prefersReducedMotion.current,
+			motion,
 		}),
+		motion,
 		top: () => keyOf(page),
 		keyOf: (target) => keyOf(target),
 		scope: untrack(() => basePath),
@@ -51,6 +58,8 @@
 		keyboardHidden: () =>
 			softKeyboardHidden({ settleMs: KEYBOARD_SETTLE_MS }),
 	});
+
+	const leaving = $derived(stack.leaving !== null);
 
 	let baseMounted = $state(!stack.covered);
 
@@ -89,18 +98,18 @@
 	data-slot="live-stack-base"
 	class="fixed inset-x-0 top-0 flex h-(--viewport-height) flex-col bg-background pt-(--safe-area-top) pb-(--safe-area-bottom)"
 	style:z-index={STACK_Z.back}
-	style:visibility={stack.covered ? "hidden" : null}
-	inert={stack.sheetKey !== null}
+	data-covered={stack.covered || undefined}
+	inert={stack.sheetOpen}
 >
 	{#if baseMounted}
-		{@render base({ covered: stack.covered })}
+		{@render base({ covered: stack.covered, uncovering: leaving })}
 	{/if}
 </div>
 {#if stack.moving || stack.tracking}
 	<div
 		bind:this={dim}
 		data-slot="live-stack-dim"
-		class="pointer-events-none fixed inset-0 bg-black opacity-0"
+		class="pointer-events-none fixed inset-0 bg-[rgb(0_0_0/var(--stack-scrim))] opacity-0"
 		style:z-index={STACK_Z.dim}
 	></div>
 {/if}
@@ -109,12 +118,19 @@
 		<div
 			{@attach placePane}
 			data-slot="live-stack-sheet"
-			class="fixed inset-x-0 top-0 flex h-(--viewport-height) flex-col bg-background pt-(--safe-area-top) pb-(--safe-area-bottom)"
+			class={[
+				"fixed inset-x-0 top-0 flex h-(--viewport-height) flex-col bg-background pt-(--safe-area-top) pb-(--safe-area-bottom)",
+				{
+					"shadow-(--stack-edge)": motion.edge,
+					"pointer-events-none": motion.fade && leaving,
+				},
+			]}
 			style:z-index={STACK_Z.front}
-			inert={stack.leaving !== null}
-			data-leaving={stack.leaving !== null || undefined}
+			data-leaving={leaving || undefined}
 		>
-			{@render sheet(stack.sheetKey, { leaving: stack.leaving !== null })}
+			<div class="contents" inert={leaving}>
+				{@render sheet(stack.sheetKey, { leaving })}
+			</div>
 		</div>
 	{/key}
 {/if}

@@ -1,15 +1,14 @@
 import { expect, type Page, test } from "@playwright/test";
 
-import { installTauriShim } from "./support/app";
+import { installTauriShim, MESSAGE_ROW } from "./support/app";
 import { DRAWER, MEDIA_TILE } from "./support/drawer";
 import { CHAT_MEDIA_HOST, serveImages } from "./support/media";
 
 const CONVERSATION = "/chat/100002:123456000";
 const SCROLLER = '[data-slot="messages-scroller"]';
-const ROW = '[role="button"][tabindex="0"]';
 const PHOTO = 'a[aria-label="Photo"]';
 
-// ms-3/me-3: the gutter a message keeps against the conversation edge
+// ps-3/pe-3: the gutter MessageWrapper keeps against the conversation edge
 const GUTTER = 12;
 // ImageMessage sizes itself `w-2/5 min-w-35 max-w-60`, and min-w-35 is 8.75rem
 const MIN_WIDTH = 140;
@@ -40,7 +39,7 @@ function measurePhotos(page: Page): Promise<Geometry> {
 				}),
 			};
 		},
-		{ scroller: SCROLLER, row: ROW, photo: PHOTO },
+		{ scroller: SCROLLER, row: MESSAGE_ROW, photo: PHOTO },
 	);
 }
 

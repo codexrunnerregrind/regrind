@@ -1,10 +1,8 @@
 <script lang="ts">
-	import {
-		PlayIcon,
-		PlusIcon,
-		SpinnerGapIcon,
-		TrashIcon,
-	} from "phosphor-svelte";
+	import PlayIcon from "phosphor-svelte/lib/PlayIcon";
+	import PlusIcon from "phosphor-svelte/lib/PlusIcon";
+	import SpinnerGapIcon from "phosphor-svelte/lib/SpinnerGapIcon";
+	import TrashIcon from "phosphor-svelte/lib/TrashIcon";
 
 	import {
 		type AlbumContentResponse,

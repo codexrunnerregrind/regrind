@@ -36,6 +36,8 @@ export function demoUploadChatMedia({
 	};
 }
 
+const deletedDrawerMedia = new Set<number>();
+
 export function demoDrawerMedia(): DemoDrawerMedia[] {
 	return [
 		...uploadedDrawerMedia,
@@ -47,5 +49,9 @@ export function demoDrawerMedia(): DemoDrawerMedia[] {
 			used: index % 3 === 0,
 			takenOnGrindr: index % 2 === 1,
 		})),
-	];
+	].filter(({ id }) => !deletedDrawerMedia.has(id));
+}
+
+export function demoDeleteDrawerMedia(mediaId: number): void {
+	deletedDrawerMedia.add(mediaId);
 }

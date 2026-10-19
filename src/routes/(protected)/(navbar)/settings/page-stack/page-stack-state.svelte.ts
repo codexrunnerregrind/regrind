@@ -1,17 +1,15 @@
 import { tick } from "svelte";
 import type { OnNavigate } from "@sveltejs/kit";
 
-import {
-	CANCEL_EASING,
-	COMMIT_EASING,
-} from "$lib/components/navigation/stack/motion";
 import { StackSettle } from "$lib/components/navigation/stack/settle";
 import {
 	type PaneSnapshot,
 	snapshotPane,
 } from "$lib/components/navigation/stack/snapshot";
+import { Generation } from "$lib/util/generation";
 import { canGoBack } from "$lib/util/history";
 import { isWithin } from "$lib/util/pathname";
+import type { StackMotion } from "$lib/components/navigation/stack/motion";
 import type { StackSurface } from "$lib/components/navigation/stack/surface";
 import { ancestorsOf, stackRelation, type StackRelation } from "./hierarchy";
 
@@ -32,25 +30,31 @@ export class PageStackState {
 	readonly #scope: string;
 
 	#ancestors: PaneSnapshot[] = [];
-	#generation = 0;
+	#pushedFrom: { path: string }[];
+	#generation = new Generation();
 	#backOwed = false;
 	#committedByGesture = false;
 
 	constructor({
 		surface,
+		motion,
 		livePane,
 		reducedMotion,
 		scope,
+		pushedFrom,
 	}: {
 		surface: StackSurface;
+		motion: StackMotion;
 		livePane: () => HTMLElement | null;
 		reducedMotion: () => boolean;
 		scope: string;
+		pushedFrom: { path: string }[];
 	}) {
-		this.#settle = new StackSettle({ surface, reducedMotion });
+		this.#settle = new StackSettle({ surface, motion, reducedMotion });
 		this.#livePane = livePane;
 		this.#reducedMotion = reducedMotion;
 		this.#scope = scope;
+		this.#pushedFrom = pushedFrom;
 	}
 
 	get canSwipeBack(): boolean {
@@ -64,11 +68,11 @@ export class PageStackState {
 
 		this.tracking = false;
 		this.#backOwed = false;
-		const generation = ++this.#generation;
+		const generation = this.#generation.next();
 
 		if (this.#committedByGesture) {
 			this.#committedByGesture = false;
-			this.#ancestors = ancestorsOf(this.#ancestors, to);
+			this.#keepAncestorsOf(to);
 			return () => void this.#adoptGhost();
 		}
 
@@ -86,33 +90,44 @@ export class PageStackState {
 				? historyDirection(navigation.delta)
 				: stackRelation({ from, to });
 		const pane = this.#livePane();
-		if (!relation || !pane) {
-			this.#ancestors = ancestorsOf(this.#ancestors, to);
+		const pushedFromDestination = this.#pushedFrom.some(
+			({ path }) => path === to,
+		);
+		if (
+			!relation ||
+			!pane ||
+			(relation === "pop" && !pushedFromDestination)
+		) {
+			this.#keepAncestorsOf(to);
 			this.#rest();
 			return;
 		}
 
 		const snapshot = snapshotPane(pane, from);
-		if (relation === "push") this.#ancestors.push(snapshot);
-		this.#ancestors = ancestorsOf(this.#ancestors, to);
+		if (relation === "push") {
+			this.#ancestors.push(snapshot);
+			this.#pushedFrom.push(snapshot);
+		}
+		this.#keepAncestorsOf(to);
 		if (this.#reducedMotion()) {
 			this.#rest();
 			return;
 		}
 
 		const target = relation === "push" ? 0 : 1;
+		const turnsAround = this.ghost?.path === to;
 		this.ghost = snapshot;
 		this.liveRole = relation === "push" ? "front" : "back";
-		this.#settle.progress = 1 - target;
+		if (!turnsAround) this.#settle.progress = 1 - target;
 
 		await tick();
 		snapshot.restore();
 		this.#settle.apply();
 
 		return () => {
-			if (generation !== this.#generation) return;
+			if (this.#generation.isStale(generation)) return;
 			void this.#settle
-				.settleTo({ target, easing: COMMIT_EASING })
+				.settleTo({ target, intent: "commit" })
 				.then((settled) => {
 					if (settled) this.ghost = null;
 				});
@@ -130,10 +145,9 @@ export class PageStackState {
 		const previous = this.#ancestors.at(-1);
 		if (!this.canSwipeBack || !previous || !this.#livePane()) return false;
 
-		this.#settle.stop();
 		this.ghost = previous;
 		this.liveRole = "front";
-		this.#settle.progress = 0;
+		this.#settle.pickUp();
 		this.tracking = true;
 		void tick().then(() => {
 			previous.restore();
@@ -163,7 +177,7 @@ export class PageStackState {
 		void this.#settle
 			.settleTo({
 				target: commit ? 1 : 0,
-				easing: commit ? COMMIT_EASING : CANCEL_EASING,
+				intent: commit ? "commit" : "cancel",
 			})
 			.then((settled) => {
 				if (!settled) return;
@@ -191,9 +205,15 @@ export class PageStackState {
 		this.ghost = null;
 	}
 
+	#keepAncestorsOf(pathname: string): void {
+		this.#ancestors = ancestorsOf(this.#ancestors, pathname);
+		this.#pushedFrom = ancestorsOf(this.#pushedFrom, pathname);
+	}
+
 	#clear(): void {
 		this.#settle.stop();
 		this.#ancestors = [];
+		this.#pushedFrom = [];
 		this.tracking = false;
 		this.#rest();
 	}

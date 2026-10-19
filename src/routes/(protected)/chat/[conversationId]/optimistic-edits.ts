@@ -1,4 +1,4 @@
-import type { OptimisticMessage } from "./merge-messages";
+import { type OptimisticMessage, previewedMessage } from "./merge-messages";
 
 /** Undoes the edit when the request it was made ahead of fails. */
 export type Revert = { revert: () => void };
@@ -7,8 +7,7 @@ const ALBUM_TYPES = ["Album", "ExpiringAlbum", "ExpiringAlbumV2"];
 
 /**
  * Shows a message as unsent before the server confirms it. The inbox preview
- * follows only when the message is the latest one, since that is the only one
- * the row is showing.
+ * follows only when the message is the one the row is showing.
  */
 export function unsendInPlace({
 	messages,
@@ -21,7 +20,7 @@ export function unsendInPlace({
 	sync: () => void;
 	refreshPreview: (message: OptimisticMessage) => void;
 }): Revert {
-	const isLatest = messages.at(0)?.messageId === messageId;
+	const isLatest = previewedMessage(messages)?.messageId === messageId;
 	const message = messages.find((m) => m.messageId === messageId);
 	if (!message) return { revert: () => {} };
 

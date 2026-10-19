@@ -13,6 +13,13 @@
 	import { below } from "$lib/util/breakpoints.svelte";
 	import { swipeTabs } from "$lib/util/swipe-tabs";
 	import ConversationScreen from "./[conversationId]/ConversationScreen.svelte";
+	import {
+		ComposerSheetsState,
+		setComposerSheets,
+	} from "./[conversationId]/message-composer/composer-sheets-state.svelte";
+	import ComposerSheets from "./[conversationId]/message-composer/ComposerSheets.svelte";
+	import { provideSendMediaOffer } from "./[conversationId]/message-composer/send-media/send-media-offer.svelte";
+	import SendMediaDialog from "./[conversationId]/message-composer/send-media/SendMediaDialog.svelte";
 	import ConversationsList from "./ConversationsList.svelte";
 	import LiveStack from "./live-stack/LiveStack.svelte";
 
@@ -22,6 +29,7 @@
 		getOrCreateConversationsState(data.ourProfileId),
 	);
 	setConversations(conversations);
+	setComposerSheets(new ComposerSheetsState());
 	onDestroy(() =>
 		conversations.setFilters({
 			active: [],
@@ -58,6 +66,9 @@
 
 	const conversationId = $derived(page.params.conversationId ?? null);
 
+	const sendMediaOffer = provideSendMediaOffer();
+	$effect(() => sendMediaOffer.keepFor(conversationId));
+
 	const mobile = below("split");
 </script>
 
@@ -78,7 +89,7 @@
 		basePath="/chat"
 		keyOf={(target) => target.params?.conversationId ?? null}
 	>
-		{#snippet base({ covered })}
+		{#snippet base({ covered, uncovering })}
 			<main
 				class="flex min-h-0 flex-1 flex-col"
 				use:swipeTabs={{
@@ -86,7 +97,7 @@
 					onPrev: () => swipeToNavTab(page.route.id, -1),
 				}}
 			>
-				<ConversationsList {covered} />
+				<ConversationsList {covered} filtersLocked={uncovering} />
 			</main>
 			<NavBar ourProfileId={data.ourProfileId} />
 		{/snippet}
@@ -146,3 +157,11 @@
 	</main>
 	<NavBar ourProfileId={data.ourProfileId} />
 {/if}
+
+{#if conversationId !== null}
+	{#key conversationId}
+		<ComposerSheets {conversationId} />
+	{/key}
+{/if}
+
+<SendMediaDialog offer={sendMediaOffer} />

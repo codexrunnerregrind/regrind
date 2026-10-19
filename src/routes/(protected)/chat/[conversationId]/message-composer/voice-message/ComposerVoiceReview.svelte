@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { PauseIcon, PlayIcon, TrashIcon } from "phosphor-svelte";
+	import PauseIcon from "phosphor-svelte/lib/PauseIcon";
+	import PlayIcon from "phosphor-svelte/lib/PlayIcon";
+	import TrashIcon from "phosphor-svelte/lib/TrashIcon";
 	import { fade } from "svelte/transition";
 
 	import { measurePeaks } from "$lib/chat/audio-peaks";

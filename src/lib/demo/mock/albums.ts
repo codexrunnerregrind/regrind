@@ -409,3 +409,20 @@ export function demoSharedAlbumsFeed() {
 		emptyAlbumId: null,
 	};
 }
+
+export function demoAddToAlbum({
+	albumId,
+	kinds,
+}: {
+	albumId: number;
+	kinds: ("photo" | "video")[];
+}): boolean {
+	const { content } = demoAlbumContent(albumId);
+	if (
+		content.length + kinds.length >
+		demoAlbumStorageLimits.maxContentItemsPerAlbum
+	)
+		return false;
+	for (const kind of kinds) demoUploadAlbumFile({ albumId, kind });
+	return true;
+}

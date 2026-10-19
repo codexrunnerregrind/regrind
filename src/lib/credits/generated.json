@@ -4,6 +4,7 @@
 			"id": "androidx.activity:activity",
 			"name": "androidx.activity:activity",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.10.1"
 			],
@@ -17,6 +18,7 @@
 			"id": "androidx.activity:activity-ktx",
 			"name": "androidx.activity:activity-ktx",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.10.1"
 			],
@@ -30,6 +32,7 @@
 			"id": "androidx.annotation:annotation",
 			"name": "androidx.annotation:annotation",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.9.1"
 			],
@@ -43,6 +46,7 @@
 			"id": "androidx.annotation:annotation-experimental",
 			"name": "androidx.annotation:annotation-experimental",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.4.1"
 			],
@@ -56,6 +60,7 @@
 			"id": "androidx.appcompat:appcompat",
 			"name": "androidx.appcompat:appcompat",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.7.1"
 			],
@@ -69,6 +74,7 @@
 			"id": "androidx.appcompat:appcompat-resources",
 			"name": "androidx.appcompat:appcompat-resources",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.7.1"
 			],
@@ -82,6 +88,7 @@
 			"id": "androidx.arch.core:core-common",
 			"name": "androidx.arch.core:core-common",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.2.0"
 			],
@@ -95,6 +102,7 @@
 			"id": "androidx.arch.core:core-runtime",
 			"name": "androidx.arch.core:core-runtime",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.2.0"
 			],
@@ -108,6 +116,7 @@
 			"id": "androidx.browser:browser",
 			"name": "androidx.browser:browser",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.8.0"
 			],
@@ -121,6 +130,7 @@
 			"id": "androidx.cardview:cardview",
 			"name": "androidx.cardview:cardview",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.0.0"
 			],
@@ -134,6 +144,7 @@
 			"id": "androidx.collection:collection",
 			"name": "androidx.collection:collection",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.2.0"
 			],
@@ -147,6 +158,7 @@
 			"id": "androidx.concurrent:concurrent-futures",
 			"name": "androidx.concurrent:concurrent-futures",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.1.0"
 			],
@@ -160,6 +172,7 @@
 			"id": "androidx.constraintlayout:constraintlayout",
 			"name": "androidx.constraintlayout:constraintlayout",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.0.1"
 			],
@@ -173,6 +186,7 @@
 			"id": "androidx.constraintlayout:constraintlayout-solver",
 			"name": "androidx.constraintlayout:constraintlayout-solver",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.0.1"
 			],
@@ -186,6 +200,7 @@
 			"id": "androidx.coordinatorlayout:coordinatorlayout",
 			"name": "androidx.coordinatorlayout:coordinatorlayout",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.1.0"
 			],
@@ -199,6 +214,7 @@
 			"id": "androidx.core:core",
 			"name": "androidx.core:core",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.13.1"
 			],
@@ -212,6 +228,7 @@
 			"id": "androidx.core:core-ktx",
 			"name": "androidx.core:core-ktx",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.13.1"
 			],
@@ -225,6 +242,7 @@
 			"id": "androidx.core:core-viewtree",
 			"name": "androidx.core:core-viewtree",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.0.0"
 			],
@@ -238,6 +256,7 @@
 			"id": "androidx.cursoradapter:cursoradapter",
 			"name": "androidx.cursoradapter:cursoradapter",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.0.0"
 			],
@@ -251,6 +270,7 @@
 			"id": "androidx.customview:customview",
 			"name": "androidx.customview:customview",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.1.0"
 			],
@@ -264,6 +284,7 @@
 			"id": "androidx.documentfile:documentfile",
 			"name": "androidx.documentfile:documentfile",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.0.0"
 			],
@@ -277,6 +298,7 @@
 			"id": "androidx.drawerlayout:drawerlayout",
 			"name": "androidx.drawerlayout:drawerlayout",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.1.1"
 			],
@@ -290,6 +312,7 @@
 			"id": "androidx.dynamicanimation:dynamicanimation",
 			"name": "androidx.dynamicanimation:dynamicanimation",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.0.0"
 			],
@@ -303,6 +326,7 @@
 			"id": "androidx.emoji2:emoji2",
 			"name": "androidx.emoji2:emoji2",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.3.0"
 			],
@@ -316,6 +340,7 @@
 			"id": "androidx.emoji2:emoji2-views-helper",
 			"name": "androidx.emoji2:emoji2-views-helper",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.3.0"
 			],
@@ -329,6 +354,7 @@
 			"id": "androidx.exifinterface:exifinterface",
 			"name": "androidx.exifinterface:exifinterface",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.3.6"
 			],
@@ -342,6 +368,7 @@
 			"id": "androidx.fragment:fragment",
 			"name": "androidx.fragment:fragment",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.5.4"
 			],
@@ -355,6 +382,7 @@
 			"id": "androidx.interpolator:interpolator",
 			"name": "androidx.interpolator:interpolator",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.0.0"
 			],
@@ -368,6 +396,7 @@
 			"id": "androidx.legacy:legacy-support-core-utils",
 			"name": "androidx.legacy:legacy-support-core-utils",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.0.0"
 			],
@@ -381,6 +410,7 @@
 			"id": "androidx.lifecycle:lifecycle-common",
 			"name": "androidx.lifecycle:lifecycle-common",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.10.0"
 			],
@@ -394,6 +424,7 @@
 			"id": "androidx.lifecycle:lifecycle-livedata",
 			"name": "androidx.lifecycle:lifecycle-livedata",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.10.0"
 			],
@@ -407,6 +438,7 @@
 			"id": "androidx.lifecycle:lifecycle-livedata-core",
 			"name": "androidx.lifecycle:lifecycle-livedata-core",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.10.0"
 			],
@@ -420,6 +452,7 @@
 			"id": "androidx.lifecycle:lifecycle-livedata-core-ktx",
 			"name": "androidx.lifecycle:lifecycle-livedata-core-ktx",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.10.0"
 			],
@@ -433,6 +466,7 @@
 			"id": "androidx.lifecycle:lifecycle-process",
 			"name": "androidx.lifecycle:lifecycle-process",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.10.0"
 			],
@@ -446,6 +480,7 @@
 			"id": "androidx.lifecycle:lifecycle-runtime",
 			"name": "androidx.lifecycle:lifecycle-runtime",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.10.0"
 			],
@@ -459,6 +494,7 @@
 			"id": "androidx.lifecycle:lifecycle-runtime-ktx",
 			"name": "androidx.lifecycle:lifecycle-runtime-ktx",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.10.0"
 			],
@@ -472,6 +508,7 @@
 			"id": "androidx.lifecycle:lifecycle-viewmodel",
 			"name": "androidx.lifecycle:lifecycle-viewmodel",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.10.0"
 			],
@@ -485,6 +522,7 @@
 			"id": "androidx.lifecycle:lifecycle-viewmodel-ktx",
 			"name": "androidx.lifecycle:lifecycle-viewmodel-ktx",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.10.0"
 			],
@@ -498,6 +536,7 @@
 			"id": "androidx.lifecycle:lifecycle-viewmodel-savedstate",
 			"name": "androidx.lifecycle:lifecycle-viewmodel-savedstate",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.10.0"
 			],
@@ -511,6 +550,7 @@
 			"id": "androidx.loader:loader",
 			"name": "androidx.loader:loader",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.0.0"
 			],
@@ -524,6 +564,7 @@
 			"id": "androidx.localbroadcastmanager:localbroadcastmanager",
 			"name": "androidx.localbroadcastmanager:localbroadcastmanager",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.0.0"
 			],
@@ -537,6 +578,7 @@
 			"id": "androidx.media3:media3-common",
 			"name": "androidx.media3:media3-common",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.5.1"
 			],
@@ -550,6 +592,7 @@
 			"id": "androidx.media3:media3-container",
 			"name": "androidx.media3:media3-container",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.5.1"
 			],
@@ -563,6 +606,7 @@
 			"id": "androidx.media3:media3-database",
 			"name": "androidx.media3:media3-database",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.5.1"
 			],
@@ -576,6 +620,7 @@
 			"id": "androidx.media3:media3-datasource",
 			"name": "androidx.media3:media3-datasource",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.5.1"
 			],
@@ -589,6 +634,7 @@
 			"id": "androidx.media3:media3-decoder",
 			"name": "androidx.media3:media3-decoder",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.5.1"
 			],
@@ -602,6 +648,7 @@
 			"id": "androidx.media3:media3-effect",
 			"name": "androidx.media3:media3-effect",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.5.1"
 			],
@@ -615,6 +662,7 @@
 			"id": "androidx.media3:media3-exoplayer",
 			"name": "androidx.media3:media3-exoplayer",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.5.1"
 			],
@@ -628,6 +676,7 @@
 			"id": "androidx.media3:media3-extractor",
 			"name": "androidx.media3:media3-extractor",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.5.1"
 			],
@@ -641,6 +690,7 @@
 			"id": "androidx.media3:media3-muxer",
 			"name": "androidx.media3:media3-muxer",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.5.1"
 			],
@@ -654,6 +704,7 @@
 			"id": "androidx.media3:media3-transformer",
 			"name": "androidx.media3:media3-transformer",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.5.1"
 			],
@@ -667,6 +718,7 @@
 			"id": "androidx.print:print",
 			"name": "androidx.print:print",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.0.0"
 			],
@@ -680,6 +732,7 @@
 			"id": "androidx.profileinstaller:profileinstaller",
 			"name": "androidx.profileinstaller:profileinstaller",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.4.0"
 			],
@@ -693,6 +746,7 @@
 			"id": "androidx.recyclerview:recyclerview",
 			"name": "androidx.recyclerview:recyclerview",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.1.0"
 			],
@@ -706,6 +760,7 @@
 			"id": "androidx.resourceinspection:resourceinspection-annotation",
 			"name": "androidx.resourceinspection:resourceinspection-annotation",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.0.1"
 			],
@@ -719,6 +774,7 @@
 			"id": "androidx.savedstate:savedstate",
 			"name": "androidx.savedstate:savedstate",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.4.0"
 			],
@@ -732,6 +788,7 @@
 			"id": "androidx.savedstate:savedstate-ktx",
 			"name": "androidx.savedstate:savedstate-ktx",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.4.0"
 			],
@@ -745,6 +802,7 @@
 			"id": "androidx.startup:startup-runtime",
 			"name": "androidx.startup:startup-runtime",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.1.1"
 			],
@@ -758,6 +816,7 @@
 			"id": "androidx.tracing:tracing",
 			"name": "androidx.tracing:tracing",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.0.0"
 			],
@@ -771,6 +830,7 @@
 			"id": "androidx.transition:transition",
 			"name": "androidx.transition:transition",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.5.0"
 			],
@@ -784,6 +844,7 @@
 			"id": "androidx.vectordrawable:vectordrawable",
 			"name": "androidx.vectordrawable:vectordrawable",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.1.0"
 			],
@@ -797,6 +858,7 @@
 			"id": "androidx.vectordrawable:vectordrawable-animated",
 			"name": "androidx.vectordrawable:vectordrawable-animated",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.1.0"
 			],
@@ -810,6 +872,7 @@
 			"id": "androidx.versionedparcelable:versionedparcelable",
 			"name": "androidx.versionedparcelable:versionedparcelable",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.1.1"
 			],
@@ -823,6 +886,7 @@
 			"id": "androidx.viewpager2:viewpager2",
 			"name": "androidx.viewpager2:viewpager2",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.0.0"
 			],
@@ -836,6 +900,7 @@
 			"id": "androidx.viewpager:viewpager",
 			"name": "androidx.viewpager:viewpager",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.0.0"
 			],
@@ -849,6 +914,7 @@
 			"id": "androidx.webkit:webkit",
 			"name": "androidx.webkit:webkit",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.14.0"
 			],
@@ -862,6 +928,7 @@
 			"id": "tbuktu-bigint",
 			"name": "bigint (shaded into FastDoubleParser)",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [],
 			"spdx": "BSD-2-Clause",
 			"url": "https://github.com/tbuktu/bigint",
@@ -873,6 +940,7 @@
 			"id": "com.fasterxml.jackson.core:jackson-annotations",
 			"name": "com.fasterxml.jackson.core:jackson-annotations",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.15.3"
 			],
@@ -887,6 +955,7 @@
 			"id": "com.fasterxml.jackson.core:jackson-core",
 			"name": "com.fasterxml.jackson.core:jackson-core",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.15.3"
 			],
@@ -901,6 +970,7 @@
 			"id": "com.fasterxml.jackson.core:jackson-databind",
 			"name": "com.fasterxml.jackson.core:jackson-databind",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.15.3"
 			],
@@ -915,6 +985,7 @@
 			"id": "com.google.android.datatransport:transport-api",
 			"name": "com.google.android.datatransport:transport-api",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"3.1.0"
 			],
@@ -928,6 +999,7 @@
 			"id": "com.google.android.datatransport:transport-backend-cct",
 			"name": "com.google.android.datatransport:transport-backend-cct",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"3.1.9"
 			],
@@ -941,6 +1013,7 @@
 			"id": "com.google.android.datatransport:transport-runtime",
 			"name": "com.google.android.datatransport:transport-runtime",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"3.1.9"
 			],
@@ -954,6 +1027,7 @@
 			"id": "com.google.android.gms:play-services-base",
 			"name": "com.google.android.gms:play-services-base",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"18.5.0"
 			],
@@ -967,6 +1041,7 @@
 			"id": "com.google.android.gms:play-services-basement",
 			"name": "com.google.android.gms:play-services-basement",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"18.4.0"
 			],
@@ -980,6 +1055,7 @@
 			"id": "com.google.android.gms:play-services-cloud-messaging",
 			"name": "com.google.android.gms:play-services-cloud-messaging",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"17.2.0"
 			],
@@ -993,6 +1069,7 @@
 			"id": "com.google.android.gms:play-services-location",
 			"name": "com.google.android.gms:play-services-location",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"21.3.0"
 			],
@@ -1006,6 +1083,7 @@
 			"id": "com.google.android.gms:play-services-stats",
 			"name": "com.google.android.gms:play-services-stats",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"17.0.2"
 			],
@@ -1019,6 +1097,7 @@
 			"id": "com.google.android.gms:play-services-tasks",
 			"name": "com.google.android.gms:play-services-tasks",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"18.2.0"
 			],
@@ -1032,6 +1111,7 @@
 			"id": "com.google.android.material:material",
 			"name": "com.google.android.material:material",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.12.0"
 			],
@@ -1045,6 +1125,7 @@
 			"id": "com.google.errorprone:error_prone_annotations",
 			"name": "com.google.errorprone:error_prone_annotations",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.26.0"
 			],
@@ -1058,6 +1139,7 @@
 			"id": "com.google.firebase:firebase-annotations",
 			"name": "com.google.firebase:firebase-annotations",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"16.2.0"
 			],
@@ -1071,6 +1153,7 @@
 			"id": "com.google.firebase:firebase-common",
 			"name": "com.google.firebase:firebase-common",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"21.0.0"
 			],
@@ -1084,6 +1167,7 @@
 			"id": "com.google.firebase:firebase-common-ktx",
 			"name": "com.google.firebase:firebase-common-ktx",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"21.0.0"
 			],
@@ -1097,6 +1181,7 @@
 			"id": "com.google.firebase:firebase-components",
 			"name": "com.google.firebase:firebase-components",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"18.0.0"
 			],
@@ -1110,6 +1195,7 @@
 			"id": "com.google.firebase:firebase-datatransport",
 			"name": "com.google.firebase:firebase-datatransport",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"18.2.0"
 			],
@@ -1123,6 +1209,7 @@
 			"id": "com.google.firebase:firebase-encoders",
 			"name": "com.google.firebase:firebase-encoders",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"17.0.0"
 			],
@@ -1136,6 +1223,7 @@
 			"id": "com.google.firebase:firebase-encoders-json",
 			"name": "com.google.firebase:firebase-encoders-json",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"18.0.0"
 			],
@@ -1149,6 +1237,7 @@
 			"id": "com.google.firebase:firebase-encoders-proto",
 			"name": "com.google.firebase:firebase-encoders-proto",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"16.0.0"
 			],
@@ -1162,6 +1251,7 @@
 			"id": "com.google.firebase:firebase-iid-interop",
 			"name": "com.google.firebase:firebase-iid-interop",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"17.1.0"
 			],
@@ -1175,6 +1265,7 @@
 			"id": "com.google.firebase:firebase-installations",
 			"name": "com.google.firebase:firebase-installations",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"17.2.0"
 			],
@@ -1188,6 +1279,7 @@
 			"id": "com.google.firebase:firebase-installations-interop",
 			"name": "com.google.firebase:firebase-installations-interop",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"17.1.1"
 			],
@@ -1201,6 +1293,7 @@
 			"id": "com.google.firebase:firebase-measurement-connector",
 			"name": "com.google.firebase:firebase-measurement-connector",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"19.0.0"
 			],
@@ -1214,6 +1307,7 @@
 			"id": "com.google.firebase:firebase-messaging",
 			"name": "com.google.firebase:firebase-messaging",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"24.1.2"
 			],
@@ -1227,6 +1321,7 @@
 			"id": "com.google.guava:failureaccess",
 			"name": "com.google.guava:failureaccess",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.0.2"
 			],
@@ -1240,6 +1335,7 @@
 			"id": "com.google.guava:guava",
 			"name": "com.google.guava:guava",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"33.3.1-android"
 			],
@@ -1253,6 +1349,7 @@
 			"id": "com.google.guava:listenablefuture",
 			"name": "com.google.guava:listenablefuture",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"9999.0-empty-to-avoid-conflict-with-guava"
 			],
@@ -1266,6 +1363,7 @@
 			"id": "fastdoubleparser",
 			"name": "FastDoubleParser (shaded into jackson-core)",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [],
 			"spdx": "MIT",
 			"url": "https://github.com/wrandelshofer/FastDoubleParser",
@@ -1277,6 +1375,7 @@
 			"id": "javax.inject:javax.inject",
 			"name": "javax.inject:javax.inject",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1"
 			],
@@ -1290,6 +1389,7 @@
 			"id": "org.jetbrains.kotlin:kotlin-stdlib",
 			"name": "org.jetbrains.kotlin:kotlin-stdlib",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"2.0.21"
 			],
@@ -1303,6 +1403,7 @@
 			"id": "org.jetbrains.kotlin:kotlin-stdlib-jdk7",
 			"name": "org.jetbrains.kotlin:kotlin-stdlib-jdk7",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.8.22"
 			],
@@ -1316,6 +1417,7 @@
 			"id": "org.jetbrains.kotlin:kotlin-stdlib-jdk8",
 			"name": "org.jetbrains.kotlin:kotlin-stdlib-jdk8",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.8.22"
 			],
@@ -1329,6 +1431,7 @@
 			"id": "org.jetbrains.kotlinx:kotlinx-coroutines-android",
 			"name": "org.jetbrains.kotlinx:kotlinx-coroutines-android",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.9.0"
 			],
@@ -1342,6 +1445,7 @@
 			"id": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
 			"name": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.9.0"
 			],
@@ -1355,6 +1459,7 @@
 			"id": "org.jetbrains.kotlinx:kotlinx-coroutines-play-services",
 			"name": "org.jetbrains.kotlinx:kotlinx-coroutines-play-services",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.9.0"
 			],
@@ -1368,6 +1473,7 @@
 			"id": "org.jetbrains.kotlinx:kotlinx-serialization-core",
 			"name": "org.jetbrains.kotlinx:kotlinx-serialization-core",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.7.3"
 			],
@@ -1381,6 +1487,7 @@
 			"id": "org.jetbrains:annotations",
 			"name": "org.jetbrains:annotations",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"23.0.0"
 			],
@@ -1394,6 +1501,7 @@
 			"id": "org.jspecify:jspecify",
 			"name": "org.jspecify:jspecify",
 			"ecosystem": "android",
+			"platform": "android",
 			"versions": [
 				"1.0.0"
 			],
@@ -1540,6 +1648,20 @@
 			"ecosystem": "npm",
 			"versions": [
 				"2.7.1"
+			],
+			"spdx": "MIT OR Apache-2.0",
+			"url": "https://github.com/tauri-apps/plugins-workspace",
+			"textHashes": [
+				"283ea6cc2997a1a7",
+				"89ff9689dcf9dd53"
+			]
+		},
+		{
+			"id": "@tauri-apps/plugin-fs",
+			"name": "@tauri-apps/plugin-fs",
+			"ecosystem": "npm",
+			"versions": [
+				"2.5.2"
 			],
 			"spdx": "MIT OR Apache-2.0",
 			"url": "https://github.com/tauri-apps/plugins-workspace",
@@ -2019,6 +2141,7 @@
 			"id": "aes",
 			"name": "aes",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.8.4"
 			],
@@ -2075,6 +2198,7 @@
 			"id": "android-native-keyring-store",
 			"name": "android-native-keyring-store",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"1.0.0"
 			],
@@ -2131,6 +2255,7 @@
 			"id": "apple-native-keyring-store",
 			"name": "apple-native-keyring-store",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"1.0.1"
 			],
@@ -2173,6 +2298,7 @@
 			"id": "ashpd",
 			"name": "ashpd",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.11.1"
 			],
@@ -2187,6 +2313,7 @@
 			"id": "async-broadcast",
 			"name": "async-broadcast",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.7.2"
 			],
@@ -2201,6 +2328,7 @@
 			"id": "async-channel",
 			"name": "async-channel",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"2.5.0"
 			],
@@ -2229,6 +2357,7 @@
 			"id": "async-executor",
 			"name": "async-executor",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"1.14.0"
 			],
@@ -2243,6 +2372,7 @@
 			"id": "async-fs",
 			"name": "async-fs",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"2.2.0"
 			],
@@ -2257,6 +2387,7 @@
 			"id": "async-io",
 			"name": "async-io",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"2.6.0"
 			],
@@ -2271,6 +2402,7 @@
 			"id": "async-lock",
 			"name": "async-lock",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"3.4.2"
 			],
@@ -2285,6 +2417,7 @@
 			"id": "async-net",
 			"name": "async-net",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"2.0.0"
 			],
@@ -2299,6 +2432,7 @@
 			"id": "async-process",
 			"name": "async-process",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"2.5.0"
 			],
@@ -2313,6 +2447,7 @@
 			"id": "async-recursion",
 			"name": "async-recursion",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"1.1.1"
 			],
@@ -2327,6 +2462,7 @@
 			"id": "async-signal",
 			"name": "async-signal",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.2.13"
 			],
@@ -2341,6 +2477,7 @@
 			"id": "async-task",
 			"name": "async-task",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"4.7.1"
 			],
@@ -2355,6 +2492,7 @@
 			"id": "async-trait",
 			"name": "async-trait",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.1.89"
 			],
@@ -2369,6 +2507,7 @@
 			"id": "atk",
 			"name": "atk",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.2"
 			],
@@ -2383,6 +2522,7 @@
 			"id": "atk-sys",
 			"name": "atk-sys",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.2"
 			],
@@ -2420,37 +2560,6 @@
 			"url": "https://github.com/cuviper/autocfg",
 			"textHashes": [
 				"99afaa30c1780120"
-			]
-		},
-		{
-			"id": "aws-lc-rs",
-			"name": "aws-lc-rs",
-			"ecosystem": "rust",
-			"versions": [
-				"1.17.3"
-			],
-			"spdx": "ISC AND (Apache-2.0 OR ISC)",
-			"shipped": "ISC",
-			"url": "https://github.com/aws/aws-lc-rs",
-			"textHashes": [
-				"f2ff9e66e9a9acdb"
-			]
-		},
-		{
-			"id": "aws-lc-sys",
-			"name": "aws-lc-sys",
-			"ecosystem": "rust",
-			"versions": [
-				"0.43.0"
-			],
-			"spdx": "ISC AND (Apache-2.0 OR ISC) AND Apache-2.0 AND MIT AND BSD-3-Clause AND (Apache-2.0 OR ISC OR MIT) AND (Apache-2.0 OR ISC OR MIT-0)",
-			"shipped": "Apache-2.0 AND BSD-3-Clause AND ISC AND MIT",
-			"url": "https://github.com/aws/aws-lc-rs",
-			"textHashes": [
-				"a4da910352996e91",
-				"c274f80372d90c01",
-				"c86c0f590ac954ba",
-				"f2ff9e66e9a9acdb"
 			]
 		},
 		{
@@ -2583,6 +2692,7 @@
 			"id": "block-padding",
 			"name": "block-padding",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.3.3"
 			],
@@ -2597,6 +2707,7 @@
 			"id": "block2",
 			"name": "block2",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"0.6.2"
 			],
@@ -2611,6 +2722,7 @@
 			"id": "blocking",
 			"name": "blocking",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"1.6.2"
 			],
@@ -2739,6 +2851,7 @@
 			"id": "cairo-rs",
 			"name": "cairo-rs",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.5"
 			],
@@ -2753,6 +2866,7 @@
 			"id": "cairo-sys-rs",
 			"name": "cairo-sys-rs",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.2"
 			],
@@ -2823,6 +2937,7 @@
 			"id": "cbc",
 			"name": "cbc",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.1.2"
 			],
@@ -2851,6 +2966,7 @@
 			"id": "cesu8",
 			"name": "cesu8",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"1.1.0"
 			],
@@ -2893,6 +3009,7 @@
 			"id": "cfg-expr",
 			"name": "cfg-expr",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.15.8"
 			],
@@ -2950,6 +3067,7 @@
 			"id": "cipher",
 			"name": "cipher",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.4.4"
 			],
@@ -2978,6 +3096,7 @@
 			"id": "clipboard-win",
 			"name": "clipboard-win",
 			"ecosystem": "rust",
+			"platform": "windows",
 			"versions": [
 				"5.4.1"
 			],
@@ -3020,6 +3139,7 @@
 			"id": "combine",
 			"name": "combine",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"4.6.7"
 			],
@@ -3062,6 +3182,7 @@
 			"id": "concurrent-queue",
 			"name": "concurrent-queue",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"2.5.0"
 			],
@@ -3118,6 +3239,7 @@
 			"id": "core-foundation",
 			"name": "core-foundation",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"0.9.4, 0.10.1"
 			],
@@ -3146,6 +3268,7 @@
 			"id": "core-graphics",
 			"name": "core-graphics",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"0.25.0"
 			],
@@ -3160,6 +3283,7 @@
 			"id": "core-graphics-types",
 			"name": "core-graphics-types",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"0.2.0"
 			],
@@ -3398,6 +3522,7 @@
 			"id": "dbus",
 			"name": "dbus",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.9.10"
 			],
@@ -3412,6 +3537,7 @@
 			"id": "dbus-secret-service",
 			"name": "dbus-secret-service",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"4.1.0"
 			],
@@ -3426,6 +3552,7 @@
 			"id": "dbus-secret-service-keyring-store",
 			"name": "dbus-secret-service-keyring-store",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"1.0.0"
 			],
@@ -3538,6 +3665,7 @@
 			"id": "dispatch2",
 			"name": "dispatch2",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"0.3.1"
 			],
@@ -3566,6 +3694,7 @@
 			"id": "dlib",
 			"name": "dlib",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.5.3"
 			],
@@ -3580,6 +3709,7 @@
 			"id": "dlopen2",
 			"name": "dlopen2",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.8.2"
 			],
@@ -3594,6 +3724,7 @@
 			"id": "dlopen2_derive",
 			"name": "dlopen2_derive",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.4.3"
 			],
@@ -3622,6 +3753,7 @@
 			"id": "downcast-rs",
 			"name": "downcast-rs",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"1.2.1"
 			],
@@ -3791,6 +3923,7 @@
 			"id": "embed_plist",
 			"name": "embed_plist",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"1.2.2"
 			],
@@ -3821,6 +3954,7 @@
 			"id": "endi",
 			"name": "endi",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"1.1.1"
 			],
@@ -3835,6 +3969,7 @@
 			"id": "enumflags2",
 			"name": "enumflags2",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.7.12"
 			],
@@ -3849,6 +3984,7 @@
 			"id": "enumflags2_derive",
 			"name": "enumflags2_derive",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.7.12"
 			],
@@ -3905,6 +4041,7 @@
 			"id": "error-code",
 			"name": "error-code",
 			"ecosystem": "rust",
+			"platform": "windows",
 			"versions": [
 				"3.3.2"
 			],
@@ -3919,6 +4056,7 @@
 			"id": "event-listener",
 			"name": "event-listener",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"5.4.1"
 			],
@@ -3933,6 +4071,7 @@
 			"id": "event-listener-strategy",
 			"name": "event-listener-strategy",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.5.4"
 			],
@@ -4003,6 +4142,7 @@
 			"id": "field-offset",
 			"name": "field-offset",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.3.6"
 			],
@@ -4031,6 +4171,7 @@
 			"id": "fixedbitset",
 			"name": "fixedbitset",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.5.7"
 			],
@@ -4213,6 +4354,7 @@
 			"id": "futures-executor",
 			"name": "futures-executor",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.3.32"
 			],
@@ -4241,6 +4383,7 @@
 			"id": "futures-lite",
 			"name": "futures-lite",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"2.6.1"
 			],
@@ -4326,6 +4469,7 @@
 			"id": "gdk",
 			"name": "gdk",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.2"
 			],
@@ -4340,6 +4484,7 @@
 			"id": "gdk-pixbuf",
 			"name": "gdk-pixbuf",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.5"
 			],
@@ -4354,6 +4499,7 @@
 			"id": "gdk-pixbuf-sys",
 			"name": "gdk-pixbuf-sys",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.0"
 			],
@@ -4368,6 +4514,7 @@
 			"id": "gdk-sys",
 			"name": "gdk-sys",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.2"
 			],
@@ -4382,6 +4529,7 @@
 			"id": "gdkwayland-sys",
 			"name": "gdkwayland-sys",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.2"
 			],
@@ -4396,6 +4544,7 @@
 			"id": "gdkx11",
 			"name": "gdkx11",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.2"
 			],
@@ -4410,6 +4559,7 @@
 			"id": "gdkx11-sys",
 			"name": "gdkx11-sys",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.2"
 			],
@@ -4483,6 +4633,7 @@
 			"id": "gio",
 			"name": "gio",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.4"
 			],
@@ -4497,6 +4648,7 @@
 			"id": "gio-sys",
 			"name": "gio-sys",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.1"
 			],
@@ -4511,6 +4663,7 @@
 			"id": "glib",
 			"name": "glib",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.5"
 			],
@@ -4525,6 +4678,7 @@
 			"id": "glib-macros",
 			"name": "glib-macros",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.5"
 			],
@@ -4539,6 +4693,7 @@
 			"id": "glib-sys",
 			"name": "glib-sys",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.1"
 			],
@@ -4567,6 +4722,7 @@
 			"id": "gobject-sys",
 			"name": "gobject-sys",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.0"
 			],
@@ -4582,7 +4738,7 @@
 			"name": "grindr",
 			"ecosystem": "rust",
 			"versions": [
-				"0.25.0+26.17.0.181424"
+				"0.30.0+26.20.0.187695"
 			],
 			"spdx": "MIT",
 			"shipped": "MIT",
@@ -4609,6 +4765,7 @@
 			"id": "gtk",
 			"name": "gtk",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.2"
 			],
@@ -4623,6 +4780,7 @@
 			"id": "gtk-sys",
 			"name": "gtk-sys",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.2"
 			],
@@ -4637,6 +4795,7 @@
 			"id": "gtk3-macros",
 			"name": "gtk3-macros",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.2"
 			],
@@ -4645,20 +4804,6 @@
 			"url": "https://github.com/gtk-rs/gtk3-rs",
 			"textHashes": [
 				"21a2121221d2a35d"
-			]
-		},
-		{
-			"id": "h2",
-			"name": "h2",
-			"ecosystem": "rust",
-			"versions": [
-				"0.4.15"
-			],
-			"spdx": "MIT",
-			"shipped": "MIT",
-			"url": "https://github.com/hyperium/h2",
-			"textHashes": [
-				"f5352eaa5597c02c"
 			]
 		},
 		{
@@ -4721,6 +4866,7 @@
 			"id": "hkdf",
 			"name": "hkdf",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.12.4"
 			],
@@ -4847,6 +4993,7 @@
 			"id": "hyper",
 			"name": "hyper",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"1.8.1"
 			],
@@ -4858,23 +5005,10 @@
 			]
 		},
 		{
-			"id": "hyper-rustls",
-			"name": "hyper-rustls",
-			"ecosystem": "rust",
-			"versions": [
-				"0.27.9"
-			],
-			"spdx": "Apache-2.0 OR ISC OR MIT",
-			"shipped": "MIT",
-			"url": "https://github.com/rustls/hyper-rustls",
-			"textHashes": [
-				"a3320aa8d192a02c"
-			]
-		},
-		{
 			"id": "hyper-util",
 			"name": "hyper-util",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"0.1.20"
 			],
@@ -5113,6 +5247,7 @@
 			"id": "inout",
 			"name": "inout",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.1.4"
 			],
@@ -5141,6 +5276,7 @@
 			"id": "iri-string",
 			"name": "iri-string",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"0.7.10"
 			],
@@ -5211,6 +5347,7 @@
 			"id": "javascriptcore-rs",
 			"name": "javascriptcore-rs",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"1.1.2"
 			],
@@ -5225,6 +5362,7 @@
 			"id": "javascriptcore-rs-sys",
 			"name": "javascriptcore-rs-sys",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"1.1.1"
 			],
@@ -5239,6 +5377,7 @@
 			"id": "jni",
 			"name": "jni",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"0.21.1"
 			],
@@ -5253,6 +5392,7 @@
 			"id": "jni-sys",
 			"name": "jni-sys",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"0.3.0"
 			],
@@ -5379,6 +5519,7 @@
 			"id": "libdbus-sys",
 			"name": "libdbus-sys",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.2.7"
 			],
@@ -5520,6 +5661,7 @@
 			"id": "mac-notification-sys",
 			"name": "mac-notification-sys",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"0.6.15"
 			],
@@ -5590,6 +5732,7 @@
 			"id": "memoffset",
 			"name": "memoffset",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.9.1"
 			],
@@ -5699,6 +5842,7 @@
 			"id": "ndk",
 			"name": "ndk",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"0.9.0"
 			],
@@ -5713,6 +5857,7 @@
 			"id": "ndk-context",
 			"name": "ndk-context",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"0.1.1"
 			],
@@ -5727,6 +5872,7 @@
 			"id": "ndk-sys",
 			"name": "ndk-sys",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"0.6.0+11769913"
 			],
@@ -5811,6 +5957,7 @@
 			"id": "num",
 			"name": "num",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.4.3"
 			],
@@ -5839,6 +5986,7 @@
 			"id": "num-complex",
 			"name": "num-complex",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.4.6"
 			],
@@ -5881,6 +6029,7 @@
 			"id": "num-iter",
 			"name": "num-iter",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.1.46"
 			],
@@ -5895,6 +6044,7 @@
 			"id": "num-rational",
 			"name": "num-rational",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.4.2"
 			],
@@ -5923,6 +6073,7 @@
 			"id": "num_enum",
 			"name": "num_enum",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"0.7.6"
 			],
@@ -5937,6 +6088,7 @@
 			"id": "num_enum_derive",
 			"name": "num_enum_derive",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"0.7.6"
 			],
@@ -5951,6 +6103,7 @@
 			"id": "objc2",
 			"name": "objc2",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"0.6.4"
 			],
@@ -5965,6 +6118,7 @@
 			"id": "objc2-app-kit",
 			"name": "objc2-app-kit",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"0.3.2"
 			],
@@ -5979,6 +6133,7 @@
 			"id": "objc2-core-foundation",
 			"name": "objc2-core-foundation",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"0.3.2"
 			],
@@ -5993,6 +6148,7 @@
 			"id": "objc2-core-graphics",
 			"name": "objc2-core-graphics",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"0.3.2"
 			],
@@ -6007,6 +6163,7 @@
 			"id": "objc2-encode",
 			"name": "objc2-encode",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"4.1.0"
 			],
@@ -6021,6 +6178,7 @@
 			"id": "objc2-exception-helper",
 			"name": "objc2-exception-helper",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"0.1.1"
 			],
@@ -6035,6 +6193,7 @@
 			"id": "objc2-foundation",
 			"name": "objc2-foundation",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"0.3.2"
 			],
@@ -6063,6 +6222,7 @@
 			"id": "objc2-web-kit",
 			"name": "objc2-web-kit",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"0.3.2"
 			],
@@ -6116,20 +6276,6 @@
 			]
 		},
 		{
-			"id": "openssl-probe",
-			"name": "openssl-probe",
-			"ecosystem": "rust",
-			"versions": [
-				"0.2.1"
-			],
-			"spdx": "MIT OR Apache-2.0",
-			"shipped": "MIT",
-			"url": "https://github.com/rustls/openssl-probe",
-			"textHashes": [
-				"84e1bbfebd74e419"
-			]
-		},
-		{
 			"id": "option-ext",
 			"name": "option-ext",
 			"ecosystem": "rust",
@@ -6147,6 +6293,7 @@
 			"id": "ordered-stream",
 			"name": "ordered-stream",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.2.0"
 			],
@@ -6175,6 +6322,7 @@
 			"id": "os_pipe",
 			"name": "os_pipe",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"1.2.3"
 			],
@@ -6203,6 +6351,7 @@
 			"id": "pango",
 			"name": "pango",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.3"
 			],
@@ -6217,6 +6366,7 @@
 			"id": "pango-sys",
 			"name": "pango-sys",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.18.0"
 			],
@@ -6231,6 +6381,7 @@
 			"id": "parking",
 			"name": "parking",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"2.2.1"
 			],
@@ -6330,6 +6481,7 @@
 			"id": "petgraph",
 			"name": "petgraph",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.8.3"
 			],
@@ -6433,6 +6585,7 @@
 			"id": "pin-utils",
 			"name": "pin-utils",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"0.1.0"
 			],
@@ -6447,6 +6600,7 @@
 			"id": "piper",
 			"name": "piper",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.2.5"
 			],
@@ -6517,6 +6671,7 @@
 			"id": "polling",
 			"name": "polling",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"3.11.0"
 			],
@@ -6531,6 +6686,7 @@
 			"id": "pollster",
 			"name": "pollster",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.4.0"
 			],
@@ -6629,6 +6785,7 @@
 			"id": "proc-macro-error",
 			"name": "proc-macro-error",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"1.0.4"
 			],
@@ -6643,6 +6800,7 @@
 			"id": "proc-macro-error-attr",
 			"name": "proc-macro-error-attr",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"1.0.4"
 			],
@@ -6872,6 +7030,7 @@
 			"id": "reqwest",
 			"name": "reqwest",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"0.13.2"
 			],
@@ -6981,34 +7140,6 @@
 			]
 		},
 		{
-			"id": "rustls",
-			"name": "rustls",
-			"ecosystem": "rust",
-			"versions": [
-				"0.23.42"
-			],
-			"spdx": "Apache-2.0 OR ISC OR MIT",
-			"shipped": "MIT",
-			"url": "https://github.com/rustls/rustls",
-			"textHashes": [
-				"a3320aa8d192a02c"
-			]
-		},
-		{
-			"id": "rustls-native-certs",
-			"name": "rustls-native-certs",
-			"ecosystem": "rust",
-			"versions": [
-				"0.8.4"
-			],
-			"spdx": "Apache-2.0 OR ISC OR MIT",
-			"shipped": "MIT",
-			"url": "https://github.com/rustls/rustls-native-certs",
-			"textHashes": [
-				"a3320aa8d192a02c"
-			]
-		},
-		{
 			"id": "rustls-pki-types",
 			"name": "rustls-pki-types",
 			"ecosystem": "rust",
@@ -7020,48 +7151,6 @@
 			"url": "https://github.com/rustls/pki-types",
 			"textHashes": [
 				"c5e7f780f961f850"
-			]
-		},
-		{
-			"id": "rustls-platform-verifier",
-			"name": "rustls-platform-verifier",
-			"ecosystem": "rust",
-			"versions": [
-				"0.6.2"
-			],
-			"spdx": "MIT OR Apache-2.0",
-			"shipped": "MIT",
-			"url": "https://github.com/rustls/rustls-platform-verifier",
-			"textHashes": [
-				"6205904d553962d4"
-			]
-		},
-		{
-			"id": "rustls-platform-verifier-android",
-			"name": "rustls-platform-verifier-android",
-			"ecosystem": "rust",
-			"versions": [
-				"0.1.1"
-			],
-			"spdx": "MIT OR Apache-2.0",
-			"shipped": "MIT",
-			"url": "https://github.com/rustls/rustls-platform-verifier",
-			"textHashes": [
-				"07c7993a082dd284"
-			]
-		},
-		{
-			"id": "rustls-webpki",
-			"name": "rustls-webpki",
-			"ecosystem": "rust",
-			"versions": [
-				"0.103.13"
-			],
-			"spdx": "ISC",
-			"shipped": "ISC",
-			"url": "https://github.com/rustls/webpki",
-			"textHashes": [
-				"3ac27594ed56fd07"
 			]
 		},
 		{
@@ -7107,20 +7196,6 @@
 			]
 		},
 		{
-			"id": "schannel",
-			"name": "schannel",
-			"ecosystem": "rust",
-			"versions": [
-				"0.1.29"
-			],
-			"spdx": "MIT",
-			"shipped": "MIT",
-			"url": "https://github.com/steffengy/schannel-rs",
-			"textHashes": [
-				"1ecbb241444ad7fe"
-			]
-		},
-		{
 			"id": "schemars",
 			"name": "schemars",
 			"ecosystem": "rust",
@@ -7153,6 +7228,7 @@
 			"id": "scoped-tls",
 			"name": "scoped-tls",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"1.0.1"
 			],
@@ -7195,6 +7271,7 @@
 			"id": "security-framework",
 			"name": "security-framework",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"3.7.0"
 			],
@@ -7209,6 +7286,7 @@
 			"id": "security-framework-sys",
 			"name": "security-framework-sys",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"2.17.0"
 			],
@@ -7503,6 +7581,7 @@
 			"id": "signal-hook-registry",
 			"name": "signal-hook-registry",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"1.4.8"
 			],
@@ -7615,6 +7694,7 @@
 			"id": "softbuffer",
 			"name": "softbuffer",
 			"ecosystem": "rust",
+			"platform": "windows",
 			"versions": [
 				"0.4.8"
 			],
@@ -7629,6 +7709,7 @@
 			"id": "soup3",
 			"name": "soup3",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.5.0"
 			],
@@ -7643,6 +7724,7 @@
 			"id": "soup3-sys",
 			"name": "soup3-sys",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.5.0"
 			],
@@ -7769,6 +7851,7 @@
 			"id": "sync_async",
 			"name": "sync_async",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"0.1.0"
 			],
@@ -7825,8 +7908,9 @@
 			"id": "system-configuration",
 			"name": "system-configuration",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
-				"0.6.1, 0.7.0"
+				"0.6.1"
 			],
 			"spdx": "MIT OR Apache-2.0",
 			"shipped": "MIT",
@@ -7839,6 +7923,7 @@
 			"id": "system-configuration-sys",
 			"name": "system-configuration-sys",
 			"ecosystem": "rust",
+			"platform": "macos",
 			"versions": [
 				"0.6.0"
 			],
@@ -7853,6 +7938,7 @@
 			"id": "system-deps",
 			"name": "system-deps",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"6.2.2"
 			],
@@ -7881,6 +7967,7 @@
 			"id": "tao-macros",
 			"name": "tao-macros",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"0.1.3"
 			],
@@ -7895,6 +7982,7 @@
 			"id": "target-lexicon",
 			"name": "target-lexicon",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.12.16"
 			],
@@ -7979,6 +8067,7 @@
 			"id": "tauri-plugin-android-fs",
 			"name": "tauri-plugin-android-fs",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"28.2.2"
 			],
@@ -8050,8 +8139,9 @@
 			"id": "tauri-plugin-haptics",
 			"name": "tauri-plugin-haptics",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
-				"2.3.2"
+				"2.3.3"
 			],
 			"spdx": "Apache-2.0 OR MIT",
 			"shipped": "MIT",
@@ -8176,6 +8266,7 @@
 			"id": "tauri-winrt-notification",
 			"name": "tauri-winrt-notification",
 			"ecosystem": "rust",
+			"platform": "windows",
 			"versions": [
 				"0.7.3"
 			],
@@ -8355,20 +8446,6 @@
 			]
 		},
 		{
-			"id": "tokio-rustls",
-			"name": "tokio-rustls",
-			"ecosystem": "rust",
-			"versions": [
-				"0.26.4"
-			],
-			"spdx": "MIT OR Apache-2.0",
-			"shipped": "MIT",
-			"url": "https://github.com/rustls/tokio-rustls",
-			"textHashes": [
-				"1b0258c48739a24e"
-			]
-		},
-		{
 			"id": "tokio-tungstenite",
 			"name": "tokio-tungstenite",
 			"ecosystem": "rust",
@@ -8485,6 +8562,7 @@
 			"id": "tower-http",
 			"name": "tower-http",
 			"ecosystem": "rust",
+			"platform": "android",
 			"versions": [
 				"0.6.8"
 			],
@@ -8570,6 +8648,7 @@
 			"id": "tree_magic_mini",
 			"name": "tree_magic_mini",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"3.2.2"
 			],
@@ -8779,20 +8858,6 @@
 			]
 		},
 		{
-			"id": "untrusted",
-			"name": "untrusted",
-			"ecosystem": "rust",
-			"versions": [
-				"0.9.0"
-			],
-			"spdx": "ISC",
-			"shipped": "ISC",
-			"url": "https://github.com/briansmith/untrusted",
-			"textHashes": [
-				"a1fff344297822d3"
-			]
-		},
-		{
 			"id": "url",
 			"name": "url",
 			"ecosystem": "rust",
@@ -8810,6 +8875,7 @@
 			"id": "urlencoding",
 			"name": "urlencoding",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"2.1.3"
 			],
@@ -8880,6 +8946,7 @@
 			"id": "version-compare",
 			"name": "version-compare",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.2.1"
 			],
@@ -8964,6 +9031,7 @@
 			"id": "wayland-backend",
 			"name": "wayland-backend",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.3.15"
 			],
@@ -8978,6 +9046,7 @@
 			"id": "wayland-client",
 			"name": "wayland-client",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.31.14"
 			],
@@ -8992,6 +9061,7 @@
 			"id": "wayland-protocols",
 			"name": "wayland-protocols",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.32.12"
 			],
@@ -9007,6 +9077,7 @@
 			"id": "wayland-protocols-wlr",
 			"name": "wayland-protocols-wlr",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.3.12"
 			],
@@ -9021,6 +9092,7 @@
 			"id": "wayland-scanner",
 			"name": "wayland-scanner",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.31.11"
 			],
@@ -9035,6 +9107,7 @@
 			"id": "wayland-sys",
 			"name": "wayland-sys",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.31.11"
 			],
@@ -9063,6 +9136,7 @@
 			"id": "webkit2gtk",
 			"name": "webkit2gtk",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"2.0.2"
 			],
@@ -9077,6 +9151,7 @@
 			"id": "webkit2gtk-sys",
 			"name": "webkit2gtk-sys",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"2.0.2"
 			],
@@ -9105,6 +9180,7 @@
 			"id": "webview2-com",
 			"name": "webview2-com",
 			"ecosystem": "rust",
+			"platform": "windows",
 			"versions": [
 				"0.38.2"
 			],
@@ -9119,6 +9195,7 @@
 			"id": "webview2-com-macros",
 			"name": "webview2-com-macros",
 			"ecosystem": "rust",
+			"platform": "windows",
 			"versions": [
 				"0.8.1"
 			],
@@ -9133,6 +9210,7 @@
 			"id": "webview2-com-sys",
 			"name": "webview2-com-sys",
 			"ecosystem": "rust",
+			"platform": "windows",
 			"versions": [
 				"0.38.2"
 			],
@@ -9203,6 +9281,7 @@
 			"id": "windows",
 			"name": "windows",
 			"ecosystem": "rust",
+			"platform": "windows",
 			"versions": [
 				"0.61.3"
 			],
@@ -9217,6 +9296,7 @@
 			"id": "windows-collections",
 			"name": "windows-collections",
 			"ecosystem": "rust",
+			"platform": "windows",
 			"versions": [
 				"0.2.0"
 			],
@@ -9231,6 +9311,7 @@
 			"id": "windows-core",
 			"name": "windows-core",
 			"ecosystem": "rust",
+			"platform": "windows",
 			"versions": [
 				"0.61.2"
 			],
@@ -9245,6 +9326,7 @@
 			"id": "windows-future",
 			"name": "windows-future",
 			"ecosystem": "rust",
+			"platform": "windows",
 			"versions": [
 				"0.2.1"
 			],
@@ -9301,6 +9383,7 @@
 			"id": "windows-native-keyring-store",
 			"name": "windows-native-keyring-store",
 			"ecosystem": "rust",
+			"platform": "windows",
 			"versions": [
 				"1.1.0"
 			],
@@ -9315,6 +9398,7 @@
 			"id": "windows-numerics",
 			"name": "windows-numerics",
 			"ecosystem": "rust",
+			"platform": "windows",
 			"versions": [
 				"0.2.0"
 			],
@@ -9329,6 +9413,7 @@
 			"id": "windows-registry",
 			"name": "windows-registry",
 			"ecosystem": "rust",
+			"platform": "windows",
 			"versions": [
 				"0.5.3"
 			],
@@ -9343,6 +9428,7 @@
 			"id": "windows-result",
 			"name": "windows-result",
 			"ecosystem": "rust",
+			"platform": "windows",
 			"versions": [
 				"0.3.4"
 			],
@@ -9357,6 +9443,7 @@
 			"id": "windows-strings",
 			"name": "windows-strings",
 			"ecosystem": "rust",
+			"platform": "windows",
 			"versions": [
 				"0.4.2"
 			],
@@ -9399,6 +9486,7 @@
 			"id": "windows-threading",
 			"name": "windows-threading",
 			"ecosystem": "rust",
+			"platform": "windows",
 			"versions": [
 				"0.1.0"
 			],
@@ -9413,6 +9501,7 @@
 			"id": "windows-version",
 			"name": "windows-version",
 			"ecosystem": "rust",
+			"platform": "windows",
 			"versions": [
 				"0.1.7"
 			],
@@ -9497,6 +9586,7 @@
 			"id": "wl-clipboard-rs",
 			"name": "wl-clipboard-rs",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.9.3"
 			],
@@ -9553,6 +9643,7 @@
 			"id": "x11",
 			"name": "x11",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"2.21.0"
 			],
@@ -9567,6 +9658,7 @@
 			"id": "x11-dl",
 			"name": "x11-dl",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"2.21.0"
 			],
@@ -9581,6 +9673,7 @@
 			"id": "x11rb",
 			"name": "x11rb",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.13.2"
 			],
@@ -9595,6 +9688,7 @@
 			"id": "x11rb-protocol",
 			"name": "x11rb-protocol",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"0.13.2"
 			],
@@ -9637,6 +9731,7 @@
 			"id": "zbus",
 			"name": "zbus",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"5.14.0"
 			],
@@ -9651,6 +9746,7 @@
 			"id": "zbus_macros",
 			"name": "zbus_macros",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"5.14.0"
 			],
@@ -9665,6 +9761,7 @@
 			"id": "zbus_names",
 			"name": "zbus_names",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"4.3.1"
 			],
@@ -9890,6 +9987,7 @@
 			"id": "zvariant",
 			"name": "zvariant",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"5.10.0"
 			],
@@ -9904,6 +10002,7 @@
 			"id": "zvariant_derive",
 			"name": "zvariant_derive",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"5.10.0"
 			],
@@ -9918,6 +10017,7 @@
 			"id": "zvariant_utils",
 			"name": "zvariant_utils",
 			"ecosystem": "rust",
+			"platform": "linux",
 			"versions": [
 				"3.3.0"
 			],
@@ -10071,10 +10171,6 @@
 			"text": "MIT License\n\nCopyright (c) 2022 Bartłomiej Maryńczak\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
 		},
 		{
-			"hash": "1b0258c48739a24e",
-			"text": "Copyright (c) 2017 quininer kel\n\nPermission is hereby granted, free of charge, to any\nperson obtaining a copy of this software and associated\ndocumentation files (the \"Software\"), to deal in the\nSoftware without restriction, including without\nlimitation the rights to use, copy, modify, merge,\npublish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software\nis furnished to do so, subject to the following\nconditions:\n\nThe above copyright notice and this permission notice\nshall be included in all copies or substantial portions\nof the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF\nANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED\nTO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A\nPARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT\nSHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR\nIN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\nDEALINGS IN THE SOFTWARE."
-		},
-		{
 			"hash": "1b58c7ba0218fb36",
 			"text": "MIT License\n\nCopyright (c) 2017 Evgeny Safronov\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
 		},
@@ -10097,10 +10193,6 @@
 		{
 			"hash": "1ddb39b2b497012f",
 			"text": "MIT License\n\nCopyright (c) 2019 Graham Esau\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
-		},
-		{
-			"hash": "1ecbb241444ad7fe",
-			"text": "Copyright (c) 2015 steffengy\n\nPermission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
 		},
 		{
 			"hash": "205956f17539e9b1",
@@ -10267,10 +10359,6 @@
 			"text": "Copyright (c) 2015 The rust-jni-sys Developers\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
 		},
 		{
-			"hash": "3ac27594ed56fd07",
-			"text": "Except as otherwise noted, this project is licensed under the following\n(ISC-style) terms:\n\nCopyright 2015 Brian Smith.\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\ncopyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHORS DISCLAIM ALL WARRANTIES\nWITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF\nMERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR\nANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\nWHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN\nACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF\nOR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.\n\nThe files under third-party/chromium are licensed as described in\nthird-party/chromium/LICENSE."
-		},
-		{
 			"hash": "3bfacc197ff245b6",
 			"text": "Copyright (c) 2012-2013 Mozilla Foundation\n\nPermission is hereby granted, free of charge, to any\nperson obtaining a copy of this software and associated\ndocumentation files (the \"Software\"), to deal in the\nSoftware without restriction, including without\nlimitation the rights to use, copy, modify, merge,\npublish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software\nis furnished to do so, subject to the following\nconditions:\n\nThe above copyright notice and this permission notice\nshall be included in all copies or substantial portions\nof the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF\nANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED\nTO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A\nPARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT\nSHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR\nIN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\nDEALINGS IN THE SOFTWARE."
 		},
@@ -10433,10 +10521,6 @@
 		{
 			"hash": "603c83c4c200b7a9",
 			"text": "The MIT License (MIT)\n\nCopyright (c) HeroicKatora 2020\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
-		},
-		{
-			"hash": "6205904d553962d4",
-			"text": "MIT License\n\nCopyright (c) 2022 1Password\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
 		},
 		{
 			"hash": "627eff66d6c4b984",
@@ -10803,10 +10887,6 @@
 			"text": "Copyright (c) 2024 Zeeshan Ali Khan & zbus contributors\n\nPermission is hereby granted, free of charge, to any\nperson obtaining a copy of this software and associated\ndocumentation files (the \"Software\"), to deal in the\nSoftware without restriction, including without\nlimitation the rights to use, copy, modify, merge,\npublish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software\nis furnished to do so, subject to the following\nconditions:\n\nThe above copyright notice and this permission notice\nshall be included in all copies or substantial portions\nof the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF\nANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED\nTO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A\nPARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT\nSHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR\nIN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\nDEALINGS IN THE SOFTWARE."
 		},
 		{
-			"hash": "a1fff344297822d3",
-			"text": "// Copyright 2015-2016 Brian Smith.\n//\n// Permission to use, copy, modify, and/or distribute this software for any\n// purpose with or without fee is hereby granted, provided that the above\n// copyright notice and this permission notice appear in all copies.\n//\n// THE SOFTWARE IS PROVIDED \"AS IS\" AND THE AUTHORS DISCLAIM ALL WARRANTIES\n// WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF\n// MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR\n// ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\n// WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN\n// ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF\n// OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE."
-		},
-		{
 			"hash": "a241ea2c0d6391f0",
 			"text": "The MIT License (MIT)\n\nCopyright (c) 2017 Sean Bowe\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE."
 		},
@@ -10825,10 +10905,6 @@
 		{
 			"hash": "a302dc760d97dc62",
 			"text": "Copyright (c) 2014 Sean McArthur\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE."
-		},
-		{
-			"hash": "a3320aa8d192a02c",
-			"text": "Copyright (c) 2016 Joseph Birr-Pixton <jpixton@gmail.com>\n\nPermission is hereby granted, free of charge, to any\nperson obtaining a copy of this software and associated\ndocumentation files (the \"Software\"), to deal in the\nSoftware without restriction, including without\nlimitation the rights to use, copy, modify, merge,\npublish, distribute, sublicense, and/or sell copies of\nthe Software, and to permit persons to whom the Software\nis furnished to do so, subject to the following\nconditions:\n\nThe above copyright notice and this permission notice\nshall be included in all copies or substantial portions\nof the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF\nANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED\nTO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A\nPARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT\nSHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY\nCLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\nOF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR\nIN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER\nDEALINGS IN THE SOFTWARE."
 		},
 		{
 			"hash": "a4da910352996e91",
@@ -11017,10 +11093,6 @@
 		{
 			"hash": "c804065b0956d00a",
 			"text": "Copyright (c) 2014 Carl Lerche and other MIO contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE."
-		},
-		{
-			"hash": "c86c0f590ac954ba",
-			"text": "The MIT License (MIT)\n\nCopyright (c) 2015-2020 the fiat-crypto authors (see\nhttps://github.com/mit-plv/fiat-crypto/blob/master/AUTHORS).\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
 		},
 		{
 			"hash": "c9067b1cc20b89f5",
@@ -11213,10 +11285,6 @@
 		{
 			"hash": "f25a5b606859d4fa",
 			"text": "Copyright (c) 2018-2019 dirs-rs contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
-		},
-		{
-			"hash": "f2ff9e66e9a9acdb",
-			"text": "ISC License:\n\nCopyright (c) 2004-2010 by Internet Systems Consortium, Inc. (\"ISC\")\nCopyright (c) 1995-2003 by Internet Software Consortium\n\nPermission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\" AND ISC DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL ISC BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE."
 		},
 		{
 			"hash": "f30ee6e1c60b4e08",

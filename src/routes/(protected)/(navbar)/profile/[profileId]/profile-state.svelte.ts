@@ -5,25 +5,56 @@ import {
 	getProfile,
 	HiddenProfileError,
 	invalidateProfile,
+	isProfileCached,
 	isUnviewableProfileError,
 	mergeProfileEditIntoCaches,
 	ProfileUnavailableError,
 	refreshProfile,
 } from "$lib/api/users/profiles";
 import { getPreferences } from "$lib/app-data/preferences.svelte";
+import { Generation } from "$lib/util/generation";
 import type { TapType } from "$lib/model/interest/taps";
 import type { Profile } from "$lib/model/users/profiles";
+
+export type PendingViewabilityChange = {
+	revert: () => void;
+	settle: () => void;
+};
+
+type ViewabilityFailureNotice =
+	| { failureLabel: string }
+	| { showFailure: (error: unknown) => void };
+
+export async function applyViewabilityChange(
+	options: {
+		change: () => PendingViewabilityChange;
+		request: () => Promise<unknown>;
+	} & ViewabilityFailureNotice,
+): Promise<void> {
+	const { revert, settle } = options.change();
+	try {
+		await options.request();
+		settle();
+	} catch (error) {
+		revert();
+		console.error(error);
+		if ("showFailure" in options) options.showFailure(error);
+		else showErrorToast({ label: options.failureLabel, error });
+	}
+}
 
 export class ProfileState {
 	profile: Profile | null = $state(null);
 	loading = $state(true);
 	refreshing = $state(false);
 	error: Error | null = $state(null);
+	changingViewability = $state(false);
 
 	readonly profileId: number;
 	readonly ourProfileId: number;
 
-	#fetchToken = 0;
+	#generation = new Generation();
+	#viewabilityChanges = new Generation();
 	#destroyed = false;
 	#viewed = false;
 
@@ -73,21 +104,31 @@ export class ProfileState {
 	}
 
 	refresh(): void {
-		if (this.loading || this.refreshing) return;
+		if (this.#busy) return;
 		void this.#load({ refresh: true });
 	}
 
-	markBlocked(): void {
-		this.error = new BlockedProfileError({ blockedByUs: true });
+	revalidate(): void {
+		if (this.#busy) return;
+		if (this.error) {
+			if (!isUnviewableProfileError(this.error)) this.retry();
+			return;
+		}
+		if (!isProfileCached(this.profileId)) this.refresh();
 	}
 
-	markHidden(): void {
-		this.error = new HiddenProfileError();
+	markBlocked(): PendingViewabilityChange {
+		return this.#changeViewability({
+			error: new BlockedProfileError({ blockedByUs: true }),
+		});
 	}
 
-	markViewable(): void {
-		this.error = null;
-		if (!this.profile) this.retry();
+	markHidden(): PendingViewabilityChange {
+		return this.#changeViewability({ error: new HiddenProfileError() });
+	}
+
+	markViewable(): PendingViewabilityChange {
+		return this.#changeViewability({ error: null });
 	}
 
 	setTap(tapType: TapType | null): void {
@@ -112,6 +153,34 @@ export class ProfileState {
 		});
 	}
 
+	get #busy(): boolean {
+		return this.loading || this.refreshing || this.changingViewability;
+	}
+
+	#changeViewability({
+		error,
+	}: {
+		error: Error | null;
+	}): PendingViewabilityChange {
+		const generation = this.#viewabilityChanges.next();
+		const superseded = () => this.#viewabilityChanges.isStale(generation);
+		const previous = this.error;
+		this.error = error;
+		this.changingViewability = true;
+		return {
+			revert: () => {
+				if (superseded()) return;
+				this.changingViewability = false;
+				if (this.error === error) this.error = previous;
+			},
+			settle: () => {
+				if (superseded()) return;
+				this.changingViewability = false;
+				if (!this.error && !this.profile) this.retry();
+			},
+		};
+	}
+
 	async #load({ refresh }: { refresh: boolean }): Promise<void> {
 		if (refresh) {
 			this.refreshing = true;
@@ -121,16 +190,17 @@ export class ProfileState {
 			this.error = null;
 			this.profile = null;
 		}
-		const token = ++this.#fetchToken;
+		const generation = this.#generation.next();
+		const errorBeforeLoad = this.error;
 		try {
 			const profile = refresh
 				? await refreshProfile(this.profileId)
 				: await getProfile(this.profileId);
-			if (this.#superseded(token)) return;
+			if (this.#superseded(generation)) return;
 			this.profile = profile;
-			this.error = null;
+			if (this.error === errorBeforeLoad) this.error = null;
 		} catch (error) {
-			if (this.#superseded(token)) return;
+			if (this.#superseded(generation)) return;
 			if (refresh && !isUnviewableProfileError(error)) {
 				console.error(error);
 				showErrorToast({
@@ -144,7 +214,7 @@ export class ProfileState {
 				error instanceof Error ? error : new Error(String(error));
 			this.profile = null;
 		} finally {
-			if (!this.#superseded(token)) {
+			if (!this.#superseded(generation)) {
 				this.loading = false;
 				this.refreshing = false;
 			}
@@ -165,7 +235,7 @@ export class ProfileState {
 		}
 	}
 
-	#superseded(token: number): boolean {
-		return this.#destroyed || token !== this.#fetchToken;
+	#superseded(generation: number): boolean {
+		return this.#destroyed || this.#generation.isStale(generation);
 	}
 }

@@ -1,4 +1,7 @@
-import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+import {
+	backGestureEventHandlers,
+	topBackGestureHandler,
+} from "$lib/platform/back-gesture-event.svelte";
 
 export type SwipeBackStack = {
 	readonly tracking: boolean;
@@ -17,14 +20,11 @@ export type EdgeSwipe = {
 
 let edgeSwipeOwner: (() => EdgeSwipe | null) | null = null;
 
-// A stack keeps its handler registered for as long as it is mounted, so it says
-// nothing about whether a back gesture has anything to dismiss.
-const stackHandlers = new WeakSet<() => boolean>();
-
 /** Whether a dialog, sheet or other overlay would take the next back gesture. */
 export function backGestureOverlayOpen(): boolean {
-	return [...backGestureEventHandlers].some(
-		(handler) => !stackHandlers.has(handler),
+	// A stack stays registered while mounted, so it says nothing either way.
+	return [...backGestureEventHandlers.values()].some(
+		(layer) => layer !== "stack",
 	);
 }
 
@@ -58,8 +58,7 @@ export function attachSystemBackGesture(stack: SwipeBackStack): () => void {
 		return false;
 	};
 
-	const ownsTheGesture = () =>
-		[...backGestureEventHandlers].at(-1) === commitInFlight;
+	const ownsTheGesture = () => topBackGestureHandler() === commitInFlight;
 
 	const start = () => {
 		if (!ownsTheGesture() || !stack.beginSwipeBack()) return false;
@@ -81,8 +80,7 @@ export function attachSystemBackGesture(stack: SwipeBackStack): () => void {
 	window.__AndroidOnBackGestureStart = start;
 	window.__AndroidOnBackGestureCancel = cancel;
 	edgeSwipeOwner = beginEdge;
-	stackHandlers.add(commitInFlight);
-	backGestureEventHandlers.add(commitInFlight);
+	backGestureEventHandlers.set(commitInFlight, "stack");
 
 	return () => {
 		stopReading();

@@ -43,3 +43,135 @@ test("the bottom navbar fits a 1080px physical-width screen", async ({
 		expect(bounds.right).toBeLessThanOrEqual(layout.cssViewportWidth);
 	}
 });
+
+test("tab widths don't change when selecting a tab", async ({ page }) => {
+	await installTauriShim(page);
+	await page.goto("/right-now");
+	await page.evaluate(() => document.fonts.ready);
+
+	const navbar = page.getByRole("navigation", { name: "Main" });
+	const tabs = ["Browse", "Right Now", "Interest", "Inbox"].map((name) =>
+		navbar.getByRole("link", { name }),
+	);
+
+	const getWidths = () =>
+		Promise.all(
+			tabs.map((tab) =>
+				tab.evaluate((el) => el.getBoundingClientRect().width),
+			),
+		);
+
+	const initialWidths = await getWidths();
+
+	for (const tab of tabs) {
+		await tab.click();
+		await expect(tab).toHaveAttribute("data-active", "true");
+		const widths = await getWidths();
+		expect(widths).toEqual(initialWidths);
+	}
+});
+
+test.describe("in a 308 × 404 pop-up window", () => {
+	test.use({ viewport: { width: 308, height: 404 } });
+
+	test("the bottom navbar scrolls to both of its ends", async ({ page }) => {
+		await installTauriShim(page);
+		await page.goto("/right-now");
+
+		const links = page.getByRole("navigation").locator(".links");
+		await expect(links).toBeVisible();
+
+		const ends = await links.evaluate((linksElement) => {
+			const content = linksElement.parentElement;
+			const avatar = content?.querySelector('a[aria-label="Me"]');
+			if (!content || !avatar)
+				throw new Error("Navbar structure not found");
+
+			content.scrollLeft = 0;
+			const atStart = {
+				content: content.getBoundingClientRect().left,
+				links: linksElement.getBoundingClientRect().left,
+			};
+			content.scrollLeft = content.scrollWidth;
+			const atEnd = {
+				content: content.getBoundingClientRect().right,
+				avatar: avatar.getBoundingClientRect().right,
+			};
+			return {
+				overflow: content.scrollWidth - content.clientWidth,
+				atStart,
+				atEnd,
+			};
+		});
+
+		expect(ends.overflow).toBeGreaterThan(0);
+		expect(ends.atStart.links).toBeGreaterThanOrEqual(ends.atStart.content);
+		expect(ends.atEnd.avatar).toBeLessThanOrEqual(ends.atEnd.content);
+	});
+});
+
+test.describe("on a 412 × 920 phone with 64 px system bars", () => {
+	test.use({ viewport: { width: 412, height: 920 } });
+
+	test("the Me screen fits without scrolling", async ({ page }) => {
+		await installTauriShim(page);
+		await page.goto("/settings");
+		const scroller = page.locator('[data-slot="me-scroller"]');
+		await expect(
+			scroller.getByRole("button", { name: "Sign out" }),
+		).toBeVisible();
+		await page.waitForLoadState("networkidle");
+
+		expect(
+			await scroller.evaluate((el) => el.scrollHeight - el.clientHeight),
+		).toBeLessThanOrEqual(0);
+	});
+});
+
+test.describe("on a 360 × 640 phone with 64 px system bars", () => {
+	test.use({ viewport: { width: 360, height: 640 } });
+
+	test("the Me screen's version label ends no closer to the navbar than to the link above it", async ({
+		page,
+	}) => {
+		await installTauriShim(page);
+		await page.goto("/settings");
+		const scroller = page.locator('[data-slot="me-scroller"]');
+		await expect(
+			scroller.getByRole("button", { name: "Sign out" }),
+		).toBeVisible();
+		await page.waitForLoadState("networkidle");
+
+		const gaps = await scroller.evaluate((scrollerElement) => {
+			const version = scrollerElement.querySelector(
+				'[data-slot="me-version"]',
+			);
+			const linkAbove = version?.previousElementSibling;
+			const meTab = document.querySelector(
+				'nav[aria-label="Main"] a[aria-label="Me"]',
+			);
+			if (!version || !linkAbove || !meTab)
+				throw new Error("Me screen structure not found");
+
+			const contentBounds = (element: Element) => {
+				const range = document.createRange();
+				range.selectNodeContents(element);
+				return range.getBoundingClientRect();
+			};
+
+			scrollerElement.scrollTop = scrollerElement.scrollHeight;
+			const versionText = contentBounds(version);
+			return {
+				scrollRange:
+					scrollerElement.scrollHeight - scrollerElement.clientHeight,
+				aboveVersion: versionText.top - contentBounds(linkAbove).bottom,
+				belowVersion:
+					meTab.getBoundingClientRect().top - versionText.bottom,
+			};
+		});
+
+		expect(gaps.scrollRange).toBeGreaterThan(0);
+		expect(gaps.aboveVersion).toBeGreaterThan(0);
+		expect(gaps.belowVersion).toBeGreaterThanOrEqual(gaps.aboveVersion);
+	});
+});

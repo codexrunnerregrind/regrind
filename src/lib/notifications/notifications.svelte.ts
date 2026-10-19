@@ -11,6 +11,7 @@ import { getPreferences } from "$lib/app-data/preferences.svelte";
 import { peekConversationsState } from "$lib/chat/conversations-context.svelte";
 import { cacheNotificationImage } from "$lib/notifications/notification-image";
 import { isAndroidPlatform, isIosPlatform } from "$lib/platform/os";
+import { whileOpeningPushDeeplink } from "$lib/push/opening-deeplink";
 import { profileMediaUrl } from "$lib/util/media";
 import {
 	chatV1MessageSentEventSchema,
@@ -134,7 +135,7 @@ class NotificationService {
 					const route = notificationExtraSchema.safeParse(
 						notification.extra,
 					).data?.route;
-					if (route) void goto(route);
+					if (route) void whileOpeningPushDeeplink(() => goto(route));
 				}).then((listener) => () => void listener.unregister()),
 			),
 		);

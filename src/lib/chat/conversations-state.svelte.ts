@@ -1,20 +1,27 @@
+/* eslint max-lines: ["error", { "max": 700, "skipBlankLines": true, "skipComments": true }] -- Keep lifecycle guards with the state they protect. */
+
 import { page } from "$app/state";
 
 import { showErrorToast } from "$lib/api/error-toast";
 import {
 	deleteConversationForMe,
 	getConversations,
-	markConversationAsRead,
 	setConversationMuted,
 	setConversationPinned,
 } from "$lib/api/messaging/conversations";
 import { onProfileEdit } from "$lib/api/users/profiles";
+import { ConversationReadRequests } from "$lib/chat/conversation-read-requests";
 import { InboxViewedMarker } from "$lib/chat/inbox-last-viewed.svelte";
-import { InboxPaging } from "$lib/chat/inbox-paging.svelte";
+import { onInboxResync } from "$lib/chat/inbox-resync";
+import {
+	type ConversationFlagField,
+	mergeConversation,
+} from "$lib/chat/merge-conversation";
 import { applyOptimisticBatch } from "$lib/chat/optimistic-batch";
 import { previewFromMessage } from "$lib/model/messaging/message-preview";
 import { below } from "$lib/util/breakpoints.svelte";
 import { reconciler } from "$lib/util/reconcile";
+import { SentinelPaging } from "$lib/util/sentinel-paging.svelte";
 import type { Conversation } from "$lib/model/messaging/conversations";
 import type { ApiResponseMessage } from "$lib/model/messaging/messages";
 import type { CachedConversation } from "./cached-conversation";
@@ -26,14 +33,15 @@ import {
 	inboxFilterRequest,
 } from "./conversation-filters.svelte";
 import {
-	type OptimisticFlagField,
-	setConversationFlag,
-} from "./conversation-flags";
+	type ConversationReadHandler,
+	ConversationReads,
+	type FetchedReadsHandler,
+} from "./conversation-reads";
 import { fetchConversationWindow } from "./conversation-window";
 import { subscribeInboxRealtime } from "./conversations-realtime";
 import { Drafts } from "./drafts.svelte";
 import { FetchEpochs } from "./fetch-epochs";
-import { mergeIntoExisting, sortConversations } from "./inbox-entries";
+import { sortConversations } from "./inbox-entries";
 import { MessageCache } from "./message-cache";
 import { PendingDeletes } from "./pending-deletes";
 import { PendingFlags } from "./pending-flags";
@@ -41,6 +49,10 @@ import { RememberedConversationFlags } from "./remembered-conversation-flags";
 import { SeenMessages } from "./seen-messages";
 import { TypingTracker } from "./typing.svelte";
 import { UnreadWhileMissing } from "./unread-while-missing";
+import {
+	type ConversationFlagUpdate,
+	updateConversationFlag,
+} from "./update-conversation-flag";
 
 const singleColumnLayout = below("split");
 
@@ -53,6 +65,7 @@ export type InboxTab = "inbox" | "albums";
 export type IncomingMessageHandler = (incoming: {
 	message: ApiResponseMessage;
 	conversation: Conversation;
+	inView: boolean;
 }) => void;
 
 class ConversationsState {
@@ -65,11 +78,7 @@ class ConversationsState {
 	loading = $state(true);
 	error: Error | null = $state(null);
 	scrollY = 0;
-	/**
-	 * Which tab the list shows. Lives here, next to {@link scrollY}, so leaving
-	 * the inbox (into My Albums, or a conversation) and coming back returns to
-	 * the tab you left from instead of resetting to Inbox.
-	 */
+	// Kept here so coming back to the inbox returns to the tab you left from.
 	activeTab = $state<InboxTab>("inbox");
 
 	#initialLoad: Promise<unknown> = Promise.resolve();
@@ -79,14 +88,18 @@ class ConversationsState {
 	readonly filters = new ConversationFilters();
 	readonly inboxViewed: InboxViewedMarker;
 	readonly typing = new TypingTracker();
-	readonly paging: InboxPaging;
+	readonly paging: SentinelPaging;
 	#onIncomingMessage: IncomingMessageHandler;
-	#activeConversationId: string | null = null;
+	#onConversationRead: ConversationReadHandler;
+	#reads: ConversationReads;
+	#readRequests = new ConversationReadRequests();
+	#activeClaim: { conversationId: string } | null = null;
 	#wsPromises: Promise<() => void>[] = [];
 	#messageCache = new MessageCache();
 	#unsubscribeReconcile: () => void;
+	#unsubscribeInboxResync = onInboxResync(() => void this.#syncLatest({}));
 	#destroyed = false;
-	#pendingFlags = new PendingFlags<OptimisticFlagField>();
+	#pendingFlags = new PendingFlags<ConversationFlagField>();
 	#pendingDeletes = new PendingDeletes();
 	#seenMessages = new SeenMessages();
 	#unreadWhileMissing = new UnreadWhileMissing();
@@ -109,14 +122,29 @@ class ConversationsState {
 	constructor({
 		ourProfileId,
 		onIncomingMessage,
+		onConversationRead = () => {},
+		onFetchedReads = () => {},
 	}: {
 		ourProfileId: number;
 		onIncomingMessage: IncomingMessageHandler;
+		onConversationRead?: ConversationReadHandler;
+		onFetchedReads?: FetchedReadsHandler;
 	}) {
 		this.ourProfileId = ourProfileId;
 		this.#onIncomingMessage = onIncomingMessage;
+		this.#onConversationRead = onConversationRead;
+		this.#reads = new ConversationReads({
+			ourProfileId,
+			known: (id) => this.#find(id),
+			activeConversationId: () =>
+				this.#activeClaim?.conversationId ?? null,
+			clearUnread: (conversation) => (conversation.data.unreadCount = 0),
+			markRead: (conversationId) => void this.markRead(conversationId),
+			onRead: onConversationRead,
+			onFetchedReads,
+		});
 		this.inboxViewed = new InboxViewedMarker({ profileId: ourProfileId });
-		this.paging = new InboxPaging({
+		this.paging = new SentinelPaging({
 			loadPage: (page) => this.#fetches.track(this.#load(page)),
 			cursor: () => this.nextPage,
 		});
@@ -165,12 +193,15 @@ class ConversationsState {
 
 	async destroy(): Promise<void> {
 		this.#destroyed = true;
+		this.#fetches.next();
 		this.paging.destroy();
 		this.drafts.destroy();
 		this.typing.destroy();
 		this.#coalescedRefresh.cancel();
 		this.#unsubscribeReconcile();
+		this.#unsubscribeInboxResync();
 		this.#unsubscribeProfileEdits();
+		await this.#reads.destroy();
 		const unlisteners = await Promise.all(this.#wsPromises);
 		for (const unlisten of unlisteners) unlisten();
 		this.#wsPromises = [];
@@ -188,6 +219,7 @@ class ConversationsState {
 	async #handleMessageSent(message: ApiResponseMessage): Promise<void> {
 		const conversationId = message.conversationId;
 		const isIncoming = message.senderId !== this.ourProfileId;
+		const counts = isIncoming && !message.unsent;
 		// Sending ends typing. The server says so too, with a `Sent` status,
 		// but the message is the one signal that cannot arrive out of order.
 		this.typing.clear({ conversationId, profileId: message.senderId });
@@ -201,9 +233,9 @@ class ConversationsState {
 		this.#seenMessages.mark(message.messageId);
 
 		if (entry) {
-			const isActive = this.#isActive(conversationId);
-			if (!isActive && isIncoming) entry.data.unreadCount += 1;
-			if (!isActive) this.invalidateConversation(conversationId);
+			if (counts) entry.data.unreadCount += 1;
+			if (!this.#isActive(conversationId))
+				this.invalidateConversation(conversationId);
 			if (message.timestamp > entry.data.lastActivityTimestamp) {
 				this.updatePreview({
 					conversationId,
@@ -212,30 +244,33 @@ class ConversationsState {
 				});
 			}
 		} else {
-			if (isIncoming) this.#unreadWhileMissing.add(conversationId);
+			if (counts) this.#unreadWhileMissing.add(conversationId);
 			entry = await this.#loadMissing(conversationId);
-			if (!entry) {
-				if (isIncoming) this.#unreadWhileMissing.drop(conversationId);
-				this.#seenMessages.unmark(message.messageId);
-				return;
-			}
-			const arrived = this.#unreadWhileMissing.take(conversationId);
-			const { data } = entry;
-			if (!this.#isActive(conversationId))
+			if (this.#destroyed) return;
+			if (entry) {
+				const arrived = this.#unreadWhileMissing.take(conversationId);
+				const { data } = entry;
 				data.unreadCount = Math.max(data.unreadCount, arrived);
+			} else {
+				if (counts) {
+					this.#unreadWhileMissing.drop(conversationId);
+					this.#readRequests.noteUnlistedUnread(conversationId);
+				}
+				this.#seenMessages.unmark(message.messageId);
+			}
 		}
+		if (counts && this.#reads.seesOpenChat(conversationId))
+			void this.markRead(conversationId);
+		if (!isIncoming || message.unsent || !entry || entry.data.muted) return;
 		const isInboxPageRoot = page.route.id === "/(protected)/chat";
 		const twoColLayout = !singleColumnLayout.current;
 		const isConversationsListVisible = isInboxPageRoot || twoColLayout;
-		if (
-			isIncoming &&
-			!this.#isActive(conversationId) &&
-			entry &&
-			!entry.data.muted &&
-			!isConversationsListVisible
-		) {
-			this.#onIncomingMessage({ message, conversation: entry });
-		}
+		this.#onIncomingMessage({
+			message,
+			conversation: entry,
+			inView:
+				this.#isActive(conversationId) || isConversationsListVisible,
+		});
 	}
 
 	async #reconcile(): Promise<void> {
@@ -247,10 +282,13 @@ class ConversationsState {
 		this.refreshing = true;
 		let reconciled = false;
 		try {
-			const fetchEpoch = await this.#claimEpochAfterInitial();
+			await this.#initialLoad.catch(() => {});
+			if (this.#destroyed) return;
+			const fetchEpoch = this.#fetches.next();
 			this.#refreshRequestedSinceFetchStart = false;
-
-			this.#messageCache.keepOnly(this.#activeConversationId);
+			const lastActivitiesAtFetchStart = this.#reads.lastActivities(
+				this.entries,
+			);
 
 			const oldestLoadedTs = this.entries.reduce(
 				(min, e) => Math.min(min, e.data.lastActivityTimestamp),
@@ -264,11 +302,20 @@ class ConversationsState {
 			if (this.#fetches.isStale(fetchEpoch)) return;
 			this.nextPage = reachedEnd ? null : nextPage;
 
+			this.#messageCache.keepOnly(
+				this.#activeClaim?.conversationId ?? null,
+			);
+			this.#reads.reportFresh(fetched.values());
 			this.#rememberedFlags.applyTo(fetched.values());
+
 			for (const incoming of fetched.values()) {
 				const existing = this.#find(incoming.data.conversationId);
 				if (existing) {
-					this.#mergeIncoming({ existing, incoming });
+					this.#mergeIncoming({
+						existing,
+						incoming,
+						lastActivitiesAtFetchStart,
+					});
 				} else if (
 					!this.#pendingDeletes.blocks({
 						conversationId: incoming.data.conversationId,
@@ -290,6 +337,14 @@ class ConversationsState {
 				// back — keep it rather than reading its absence as a delete.
 				if (!this.filters.matches(entry)) continue;
 				if (
+					entry.data.lastActivityTimestamp >
+					(lastActivitiesAtFetchStart.get(id) ??
+						Number.NEGATIVE_INFINITY)
+				) {
+					this.#refreshRequestedSinceFetchStart = true;
+					continue;
+				}
+				if (
 					this.#pendingDeletes.blocks({
 						conversationId: id,
 						fetchEpoch,
@@ -298,13 +353,20 @@ class ConversationsState {
 					continue;
 				if (entry.data.lastActivityTimestamp > windowFloor) {
 					this.remove(id);
+					this.#reads.reportDropped({
+						conversation: entry,
+						startedWith: lastActivitiesAtFetchStart,
+						dropsOnlyReadChats: this.filters.dropsOnlyReadChats,
+					});
 				}
 			}
 
 			this.#sortEntries();
+			this.#reads.readOpenChat();
 			this.error = null;
 			reconciled = true;
 		} catch (error) {
+			if (this.#destroyed) return;
 			console.error(error);
 			showErrorToast({
 				label: "Failed to refresh conversations",
@@ -324,7 +386,7 @@ class ConversationsState {
 		void this.refresh();
 	}
 
-	#syncLatest(args: { errorLabel: string }): Promise<boolean> {
+	#syncLatest(args: { errorLabel?: string }): Promise<boolean> {
 		this.#syncLatestInFlight ??= this.#runSyncLatest(args).finally(() => {
 			this.#syncLatestInFlight = null;
 		});
@@ -334,21 +396,30 @@ class ConversationsState {
 	async #runSyncLatest({
 		errorLabel,
 	}: {
-		errorLabel: string;
+		errorLabel?: string;
 	}): Promise<boolean> {
+		if (this.#destroyed) return false;
 		// Claiming would make an in-flight #load drop the nextPage it fetched.
 		const fetchEpoch = this.#fetches.current;
+		const lastActivitiesAtFetchStart = this.#reads.lastActivities(
+			this.entries,
+		);
 		try {
 			const result = await getConversations({
 				page: 1,
 				filters: inboxFilterRequest(this.filters.snapshot()),
 			});
-			if (this.#fetches.isStale(fetchEpoch)) return true;
+			if (this.#fetches.isStale(fetchEpoch)) return !this.#destroyed;
+			this.#reads.reportFresh(result.entries);
 			this.#rememberedFlags.applyTo(result.entries);
 			for (const incoming of result.entries) {
 				const existing = this.#find(incoming.data.conversationId);
 				if (existing) {
-					this.#mergeIncoming({ existing, incoming });
+					this.#mergeIncoming({
+						existing,
+						incoming,
+						lastActivitiesAtFetchStart,
+					});
 				} else if (
 					!this.#pendingDeletes.blocks({
 						conversationId: incoming.data.conversationId,
@@ -359,22 +430,26 @@ class ConversationsState {
 				}
 			}
 			this.#sortEntries();
+			this.#reads.readOpenChat();
 			this.error = null;
+			this.#runRequestedRefresh();
 			return true;
 		} catch (error) {
+			if (this.#destroyed) return false;
 			console.error(error);
-			showErrorToast({ label: errorLabel, error });
+			if (errorLabel) showErrorToast({ label: errorLabel, error });
 			return false;
 		}
 	}
 
 	async #load(page: number): Promise<void> {
-		const fetchEpoch = this.#fetches.claim();
+		const fetchEpoch = this.#fetches.next();
 		const result = await getConversations({
 			page,
 			filters: inboxFilterRequest(this.filters.snapshot()),
 		});
 		if (this.#fetches.isStale(fetchEpoch)) return;
+		this.#reads.reportFresh(result.entries);
 		this.#rememberedFlags.applyTo(result.entries);
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- function-local lookup, never mutated after construction
 		const known = new Set(this.entries.map((e) => e.data.conversationId));
@@ -389,11 +464,7 @@ class ConversationsState {
 		}
 		this.nextPage = result.nextPage;
 		this.#sortEntries();
-	}
-
-	async #claimEpochAfterInitial(): Promise<number> {
-		await this.#initialLoad.catch(() => {});
-		return this.#fetches.claim();
+		this.#reads.readOpenChat();
 	}
 
 	refresh(): Promise<void> {
@@ -425,6 +496,7 @@ class ConversationsState {
 	}
 
 	async ensureLoaded(conversationId: string): Promise<boolean> {
+		if (this.#destroyed) return false;
 		if (this.#find(conversationId)) return true;
 		const errorLabel = "Failed to sync conversation into sidebar";
 		return this.#fetches.track(this.#syncLatest({ errorLabel }));
@@ -440,7 +512,7 @@ class ConversationsState {
 	}
 
 	#isActive(conversationId: string): boolean {
-		return conversationId === this.#activeConversationId;
+		return conversationId === this.#activeClaim?.conversationId;
 	}
 
 	remove(conversationId: string) {
@@ -464,15 +536,16 @@ class ConversationsState {
 		return { revert };
 	}
 
-	setActive(conversationId: string): void {
-		this.#activeConversationId = conversationId;
+	setActive(conversationId: string): () => void {
+		const claim = { conversationId };
+		this.#activeClaim = claim;
+		if (!this.#find(conversationId))
+			this.#readRequests.noteUnlistedUnread(conversationId);
 		void this.markRead(conversationId);
-	}
-
-	clearActive(conversationId: string): void {
-		if (this.#activeConversationId === conversationId) {
-			this.#activeConversationId = null;
-		}
+		this.#onConversationRead(conversationId);
+		return () => {
+			if (this.#activeClaim === claim) this.#activeClaim = null;
+		};
 	}
 
 	get hasUnread(): boolean {
@@ -485,38 +558,22 @@ class ConversationsState {
 		this.inboxViewed.noteListViewed(this.visibleEntries);
 	}
 
-	async markRead(conversationId: string) {
+	async markRead(conversationId: string): Promise<void> {
 		const entry = this.#find(conversationId);
-		if (entry) {
-			const clearedCount = entry.data.unreadCount;
-			if (clearedCount > 0) {
-				entry.data.unreadCount = 0;
-				try {
-					await markConversationAsRead({ conversationId });
-				} catch (error) {
-					console.error(error);
-					showErrorToast({
-						label: "Failed to mark conversation as read",
-						error,
-					});
-					entry.data.unreadCount += clearedCount;
-				}
-			}
-		}
+		if (entry) await this.#readRequests.read(entry);
+		else if (this.#isActive(conversationId))
+			await this.#readRequests.readUnlisted(conversationId);
 	}
 
-	#setFlag(args: {
-		conversationIds: string[];
-		field: OptimisticFlagField;
-		value: boolean;
-		request: (conversationId: string) => Promise<unknown>;
-		errorLabel: string;
-	}): Promise<void> {
-		return setConversationFlag({
-			...args,
-			find: (id) => this.#find(id),
+	#setFlag({
+		conversationIds,
+		...update
+	}: ConversationFlagUpdate & { conversationIds: string[] }): Promise<void> {
+		return updateConversationFlag({
+			...update,
+			entries: conversationIds.map((id) => this.#find(id)),
 			pendingFlags: this.#pendingFlags,
-			sort: () => this.#sortEntries(),
+			resort: () => this.#sortEntries(),
 		});
 	}
 
@@ -626,18 +683,23 @@ class ConversationsState {
 	#mergeIncoming({
 		existing,
 		incoming,
+		lastActivitiesAtFetchStart,
 	}: {
 		existing: Conversation;
 		incoming: Conversation;
+		lastActivitiesAtFetchStart: Map<string, number>;
 	}): void {
-		mergeIntoExisting({
+		const { conversationId } = incoming.data;
+		this.#readRequests.noteSnapshot(conversationId);
+		const keptLiveActivity = mergeConversation({
 			existing,
 			incoming,
-			pendingFields: this.#pendingFlags.fields(
-				incoming.data.conversationId,
-			),
-			activeConversationId: this.#activeConversationId,
+			pendingFlags: this.#pendingFlags.fields(conversationId),
+			lastActivityAtFetchStart:
+				lastActivitiesAtFetchStart.get(conversationId) ??
+				Number.NEGATIVE_INFINITY,
 		});
+		if (keptLiveActivity) this.#refreshRequestedSinceFetchStart = true;
 	}
 
 	#sortEntries(): void {

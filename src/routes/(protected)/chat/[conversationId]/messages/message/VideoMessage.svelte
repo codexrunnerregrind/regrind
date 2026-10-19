@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { PlayIcon, VideoIcon } from "phosphor-svelte";
+	import PlayIcon from "phosphor-svelte/lib/PlayIcon";
+	import VideoIcon from "phosphor-svelte/lib/VideoIcon";
 
 	import { showErrorToast } from "$lib/api/error-toast";
 	import { getSingleMessage } from "$lib/api/messaging/messages";

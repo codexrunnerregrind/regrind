@@ -6,7 +6,7 @@
 	import Button from "$lib/components/ui/button/button.svelte";
 	import { Spinner } from "$lib/components/ui/spinner";
 	import * as ToggleGroup from "$lib/components/ui/toggle-group";
-	import { isFilterableGender } from "$lib/model/browse/grid/filters";
+	import { compareFilterGenders } from "$lib/model/browse/grid/filters";
 	import { instantWhenReducedMotion } from "$lib/util/reduced-motion";
 	import FilterDropdown from "./FilterDropdown.svelte";
 	import { isGenderChipShown, selectGenders } from "./gender-chips";
@@ -18,16 +18,12 @@
 	}: { checked: boolean; value: number[] } = $props();
 
 	const genders = $derived(
-		getGenders().then((genders) =>
-			genders
-				.filter(isFilterableGender)
-				.sort((a, b) => a.sortFilter - b.sortFilter),
-		),
+		getGenders().then((genders) => genders.toSorted(compareFilterGenders)),
 	);
 
 	const hide = instantWhenReducedMotion(
 		(node: HTMLDivElement): TransitionConfig => {
-			const width = node.offsetWidth;
+			const { width } = node.getBoundingClientRect();
 			return {
 				duration: 400,
 				css: (t: number, u: number) =>
@@ -87,7 +83,7 @@
 					() => value.map(String),
 					(next: string[]) => {
 						value = selectGenders({
-							genders,
+							catalog: genders,
 							previous: value,
 							next: next.map(Number),
 						});

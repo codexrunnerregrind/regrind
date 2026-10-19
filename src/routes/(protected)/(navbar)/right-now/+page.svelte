@@ -29,21 +29,6 @@
 </script>
 
 <main class="screen-nav-host">
-	<div
-		class="pull-scroller"
-		bind:this={feedContainer}
-		onscroll={() => (rightNowState.scrollY = feedContainer?.scrollTop ?? 0)}
-	>
-		<!-- No horizontal padding here: the feed rows carry their own ps-4/pe-4 so
-		     they align with the inbox and taps lists. -->
-		<div class="flex min-h-overscrollable flex-col gap-4 pt-3 pb-nav-clear">
-			<TopBar />
-			<div class="flex flex-col items-center">
-				<RightNowFeed {ourProfileId} />
-			</div>
-		</div>
-	</div>
-	<MyPostButton />
 	{#if !rightNowState.loading && !rightNowState.error}
 		<DataRefreshControl
 			container={feedContainer}
@@ -52,5 +37,23 @@
 			onrefresh={() => void rightNowState.reload()}
 		/>
 	{/if}
+	<div
+		class="pull-scroller"
+		bind:this={feedContainer}
+		onscroll={() => (rightNowState.scrollY = feedContainer?.scrollTop ?? 0)}
+	>
+		<!-- No horizontal padding here: the feed rows carry their own ps-4/pe-4 so
+		     they align with the inbox and taps lists. -->
+		<div
+			data-refresh-content
+			class="min-h-overscrollable flex flex-col gap-4 pt-3 pb-nav-clear"
+		>
+			<TopBar />
+			<div class="flex flex-col items-center">
+				<RightNowFeed {ourProfileId} />
+			</div>
+		</div>
+	</div>
+	<MyPostButton />
 	<ScrollToTopButton container={feedContainer} class="bottom-nav-clear" />
 </main>

@@ -29,6 +29,7 @@ import {
 	deleteProfilePhotos,
 	getProfile,
 	getProfiles,
+	getProfileUploadedPhotos,
 	HiddenProfileError,
 	MAX_PROFILES_PER_REQUEST,
 	onProfileEdit,
@@ -177,6 +178,15 @@ beforeEach(() => {
 			if (path === "/v3/me/profile/images") {
 				return Promise.resolve(ok(null));
 			}
+			if (path.startsWith("/v3.1/me/profile/images?selected=")) {
+				return Promise.resolve(
+					okValidated({
+						medias: [
+							{ mediaHash: "a".repeat(40), type: 0, state: 1 },
+						],
+					}),
+				);
+			}
 			throw new Error(`unexpected request: ${method} ${path}`);
 		},
 	);
@@ -255,6 +265,42 @@ describe("setProfilePhotos", () => {
 			method: "PUT",
 			body: { primaryImageHash: null, secondaryImageHashes: [] },
 		});
+	});
+
+	it("caches a photo it has not seen as awaiting review", async () => {
+		await getProfile(PROFILE_ID);
+
+		await setProfilePhotos({
+			cacheProfileId: PROFILE_ID,
+			mediaHashes: ["a", "fresh"],
+		});
+
+		expect((await getProfile(PROFILE_ID)).medias[1]).toMatchObject({
+			mediaHash: "fresh",
+			state: 0,
+		});
+	});
+
+	it("reports the saved photos to the profile edit listeners after the cache entry expired", async () => {
+		let clock = 1_000;
+		setNowForTesting(() => clock);
+		await getProfile(PROFILE_ID);
+		const edits: { profileId: number; patch: Partial<Profile> }[] = [];
+		const unsubscribe = onProfileEdit((edit) => edits.push(edit));
+
+		clock += 60_000;
+		await setProfilePhotos({
+			cacheProfileId: PROFILE_ID,
+			mediaHashes: ["fresh", "a"],
+		});
+		unsubscribe();
+
+		expect(
+			edits.map(({ profileId, patch }) => ({
+				profileId,
+				mediaHashes: patch.medias?.map(({ mediaHash }) => mediaHash),
+			})),
+		).toEqual([{ profileId: PROFILE_ID, mediaHashes: ["fresh", "a"] }]);
 	});
 });
 
@@ -640,5 +686,19 @@ describe("getProfiles", () => {
 	it("sends nothing for an empty list", async () => {
 		await expect(getProfiles([])).resolves.toEqual([]);
 		expect(fetchRestMock).not.toHaveBeenCalled();
+	});
+});
+
+describe("getProfileUploadedPhotos", () => {
+	it("asks for the photos off the profile when listing previous uploads", async () => {
+		await expect(
+			getProfileUploadedPhotos({ selected: false }),
+		).resolves.toEqual({
+			medias: [{ mediaHash: "a".repeat(40), type: 0, state: 1 }],
+		});
+
+		expect(fetchRestMock).toHaveBeenCalledWith(
+			"/v3.1/me/profile/images?selected=false",
+		);
 	});
 });

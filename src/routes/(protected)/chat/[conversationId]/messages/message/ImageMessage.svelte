@@ -4,13 +4,15 @@
 	import TakenOnGrindrBadge from "$lib/components/media/TakenOnGrindrBadge.svelte";
 	import MediaImage from "$lib/components/shared/MediaImage.svelte";
 	import { draftFromMessage } from "$lib/model/messaging/messages";
-	import { profileMediaUrl } from "$lib/util/media";
+	import { profileMediaUrl, proxyMediaUrl } from "$lib/util/media";
+	import { stableSignedUrl } from "$lib/util/signed-url";
 	import type {
 		MediaViewerActions,
 		MediaViewerHeader,
 	} from "$lib/chat/media-viewer-chrome";
 	import type { ImageMessage } from "$lib/model/messaging/messages";
 	import { getConversationState } from "../../conversation-state.svelte";
+	import { mediaRenewal } from "./media-renewal";
 	import { MessageMediaState } from "./message-media.svelte";
 
 	// The reaction the double-tap on a message bubble sends, mirrored here so the
@@ -43,8 +45,16 @@
 			.reverse(),
 	);
 
+	// Holds on to the signature that loaded while a renewed one arrives.
+	const renewMedia = mediaRenewal();
+	let loadedUrl = $state<string | null>(null);
+	const tileUrl = $derived(
+		stableSignedUrl({ latest: message.url, loaded: loadedUrl }),
+	);
+	const src = $derived(proxyMediaUrl(tileUrl));
+
 	let failedSrc: string | null = $state(null);
-	const failed = $derived(failedSrc === message.url);
+	const failed = $derived(failedSrc === src);
 
 	// The API leaves width and height out often enough that it cannot be relied
 	// on, and an <img> with no ratio and an auto height occupies nothing until it
@@ -159,10 +169,7 @@
 	$effect(() => () => teardown?.());
 </script>
 
-<div
-	class={["relative", { "w-2/5 max-w-60 min-w-35": !media.clone }]}
-	{@attach media.attach}
->
+<div class={["relative", media.widthClass]} {@attach media.attach}>
 	<a
 		href={failed ? undefined : message.url}
 		rel="noreferrer"
@@ -172,16 +179,18 @@
 		onclick={openGallery}
 	>
 		<MediaImage
-			src={message.url}
+			{src}
 			class={["w-full rounded-lg", media.cornerClass]}
 			imgClass="chat-media-tint"
 			{aspectRatio}
 			onload={(image) => {
+				loadedUrl = tileUrl;
 				if (image.naturalHeight > 0) {
 					naturalRatio = `${image.naturalWidth} / ${image.naturalHeight}`;
 				}
 			}}
 			bind:failedSrc
+			onexpired={renewMedia}
 		/>
 		{#if message.takenOnGrindr}
 			<!-- Bottom corner: the reactions hang off the top one. Inside the

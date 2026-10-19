@@ -1,10 +1,8 @@
 <script lang="ts">
-	import {
-		PauseIcon,
-		PlayIcon,
-		SpeakerSimpleHighIcon,
-		SpeakerSimpleSlashIcon,
-	} from "phosphor-svelte";
+	import PauseIcon from "phosphor-svelte/lib/PauseIcon";
+	import PlayIcon from "phosphor-svelte/lib/PlayIcon";
+	import SpeakerSimpleHighIcon from "phosphor-svelte/lib/SpeakerSimpleHighIcon";
+	import SpeakerSimpleSlashIcon from "phosphor-svelte/lib/SpeakerSimpleSlashIcon";
 	import { sineOut } from "svelte/easing";
 	import { fade } from "svelte/transition";
 	import type { SvelteMediaTimeRange } from "svelte/elements";
@@ -12,6 +10,7 @@
 	import { Button } from "$lib/components/ui/button";
 	import { now } from "$lib/util/clock";
 	import { formatMediaDuration } from "$lib/util/format-time";
+	import { firstFrameSrc, releaseVideoOnDestroy } from "$lib/util/media";
 	import VideoScrubber from "./VideoScrubber.svelte";
 
 	let {
@@ -75,6 +74,7 @@
 	let paused = $state(true);
 	let muted = $state(true);
 	let currentTime = $state(0);
+	let queuedSeek = $state<number | null>(null);
 	let duration = $state(0);
 	let buffered = $state<SvelteMediaTimeRange[]>([]);
 
@@ -96,6 +96,17 @@
 
 	function toggle(event: PointerEvent) {
 		if (event.pointerType !== "mouse") revealed = !revealed;
+	}
+
+	function seek(time: number) {
+		if (element?.seeking) queuedSeek = time;
+		else currentTime = time;
+	}
+
+	function seeked() {
+		if (queuedSeek === null) return;
+		currentTime = queuedSeek;
+		queuedSeek = null;
 	}
 
 	function focusEntered(event: FocusEvent) {
@@ -123,19 +134,22 @@
 	<!-- svelte-ignore a11y_media_has_caption -->
 	<video
 		bind:this={element}
+		{@attach releaseVideoOnDestroy}
 		onpointerdown={toggle}
 		bind:paused
 		bind:muted
 		bind:currentTime
 		bind:duration
 		bind:buffered
-		{src}
+		src={poster === null ? firstFrameSrc(src) : src}
 		poster={poster ?? undefined}
 		{loop}
 		playsinline
 		preload="metadata"
+		data-slot="video-player-media"
 		class="size-full object-contain"
 		onloadeddata={loaded}
+		onseeked={seeked}
 		onerror={failed}
 	></video>
 	{#if controlsVisible}
@@ -148,7 +162,7 @@
 			<div
 				data-pswp-interactive
 				transition:fade={{ duration: 150, easing: sineOut }}
-				class="flex grow items-center gap-3 rounded-full p-3 text-white glass-media-controls-subdued"
+				class="flex max-w-xl grow items-center gap-3 rounded-full p-3 text-white glass-media-controls-subdued"
 			>
 				<Button
 					variant="outline"
@@ -164,13 +178,13 @@
 					{/if}
 				</Button>
 				<span class="shrink-0 text-[13px] tracking-tight tabular-nums">
-					{formatMediaDuration(currentTime)}
+					{formatMediaDuration(queuedSeek ?? currentTime)}
 				</span>
 				<VideoScrubber
-					{currentTime}
+					currentTime={queuedSeek ?? currentTime}
 					{duration}
 					{buffered}
-					onseek={(time) => (currentTime = time)}
+					onseek={seek}
 				/>
 				<span class="shrink-0 text-[13px] tracking-tight tabular-nums">
 					{formatMediaDuration(duration)}

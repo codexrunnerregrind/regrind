@@ -17,6 +17,10 @@ edition = "2021"
 name = "regrind_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
+[[example]]
+name = "live-counterpart"
+path = "../e2e-live/counterpart/main.rs"
+
 [features]
 keychain = ["dep:apple-native-keyring-store"]
 private-api = []
@@ -36,14 +40,14 @@ tauri-build = { version = "2", features = [] }
 [dev-dependencies]
 glob = "0.3"
 tauri = { version = "2", features = ["test"] }
-tokio = { version = "1", features = ["net", "io-util", "rt-multi-thread"] }
+tokio = { version = "1", features = ["net", "io-util", "rt-multi-thread", "test-util"] }
 
 [dependencies]
 tauri = { version = "2", features = ["macos-private-api"] }
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-grindr = "0.25"
+grindr = "0.30"
 image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "gif", "bmp", "tiff"] }
 moxcms = "0.8"
 tokio = { version = "1", features = ["sync", "time", "rt", "macros"] }
@@ -73,8 +77,11 @@ apple-native-keyring-store = { version = "1.0.1", features = ["keychain", "prote
 objc2 = "0.6"
 # Scroll-wheel gesture phases for the debug probe, see src/scroll_phase.rs
 block2 = "0.6"
-objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSEvent", "block2", "objc2-core-foundation"] }
+objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSEvent", "NSHapticFeedback", "block2", "objc2-core-foundation"] }
 rfd = "0.16"
+
+[target.'cfg(target_vendor = "apple")'.dependencies]
+wry = { version = "0.55", default-features = false }
 
 [target.'cfg(target_os = "ios")'.dependencies]
 apple-native-keyring-store = { version = "1.0.1", features = ["keychain", "protected"] }
@@ -88,6 +95,8 @@ windows-core = "0.61"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 dbus-secret-service-keyring-store = { version = "1.0.0", features = ["crypto-rust"] }
+gdk = "0.18"
+webkit2gtk = { version = "2", features = ["v2_28"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 android-native-keyring-store = "1.0.0"
@@ -102,9 +111,30 @@ tauri-plugin-single-instance = "2"
 [profile.release]
 strip = "symbols"
 
+# Photo decoding and resizing take seconds without optimizations
+[profile.dev.package]
+image = { opt-level = 3 }
+png = { opt-level = 3 }
+fdeflate = { opt-level = 3 }
+miniz_oxide = { opt-level = 3 }
+simd-adler32 = { opt-level = 3 }
+crc32fast = { opt-level = 3 }
+zune-jpeg = { opt-level = 3 }
+zune-core = { opt-level = 3 }
+image-webp = { opt-level = 3 }
+gif = { opt-level = 3 }
+weezl = { opt-level = 3 }
+moxcms = { opt-level = 3 }
+pxfm = { opt-level = 3 }
+base64 = { opt-level = 3 }
+
 # See https://github.com/tauri-apps/tauri/pull/15777
 [patch.crates-io]
 wry = { path = ".patched/wry" }
 tauri-codegen = { path = ".patched/tauri-codegen" }
 http2 = { path = ".patched/http2" }
 tauri-plugin-geolocation = { path = ".patched/tauri-plugin-geolocation" }
+tauri = { path = ".patched/tauri" }
+tauri-utils = { path = ".patched/tauri-utils" }
+tauri-runtime = { path = ".patched/tauri-runtime" }
+tauri-runtime-wry = { path = ".patched/tauri-runtime-wry" }

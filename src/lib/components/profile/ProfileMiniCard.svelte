@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { ChatIcon, NotePencilIcon, StarIcon } from "phosphor-svelte";
+	import ChatIcon from "phosphor-svelte/lib/ChatIcon";
+	import NotePencilIcon from "phosphor-svelte/lib/NotePencilIcon";
+	import StarIcon from "phosphor-svelte/lib/StarIcon";
 	import type { Snippet } from "svelte";
 
 	import DistanceFormatted from "$lib/components/profile/DistanceFormatted.svelte";

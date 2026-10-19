@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { RulerIcon } from "phosphor-svelte";
+	import RulerIcon from "phosphor-svelte/lib/RulerIcon";
 
 	import { showErrorToast } from "$lib/api/error-toast";
 	import {

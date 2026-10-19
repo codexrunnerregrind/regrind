@@ -10,7 +10,7 @@ title: "FAQ"
 
 ::: details How to download Open Grind APK?
 
-**Follow instructions at [https://opengrind.org/download](/guides/download)**. Do not download apk files outside of the official pages. If you're an advanced technical user, consider [building Open Grind](https://git.opengrind.org/open-grind/open-grind/src/branch/main/BUILDING.md#build-open-grind) yourself on your computer.
+**Follow instructions at [https://opengrind.org/download](/guides/download)**, or install it from [Google Play](https://play.google.com/store/apps/details?id=org.opengrind). Do not download apk files outside of the official pages. If you're an advanced technical user, consider [building Open Grind](https://git.opengrind.org/open-grind/open-grind/src/branch/main/BUILDING.md#build-open-grind) yourself on your computer.
 
 :::
 
@@ -53,7 +53,7 @@ Open Grind has opt-in auto-updater that sends an anonymous request to git.opengr
 
 Open Grind installed from F-Droid, Google Play or .deb never updates itself, and updates are managed by your package manager or app store.
 
-**As of September 1st, 2026, the estimated number of users is ~67 000 based on the downloads counter.**
+**As of October 2nd, 2026, the estimated number of users is ~61 000 based on the downloads counter.**
 
 :::
 

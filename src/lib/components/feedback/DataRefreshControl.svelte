@@ -1,13 +1,13 @@
 <script lang="ts">
+	import { untrack } from "svelte";
 	import { cubicOut, expoOut } from "svelte/easing";
 	import { prefersReducedMotion, Tween } from "svelte/motion";
-	import type { ClassValue } from "svelte/elements";
 	import type { TransitionConfig } from "svelte/transition";
 
 	import { Button } from "$lib/components/ui/button";
 	import { scale } from "$lib/util/reduced-motion";
-	import { cn } from "$lib/util/utils";
 	import { attachPullInputs } from "./refresh/attach-inputs";
+	import { contentSlide } from "./refresh/content-slide";
 	import {
 		MAX_SLINGSHOT_TENSION,
 		slingshotTension,
@@ -27,14 +27,16 @@
 		anchorOffset = 0,
 		containerClass,
 		onrefresh,
+		oninsetchange,
 	}: {
 		updating?: boolean;
 		position: "top" | "bottom";
 		container?: HTMLElement | null;
 		hintOffset?: number;
 		anchorOffset?: number;
-		containerClass?: ClassValue;
+		containerClass?: import("svelte/elements").ClassValue;
 		onrefresh?: () => void;
+		oninsetchange?: () => void;
 	} = $props();
 
 	const BUTTON_HEIGHT_PX = 32;
@@ -43,9 +45,14 @@
 	const ARM_PX = 18;
 	const BOUNDARY_SETTLE_MS = 50;
 	const MOUSE_PROBE_MS = BOUNDARY_SETTLE_MS + 70;
+	const REVEAL_MS = 250;
 	const REVEAL_TRANSITION: TransitionConfig = {
-		duration: 250,
+		duration: REVEAL_MS,
 		easing: expoOut,
+	};
+	const CONTENT_SLIDE = {
+		duration: REVEAL_MS,
+		easing: "cubic-bezier(0.16, 1, 0.3, 1)",
 	};
 
 	const mounted = $derived(!!container);
@@ -54,10 +61,9 @@
 		container: () => container,
 		enabled: () => position === "top",
 	});
-
 	const restingButton = new RestingButtonModel({ probeMs: MOUSE_PROBE_MS });
-
 	const reveal = new Tween(0, REVEAL_TRANSITION);
+	const buttonSpace = new Tween(0, REVEAL_TRANSITION);
 	const model = new PullModel();
 	model.space = ARM_PX;
 
@@ -91,7 +97,6 @@
 	const discTop = new Tween(DISC_START, { duration: 250, easing: cubicOut });
 	const settleMotion = () =>
 		prefersReducedMotion.current ? { duration: 0 } : undefined;
-	let discOutro = $state(false);
 
 	function discDragTop(displayPx: number): number {
 		const drag = Math.min(1, displayPx / ARM_PX);
@@ -117,11 +122,13 @@
 			reveal.current > 0
 		);
 	});
-	const hintMayOverflowBand = $derived(hintShown);
 	const buttonShown = $derived.by(() => {
 		if (activeFace) return activeFace === "button";
-		return lingerFace === "button" && reveal.current > 0;
+		return lingerFace === "button" && buttonSpace.current > 0;
 	});
+	const bandHeight = $derived(
+		hintShown ? reveal.current : buttonSpace.current,
+	);
 
 	const discSpinning = $derived(
 		busy || (!model.gestureActive && model.settledOutcome === "triggered"),
@@ -150,12 +157,8 @@
 		}
 	});
 
-	const discVisible = $derived(discShown || discOutro);
-	const overlayHeight = $derived(discVisible ? DISC_WINDOW : reveal.current);
-	const opacity = $derived.by(() => {
-		if (discVisible) {
-			return 1;
-		} else if (hintShown) {
+	const bandOpacity = $derived.by(() => {
+		if (hintShown) {
 			return Math.min(
 				1,
 				Math.max(0, (reveal.current / ARM_PX) * 1.2 - 0.2),
@@ -163,9 +166,13 @@
 		} else {
 			return Math.min(
 				1,
-				Math.max(0, (reveal.current / REST_HEIGHT_PX) * 1.6 - 0.2),
+				Math.max(0, (buttonSpace.current / REST_HEIGHT_PX) * 1.6 - 0.2),
 			);
 		}
+	});
+	const anchorEdge = $derived({
+		"top-0": position === "top",
+		"bottom-0": position === "bottom",
 	});
 	const geometry = scrollGeometry({
 		container: () => container,
@@ -181,15 +188,76 @@
 		if (model.gestureActive && model.source === "overscroll") {
 			void reveal.set(model.displayPx, { duration: 0 });
 		} else if (!model.gestureActive) {
-			void reveal.set(
-				busy || restingButton.shown ? REST_HEIGHT_PX : 0,
-				settleMotion(),
-			);
+			void reveal.set(0, settleMotion());
 		}
 	});
 
+	$effect(() => {
+		void buttonSpace.set(
+			restingButton.shown ? REST_HEIGHT_PX : 0,
+			settleMotion(),
+		);
+	});
+
+	const closingRoomClampsScroll = $derived(position === "bottom");
+	const roomOpen = $derived(
+		closingRoomClampsScroll ? restingButton.offered : restingButton.shown,
+	);
+	const contentInset = $derived(roomOpen ? REST_HEIGHT_PX : 0);
+	const contentInsetProperty = $derived(
+		position === "top" ? "--refresh-inset-top" : "--refresh-inset-bottom",
+	);
+
+	const slide = contentSlide(CONTENT_SLIDE);
+
+	$effect(() => {
+		void buttonSpace.current;
+		slide.follow();
+	});
+
+	type InsetChange = { target: HTMLElement; property: string; inset: number };
+
+	function applyContentInset({ target, property, inset }: InsetChange) {
+		const restingAtFloor =
+			position === "bottom" && boundaryDistance() === 0;
+		target.style.setProperty(property, `${inset}px`);
+		if (restingAtFloor) geometry.scrollToRest();
+		oninsetchange?.();
+	}
+
+	function slideContentInset({ target, property, inset }: InsetChange) {
+		const change = () => applyContentInset({ target, property, inset });
+		const written =
+			parseFloat(target.style.getPropertyValue(property)) || 0;
+		const slideWouldStretchScrollRange =
+			position === "top" && inset < written;
+		if (slideWouldStretchScrollRange)
+			slide.ahead({ scroller: target, byPx: inset - written, change });
+		else slide.across({ scroller: target, edge: position, change });
+	}
+
+	$effect(() => {
+		const target = container;
+		const property = contentInsetProperty;
+		if (!target) return;
+		let attached = false;
+		$effect(() => {
+			const change = { target, property, inset: contentInset };
+			untrack(() =>
+				attached
+					? slideContentInset(change)
+					: applyContentInset(change),
+			);
+			attached = true;
+		});
+		return () => {
+			slide.cancel();
+			target.style.removeProperty(property);
+		};
+	});
+
 	const shouldRevealRestingButton = () =>
-		restingButton.pointerOnly &&
+		restingButton.offered &&
 		!restingButton.shown &&
 		!busy &&
 		!model.gestureActive &&
@@ -237,80 +305,88 @@
 	<div
 		data-refresh-phase={model.phase}
 		data-refresh-source={model.source}
-		class={cn(
-			"pointer-events-none z-10",
-			{ "overflow-clip": !hintMayOverflowBand },
-			"absolute inset-x-0",
+		class={[
+			"pointer-events-none absolute inset-x-0 z-10",
 			{
 				"top-(--drc-anchor)": position === "top",
 				"bottom-(--drc-anchor)": position === "bottom",
 			},
 			containerClass,
-		)}
+		]}
 		style:--drc-anchor="{headerOffset.px + anchorOffset}px"
-		style:height="{overlayHeight}px"
-		style:opacity
 	>
-		{#if discShown}
-			<div
-				class={[
-					"absolute left-1/2",
-					{
-						"top-0": position === "top",
-						"bottom-0": position === "bottom",
-					},
-				]}
-				style:translate="-50% {position === 'top'
-					? discTop.current
-					: -discTop.current}px"
-				out:scale={{ duration: 150, easing: cubicOut }}
-				onoutrostart={() => (discOutro = true)}
-				onoutroend={() => {
-					discOutro = false;
-					void discTop.set(DISC_START, { duration: 0 });
-				}}
-			>
-				<RefreshDisc progress={discProgress} spinning={discSpinning} />
-			</div>
-		{:else if hintShown}
-			<span
-				class={[
-					"absolute left-1/2 text-xs whitespace-nowrap text-muted-foreground",
-					{
-						"bottom-1": position === "top",
-						"top-1": position === "bottom",
-					},
-				]}
-				style:translate="-50% {position === 'top'
-					? hintOffset
-					: -hintOffset}px"
-			>
-				{#if model.phase === "armed"}
-					Release to refresh
-				{:else}
-					Pull to refresh
-				{/if}
-			</span>
-		{:else if buttonShown}
-			<div
-				class={[
-					"absolute left-1/2 -translate-x-1/2",
-					{
-						"bottom-3": position === "top",
-						"top-3": position === "bottom",
-					},
-				]}
-			>
-				{@render button()}
-			</div>
-		{/if}
+		<div
+			data-slot="refresh-band"
+			class={[
+				"absolute inset-x-0",
+				anchorEdge,
+				{ "overflow-clip": !hintShown },
+			]}
+			style:height="{bandHeight}px"
+			style:opacity={bandOpacity}
+		>
+			{#if hintShown}
+				<span
+					class={[
+						"absolute left-1/2 text-xs whitespace-nowrap text-muted-foreground",
+						{
+							"bottom-1": position === "top",
+							"top-1": position === "bottom",
+						},
+					]}
+					style:translate="-50% {position === 'top'
+						? hintOffset
+						: -hintOffset}px"
+				>
+					{#if model.phase === "armed"}
+						Release to refresh
+					{:else}
+						Pull to refresh
+					{/if}
+				</span>
+			{:else if buttonShown}
+				<div
+					class={[
+						"absolute left-1/2 -translate-x-1/2",
+						{
+							"bottom-3": position === "top",
+							"top-3": position === "bottom",
+						},
+					]}
+				>
+					{@render button()}
+				</div>
+			{/if}
+		</div>
+		<div
+			data-slot="refresh-disc-window"
+			class={["absolute inset-x-0 overflow-clip", anchorEdge]}
+			style:height="{DISC_WINDOW}px"
+		>
+			{#if discShown}
+				<div
+					class={["absolute left-1/2", anchorEdge]}
+					style:translate="-50% {position === 'top'
+						? discTop.current
+						: -discTop.current}px"
+					out:scale={{ duration: 150, easing: cubicOut }}
+					onoutroend={() =>
+						void discTop.set(DISC_START, { duration: 0 })}
+				>
+					<RefreshDisc
+						progress={discProgress}
+						spinning={discSpinning}
+					/>
+				</div>
+			{/if}
+		</div>
 	</div>
 {/if}
 
 {#snippet button()}
 	<Button
 		size="sm"
-		class="pointer-events-auto h-(--height) w-25 backdrop-filter-(--bd-chip)"
+		class="pointer-events-auto h-(--height) w-25"
 		style="--height: {BUTTON_HEIGHT_PX}px;"
 		onclick={() => model.clickTrigger()}
 	>

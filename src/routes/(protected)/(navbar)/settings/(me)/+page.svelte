@@ -1,11 +1,9 @@
 <script lang="ts">
-	import {
-		GearIcon,
-		IdentificationCardIcon,
-		ImagesSquareIcon,
-		PaletteIcon,
-		UserCircleIcon,
-	} from "phosphor-svelte";
+	import GearIcon from "phosphor-svelte/lib/GearIcon";
+	import IdentificationCardIcon from "phosphor-svelte/lib/IdentificationCardIcon";
+	import ImagesSquareIcon from "phosphor-svelte/lib/ImagesSquareIcon";
+	import PaletteIcon from "phosphor-svelte/lib/PaletteIcon";
+	import UserCircleIcon from "phosphor-svelte/lib/UserCircleIcon";
 
 	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
 	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
@@ -19,7 +17,10 @@
 </script>
 
 <main class="screen-nav-host">
-	<div class="h-full w-full overflow-y-auto overscroll-none">
+	<div
+		data-slot="me-scroller"
+		class="h-full w-full overflow-y-auto overscroll-none"
+	>
 		<div class="flex w-full px-screen pt-4 pb-nav-clear">
 			<div class="m-auto flex w-full max-w-120 flex-col pb-16">
 				<!-- Titled like the other roots (Inbox, Interest): the screen's own name

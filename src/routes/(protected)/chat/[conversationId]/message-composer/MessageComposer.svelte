@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onNavigate } from "$app/navigation";
-	import { tick, untrack } from "svelte";
+	import { onDestroy, tick, untrack } from "svelte";
 
 	import { showErrorToast } from "$lib/api/error-toast";
 	import { getConversations } from "$lib/chat/conversations-context.svelte";
@@ -13,12 +13,19 @@
 		ApiResponseMessage,
 		MessageDraft,
 	} from "$lib/model/messaging/messages";
-	import ComposerAttachments from "./attachments/ComposerAttachments.svelte";
+	import { getConversationState } from "../conversation-state.svelte";
+	import ComposerAttachmentsTrigger from "./attachments/ComposerAttachmentsTrigger.svelte";
+	import {
+		type ComposerSheet,
+		getComposerSheets,
+	} from "./composer-sheets-state.svelte";
 	import ComposerReplyPreview from "./ComposerReplyPreview.svelte";
 	import ComposerSavedPhrases from "./ComposerSavedPhrases.svelte";
 	import ComposerSubmitButton from "./ComposerSubmitButton.svelte";
 	import { setMessageComposerContext } from "./message-composer-context.svelte";
 	import MessageTextInput from "./MessageTextInput.svelte";
+	import ComposerSendMedia from "./send-media/ComposerSendMedia.svelte";
+	import ComposerStickersTrigger from "./stickers/ComposerStickersTrigger.svelte";
 	import ComposerVoiceMessage from "./voice-message/ComposerVoiceMessage.svelte";
 	import ComposerVoiceRecording from "./voice-message/ComposerVoiceRecording.svelte";
 	import ComposerVoiceReview from "./voice-message/ComposerVoiceReview.svelte";
@@ -45,10 +52,13 @@
 	} = $props();
 
 	const { drafts } = getConversations();
+	const sheets = getComposerSheets();
 	const mobile = below("split");
 
 	let textContent = $state(untrack(() => drafts.get(conversationId)));
 	let textInput: HTMLTextAreaElement | null = $state(null);
+	let stickersTrigger: HTMLElement | null = $state(null);
+	let attachmentsTrigger: HTMLElement | null = $state(null);
 
 	async function onSubmit() {
 		const text = textContent.trim();
@@ -96,12 +106,15 @@
 	$effect(() => registerFocus?.(() => textInput?.focus()));
 
 	$effect(() => {
-		if (replyTo) textInput?.focus();
+		if (!replyTo || !textInput) return;
+		if (untrack(() => sheets.hasOpenSheet({ conversationId }))) return;
+		textInput.focus();
 	});
 
 	dismissOnBackGesture({
 		active: () => replyTo !== null && replyTo !== undefined,
 		dismiss: () => onCancelReply?.(),
+		layer: "screen",
 	});
 
 	const voice = untrack(
@@ -121,11 +134,28 @@
 			event.preventDefault();
 	}
 
-	setMessageComposerContext(() => ({
+	function focusTrigger({ sheet }: { sheet: ComposerSheet }) {
+		const trigger =
+			sheet === "attachments" && attachmentsTrigger?.isConnected
+				? attachmentsTrigger
+				: stickersTrigger;
+		trigger?.focus();
+	}
+
+	const composerContext = () => ({
+		conversationId,
 		disabled,
 		sendMessages: onSend,
 		voice,
-	}));
+	});
+	setMessageComposerContext(composerContext);
+	onDestroy(
+		sheets.bind({
+			conversationState: getConversationState(),
+			context: composerContext,
+			focusTrigger,
+		}),
+	);
 </script>
 
 <!-- In the flow rather than floating over the list: the messages then end
@@ -166,14 +196,27 @@
 			);
 		}}
 	/>
-	<!-- One row, three controls: attach, field, send. `items-end` keeps the two
+	<!-- One row: attach, stickers, field, send. `items-end` keeps the two
 	     buttons on the bottom line as the field grows to multiple lines. -->
 	<div class="relative flex w-full items-end gap-2">
-		<!-- Keyed so switching conversation tears the drawer down with the old one
-		     rather than leaving it open over the new chat. -->
-		{#key conversationId}
-			<ComposerAttachments />
-		{/key}
+		<ComposerAttachmentsTrigger
+			bind:ref={attachmentsTrigger}
+			onClick={() =>
+				sheets.setOpen({
+					conversationId,
+					sheet: "attachments",
+					open: true,
+				})}
+		/>
+		<ComposerStickersTrigger
+			bind:ref={stickersTrigger}
+			onClick={() =>
+				sheets.setOpen({
+					conversationId,
+					sheet: "stickers",
+					open: true,
+				})}
+		/>
 		<MessageTextInput
 			bind:value={textContent}
 			bind:ref={textInput}
@@ -202,4 +245,7 @@
 			<ComposerVoiceRecording />
 		{/if}
 	</div>
+	{#key conversationId}
+		<ComposerSendMedia />
+	{/key}
 </form>

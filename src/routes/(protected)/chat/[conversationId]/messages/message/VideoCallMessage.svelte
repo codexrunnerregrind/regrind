@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { PhoneSlashIcon, VideoCameraIcon } from "phosphor-svelte";
+	import PhoneSlashIcon from "phosphor-svelte/lib/PhoneSlashIcon";
+	import VideoCameraIcon from "phosphor-svelte/lib/VideoCameraIcon";
 
 	import {
 		videoCallOutcome,

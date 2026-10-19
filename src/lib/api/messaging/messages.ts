@@ -10,7 +10,7 @@ import {
 import { unixTimestampMsSchema } from "$lib/model/types";
 import { ws } from "$lib/ws.svelte";
 import type { Conversation } from "$lib/model/messaging/conversations";
-import type { OutboundMessage } from "$lib/model/messaging/messages";
+import type { MessageDraft } from "$lib/model/messaging/messages";
 
 const conversationMessagesSchema = z.object({
 	lastReadTimestamp: unixTimestampMsSchema.nullable(),
@@ -74,15 +74,34 @@ export async function getSingleMessage({
 	return message;
 }
 
+export async function refreshMessagesById({
+	conversationId,
+	messageIds,
+}: {
+	conversationId: string;
+	messageIds: string[];
+}) {
+	return await fetchRest(
+		`/v4/chat/conversation/${conversationId}/message-by-id`,
+		{ method: "POST", body: { messageIds } },
+	).then((res) =>
+		res.jsonParsed(
+			z.object({ messages: z.array(apiResponseMessageSchema) }),
+		),
+	);
+}
+
 export async function sendMessage({
 	toUserId,
-	message,
+	message: outbound,
 	replyToMessageId,
 }: {
 	toUserId: number;
-	message: OutboundMessage;
+	message: MessageDraft["outbound"];
 	replyToMessageId?: string;
 }) {
+	const message =
+		typeof outbound === "function" ? await outbound() : outbound;
 	const body = {
 		type: message.type,
 		target: { type: "Direct", targetId: toUserId },

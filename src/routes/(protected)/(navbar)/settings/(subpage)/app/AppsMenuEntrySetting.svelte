@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { SquaresFourIcon } from "phosphor-svelte";
+	import SquaresFourIcon from "phosphor-svelte/lib/SquaresFourIcon";
 
 	import { showErrorToast } from "$lib/api/error-toast";
 	import SettingsSwitchRow from "$lib/components/settings/SettingsSwitchRow.svelte";

@@ -1,9 +1,7 @@
 <script lang="ts">
-	import {
-		LockSimpleIcon,
-		PencilSimpleIcon,
-		PlusIcon,
-	} from "phosphor-svelte";
+	import LockSimpleIcon from "phosphor-svelte/lib/LockSimpleIcon";
+	import PencilSimpleIcon from "phosphor-svelte/lib/PencilSimpleIcon";
+	import PlusIcon from "phosphor-svelte/lib/PlusIcon";
 	import { onMount } from "svelte";
 	import { toast } from "svelte-sonner";
 

@@ -11,7 +11,8 @@ export const getOrCreateConversationsState = accountScoped(
 	(profileId) =>
 		new ConversationsState({
 			ourProfileId: profileId,
-			onIncomingMessage: ({ message, conversation }) =>
+			onIncomingMessage: ({ message, conversation, inView }) => {
+				if (inView) return;
 				showIncomingMessageToast({
 					message,
 					sender: {
@@ -21,7 +22,8 @@ export const getOrCreateConversationsState = accountScoped(
 								?.primaryMediaHash ?? null,
 					},
 					conversationId: conversation.data.conversationId,
-				}),
+				});
+			},
 		}),
 );
 

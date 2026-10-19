@@ -1,9 +1,13 @@
 import { expect, type Page, test } from "@playwright/test";
 
-import { installTauriShim, TrustedTouch } from "./support/app";
+import {
+	hoverPen,
+	installTauriShim,
+	MESSAGE_ROW,
+	TrustedTouch,
+} from "./support/app";
 
 const CONVERSATION = "/chat/100001:123456000";
-const MESSAGE_ROW = '[role="button"][tabindex="0"]';
 const REACTABLE = "Sed do eiusmod tempor incididunt?";
 const REACT_BUTTON = { name: "React with fire" };
 const HINT = "Double tap to";
@@ -20,7 +24,6 @@ function reactable(page: Page) {
 }
 
 test.describe("with a cursor", () => {
-	// the shared context emulates a touchscreen, where the button never shows
 	test.use({ hasTouch: false });
 
 	test("the menu offers the reaction as a button, since no finger can double-tap", async ({
@@ -58,14 +61,24 @@ test.describe("with a cursor", () => {
 	});
 });
 
-test("a touchscreen keeps the double-tap hint instead of the button", async ({
+test("the menu header follows the pointer in use: a finger gets the double-tap hint, a hovering pen the button", async ({
 	page,
 }) => {
 	await openConversation(page);
-	await reactable(page).click({ button: "right" });
+	const bubble = reactable(page);
+	await bubble.scrollIntoViewIfNeeded();
+
+	await hoverPen({ page, target: bubble });
+	await bubble.tap();
+	await bubble.dispatchEvent("contextmenu");
 
 	await expect(page.getByText(HINT)).toBeVisible();
 	await expect(page.getByRole("button", REACT_BUTTON)).toBeHidden();
+
+	await hoverPen({ page, target: page.getByText(HINT) });
+
+	await expect(page.getByRole("button", REACT_BUTTON)).toBeVisible();
+	await expect(page.getByText(HINT)).toBeHidden();
 });
 
 test("a double tap still reacts on a touchscreen", async ({ page }) => {

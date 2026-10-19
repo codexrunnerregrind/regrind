@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CaretRightIcon } from "phosphor-svelte";
+	import CaretRightIcon from "phosphor-svelte/lib/CaretRightIcon";
 	import type { SvelteSet } from "svelte/reactivity";
 
 	import DisplayName from "$lib/components/profile/DisplayName.svelte";

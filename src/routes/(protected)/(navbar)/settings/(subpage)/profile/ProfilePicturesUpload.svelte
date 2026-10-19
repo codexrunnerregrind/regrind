@@ -1,15 +1,29 @@
 <script lang="ts">
-	import { PlusIcon, SpinnerGapIcon } from "phosphor-svelte";
+	import PlusIcon from "phosphor-svelte/lib/PlusIcon";
+	import SpinnerGapIcon from "phosphor-svelte/lib/SpinnerGapIcon";
+	import { toast } from "svelte-sonner";
 
+	import { httpStatusOf } from "$lib/api/api-error";
 	import { showErrorToast } from "$lib/api/error-toast";
 	import { uploadProfilePhoto } from "$lib/api/users/profiles";
 	import { PhotoEditQueue } from "$lib/components/media/photo-edit-queue.svelte";
 	import PhotoEditorDrawer from "$lib/components/media/PhotoEditorDrawer.svelte";
-	import { pickMultipleMedia } from "$lib/platform/media-picker";
+	import { demoEnabled } from "$lib/demo";
+	import { discardStagedMedia } from "$lib/platform/media-file";
+	import {
+		receiveMedia,
+		screenMedia,
+	} from "$lib/platform/media-intake.svelte";
+	import {
+		type PickedMedia,
+		pickMultipleMedia,
+	} from "$lib/platform/media-picker";
 	import { dragReorder } from "$lib/util/drag-reorder";
+	import { maxProfilePhotos as MAX_PHOTOS } from "./options";
 	import ProfilePictureSlot from "./ProfilePictureSlot.svelte";
 
-	const MAX_PHOTOS = 6;
+	const DAILY_LIMIT_MESSAGE =
+		"You've reached today's limit for new profile photos";
 
 	let {
 		medias = $bindable(),
@@ -48,10 +62,25 @@
 	 * to get the hash the profile is saved with — but it is on the profile only
 	 * once the form is saved, the same as a removal.
 	 */
-	async function addPhotos() {
+	async function addPhotos(received?: PickedMedia[]) {
 		const room = MAX_PHOTOS - medias.length;
-		if (uploading || room <= 0 || edits.current !== null) return;
-		const picked = (await pickMultipleMedia("image")).slice(0, room);
+		if (uploading || room <= 0 || edits.current !== null) {
+			if (received) void discardStagedMedia(received);
+			return;
+		}
+		const all =
+			received === undefined
+				? await pickMultipleMedia("image")
+				: (await screenMedia({ media: received, videos: false })).map(
+						({ media }) => media,
+					);
+		const picked = all.slice(0, room);
+		if (all.length > picked.length) {
+			toast.error(
+				`${all.length - picked.length} left out, a profile holds up to ${MAX_PHOTOS} photos`,
+			);
+			void discardStagedMedia(all.slice(room));
+		}
 		if (picked.length === 0) return;
 
 		try {
@@ -71,11 +100,22 @@
 			}
 		} catch (error) {
 			console.error(error);
-			showErrorToast({ label: "Failed to upload photo", error });
+			if (httpStatusOf(error) === 403) toast.error(DAILY_LIMIT_MESSAGE);
+			else showErrorToast({ label: "Failed to upload photo", error });
 		} finally {
 			uploading = false;
 		}
 	}
+
+	receiveMedia(() =>
+		medias.length < MAX_PHOTOS && !demoEnabled && !uploading
+			? {
+					label: "Drop to add photos",
+					videos: false,
+					receive: (media) => void addPhotos(media),
+				}
+			: null,
+	);
 </script>
 
 <div

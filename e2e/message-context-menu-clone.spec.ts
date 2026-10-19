@@ -1,13 +1,22 @@
 import { expect, type Page, test } from "@playwright/test";
 
-import { installEventInjection, installTauriShim } from "./support/app";
+import {
+	DEMO_CONVERSATION,
+	DEMO_CONVERSATION_ID,
+	emitMessageSent,
+	EXPIRED_IMAGE,
+	EXPIRING_IMAGE,
+	EXPIRING_VIDEO,
+	expiringImageMessage,
+	expiringVideoMessage,
+	installEventInjection,
+	installTauriShim,
+	MESSAGE_ROW,
+} from "./support/app";
 import { CHAT_MEDIA_HOST, serveImages } from "./support/media";
 
-const CONVERSATION = "/chat/100001:123456000";
-const CONVERSATION_ID = "100001:123456000";
 const ME = 123456000;
 const THEM = 100001;
-const MESSAGE_ROW = '[role="button"][tabindex="0"]';
 const ALBUM = '[aria-label="Open album"]';
 const PHOTO = 'a[aria-label="Photo"]';
 const QUOTE = '[data-slot="message-quote"]';
@@ -16,32 +25,33 @@ async function openConversation(page: Page): Promise<void> {
 	await serveImages(page, CHAT_MEDIA_HOST);
 	await installTauriShim(page);
 	await installEventInjection(page);
-	await page.goto(CONVERSATION);
+	await page.goto(DEMO_CONVERSATION);
 	await page.locator(MESSAGE_ROW).first().waitFor({ timeout: 60_000 });
 	await page.waitForTimeout(1000);
 }
 
-async function receiveOwnMessage(page: Page, message: unknown): Promise<void> {
-	await page.evaluate((payload) => {
-		window.__emitTauriEvent?.("grindr:chat_v1_message_sent", {
-			type: "chat.v1.message_sent",
-			notificationId: null,
-			ref: null,
-			payload,
-		});
-	}, message);
+async function receiveMessage(page: Page, message: unknown): Promise<void> {
+	await emitMessageSent(page, message);
 	await page.waitForTimeout(1000);
 }
 
 function ourMessage(timestamp: number) {
 	return {
 		messageId: `ws-out-${timestamp}`,
-		conversationId: CONVERSATION_ID,
+		conversationId: DEMO_CONVERSATION_ID,
 		senderId: ME,
 		timestamp,
 		unsent: false,
 		reactions: [],
 		replyToMessage: null,
+	};
+}
+
+function theirMessage(timestamp: number) {
+	return {
+		...ourMessage(timestamp),
+		messageId: `ws-in-${timestamp}`,
+		senderId: THEM,
 	};
 }
 
@@ -89,7 +99,7 @@ function outgoingReply(timestamp: number) {
 			type: "Text",
 			body: { text: "Sed do eiusmod tempor incididunt?" },
 			messageId: "2:demo-100001-2",
-			conversationId: CONVERSATION_ID,
+			conversationId: DEMO_CONVERSATION_ID,
 			senderId: THEM,
 			timestamp: timestamp - 60_000,
 			unsent: false,
@@ -166,7 +176,7 @@ test("the context menu lifts an album we sent at its real size", async ({
 	page,
 }) => {
 	await openConversation(page);
-	await receiveOwnMessage(page, outgoingAlbum(Date.now() + 60_000));
+	await receiveMessage(page, outgoingAlbum(Date.now() + 60_000));
 	await expectCloneToMatchOriginal(page, { selector: ALBUM, what: "album" });
 });
 
@@ -174,15 +184,83 @@ test("the context menu lifts a photo we sent at its real size", async ({
 	page,
 }) => {
 	await openConversation(page);
-	await receiveOwnMessage(page, outgoingImage(Date.now() + 60_000));
+	await receiveMessage(page, outgoingImage(Date.now() + 60_000));
 	await expectCloneToMatchOriginal(page, { selector: PHOTO, what: "photo" });
+});
+
+test("the context menu lifts an expiring image we sent at its real size", async ({
+	page,
+}) => {
+	await openConversation(page);
+	await receiveMessage(
+		page,
+		expiringImageMessage({ envelope: ourMessage(Date.now() + 60_000) }),
+	);
+	await expectCloneToMatchOriginal(page, {
+		selector: EXPIRING_IMAGE,
+		what: "expiring image",
+	});
+});
+
+test("the context menu lifts an expiring image under a wider quote at its real size", async ({
+	page,
+}) => {
+	await openConversation(page);
+	const timestamp = Date.now() + 60_000;
+	await receiveMessage(page, {
+		...expiringImageMessage({ envelope: ourMessage(timestamp) }),
+		replyToMessage: outgoingReply(timestamp).replyToMessage,
+	});
+
+	const pill = page.locator(EXPIRING_IMAGE).last();
+	const quote = page.locator(QUOTE).last();
+	expect(
+		(await quote.boundingBox())!.width,
+		"the quote should be the wider of the two",
+	).toBeGreaterThan((await pill.boundingBox())!.width);
+
+	await expectCloneToMatchOriginal(page, {
+		selector: EXPIRING_IMAGE,
+		what: "expiring image",
+	});
+});
+
+test("the context menu lifts an expired image we received at its real size", async ({
+	page,
+}) => {
+	await openConversation(page);
+	await receiveMessage(
+		page,
+		expiringImageMessage({
+			envelope: theirMessage(Date.now() + 60_000),
+			spent: true,
+		}),
+	);
+	await expectCloneToMatchOriginal(page, {
+		selector: EXPIRED_IMAGE,
+		what: "expired image",
+	});
+});
+
+test("the context menu lifts an expiring video we received at its real size", async ({
+	page,
+}) => {
+	await openConversation(page);
+	await receiveMessage(
+		page,
+		expiringVideoMessage({ envelope: theirMessage(Date.now() + 60_000) }),
+	);
+	await expectCloneToMatchOriginal(page, {
+		selector: EXPIRING_VIDEO,
+		what: "expiring video",
+	});
 });
 
 test("the context menu lifts a reply we sent with its quote intact", async ({
 	page,
 }) => {
 	await openConversation(page);
-	await receiveOwnMessage(page, outgoingReply(Date.now() + 60_000));
+	await receiveMessage(page, outgoingReply(Date.now() + 60_000));
 
 	const original = await openContextMenuOf(page, QUOTE);
 	expect(original, "the quote should be laid out").not.toBeNull();

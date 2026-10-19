@@ -1,5 +1,8 @@
 <script lang="ts" generics="T extends number">
-	import { CaretUpDownIcon } from "phosphor-svelte";
+	import { IsUsingKeyboard } from "bits-ui";
+	import CaretUpDownIcon from "phosphor-svelte/lib/CaretUpDownIcon";
+	import type { IconComponentProps } from "phosphor-svelte";
+	import type { Component } from "svelte";
 
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
 	import type { Option } from "$lib/util/options";
@@ -15,13 +18,28 @@
 	}: {
 		label: string;
 		value: T | null;
-		options: Option<T>[];
+		options: (Option<T> & { icon?: Component<IconComponentProps> })[];
 		placeholder?: string;
 		clearLabel?: string;
 		nullable?: boolean;
 	} = $props();
 
 	const selected = $derived(options.find((option) => option.value === value));
+	const SelectedIcon = $derived(selected?.icon);
+	const hasIcons = $derived(options.some((option) => option.icon));
+	let menu = $state<HTMLElement | null>(null);
+	const usingKeyboard = new IsUsingKeyboard();
+
+	function revealSelected(opening: Event) {
+		const checked = menu?.querySelector<HTMLElement>(
+			'[role="menuitemradio"][aria-checked="true"]',
+		);
+		if (!checked) return;
+		checked.scrollIntoView({ block: "center" });
+		if (!usingKeyboard.current) return;
+		opening.preventDefault();
+		checked.focus({ preventScroll: true });
+	}
 </script>
 
 <!-- The row itself is the trigger, so the whole 56px band is tappable rather
@@ -42,9 +60,15 @@
 					<span
 						class={[
 							valueClass,
-							{ "text-muted-foreground": !selected },
+							{
+								"flex items-center gap-2": SelectedIcon,
+								"text-muted-foreground": !selected,
+							},
 						]}
 					>
+						{#if SelectedIcon}
+							<SelectedIcon data-slot="select-field-icon" />
+						{/if}
 						{selected?.label ?? placeholder}
 					</span>
 					<CaretUpDownIcon
@@ -55,7 +79,9 @@
 		{/snippet}
 	</DropdownMenu.Trigger>
 	<DropdownMenu.Content
+		bind:ref={menu}
 		class="max-h-72 w-(--bits-dropdown-menu-anchor-width)"
+		onOpenAutoFocus={revealSelected}
 	>
 		<DropdownMenu.RadioGroup
 			bind:value={
@@ -67,12 +93,18 @@
 			}
 		>
 			{#if nullable}
-				<DropdownMenu.RadioItem value=""
-					>{clearLabel}</DropdownMenu.RadioItem
+				<DropdownMenu.RadioItem
+					value=""
+					data-inset={hasIcons || undefined}
 				>
+					{clearLabel}
+				</DropdownMenu.RadioItem>
 			{/if}
 			{#each options as option (option.value)}
 				<DropdownMenu.RadioItem value={String(option.value)}>
+					{#if option.icon}
+						<option.icon data-slot="select-field-icon" />
+					{/if}
 					{option.label}
 				</DropdownMenu.RadioItem>
 			{/each}

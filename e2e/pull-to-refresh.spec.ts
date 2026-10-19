@@ -1,71 +1,102 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 
-import { installTauriShim } from "./support/app";
-import { installFakeOverscroll, type PullSnapshot } from "./support/pull";
+import {
+	DEMO_CONVERSATION,
+	FIRST_ROUTE_COMPILE_MS,
+	installTauriShim,
+	MESSAGE_ROW,
+	openGrid,
+	wheel,
+} from "./support/app";
+import { openTaps, TAP_ROW } from "./support/interest-pager";
+import {
+	BUTTON_ROW_PX,
+	CONVERSATION_ROW,
+	CONVERSATIONS_SCROLLER,
+	driveInOneGesture,
+	openInbox,
+	refreshButton,
+	topOf,
+} from "./support/pull";
 
 const ARM_PX = 18;
+const SHALLOW_PX = 6;
 const REFRESH_SETTLE_MS = 2400;
+const DISC_REST_MS = 400;
+const ME = 123456000;
+const CONVERSATIONS_MODULE_URL =
+	"/src/lib/chat/conversations-context.svelte.ts";
+const SCROLL_AWAY_PX = 10;
+const MESSAGES_SCROLLER = '[data-slot="messages-scroller"]';
+const SCREEN_TALLER_THAN_ITS_CONTENT = { width: 420, height: 3000 };
+const ROOM_ABOVE_COMPOSER_PROPERTY = "--refresh-inset-bottom";
+const BROWSE_TILE = '[data-slot="grid-content"] a[href^="/profile/"]';
+const GRID_PREPARE_MS = 180_000;
+const BUTTON_CLEARANCE_PX = 12;
+const SLIDE_SLIP_PX = 2;
 
-async function openInbox(page: Page) {
-	await installTauriShim(page);
-	await installFakeOverscroll(page);
-	await page.goto("/chat");
+async function openRefreshableTaps(page: Page) {
+	await openTaps(page);
 	await page
-		.locator("a[href^='/chat/']")
+		.locator("[data-refresh-phase]")
 		.first()
-		.waitFor({ timeout: 120_000 });
+		.waitFor({ state: "attached" });
+	await page.waitForTimeout(600);
+}
+
+async function openBrowse(page: Page) {
+	test.setTimeout(GRID_PREPARE_MS);
+	await installTauriShim(page);
+	await openGrid(page);
+	await page.locator(BROWSE_TILE).first().waitFor();
 	await page.locator("[data-refresh-phase]").waitFor({ state: "attached" });
 	await page.waitForTimeout(600);
 }
 
-async function driveInOneGesture<K extends string>(
-	page: Page,
-	keys: readonly K[],
-	body: string,
-): Promise<Record<K, PullSnapshot>> {
-	const snapshots: Partial<Record<K, PullSnapshot>> =
-		await page.evaluate(`(async () => {
-		const scroller = document.querySelector(
-			'[data-slot="conversations-scroller"]',
-		);
-		if (!scroller) throw new Error("conversations scroller not found");
-		const overlay = document.querySelector("[data-refresh-phase]");
-		if (!overlay) throw new Error("refresh control not found");
-		const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-		const gesture = (px) => {
-			scroller.dispatchEvent(new WheelEvent("wheel", { deltaY: -8 }));
-			scroller.__band = px;
-			scroller.dispatchEvent(new Event("scroll"));
-		};
-		const spring = (px) => {
-			scroller.__band = px;
-			scroller.dispatchEvent(new Event("scroll"));
-		};
-		const lift = () => scroller.dispatchEvent(new Event("scrollend"));
-		const snap = () => {
-			const button = overlay.querySelector("button");
-			const disc = overlay.querySelector("[data-refresh-disc]");
-			const hint = button || disc ? null : overlay.querySelector("span");
-			return {
-				phase: overlay.dataset.refreshPhase,
-				overlayHeight: Math.round(overlay.getBoundingClientRect().height),
-				opacity: parseFloat(getComputedStyle(overlay).opacity),
-				hint: hint ? hint.textContent.trim() : null,
-				hasButton: !!button,
-				disc: !!disc,
-				spinning: !!overlay.querySelector("[data-refresh-disc][data-spinning]"),
-				bandWrites: scroller.__bandWrites ?? 0,
-			};
-		};
-		${body}
-	})()`);
+async function openConversation(page: Page) {
+	await installTauriShim(page);
+	await page.goto(DEMO_CONVERSATION);
+	await page
+		.locator(MESSAGE_ROW)
+		.first()
+		.waitFor({ timeout: FIRST_ROUTE_COMPILE_MS });
+	await page
+		.locator(`${MESSAGES_SCROLLER} ~ [data-refresh-phase]`)
+		.waitFor({ state: "attached" });
+	await page.waitForTimeout(600);
+}
 
-	const missing = keys.filter((key) => snapshots[key] === undefined);
-	if (missing.length > 0)
-		throw new Error(
-			`the page returned no snapshot for ${missing.join(", ")}`,
-		);
-	return snapshots as Record<K, PullSnapshot>;
+const bottomOf = (row: Locator) =>
+	row.evaluate((el) => el.getBoundingClientRect().bottom);
+
+const floorDistance = (scroller: Locator) =>
+	scroller.evaluate((el) => el.scrollHeight - el.clientHeight - el.scrollTop);
+
+const scrollRange = (scroller: Locator) =>
+	scroller.evaluate((el) => el.scrollHeight - el.clientHeight);
+
+const slidingContent = (scroller: Locator) =>
+	scroller.evaluate((el) => {
+		const content = el.querySelector(":scope > [data-refresh-content]");
+		return content?.getAnimations().length ?? 0;
+	});
+
+const roomAboveComposer = (scroller: Locator) =>
+	scroller.evaluate(
+		(el: HTMLElement, room) => el.style.getPropertyValue(room),
+		ROOM_ABOVE_COMPOSER_PROPERTY,
+	);
+
+async function revealButtonOver(
+	page: Page,
+	{ row, towardBoundary = -100 }: { row: Locator; towardBoundary?: number },
+) {
+	const box = await row.boundingBox();
+	if (!box) throw new Error("the row is not on screen");
+	const pointer = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+	await wheel(page, pointer, towardBoundary);
+	await expect(refreshButton(page)).toBeVisible();
+	return pointer;
 }
 
 test.describe("pull to refresh", () => {
@@ -96,12 +127,12 @@ test.describe("pull to refresh", () => {
 		);
 
 		expect(steps.resting).toMatchObject({ hasButton: false, disc: false });
-		expect(steps.resting.overlayHeight).toBeLessThanOrEqual(1);
+		expect(steps.resting.bandHeight).toBeLessThanOrEqual(1);
 
 		expect(steps.pulling).toMatchObject({
 			hint: "Pull to refresh",
 			hasButton: false,
-			overlayHeight: 8,
+			bandHeight: 8,
 		});
 		expect(steps.pulling.opacity).toBeGreaterThan(0.2);
 
@@ -110,7 +141,7 @@ test.describe("pull to refresh", () => {
 			hint: "Release to refresh",
 		});
 		expect(steps.armed.opacity).toBeGreaterThan(0.95);
-		expect(steps.deep.overlayHeight).toBe(44);
+		expect(steps.deep.bandHeight).toBe(44);
 
 		expect(steps.held.phase).toBe("armed");
 		expect(steps.fired).toMatchObject({
@@ -149,9 +180,9 @@ test.describe("pull to refresh", () => {
 		expect(steps.springing).toMatchObject({
 			phase: "idle",
 			hint: "Pull to refresh",
-			overlayHeight: 10,
+			bandHeight: 10,
 		});
-		expect(steps.collapsed.overlayHeight).toBeLessThanOrEqual(1);
+		expect(steps.collapsed.bandHeight).toBeLessThanOrEqual(1);
 	});
 
 	test("a gesture that arrives from mid-list never engages at the boundary", async ({
@@ -237,7 +268,7 @@ test.describe("pull to refresh", () => {
 		);
 
 		expect(steps.revealed.hasButton).toBe(true);
-		expect(steps.revealed.overlayHeight).toBeGreaterThanOrEqual(50);
+		expect(steps.revealed.bandHeight).toBeGreaterThanOrEqual(50);
 		expect(steps.clicked).toMatchObject({
 			phase: "refreshing",
 			disc: true,
@@ -245,4 +276,348 @@ test.describe("pull to refresh", () => {
 		});
 		expect(steps.settled).toMatchObject({ phase: "idle", hasButton: true });
 	});
+
+	test("a pull that starts while the disc of a finished refresh is still leaving shows its hint at the band", async ({
+		page,
+	}) => {
+		await openInbox(page);
+		const steps = await driveInOneGesture(
+			page,
+			["leaving", "pulled", "gone"],
+			`
+			const { getOrCreateConversationsState } = await import(
+				"${CONVERSATIONS_MODULE_URL}"
+			);
+			const conversations = getOrCreateConversationsState(${ME});
+			conversations.refreshing = true;
+			await sleep(${DISC_REST_MS});
+			const outroStarted = new Promise((resolve) =>
+				document.addEventListener("outrostart", resolve, {
+					capture: true,
+					once: true,
+				}),
+			);
+			conversations.refreshing = false;
+			await outroStarted;
+			const outro = overlay
+				.getAnimations({ subtree: true })
+				.filter((animation) => !(animation instanceof CSSAnimation));
+			if (outro.length === 0) throw new Error("the disc outro is not running");
+			outro.forEach((animation) => animation.pause());
+			const leaving = snap();
+			gesture(0); await sleep(20);
+			gesture(${SHALLOW_PX}); await sleep(30);
+			const pulled = snap();
+			outro.forEach((animation) => animation.finish());
+			await sleep(60);
+			const gone = snap();
+			return { leaving, pulled, gone };
+		`,
+		);
+
+		expect(steps.leaving).toMatchObject({ disc: true, hint: null });
+		expect(steps.pulled).toMatchObject({
+			phase: "pulling",
+			disc: true,
+			hint: "Pull to refresh",
+			bandHeight: SHALLOW_PX,
+		});
+		expect(steps.pulled.hintBottom).toBeLessThanOrEqual(SHALLOW_PX);
+		expect(steps.pulled.opacity).toBeLessThan(1);
+		expect(steps.gone).toMatchObject({
+			disc: false,
+			hint: "Pull to refresh",
+			bandHeight: SHALLOW_PX,
+			hintBottom: steps.pulled.hintBottom,
+		});
+	});
+
+	test("the disc of a finished refresh stays whole and opaque until it starts leaving", async ({
+		page,
+	}) => {
+		await openInbox(page);
+		const steps = await driveInOneGesture(
+			page,
+			["spinning", "finished"],
+			`
+			const { getOrCreateConversationsState } = await import(
+				"${CONVERSATIONS_MODULE_URL}"
+			);
+			const conversations = getOrCreateConversationsState(${ME});
+			conversations.refreshing = true;
+			await sleep(${DISC_REST_MS});
+			const spinning = snap();
+			conversations.refreshing = false;
+			await null;
+			const finished = snap();
+			return { spinning, finished };
+		`,
+		);
+
+		const whole = { disc: true, discClippedPx: 0, discOpacity: 1 };
+		expect(steps.spinning).toMatchObject(whole);
+		expect(steps.finished).toMatchObject(whole);
+	});
+
+	for (const list of [
+		{ name: "the inbox", open: openInbox, row: CONVERSATION_ROW },
+		{ name: "the taps list", open: openRefreshableTaps, row: TAP_ROW },
+	]) {
+		test(`on ${list.name} the button takes a row of its own above the first entry, and gives it back once the reader scrolls on`, async ({
+			page,
+		}) => {
+			await list.open(page);
+			const firstRow = page.locator(list.row).first();
+			const restingTop = await topOf(firstRow);
+
+			const pointer = await revealButtonOver(page, { row: firstRow });
+			await expect
+				.poll(() => topOf(firstRow))
+				.toBe(restingTop + BUTTON_ROW_PX);
+			const button = await refreshButton(page).boundingBox();
+			if (!button) throw new Error("the Refresh button has no box");
+			expect(button.y + button.height).toBeLessThan(
+				restingTop + BUTTON_ROW_PX,
+			);
+
+			await wheel(page, pointer, SCROLL_AWAY_PX);
+			await expect(refreshButton(page)).toBeHidden();
+			await expect
+				.poll(() => topOf(firstRow))
+				.toBe(restingTop - SCROLL_AWAY_PX);
+		});
+	}
+
+	test("on Browse the tiles slide down in step with the button, so the button never covers the first row", async ({
+		page,
+	}) => {
+		await openBrowse(page);
+		const firstTile = page.locator(BROWSE_TILE).first();
+		const restingTop = await topOf(firstTile);
+		const clearances = await firstTile.evaluateHandle((tile) => {
+			const band = tile
+				.closest("main")
+				?.querySelector('[data-slot="refresh-band"]');
+			if (!band) throw new Error("refresh band not found");
+			const seen: number[] = [];
+			new MutationObserver(() => {
+				const button = band.querySelector("button");
+				if (!button) return;
+				const drawnBottom = Math.min(
+					button.getBoundingClientRect().bottom,
+					band.getBoundingClientRect().bottom,
+				);
+				seen.push(tile.getBoundingClientRect().top - drawnBottom);
+			}).observe(band, { attributes: true, attributeFilter: ["style"] });
+			return seen;
+		});
+
+		await revealButtonOver(page, { row: firstTile });
+		await expect
+			.poll(() => topOf(firstTile))
+			.toBe(restingTop + BUTTON_ROW_PX);
+
+		const seen = await clearances.evaluate((list) => [...list]);
+		expect(seen.length).toBeGreaterThan(2);
+		expect(seen.at(-1)).toBeCloseTo(BUTTON_CLEARANCE_PX, 0);
+		expect(Math.min(...seen)).toBeGreaterThanOrEqual(
+			BUTTON_CLEARANCE_PX - SLIDE_SLIP_PX,
+		);
+	});
+
+	test("a clicked refresh spins in the button's row without moving the list", async ({
+		page,
+	}) => {
+		await openInbox(page);
+		const firstRow = page.locator(CONVERSATION_ROW).first();
+		const restingTop = await topOf(firstRow);
+		await revealButtonOver(page, { row: firstRow });
+		await expect
+			.poll(() => topOf(firstRow))
+			.toBe(restingTop + BUTTON_ROW_PX);
+
+		const rowTops = await firstRow.evaluateHandle((row) => {
+			const seen = new Set<number>();
+			const sample = () => {
+				seen.add(row.getBoundingClientRect().top);
+				requestAnimationFrame(sample);
+			};
+			requestAnimationFrame(sample);
+			return seen;
+		});
+		await refreshButton(page).click();
+		await expect(
+			page.locator("[data-refresh-disc][data-spinning]"),
+		).toBeVisible();
+		await expect(refreshButton(page)).toBeVisible();
+
+		expect(await rowTops.evaluate((seen) => [...seen])).toEqual([
+			restingTop + BUTTON_ROW_PX,
+		]);
+	});
+
+	test("in a conversation the button takes its room above the composer and keeps it while the reader is scrolled up", async ({
+		page,
+	}) => {
+		await openConversation(page);
+		const scroller = page.locator(MESSAGES_SCROLLER);
+		const newest = page.locator(MESSAGE_ROW).last();
+		const restingBottom = await bottomOf(newest);
+
+		const pointer = await revealButtonOver(page, {
+			row: newest,
+			towardBoundary: 100,
+		});
+		await expect
+			.poll(() => roomAboveComposer(scroller))
+			.toBe(`${BUTTON_ROW_PX}px`);
+		await expect
+			.poll(() => bottomOf(newest))
+			.toBe(restingBottom - BUTTON_ROW_PX);
+		expect(await floorDistance(scroller)).toBeLessThanOrEqual(1);
+		const button = await refreshButton(page).boundingBox();
+		const composer = await page
+			.locator('[data-slot="message-composer"]')
+			.boundingBox();
+		if (!button || !composer)
+			throw new Error("the Refresh button or the composer has no box");
+		expect(button.y).toBeGreaterThan(restingBottom - BUTTON_ROW_PX);
+		expect(button.y + button.height).toBeLessThan(composer.y);
+
+		await wheel(page, pointer, -SCROLL_AWAY_PX);
+		await expect(refreshButton(page)).toBeHidden();
+		expect(await floorDistance(scroller)).toBe(SCROLL_AWAY_PX);
+		expect(await bottomOf(newest)).toBe(
+			restingBottom - BUTTON_ROW_PX + SCROLL_AWAY_PX,
+		);
+
+		await wheel(page, pointer, 100);
+		await expect(refreshButton(page)).toBeVisible();
+		expect(await bottomOf(newest)).toBe(restingBottom - BUTTON_ROW_PX);
+	});
+
+	test("a message sent from the floor lands above the button's room without closing it", async ({
+		page,
+	}) => {
+		await openConversation(page);
+		const scroller = page.locator(MESSAGES_SCROLLER);
+		const newest = page.locator(MESSAGE_ROW).last();
+		const restingBottom = await bottomOf(newest);
+		await revealButtonOver(page, { row: newest, towardBoundary: 100 });
+		await expect
+			.poll(() => roomAboveComposer(scroller))
+			.toBe(`${BUTTON_ROW_PX}px`);
+		await expect
+			.poll(() => bottomOf(newest))
+			.toBe(restingBottom - BUTTON_ROW_PX);
+
+		const rooms = await scroller.evaluateHandle((el: HTMLElement, room) => {
+			const seen = new Set<string>();
+			const sample = () => {
+				seen.add(el.style.getPropertyValue(room));
+				requestAnimationFrame(sample);
+			};
+			requestAnimationFrame(sample);
+			return seen;
+		}, ROOM_ABOVE_COMPOSER_PROPERTY);
+		const sent = `sent from the floor ${Date.now()}`;
+		await page.getByRole("textbox").fill(sent);
+		await page.getByRole("textbox").press("Enter");
+		await expect(newest).toContainText(sent);
+		await expect
+			.poll(() => bottomOf(newest))
+			.toBeCloseTo(restingBottom - BUTTON_ROW_PX, 0);
+		await expect(refreshButton(page)).toBeVisible();
+		expect(await rooms.evaluate((seen) => [...seen])).toEqual([
+			`${BUTTON_ROW_PX}px`,
+		]);
+	});
+
+	test("a message sent while the button's room is still opening lands on the floor all the same", async ({
+		page,
+	}) => {
+		await openConversation(page);
+		const scroller = page.locator(MESSAGES_SCROLLER);
+		const newest = page.locator(MESSAGE_ROW).last();
+		const sent = `sent while the room opens ${Date.now()}`;
+		await page.getByRole("textbox").fill(sent);
+		const box = await newest.boundingBox();
+		if (!box) throw new Error("the newest message is not on screen");
+
+		await wheel(
+			page,
+			{ x: box.x + box.width / 2, y: box.y + box.height / 2 },
+			100,
+		);
+		await page.getByRole("textbox").press("Enter");
+
+		await expect(newest).toContainText(sent);
+		await expect
+			.poll(() => roomAboveComposer(scroller))
+			.toBe(`${BUTTON_ROW_PX}px`);
+		await expect.poll(() => floorDistance(scroller)).toBeLessThanOrEqual(1);
+		await expect(refreshButton(page)).toBeVisible();
+	});
+
+	for (const surface of [
+		{
+			name: "an inbox",
+			open: openInbox,
+			scroller: CONVERSATIONS_SCROLLER,
+			nearestRow: (page: Page) => page.locator(CONVERSATION_ROW).first(),
+			edgeOf: topOf,
+			towardBoundary: -100,
+			shift: BUTTON_ROW_PX,
+		},
+		{
+			name: "a conversation",
+			open: openConversation,
+			scroller: MESSAGES_SCROLLER,
+			nearestRow: (page: Page) => page.locator(MESSAGE_ROW).last(),
+			edgeOf: bottomOf,
+			towardBoundary: 100,
+			shift: -BUTTON_ROW_PX,
+		},
+	]) {
+		test(`${surface.name} shorter than the screen makes the button's room out of its spare height, and never out of new scroll range while the list slides`, async ({
+			page,
+		}) => {
+			await page.setViewportSize(SCREEN_TALLER_THAN_ITS_CONTENT);
+			await surface.open(page);
+			const scroller = page.locator(surface.scroller);
+			const row = surface.nearestRow(page);
+			const restingEdge = await surface.edgeOf(row);
+			const restingRange = await scrollRange(scroller);
+			expect(restingRange).toBeLessThanOrEqual(1);
+			const ranges = await scroller.evaluateHandle((el) => {
+				const seen: number[] = [];
+				const sample = () => {
+					seen.push(el.scrollHeight - el.clientHeight);
+					requestAnimationFrame(sample);
+				};
+				requestAnimationFrame(sample);
+				return seen;
+			});
+
+			const pointer = await revealButtonOver(page, {
+				row,
+				towardBoundary: surface.towardBoundary,
+			});
+			await expect
+				.poll(() => surface.edgeOf(row))
+				.toBe(restingEdge + surface.shift);
+			expect(await scrollRange(scroller)).toBe(restingRange);
+
+			await wheel(page, pointer, -surface.towardBoundary, {
+				steps: 2,
+				gapMs: 30,
+			});
+			await expect(refreshButton(page)).toBeHidden();
+			await expect.poll(() => slidingContent(scroller)).toBe(0);
+
+			const seen = await ranges.evaluate((list) => [...list]);
+			expect(seen.length).toBeGreaterThan(2);
+			expect(Math.max(...seen)).toBeLessThanOrEqual(restingRange);
+		});
+	}
 });

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 
 import { fromBase64 } from "$lib/util/base64";
 import {
+	isProxiedMediaUrl,
 	profileMediaUrl,
 	proxyMediaUrl,
 	unproxyMediaUrl,
@@ -153,4 +154,22 @@ describe("unproxyMediaUrl", () => {
 
 		expect(unproxyMediaUrl(smuggled)).toBe(smuggled);
 	});
+});
+
+describe("isProxiedMediaUrl", () => {
+	it.each(["macos", "android"])(
+		"recognizes the form the proxy takes on %s",
+		(osName) => {
+			runningOn(osName);
+
+			expect(isProxiedMediaUrl(new URL(proxyMediaUrl(PHOTO)))).toBe(true);
+		},
+	);
+
+	it.each([PHOTO, "http://tauri.localhost/", "tauri://localhost/chat"])(
+		"tells %s apart from proxied media",
+		(url) => {
+			expect(isProxiedMediaUrl(new URL(url))).toBe(false);
+		},
+	);
 });

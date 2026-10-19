@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { MagnifyingGlassIcon, XIcon } from "phosphor-svelte";
+	import MagnifyingGlassIcon from "phosphor-svelte/lib/MagnifyingGlassIcon";
+	import XIcon from "phosphor-svelte/lib/XIcon";
 
 	import { Button } from "$lib/components/ui/button";
 	import { Input } from "$lib/components/ui/input";

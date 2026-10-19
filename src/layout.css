@@ -3,7 +3,8 @@
 @import "shadcn-svelte/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
-@custom-variant can-hover (@media (hover: hover) and (pointer: fine));
+@custom-variant hover (&:hover:where([data-hover-pointer] *));
+@custom-variant can-hover (&:where([data-hover-pointer] *));
 
 /* The "Nearby" palette (design_handoff_nearby_app/README.md § Design tokens).
    Hex values are copied verbatim from the handoff table so the two can be
@@ -72,6 +73,8 @@
 	--media-placeholder-foreground: #847f77;
 	/* Chat's list pane width. Read back by +layout@(protected).svelte to size
 	   the resizable pane, so it has to stay a plain length. */
+	--stack-scrim: 0.8;
+	--stack-edge: -1px 0 0 oklch(1 0 0 / 10%);
 	--list-rail: 117px;
 	--safe-area-top: 0px;
 	--safe-area-bottom: 0px;
@@ -329,7 +332,13 @@
 	   inside a padded container (the attachments sheet) rather than edge to
 	   edge, so the spacing around the tiles reads as one value. */
 	--spacing-gutter: 2px;
-	--radius-chat-panel: 27px;
+	--radius-chat-panel: 30px;
+
+	--z-index-modal: 130000;
+	--z-index-drop: 135000;
+	--z-index-toast: 140000;
+	--z-index-popover: 145000;
+	--z-index-safe-area: 150000;
 
 	--spacing-count-badge: 5.5px;
 
@@ -338,6 +347,8 @@
 
 	/* overlap that seams an SVG message tail onto its bubble */
 	--spacing-hairline: 0.5px;
+
+	--border-width-hairline: 0.5px;
 }
 
 /* .photo-grid column-count thresholds, queried against the nearest
@@ -351,6 +362,16 @@
 	--container-grid5: 736px;
 	--container-grid6: 992px;
 	--container-grid7: 1248px;
+}
+
+@theme {
+	--container-gif2: 200px;
+	--container-gif3: 320px;
+	--container-gaymoji4: 240px;
+	--container-gaymoji5: 320px;
+	--container-gaymoji6: 448px;
+	--container-gaymoji7: 560px;
+	--container-gaymoji8: 672px;
 }
 
 @layer base {
@@ -843,7 +864,12 @@ a {
 /* 1px past full height keeps a scroll container technically scrollable, so
    a native rubber band (and with it pull-to-refresh) works on short content */
 @utility min-h-overscrollable {
-	min-height: calc(100% + 1px);
+	min-height: calc(
+		100% + 1px - var(--refresh-inset-top, 0px) -
+			var(--refresh-inset-bottom, 0px)
+	);
+	margin-top: var(--refresh-inset-top, 0px);
+	margin-bottom: var(--refresh-inset-bottom, 0px);
 }
 
 @utility screen-nav-host {
@@ -863,10 +889,44 @@ a {
 	contain-intrinsic-block-size: auto var(--offscreen-block-size);
 }
 
+[data-covered] {
+	content-visibility: hidden;
+}
+
+@supports not (content-visibility: hidden) {
+	[data-covered] {
+		visibility: hidden;
+	}
+}
+
 [data-sonner-toaster] {
 	font-family: var(--font-sans) !important;
+	z-index: var(--z-index-toast) !important;
 	/* bits-ui modal dialogs set body { pointer-events: none }; toasts must stay tappable */
 	pointer-events: auto;
+}
+
+[data-sonner-toaster][data-y-position="bottom"] {
+	transition:
+		transform 400ms ease,
+		bottom 300ms ease-out;
+}
+
+[data-sonner-toaster][data-y-position="bottom"][data-sheet-anchored] {
+	bottom: min(
+		max(var(--offset-bottom), var(--sheet-anchor, 0px)),
+		calc(
+			100dvh - var(--safe-area-top) - 0.5rem -
+				var(--toast-stack-height, 0px)
+		)
+	);
+	transition: transform 400ms ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	[data-sonner-toaster][data-y-position="bottom"] {
+		transition: none;
+	}
 }
 
 .toast[data-styled="true"] {
@@ -874,10 +934,6 @@ a {
 	color: var(--popover) !important;
 	border-radius: 1.25rem !important;
 	border: 1px solid var(--color-border) !important;
-}
-
-[data-sonner-toaster][data-y-position="top"] {
-	z-index: 149999;
 }
 
 /* The bubble is a small centered pill, but sonner's row spans the full width —
@@ -1024,8 +1080,8 @@ a {
 	--bd-panel: blur(24px);
 	--bd-chip: blur(40px);
 	--pill-frost: url(#frost-pill-40);
-	--chip-frost: url(#frost-tile) url(#frost-round-40);
-	--veil-frost: url(#frost-tile) url(#frost-round-8);
+	--chip-frost: url(#frost-tile-6) url(#frost-round-40);
+	--veil-frost: url(#frost-tile-1) url(#frost-round-8);
 	--glass-controls-bg: rgba(0, 0, 0, 0.4);
 	--glass-controls-subdued-bg: rgba(0, 0, 0, 0.2);
 	--scrim: none;
@@ -1036,7 +1092,7 @@ a {
 	--bd-panel: blur(16px);
 	--bd-chip: blur(24px);
 	--pill-frost: url(#frost-pill-24);
-	--chip-frost: url(#frost-tile) url(#frost-round-24);
+	--chip-frost: url(#frost-tile-6) url(#frost-round-24);
 	--bar-content-gap: 0.75rem;
 }
 

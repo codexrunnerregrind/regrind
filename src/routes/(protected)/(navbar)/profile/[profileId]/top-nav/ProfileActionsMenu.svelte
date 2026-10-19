@@ -1,17 +1,17 @@
 <script lang="ts">
-	import {
-		CopyIcon,
-		DotsThreeIcon,
-		EyeSlashIcon,
-		FlagIcon,
-		MapPinIcon,
-		ProhibitIcon,
-	} from "phosphor-svelte";
+	import CopyIcon from "phosphor-svelte/lib/CopyIcon";
+	import DotsThreeIcon from "phosphor-svelte/lib/DotsThreeIcon";
+	import EyeSlashIcon from "phosphor-svelte/lib/EyeSlashIcon";
+	import FlagIcon from "phosphor-svelte/lib/FlagIcon";
+	import MapPinIcon from "phosphor-svelte/lib/MapPinIcon";
+	import ProhibitIcon from "phosphor-svelte/lib/ProhibitIcon";
 	import { toast } from "svelte-sonner";
 
+	import { blockUser } from "$lib/api/browse/blocks";
 	import { hideUser } from "$lib/api/browse/hides";
 	import { showErrorToast } from "$lib/api/error-toast";
 	import BlockProfileDialog from "$lib/components/profile/BlockProfileDialog.svelte";
+	import { showBlockFailure } from "$lib/components/report/block-failure";
 	import ReportSheet from "$lib/components/report/ReportSheet.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
@@ -20,31 +20,41 @@
 		LocationUnavailableError,
 	} from "$lib/location/trilaterate";
 	import { openExternalLink } from "$lib/platform/link-opener";
+	import {
+		applyViewabilityChange,
+		type PendingViewabilityChange,
+	} from "../profile-state.svelte";
 
 	let {
 		profileId,
 		name = null,
 		distance = null,
-		blockable,
-		onBlocked,
-		onHidden,
+		changingViewability,
+		markBlocked,
+		markHidden,
 	}: {
 		profileId: number;
 		name?: string | null;
 		distance?: number | null;
-		blockable: boolean;
-		onBlocked: () => void;
-		onHidden: () => void;
+		changingViewability: boolean;
+		markBlocked: () => PendingViewabilityChange;
+		markHidden: () => PendingViewabilityChange;
 	} = $props();
 
-	let submitting = $state(false);
 	let locating = $state(false);
 	let blockOpen = $state(false);
 	let reportOpen = $state(false);
 
-	// "View on map" is a hidden power-user tool. A normal tap opens the menu
-	// without it; press-and-hold the dots button for this long to reveal it.
-	// It hides again once the menu closes, so it never lingers after a plain tap.
+	function block() {
+		void applyViewabilityChange({
+			change: markBlocked,
+			request: () => blockUser({ profileId }),
+			showFailure: showBlockFailure,
+		});
+	}
+
+	// "View on map" is a hidden power-user tool: press-and-hold the dots button
+	// to reveal it. It hides again once the menu closes.
 	const LONG_PRESS_MS = 500;
 	let menuOpen = $state(false);
 	let mapUnlocked = $state(false);
@@ -67,9 +77,8 @@
 		if (!menuOpen) mapUnlocked = false;
 	});
 
-	// Listeners go on the wrapper in the capture phase, added imperatively so the
-	// trigger's own open behaviour is never touched and no handlers land on a
-	// non-interactive element in markup.
+	// Capture-phase listeners on the wrapper, so the trigger's own open
+	// behaviour is untouched.
 	$effect(() => {
 		const el = triggerWrap;
 		if (!el) return;
@@ -116,18 +125,15 @@
 	}
 </script>
 
-<!-- The long-press detection lives on this wrapper (see the capture-phase
-	listeners in the effect above) so it never alters the trigger's open behaviour. -->
 <div class="contents" bind:this={triggerWrap}>
 	<DropdownMenu.Root bind:open={menuOpen}>
-		<DropdownMenu.Trigger>
+		<DropdownMenu.Trigger disabled={changingViewability || locating}>
 			{#snippet child({ props: { class: className, ...props } })}
 				<Button
 					size="icon-lg"
 					variant="secondary"
 					aria-label="Profile menu"
 					class={[className, "size-12"]}
-					disabled={submitting || locating}
 					{...props}
 				>
 					<DotsThreeIcon class="size-8" />
@@ -165,36 +171,31 @@
 				Report profile
 			</DropdownMenu.Item>
 			<DropdownMenu.Item
-				disabled={submitting}
-				onSelect={async () => {
-					if (submitting) return;
-					submitting = true;
-					try {
-						await hideUser({ profileId });
-						onHidden();
-					} catch (error) {
-						console.error(error);
-						showErrorToast({ label: "Failed to hide user", error });
-					} finally {
-						submitting = false;
-					}
-				}}
+				onSelect={() =>
+					applyViewabilityChange({
+						change: markHidden,
+						request: () => hideUser({ profileId }),
+						failureLabel: "Failed to hide user",
+					})}
 			>
 				<EyeSlashIcon class="size-5" />
 				Hide profile
 			</DropdownMenu.Item>
-			{#if blockable}
-				<DropdownMenu.Item
-					variant="destructive"
-					onSelect={() => (blockOpen = true)}
-				>
-					<ProhibitIcon class="size-5" />
-					Block profile
-				</DropdownMenu.Item>
-			{/if}
+			<DropdownMenu.Item
+				variant="destructive"
+				onSelect={() => (blockOpen = true)}
+			>
+				<ProhibitIcon class="size-5" />
+				Block profile
+			</DropdownMenu.Item>
 		</DropdownMenu.Content>
 	</DropdownMenu.Root>
 </div>
 
-<BlockProfileDialog bind:open={blockOpen} {profileId} {name} {onBlocked} />
-<ReportSheet bind:open={reportOpen} {profileId} {blockable} {onBlocked} />
+<BlockProfileDialog
+	bind:open={blockOpen}
+	{profileId}
+	{name}
+	onConfirm={block}
+/>
+<ReportSheet bind:open={reportOpen} {profileId} onBlock={block} />

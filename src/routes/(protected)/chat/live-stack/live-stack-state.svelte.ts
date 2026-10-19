@@ -1,12 +1,10 @@
 import { tick } from "svelte";
 import type { NavigationTarget, OnNavigate } from "@sveltejs/kit";
 
-import {
-	CANCEL_EASING,
-	COMMIT_EASING,
-} from "$lib/components/navigation/stack/motion";
 import { StackSettle } from "$lib/components/navigation/stack/settle";
+import { Generation } from "$lib/util/generation";
 import { isWithin } from "$lib/util/pathname";
+import type { StackMotion } from "$lib/components/navigation/stack/motion";
 import type { StackSurface } from "$lib/components/navigation/stack/surface";
 
 const BACK_WATCHDOG_MS = 1000;
@@ -25,13 +23,13 @@ export class LiveStackState {
 	readonly #keyboardVisible: () => boolean;
 	readonly #keyboardHidden: () => Promise<void>;
 
-	#generation = 0;
-	#backOwed = false;
-	#awaitingBack = false;
+	#generation = new Generation();
+	#committedSlide: Promise<boolean> | null = null;
 	#watchdog: ReturnType<typeof setTimeout> | undefined;
 
 	constructor({
 		surface,
+		motion,
 		top,
 		keyOf,
 		scope,
@@ -41,6 +39,7 @@ export class LiveStackState {
 		keyboardHidden,
 	}: {
 		surface: StackSurface;
+		motion: StackMotion;
 		top: () => string | null;
 		keyOf: (target: NavigationTarget) => string | null;
 		scope: string;
@@ -49,7 +48,7 @@ export class LiveStackState {
 		keyboardVisible: () => boolean;
 		keyboardHidden: () => Promise<void>;
 	}) {
-		this.#settle = new StackSettle({ surface, reducedMotion });
+		this.#settle = new StackSettle({ surface, motion, reducedMotion });
 		this.#top = top;
 		this.#keyOf = keyOf;
 		this.#scope = scope;
@@ -64,6 +63,10 @@ export class LiveStackState {
 		return this.#top() !== null && !this.moving && !this.tracking;
 	}
 
+	get sheetOpen(): boolean {
+		return this.#top() !== null;
+	}
+
 	get sheetKey(): string | null {
 		return this.leaving ?? this.#top();
 	}
@@ -76,11 +79,9 @@ export class LiveStackState {
 		const { from, to } = navigation;
 		if (!from || !to) return;
 
-		const generation = ++this.#generation;
+		const generation = this.#generation.next();
 		this.tracking = false;
-		this.#backOwed = false;
 		this.#clearWatchdog();
-		this.#settle.stop();
 
 		const fromKey = this.#keyOf(from);
 		const toKey = this.#keyOf(to);
@@ -90,13 +91,18 @@ export class LiveStackState {
 		const opens = fromKey === null && toKey !== null;
 		const closes = fromKey !== null && toKey === null;
 
-		const swipedBack = this.#awaitingBack && staysInScope && closes;
-		this.#awaitingBack = false;
-		if (swipedBack) {
+		const committedSlide = this.#committedSlide;
+		this.#committedSlide = null;
+		if (committedSlide && staysInScope && closes) {
+			this.leaving = fromKey;
 			return () => {
-				if (generation === this.#generation) this.#rest(null);
+				void committedSlide.then((settled) => {
+					if (settled && !this.#generation.isStale(generation))
+						this.#rest(null);
+				});
 			};
 		}
+		this.#settle.stop();
 
 		if (!staysInScope || !(opens || closes) || this.#reducedMotion()) {
 			this.#rest(toKey);
@@ -115,13 +121,14 @@ export class LiveStackState {
 		this.applyFrame();
 
 		return () => {
-			if (generation !== this.#generation) return;
+			if (this.#generation.isStale(generation)) return;
+			if (opens) this.leaving = null;
 			void this.#beforeSettle({ opens, waitForKeyboard }).then(() => {
-				if (generation !== this.#generation) return;
+				if (this.#generation.isStale(generation)) return;
 				void this.#settle
-					.settleTo({ target: opens ? 0 : 1, easing: COMMIT_EASING })
+					.settleTo({ target: opens ? 0 : 1, intent: "commit" })
 					.then((settled) => {
-						if (settled && generation === this.#generation)
+						if (settled && !this.#generation.isStale(generation))
 							this.#rest(toKey);
 					});
 			});
@@ -129,23 +136,16 @@ export class LiveStackState {
 	}
 
 	beginSwipeBack(): boolean {
-		if (this.#backOwed) {
-			this.#settle.stop();
-			this.#settle.track(1);
-			this.#payBack();
-			return false;
-		}
-
 		if (
 			this.#top() === null ||
 			this.leaving !== null ||
-			this.moving ||
+			(this.moving && !this.#settle.settlingIn) ||
 			!this.#backLandsOnBase()
 		)
 			return false;
 
-		this.#settle.stop();
-		this.#settle.progress = 0;
+		this.#settle.pickUp();
+		this.moving = false;
 		this.tracking = true;
 		void tick().then(() => this.applyFrame());
 		return true;
@@ -160,18 +160,15 @@ export class LiveStackState {
 		if (!this.tracking) return;
 		this.tracking = false;
 		this.moving = true;
-		this.#backOwed = true;
-		const generation = this.#generation;
-		void this.#settle
-			.settleTo({ target: 1, easing: COMMIT_EASING })
-			.then((settled) => {
-				if (
-					settled &&
-					generation === this.#generation &&
-					this.#backOwed
-				)
-					this.#payBack();
-			});
+		this.#committedSlide = this.#settle.settleTo({
+			target: 1,
+			intent: "commit",
+		});
+		this.#watchdog = setTimeout(
+			() => this.#abandonBack(),
+			BACK_WATCHDOG_MS,
+		);
+		history.back();
 	}
 
 	cancelSwipeBack(): void {
@@ -182,37 +179,25 @@ export class LiveStackState {
 	}
 
 	dispose(): void {
-		this.#generation++;
-		this.#backOwed = false;
+		this.#generation.next();
 		this.#settle.stop();
 		this.#clearWatchdog();
-		this.#awaitingBack = false;
+		this.#committedSlide = null;
 		this.tracking = false;
-	}
-
-	#payBack(): void {
-		this.#backOwed = false;
-		this.#awaitingBack = true;
-		this.#watchdog = setTimeout(
-			() => this.#abandonBack(),
-			BACK_WATCHDOG_MS,
-		);
-		history.back();
 	}
 
 	#abandonBack(): void {
 		this.#watchdog = undefined;
-		if (!this.#awaitingBack) return;
-		this.#awaitingBack = false;
+		this.#committedSlide = null;
 		this.#returnToCovered();
 	}
 
 	#returnToCovered(): void {
-		const generation = this.#generation;
+		const generation = this.#generation.current;
 		void this.#settle
-			.settleTo({ target: 0, easing: CANCEL_EASING })
+			.settleTo({ target: 0, intent: "cancel" })
 			.then((settled) => {
-				if (settled && generation === this.#generation)
+				if (settled && !this.#generation.isStale(generation))
 					this.moving = false;
 			});
 	}

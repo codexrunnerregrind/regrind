@@ -1,5 +1,8 @@
 import type { HTMLAttributes } from "svelte/elements";
 
+import { playHaptic } from "$lib/haptics";
+import { firedByTouch } from "$lib/platform/touch-origin";
+
 const LONG_PRESS_DURATION_MS = 450;
 const LONG_PRESS_MOVE_TOLERANCE_PX = 12;
 // iOS WebKit does not reliably fire `dblclick` for touch, so we synthesize a
@@ -11,13 +14,21 @@ const NATIVE_CONTEXTMENU_DELAY_MS = 500;
 const CLICK_SUPPRESS_MS = 700;
 
 let lastFiredAt = 0;
+let heldTouchUntil = 0;
 let suppressClickUntil = 0;
-let clickSuppressorAttached = false;
+let documentListenersAttached = false;
 
-function fireOnce(onLongPress: () => void): void {
+function fireOnce({
+	onLongPress,
+	byTouch,
+}: {
+	onLongPress: () => void;
+	byTouch: boolean;
+}): void {
 	const now = Date.now();
 	if (now - lastFiredAt < NATIVE_CONTEXTMENU_DELAY_MS) return;
 	lastFiredAt = now;
+	if (byTouch) playHaptic("longPress");
 	onLongPress();
 }
 
@@ -32,11 +43,32 @@ function onGlobalClickCapture(event: MouseEvent): void {
 	event.stopPropagation();
 }
 
+function onGlobalPointerDownCapture(): void {
+	suppressClickUntil = 0;
+}
+
 function suppressNextClick(): void {
 	suppressClickUntil = Date.now() + CLICK_SUPPRESS_MS;
-	if (clickSuppressorAttached || typeof document === "undefined") return;
-	clickSuppressorAttached = true;
+	if (documentListenersAttached || typeof document === "undefined") return;
+	documentListenersAttached = true;
 	document.addEventListener("click", onGlobalClickCapture, { capture: true });
+	document.addEventListener("pointerdown", onGlobalPointerDownCapture, {
+		capture: true,
+	});
+}
+
+// Chromium follows a held touch with its own contextmenu, and WebKitGTK sends
+// one typed as a mouse when the finger lifts: both belong to the fired hold.
+function holdTouch(): void {
+	heldTouchUntil = Number.POSITIVE_INFINITY;
+	if (typeof window === "undefined") return;
+	const release = () => {
+		heldTouchUntil = Date.now() + NATIVE_CONTEXTMENU_DELAY_MS;
+		window.removeEventListener("pointerup", release, true);
+		window.removeEventListener("pointercancel", release, true);
+	};
+	window.addEventListener("pointerup", release, true);
+	window.addEventListener("pointercancel", release, true);
 }
 
 type LongPressHandlers = Pick<
@@ -62,6 +94,7 @@ export function longPressHandlers(
 	let timer: ReturnType<typeof setTimeout> | null = null;
 	let originX = 0;
 	let originY = 0;
+	let pressing = false;
 	let pressConsumed = false;
 	let lastTapAt = 0;
 	let lastTapX = 0;
@@ -91,13 +124,16 @@ export function longPressHandlers(
 			pressConsumed = false;
 			cancel();
 			if (event.pointerType === "mouse") return;
+			pressing = true;
 			originX = event.clientX;
 			originY = event.clientY;
+			const byTouch = firedByTouch(event);
 			timer = setTimeout(() => {
 				timer = null;
 				pressConsumed = true;
 				cancelReplay();
-				fireOnce(onLongPress);
+				holdTouch();
+				fireOnce({ onLongPress, byTouch });
 			}, LONG_PRESS_DURATION_MS);
 		},
 		onpointermove(event) {
@@ -111,6 +147,7 @@ export function longPressHandlers(
 			}
 		},
 		onpointerup(event) {
+			pressing = false;
 			cancel();
 			if (event.pointerType === "mouse") return;
 			if (pressConsumed) {
@@ -165,16 +202,24 @@ export function longPressHandlers(
 			}, DOUBLE_TAP_MAX_GAP_MS);
 		},
 		onpointercancel() {
+			pressing = false;
 			cancel();
 			cancelReplay();
 		},
 		oncontextmenu(event) {
 			event.preventDefault();
 			cancel();
-			if (!pressConsumed) {
-				pressConsumed = true;
-				fireOnce(onLongPress);
+			if (Date.now() < heldTouchUntil) return;
+			if (pressing && pressConsumed) return;
+			pressConsumed = true;
+			const { pointerType } = event as Partial<PointerEvent>;
+			if (pointerType === "mouse" || pointerType === "") {
+				onLongPress();
+				return;
 			}
+			const byTouch = firedByTouch(event);
+			if (byTouch) holdTouch();
+			fireOnce({ onLongPress, byTouch });
 		},
 	};
 }

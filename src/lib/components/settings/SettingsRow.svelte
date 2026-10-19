@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { ArrowSquareOutIcon, CaretRightIcon } from "phosphor-svelte";
+	import ArrowSquareOutIcon from "phosphor-svelte/lib/ArrowSquareOutIcon";
+	import CaretRightIcon from "phosphor-svelte/lib/CaretRightIcon";
 
 	import IconTile from "./IconTile.svelte";
 

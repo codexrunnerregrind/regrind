@@ -50,7 +50,10 @@
 		]}
 		{@attach bottomChrome}
 	>
-		<nav class="flex w-full flex-row items-center gap-2.5">
+		<nav
+			aria-label="Chat and tap"
+			class="flex w-full flex-row items-center gap-2.5"
+		>
 			<OpenConversationButton {profileId} {ourProfileId} />
 			<TapProfileButton {profileId} {tapType} {onTap} />
 		</nav>

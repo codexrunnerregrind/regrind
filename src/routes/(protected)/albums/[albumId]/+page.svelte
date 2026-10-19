@@ -1,13 +1,11 @@
 <script lang="ts">
 	import { page } from "$app/state";
-	import {
-		ArrowLeftIcon,
-		DownloadSimpleIcon,
-		ImageIcon,
-		PencilSimpleIcon,
-		TrashIcon,
-		UsersIcon,
-	} from "phosphor-svelte";
+	import ArrowLeftIcon from "phosphor-svelte/lib/ArrowLeftIcon";
+	import DownloadSimpleIcon from "phosphor-svelte/lib/DownloadSimpleIcon";
+	import ImageIcon from "phosphor-svelte/lib/ImageIcon";
+	import PencilSimpleIcon from "phosphor-svelte/lib/PencilSimpleIcon";
+	import TrashIcon from "phosphor-svelte/lib/TrashIcon";
+	import UsersIcon from "phosphor-svelte/lib/UsersIcon";
 	import { toast } from "svelte-sonner";
 
 	import { showErrorToast } from "$lib/api/error-toast";

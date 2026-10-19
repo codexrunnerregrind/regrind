@@ -7,14 +7,14 @@ import {
 	HEIGHT_CM_MAX,
 	HEIGHT_CM_MIN,
 	isFilterableGenderId,
-	isFilterableTagKey,
-	isFilterableTribe,
 	isFullRange,
 	WEIGHT_GRAMS_MAX,
 	WEIGHT_GRAMS_MIN,
 	WEIGHT_KG_MAX,
 	WEIGHT_KG_MIN,
 } from "$lib/model/browse/grid/filters";
+import { isTribeOffered } from "$lib/model/users/profiles";
+import { isTagKeyOffered } from "$lib/model/users/tags";
 import type { cascadeV4QuerySchema } from "$lib/model/browse/grid/cascade/query/v4";
 
 const sendable = <T>({ enabled, values }: { enabled: boolean; values: T[] }) =>
@@ -40,30 +40,46 @@ const weightGrams = ({
 	kg: number | undefined;
 	end: number;
 	endGrams: number;
-}) => (kg === undefined || kg === end ? endGrams : kg * 1000);
+}) => (kg === undefined || kg === end ? endGrams : Math.round(kg * 1000));
 
 type CascadeQuery = z.infer<typeof cascadeV4QuerySchema>;
 type CascadeFilters = Omit<CascadeQuery, "nearbyGeoHash">;
+export type CascadeFilterKey = keyof CascadeFilters;
 
 export function buildCascadeQuery({
 	geohash,
 	filters,
+	genderFilterFlag,
 }: {
 	geohash: string;
 	filters: GridSearchFilters | null;
+	genderFilterFlag: boolean;
 }): CascadeQuery {
-	return { nearbyGeoHash: geohash, ...(filters && cascadeFilters(filters)) };
+	return {
+		nearbyGeoHash: geohash,
+		...(filters && cascadeFilters({ filters, genderFilterFlag })),
+	};
 }
 
-export function sentFilterKeys(
-	filters: GridSearchFilters,
-): (keyof CascadeFilters)[] {
-	return Object.entries(cascadeFilters(filters))
+export function sentFilterKeys({
+	filters,
+	genderFilterFlag,
+}: {
+	filters: GridSearchFilters;
+	genderFilterFlag: boolean;
+}): CascadeFilterKey[] {
+	return Object.entries(cascadeFilters({ filters, genderFilterFlag }))
 		.filter(([, value]) => value !== undefined)
-		.map(([key]) => key as keyof CascadeFilters);
+		.map(([key]) => key as CascadeFilterKey);
 }
 
-function cascadeFilters(filters: GridSearchFilters): CascadeFilters {
+function cascadeFilters({
+	filters,
+	genderFilterFlag,
+}: {
+	filters: GridSearchFilters;
+	genderFilterFlag: boolean;
+}): CascadeFilters {
 	const age = sendableRange({
 		enabled: filters.ageEnabled,
 		range: filters.age,
@@ -107,7 +123,13 @@ function cascadeFilters(filters: GridSearchFilters): CascadeFilters {
 			undefined,
 		tribes: sendable({
 			enabled: filters.tribesEnabled,
-			values: filters.tribes.filter(isFilterableTribe),
+			values: filters.tribes.filter((id) =>
+				isTribeOffered({ id, genderFilterFlag }),
+			),
+		}),
+		tribesImInto: sendable({
+			enabled: filters.tribesImIntoEnabled,
+			values: filters.tribesImInto,
 		}),
 		bodyTypes: sendable({
 			enabled: filters.bodyTypesEnabled,
@@ -149,7 +171,9 @@ function cascadeFilters(filters: GridSearchFilters): CascadeFilters {
 		}),
 		tags: sendable({
 			enabled: filters.tagsEnabled,
-			values: filters.tags.filter(isFilterableTagKey),
+			values: filters.tags.filter((key) =>
+				isTagKeyOffered({ key, genderFilterFlag }),
+			),
 		}),
 		fresh: filters.isFresh || undefined,
 	};

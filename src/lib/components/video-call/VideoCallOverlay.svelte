@@ -1,12 +1,10 @@
 <script lang="ts">
-	import {
-		CameraRotateIcon,
-		MicrophoneIcon,
-		MicrophoneSlashIcon,
-		PhoneSlashIcon,
-		VideoCameraIcon,
-		VideoCameraSlashIcon,
-	} from "phosphor-svelte";
+	import CameraRotateIcon from "phosphor-svelte/lib/CameraRotateIcon";
+	import MicrophoneIcon from "phosphor-svelte/lib/MicrophoneIcon";
+	import MicrophoneSlashIcon from "phosphor-svelte/lib/MicrophoneSlashIcon";
+	import PhoneSlashIcon from "phosphor-svelte/lib/PhoneSlashIcon";
+	import VideoCameraIcon from "phosphor-svelte/lib/VideoCameraIcon";
+	import VideoCameraSlashIcon from "phosphor-svelte/lib/VideoCameraSlashIcon";
 	import type { Snippet } from "svelte";
 
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";

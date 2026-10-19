@@ -1,10 +1,8 @@
 <script lang="ts">
-	import {
-		ClockIcon,
-		ImageBrokenIcon,
-		ImagesIcon,
-		VideoIcon,
-	} from "phosphor-svelte";
+	import ClockIcon from "phosphor-svelte/lib/ClockIcon";
+	import ImageBrokenIcon from "phosphor-svelte/lib/ImageBrokenIcon";
+	import ImagesIcon from "phosphor-svelte/lib/ImagesIcon";
+	import VideoIcon from "phosphor-svelte/lib/VideoIcon";
 	import { toast } from "svelte-sonner";
 
 	import { showErrorToast } from "$lib/api/error-toast";
@@ -21,11 +19,13 @@
 	import LockIcon from "$lib/components/shared/LockIcon.svelte";
 	import { profileMediaUrl } from "$lib/util/media";
 	import { getNow } from "$lib/util/now";
+	import { parseSignedUrl } from "$lib/util/signed-url";
 	import type { AlbumMessage } from "$lib/model/messaging/messages";
 	import { getConversationState } from "../../conversation-state.svelte";
 	import { albumExpiry } from "./album-expiry";
 	import { getMessageContext } from "./context";
 	import LockedMedia from "./LockedMedia.svelte";
+	import { mediaRenewal } from "./media-renewal";
 	import { MessageMediaState } from "./message-media.svelte";
 
 	const ALBUM_MEMO_TTL_MS = 10 * 60 * 1000;
@@ -105,7 +105,9 @@
 	// locked for them, not for us. The message's `coverUrl` stands in until that
 	// lands, and only as long as the signature it was sent with holds.
 	let freshCover = $state<string | null>(null);
-	let coverBroken = $state(false);
+	// Keyed by url, so a renewed signature gets its own try.
+	let brokenCover = $state<string | null>(null);
+	const renewMedia = mediaRenewal();
 
 	// Somebody else's locked album is the case where the sent-with signature has
 	// almost always lapsed, and the browser takes seconds to give up on the dead
@@ -115,7 +117,10 @@
 	const staleCover = $derived(!isViewable && !isOurs);
 
 	const preview = $derived(
-		freshCover ?? (coverBroken || staleCover ? null : message.coverUrl),
+		freshCover ??
+			(brokenCover === message.coverUrl || staleCover
+				? null
+				: message.coverUrl),
 	);
 
 	$effect(() => {
@@ -230,7 +235,10 @@
 			class="chat-media-tint absolute top-0 left-0 h-full w-full rounded-[inherit] object-cover"
 			draggable="false"
 			onerror={() => {
-				coverBroken = true;
+				const signed =
+					preview !== null && parseSignedUrl(preview) !== null;
+				brokenCover = message.coverUrl;
+				if (signed) void renewMedia?.();
 			}}
 		/>
 	{:else if isViewable}

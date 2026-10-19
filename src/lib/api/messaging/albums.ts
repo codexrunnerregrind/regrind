@@ -170,6 +170,19 @@ export async function deleteAlbumContent({
 	}).then((res) => res.assertOk());
 }
 
+export async function addDrawerMediaToAlbum({
+	albumId,
+	mediaIds,
+}: {
+	albumId: number;
+	mediaIds: number[];
+}) {
+	await fetchRest(
+		`/v1/albums/${albumId}/content/chat/list-by-id?isFresh=false`,
+		{ method: "POST", body: { ids: mediaIds } },
+	).then((res) => res.assertOk());
+}
+
 export async function reorderAlbumContent({
 	albumId,
 	contentIds,
@@ -213,13 +226,11 @@ export async function uploadAlbumContent({
 		onHashed?.(uploaded.sha256);
 		return uploaded;
 	}
-	if (media.source === "web") {
-		throw new Error("A file picked in the browser has no native path");
-	}
+	const file = mediaFileDescriptor(media);
 	const { response, sha256 } = await uploadFileRest(
 		`/v1/albums/${albumId}/content?${albumContentQuery(inspection)}isFresh=false`,
 		{
-			file: mediaFileDescriptor(media),
+			file,
 			part: { name: "content", filename: "" },
 			maxBodySize: limits.maxContentSize,
 			profileId,

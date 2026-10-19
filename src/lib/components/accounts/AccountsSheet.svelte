@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
-	import { PlusIcon } from "phosphor-svelte";
+	import PlusIcon from "phosphor-svelte/lib/PlusIcon";
 	import { toast } from "svelte-sonner";
 
 	import {
@@ -38,7 +38,7 @@
 			open = false;
 			return false;
 		};
-		backGestureEventHandlers.add(onBackGesture);
+		backGestureEventHandlers.set(onBackGesture, "overlay");
 		return () => {
 			backGestureEventHandlers.delete(onBackGesture);
 		};

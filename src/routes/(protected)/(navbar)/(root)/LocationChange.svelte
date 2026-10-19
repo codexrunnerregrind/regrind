@@ -1,11 +1,9 @@
 <script lang="ts">
-	import {
-		CheckIcon,
-		GpsFixIcon,
-		ListIcon,
-		MapPinIcon,
-		StarIcon,
-	} from "phosphor-svelte";
+	import CheckIcon from "phosphor-svelte/lib/CheckIcon";
+	import GpsFixIcon from "phosphor-svelte/lib/GpsFixIcon";
+	import ListIcon from "phosphor-svelte/lib/ListIcon";
+	import MapPinIcon from "phosphor-svelte/lib/MapPinIcon";
+	import StarIcon from "phosphor-svelte/lib/StarIcon";
 	import { toast } from "svelte-sonner";
 
 	import { showErrorToast } from "$lib/api/error-toast";

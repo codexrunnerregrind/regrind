@@ -47,7 +47,7 @@
 			if (!working) cancel();
 			return false;
 		};
-		backGestureEventHandlers.add(onBackGesture);
+		backGestureEventHandlers.set(onBackGesture, "overlay");
 		return () => {
 			backGestureEventHandlers.delete(onBackGesture);
 		};

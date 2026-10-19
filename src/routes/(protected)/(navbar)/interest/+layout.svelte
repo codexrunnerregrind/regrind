@@ -96,6 +96,7 @@
      background let the tiles read straight through the title and tabs. -->
 <nav
 	bind:clientHeight={headerHeight}
+	aria-label="Interest"
 	data-fixed-header
 	class="fixed top-0 left-0 z-10 w-full bg-background px-screen pt-fixed-header"
 >

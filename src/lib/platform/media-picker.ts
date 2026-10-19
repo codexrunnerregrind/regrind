@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { readFile } from "@tauri-apps/plugin-fs";
 import { AndroidFs, type AndroidFsUri } from "tauri-plugin-android-fs-api";
@@ -45,6 +46,7 @@ export type MediaKind = keyof typeof filtersByKind;
 export type PickedMedia = { key: string; mimeType: string | null } & (
 	| { source: "android"; uri: AndroidFsUri }
 	| { source: "desktop"; path: string }
+	| { source: "staged"; id: string; file?: File }
 	| { source: "web"; file: File }
 );
 
@@ -68,6 +70,7 @@ export function nativeSource(media: PickedMedia): string | null {
 			return media.uri.uri;
 		case "desktop":
 			return media.path;
+		case "staged":
 		case "web":
 			return null;
 	}
@@ -81,6 +84,9 @@ export async function readMediaBytes(
 			return AndroidFs.readFile(media.uri);
 		case "desktop":
 			return readFile(media.path);
+		case "staged":
+			if (!media.file) throw new Error("Staged media has no local file");
+			return new Uint8Array(await media.file.arrayBuffer());
 		case "web":
 			return new Uint8Array(await media.file.arrayBuffer());
 	}
@@ -108,11 +114,7 @@ async function pick({
 	}
 
 	if (isAndroidPlatform()) {
-		const uris = await AndroidFs.showOpenFilePicker({
-			pickerType: "Gallery",
-			mimeTypes: filter.mimeTypes,
-			multiple,
-		});
+		const uris = await pickAndroidUris({ filter, multiple });
 		return Promise.all(
 			uris.map(
 				async (uri): Promise<PickedMedia> => ({
@@ -145,7 +147,30 @@ async function pick({
 	);
 }
 
-function mimeTypeFromPath(path: string): string | null {
+async function pickAndroidUris({
+	filter,
+	multiple,
+}: {
+	filter: MediaFilter;
+	multiple: boolean;
+}): Promise<AndroidFsUri[]> {
+	const picked = await invoke<string[] | null>("pick_android_media", {
+		mimeTypes: filter.mimeTypes,
+		multiple,
+	});
+	if (picked !== null) {
+		return picked.map(
+			(uri): AndroidFsUri => ({ uri, documentTopTreeUri: null }),
+		);
+	}
+	return AndroidFs.showOpenFilePicker({
+		pickerType: "Gallery",
+		mimeTypes: filter.mimeTypes,
+		multiple,
+	});
+}
+
+export function mimeTypeFromPath(path: string): string | null {
 	const extension = path.slice(path.lastIndexOf(".") + 1).toLowerCase();
 	return mimeTypesByExtension[extension] ?? null;
 }

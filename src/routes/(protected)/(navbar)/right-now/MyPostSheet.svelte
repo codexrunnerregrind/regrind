@@ -1,5 +1,8 @@
 <script lang="ts">
-	import { CameraIcon, ClockIcon, HouseIcon, XIcon } from "phosphor-svelte";
+	import CameraIcon from "phosphor-svelte/lib/CameraIcon";
+	import ClockIcon from "phosphor-svelte/lib/ClockIcon";
+	import HouseIcon from "phosphor-svelte/lib/HouseIcon";
+	import XIcon from "phosphor-svelte/lib/XIcon";
 	import { untrack } from "svelte";
 	import { toast } from "svelte-sonner";
 
@@ -75,7 +78,7 @@
 			open = false;
 			return false;
 		};
-		backGestureEventHandlers.add(onBackGesture);
+		backGestureEventHandlers.set(onBackGesture, "overlay");
 		return () => {
 			backGestureEventHandlers.delete(onBackGesture);
 		};

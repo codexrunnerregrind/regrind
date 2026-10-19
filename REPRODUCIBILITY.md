@@ -58,6 +58,7 @@ Every input that affects the output bytes is pinned in exactly one place:
 
 - **Canonical builder:** Linux x86_64; `nix run .#build-android`
 - **Official releases:** multiple providers in `build.yml` CI and F-Droid
+- **F-Droid:** per-ABI builds use [`ci/fdroid/build-android.sh`](./ci/fdroid/build-android.sh) instead of Nix, with Node.js from Debian. Node.js 20 to 26 build the same frontend; Bun's built-in `node` does not, so the script stops when `node` is missing
 - Cross-compilation table **for Android builds**:
 
     |            | On x86_64   | On arm64                 |
@@ -89,10 +90,10 @@ Needs `apksigcopier` and `apksigner`, both on `PATH` in `nix develop .#android`.
 # 1. Reproduce the unsigned APK locally
 git checkout v<tag>
 nix run .#build-android
-LOCAL="$(find src-tauri/gen/android/app/build/outputs/apk/universal/release -name '*-unsigned.apk')"
 
 # 2. Fetch from https://git.opengrind.org/open-grind/open-grind/releases
-PUBLISHED=/path/to/regrind-v<tag>-android.apk
+PUBLISHED=/path/to/regrind-v<tag>-android-arm64-v8a.apk
+LOCAL="$(find src-tauri/gen/android/app/build/outputs/apk -name "$(basename "$PUBLISHED" .apk)-unsigned.apk")"
 RELEASE_CERT=0266c7bf4936be5f94e96870755f5003c85ea27997098100bbcd55ca264e3940 # KEYS.md
 
 # 3. Confirm the content reproduces
@@ -137,6 +138,7 @@ fi
 ```bash
 # 1. Reproduce the app locally
 git checkout v<tag>
+rm -rf src-tauri/target/release/bundle/deb src-tauri/target/release/bundle/appimage
 podman build -t regrind-linux ci/linux
 podman run --rm -v "$PWD:/work" regrind-linux sh ci/linux/build.sh
 
@@ -233,56 +235,33 @@ fi
 
 - Pinned inputs:
 
-    | Component                         | Where it's pinned                                         |
-    | --------------------------------- | --------------------------------------------------------- |
-    | macOS C toolchain (clang, cc, ld) | `flake.lock` (nixpkgs clang wrapper)                      |
-    | macOS SDK                         | `flake.lock` (nixpkgs `apple-sdk`, exported as `SDKROOT`) |
-    | `plutil` (Info.plist)             | `flake.lock` (nixpkgs `xcbuild`)                          |
-    | Checkout path and `CARGO_HOME`    | remapped to `/regrind` and `/cargo` by `nix/common.nix`   |
+    | Component                                        | Where it's pinned                                         |
+    | ------------------------------------------------ | --------------------------------------------------------- |
+    | macOS C toolchain (clang, cc, ld)                | `flake.lock` (nixpkgs clang wrapper)                      |
+    | macOS SDK                                        | `flake.lock` (nixpkgs `apple-sdk`, exported as `SDKROOT`) |
+    | `plutil` (Info.plist)                            | `flake.lock` (nixpkgs `xcbuild`)                          |
+    | Checkout path and `CARGO_HOME`                   | remapped to `/regrind` and `/cargo` by `nix/common.nix`   |
+    | Ad-hoc signature                                 | `flake.lock` (nixpkgs `rcodesign`)                        |
+    | Zip archive                                      | `flake.lock` (nixpkgs `zip`)                              |
+    | `lipo`, `install_name_tool`, `codesign_allocate` | `flake.lock` (nixpkgs `cctools`)                          |
 
-`codesign` and `ditto` come from macOS itself and cannot be pinned by Nix. Neither affects the compiled code: `ditto` only packs the archive, and the signature is removed from both sides before comparing.
-
-A signature cannot be reproduced without its key, and removing one does not restore the pre-signing bytes, so both sides are brought to the same state instead: re-sign ad-hoc, remove that signature, delete the signature directory. That normalization is signing identity-independent. Stripping also hides the hardened runtime and the entitlements, so step 3 checks those first.
+Releases are signed ad-hoc by the pinned `rcodesign` and zipped by the pinned `zip`.
 
 ```bash
-# 1. Reproduce the app locally
+# 1. Reproduce the zip locally
 git checkout v<tag>
 nix run .#build-macos
-LOCAL="src-tauri/target/universal-apple-darwin/release/bundle/macos/Open Grind.app"
+LOCAL=src-tauri/target/release/artifacts/regrind-v<tag>-macos.zip
 
 # 2. Fetch from https://git.opengrind.org/open-grind/open-grind/releases
 PUBLISHED=/path/to/regrind-v<tag>-macos.zip
-WORK=$(mktemp -d)
-ditto -x -k "$PUBLISHED" "$WORK/published"
-APP="$(find "$WORK/published" -maxdepth 1 -name '*.app')"
 
-# 3. Confirm the published app is hardened as released
-if codesign -dvvv "$APP" 2>&1 | grep -q 'flags=.*runtime' &&
-  ! codesign -d --entitlements - --xml "$APP" 2>/dev/null | grep -q get-task-allow; then
-  echo "✓ hardened runtime on, no debug entitlement"
+# 3. Confirm the zip reproduces
+shasum -a 256 "$LOCAL" "$PUBLISHED"
+if cmp -s "$LOCAL" "$PUBLISHED"; then
+  echo "✓ zip matches"
 else
-  echo "✗ published app is not hardened as released, do not run it" >&2
-  exit 1
-fi
-
-# 4. Confirm the content reproduces
-app_content_hash() {
-  copy="$(mktemp -d)/app"
-  ditto "$1" "$copy"
-  codesign --force --deep --sign - "$copy" >/dev/null 2>&1
-  codesign --remove-signature "$copy" >/dev/null 2>&1
-  rm -rf "$copy/Contents/_CodeSignature" "$copy/Contents/CodeResources"
-  find "$copy" \! -type d | sort | while IFS= read -r entry; do
-    printf '%s  %s\n' \
-      "$(shasum -a 256 "$entry" | cut -c1-64)" \
-      "${entry#"$copy"}"
-  done
-}
-
-if diff <(app_content_hash "$LOCAL") <(app_content_hash "$APP"); then
-  echo "✓ app hash checksum matches"
-else
-  echo "✗ app hash checksum mismatch, local build does not match the published app" >&2
+  echo "✗ zip mismatch, local build does not match the published zip" >&2
   exit 1
 fi
 ```

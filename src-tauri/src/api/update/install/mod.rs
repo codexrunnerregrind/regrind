@@ -4,60 +4,17 @@ mod android;
 pub use android::AndroidUpdater;
 #[cfg(not(target_os = "android"))]
 mod desktop;
+mod hold;
 
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Runtime};
 
-use super::baseline::{Baseline, InstallKind};
-use super::component::{self, Component};
-use super::release::Candidate;
+use super::baseline::Baseline;
+use super::component::Component;
+use hold::TransferPurpose;
+pub use hold::{TransferHold, TransferProgress};
 
 #[cfg_attr(not(target_os = "android"), allow(dead_code))]
 const MEDIA_UPLOAD: &str = "mediaUpload";
-
-#[cfg_attr(not(target_os = "android"), allow(dead_code))]
-#[derive(Debug, Clone, Copy)]
-enum TransferPurpose {
-	Update {
-		package_name: &'static str,
-		kind: InstallKind,
-	},
-	MediaUpload,
-}
-
-pub struct TransferHold<'a, R: Runtime> {
-	app: &'a AppHandle<R>,
-	purpose: TransferPurpose,
-}
-
-impl<'a, R: Runtime> TransferHold<'a, R> {
-	pub fn update(app: &'a AppHandle<R>, candidate: &Candidate) -> Self {
-		let package_name = component::by_key(&candidate.component)
-			.map_or(component::SELF_PACKAGE, Component::install_target);
-		Self::begin(
-			app,
-			TransferPurpose::Update {
-				package_name,
-				kind: candidate.kind,
-			},
-		)
-	}
-
-	pub fn media_upload(app: &'a AppHandle<R>) -> Self {
-		Self::begin(app, TransferPurpose::MediaUpload)
-	}
-
-	fn begin(app: &'a AppHandle<R>, purpose: TransferPurpose) -> Self {
-		platform::begin_transfer(app, purpose);
-		Self { app, purpose }
-	}
-}
-
-impl<R: Runtime> Drop for TransferHold<'_, R> {
-	fn drop(&mut self) {
-		platform::end_transfer(self.app, self.purpose);
-	}
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(
@@ -120,16 +77,29 @@ pub struct Outcome {
 	pub message: Option<String>,
 }
 
+fn android_abi(arch: &str) -> Option<&'static str> {
+	match arch {
+		"aarch64" => Some("arm64-v8a"),
+		"arm" => Some("armeabi-v7a"),
+		"x86" => Some("x86"),
+		"x86_64" => Some("x86_64"),
+		_ => None,
+	}
+}
+
 fn suffix_for(os: &str, arch: &str) -> Option<String> {
-	let arch = match arch {
+	let desktop_arch = match arch {
 		"aarch64" => "arm64",
 		other => other,
 	};
 	match os {
-		"android" => Some("-android.apk".to_owned()),
+		"android" => Some(match android_abi(arch) {
+			Some(abi) => format!("-android-{abi}.apk"),
+			None => "-android.apk".to_owned(),
+		}),
 		"macos" => Some("-macos.zip".to_owned()),
-		"windows" => Some(format!("-windows-{arch}.exe")),
-		"linux" => Some(format!("-linux-{arch}.AppImage")),
+		"windows" => Some(format!("-windows-{desktop_arch}.exe")),
+		"linux" => Some(format!("-linux-{desktop_arch}.AppImage")),
 		_ => None,
 	}
 }
@@ -187,12 +157,14 @@ mod pins {
 	use super::{suffix_for, Unsupported};
 	use crate::pin_support::{
 		addon_gate_verdicts, assert_rejections_classify_as, braced_block,
-		is_identifier, kotlin_constant, kotlin_package, source_tokens,
-		spaced_match, squashed, ADDON_GATE, MANIFEST,
+		camel_case, is_identifier, kotlin_constant, kotlin_package,
+		source_tokens, spaced_match, squashed, ADDON_GATE, MANIFEST,
 	};
 
 	const KEYS: &str = include_str!("../../../../../KEYS.md");
 	const LINUX_BUILD: &str = include_str!("../../../../../ci/linux/build.sh");
+	const ANDROID_OUTPUTS: &str =
+		include_str!("../../../../../ci/android-outputs.sh");
 	const GATE: &str = include_str!(
 		"../../../../android-logic/src/main/kotlin/org/regrind/update/InstallGate.kt"
 	);
@@ -214,6 +186,9 @@ mod pins {
 
 	const COMPONENTS_TS: &str =
 		include_str!("../../../../../src/lib/updates/components.ts");
+
+	const CAPABILITY_TS: &str =
+		include_str!("../../../../../src/lib/updates/capability.svelte.ts");
 
 	const INSTALLER: &str = include_str!(
 		"../../../../gen/android/app/src/main/java/org/regrind/update/ApkInstaller.kt"
@@ -548,7 +523,11 @@ mod pins {
 			invoked.contains(&"installPending"),
 			"the bridge no longer asks the plugin whether an install is pending"
 		);
-		for command in invoked {
+		assert_plugin_declares(&invoked);
+	}
+
+	fn assert_plugin_declares(commands: &[&str]) {
+		for command in commands {
 			assert!(
 				spaced_match(
 					PLUGIN,
@@ -573,19 +552,6 @@ mod pins {
 	) -> &'a str {
 		let at = declaration_at(source, file, header);
 		braced_block(&source[at..], file, header)
-	}
-
-	fn camel_case(snake: &str) -> String {
-		let mut parts = snake.split('_');
-		let mut camel = parts.next().unwrap_or_default().to_owned();
-		for part in parts {
-			let mut characters = part.chars();
-			if let Some(first) = characters.next() {
-				camel.extend(first.to_uppercase());
-				camel.push_str(characters.as_str());
-			}
-		}
-		camel
 	}
 
 	struct PluginPair {
@@ -765,6 +731,23 @@ mod pins {
 	}
 
 	#[test]
+	fn every_transfer_command_exists_in_kotlin_with_its_fields() {
+		let bridge = squashed(ANDROID_BRIDGE);
+		let sent: Vec<&str> = bridge
+			.split("send_transfer(app,\"")
+			.skip(1)
+			.filter_map(|call| call.split('"').next())
+			.collect();
+		assert_eq!(sent, ["beginTransfer", "transferProgress", "endTransfer"]);
+		assert_plugin_declares(&sent);
+		assert_eq!(
+			UPDATE_PAIR.rust_wire_fields("TransferRequest"),
+			UPDATE_PAIR.kotlin_arg_fields("TransferArgs"),
+			"TransferRequest and TransferArgs disagree on field names"
+		);
+	}
+
+	#[test]
 	fn the_recaptcha_request_carries_the_fields_kotlin_parses() {
 		RECAPTCHA_PAIR.assert_requests_carry_the_parsed_fields(&["mintToken"]);
 	}
@@ -909,6 +892,61 @@ mod pins {
 			.collect()
 	}
 
+	fn quoted_list(
+		source: &str,
+		file: &str,
+		opening: &str,
+		closing: char,
+	) -> Vec<String> {
+		let source = squashed(source);
+		let start = source
+			.find(opening)
+			.unwrap_or_else(|| panic!("{file} no longer declares {opening}"))
+			+ opening.len();
+		let list = &source[start..];
+		let list = &list[..list
+			.find(closing)
+			.unwrap_or_else(|| panic!("{opening} in {file} is not closed"))];
+		list.split(',')
+			.filter(|entry| !entry.is_empty())
+			.map(|entry| {
+				entry
+					.strip_prefix('"')
+					.and_then(|entry| entry.strip_suffix('"'))
+					.unwrap_or_else(|| {
+						panic!("{entry} in {file} is not a string literal")
+					})
+					.to_owned()
+			})
+			.collect()
+	}
+
+	#[test]
+	fn every_fdroid_client_the_frontend_names_is_an_external_updater() {
+		let updaters = quoted_list(
+			GATE,
+			"InstallGate.kt",
+			"valEXTERNAL_UPDATERS=setOf(",
+			')',
+		);
+		let clients = quoted_list(
+			CAPABILITY_TS,
+			"capability.svelte.ts",
+			"constFDROID_CLIENTS=newSet([",
+			']',
+		);
+		assert!(
+			!clients.is_empty(),
+			"capability.svelte.ts lists no F-Droid client"
+		);
+		for client in &clients {
+			assert!(
+				updaters.contains(client),
+				"{client} never reaches the frontend as externallyManaged, so its installs would miss the F-Droid notice"
+			);
+		}
+	}
+
 	#[test]
 	fn the_kotlin_install_allowlist_matches_the_component_table() {
 		use super::super::component;
@@ -1016,6 +1054,9 @@ mod pins {
 				"Disabled" => ("ERROR_DISABLED", RecaptchaError::AddonDisabled),
 				"Untrusted" => {
 					("ERROR_UNTRUSTED", RecaptchaError::AddonUntrusted)
+				}
+				"Hidden" | "TurnedOff" | "Outdated" => {
+					("ERROR_UNAVAILABLE", RecaptchaError::AddonUnavailable)
 				}
 				unknown => panic!(
 					"AddonGate.Verdict.{unknown} has no reCAPTCHA reason"
@@ -1155,6 +1196,34 @@ mod pins {
 		assert!(
 			LINUX_BUILD.contains("aarch64) arch=arm64"),
 			"build.sh no longer maps aarch64 to arm64"
+		);
+	}
+
+	#[test]
+	fn the_android_suffix_matches_the_split_names_the_build_writes() {
+		for (arch, flavor, abi) in [
+			("aarch64", "arm64", "arm64-v8a"),
+			("arm", "arm", "armeabi-v7a"),
+			("x86", "x86", "x86"),
+			("x86_64", "x86_64", "x86_64"),
+		] {
+			assert_eq!(
+				suffix_for("android", arch).unwrap(),
+				format!("-android-{abi}.apk")
+			);
+			assert!(
+				ANDROID_OUTPUTS.contains(&format!("{flavor}) abi=\"-{abi}\"")),
+				"android-outputs.sh no longer names the {flavor} split -{abi}"
+			);
+		}
+	}
+
+	#[test]
+	fn an_android_abi_without_a_split_takes_the_universal_apk() {
+		assert_eq!(suffix_for("android", "riscv64").unwrap(), "-android.apk");
+		assert!(
+			ANDROID_OUTPUTS.contains("universal) abi=\"\""),
+			"android-outputs.sh no longer names the universal APK -android.apk"
 		);
 	}
 

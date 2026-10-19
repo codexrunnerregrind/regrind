@@ -1,44 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
-	CANCEL_EASING,
-	COMMIT_EASING,
-} from "$lib/components/navigation/stack/motion";
-import {
-	fakeSurface,
 	flushMicrotasks,
 	navigationEvent,
 	settleLast,
 } from "$lib/components/navigation/stack/stack-test-helpers";
-import { PageStackState } from "./page-stack-state.svelte";
-
-function makeStack({ reducedMotion = false, canGoBack = true } = {}) {
-	vi.stubGlobal("navigation", { canGoBack });
-
-	const pane = document.createElement("div");
-	pane.innerHTML = "<p>live</p>";
-	document.body.append(pane);
-
-	const { surface, applied, animations } = fakeSurface();
-
-	const stack = new PageStackState({
-		surface,
-		livePane: () => pane,
-		reducedMotion: () => reducedMotion,
-		scope: "/settings",
-	});
-
-	return { stack, pane, applied, animations };
-}
-
-async function push(
-	{ stack, animations }: ReturnType<typeof makeStack>,
-	{ from, to }: { from: string; to: string },
-) {
-	const start = await stack.navigate(navigationEvent({ from, to }));
-	start?.();
-	await settleLast(animations);
-}
+import { makeStack, motion, push } from "./page-stack-test-helpers";
 
 afterEach(() => {
 	document.body.innerHTML = "";
@@ -61,28 +28,96 @@ describe("PageStackState navigation", () => {
 		expect(animations.at(-1)).toMatchObject({
 			from: 1,
 			to: 0,
-			easing: COMMIT_EASING,
+			easing: motion.commitEasing,
 		});
 
 		await settleLast(animations);
 		expect(stack.ghost).toBeNull();
 	});
 
-	it("slides a popped page away to the right over the page beneath", async () => {
-		const { stack, applied, animations } = makeStack();
+	it("slides a popped page away to the right over the page it was pushed from", async () => {
+		const harness = makeStack();
+		const { stack, applied, animations } = harness;
+		await push(harness, { from: "/settings", to: "/settings/app" });
+		applied.length = 0;
 
 		const start = await stack.navigate(
 			navigationEvent({ from: "/settings/app", to: "/settings" }),
 		);
 		expect(stack.liveRole).toBe("back");
+		expect(stack.ghost?.path).toBe("/settings/app");
 		expect(applied).toEqual([0]);
 
 		start?.();
 		expect(animations.at(-1)).toMatchObject({ from: 0, to: 1 });
 	});
 
-	it("treats a backward history move as a pop even when it lands deeper", async () => {
-		const { stack, applied, animations } = makeStack();
+	it("slides a history move over several levels back onto the root it was pushed from", async () => {
+		const harness = makeStack();
+		const { stack, animations } = harness;
+		await push(harness, { from: "/settings", to: "/settings/account" });
+		await push(harness, {
+			from: "/settings/account",
+			to: "/settings/account/privacy",
+		});
+
+		const start = await stack.navigate(
+			navigationEvent({
+				from: "/settings/account/privacy",
+				to: "/settings",
+				delta: -2,
+			}),
+		);
+		expect(stack.liveRole).toBe("back");
+
+		start?.();
+		expect(animations.at(-1)).toMatchObject({ from: 0, to: 1 });
+	});
+
+	it("cuts a pop onto a page it was never pushed from, even when another one waits beneath", async () => {
+		const harness = makeStack();
+		const { stack, applied, animations } = harness;
+		await push(harness, {
+			from: "/settings/account",
+			to: "/settings/account/privacy",
+		});
+		const slides = animations.length;
+
+		const start = await stack.navigate(
+			navigationEvent({
+				from: "/settings/account/privacy",
+				to: "/settings",
+			}),
+		);
+
+		expect(stack.ghost).toBeNull();
+		expect(start).toBeUndefined();
+		expect(animations).toHaveLength(slides);
+		expect(applied.at(-1)).toBe(0);
+	});
+
+	it("slides down every level history says was pushed before the stack was mounted again, leaving the gesture to the system", async () => {
+		const { stack, animations } = makeStack({
+			pushedFrom: [{ path: "/settings" }, { path: "/settings/account" }],
+		});
+		expect(stack.canSwipeBack).toBe(false);
+
+		for (const [from, to] of [
+			["/settings/account/blocked", "/settings/account"],
+			["/settings/account", "/settings"],
+		] as const) {
+			const slides = animations.length;
+			const start = await stack.navigate(navigationEvent({ from, to }));
+			expect(stack.ghost?.path).toBe(from);
+			start?.();
+			expect(animations).toHaveLength(slides + 1);
+			expect(animations.at(-1)).toMatchObject({ from: 0, to: 1 });
+			await settleLast(animations);
+		}
+	});
+
+	it("cuts a backward history move that lands deeper instead of pushing it in", async () => {
+		const { stack, animations } = makeStack();
 
 		const start = await stack.navigate(
 			navigationEvent({
@@ -91,11 +126,11 @@ describe("PageStackState navigation", () => {
 				delta: -1,
 			}),
 		);
-		expect(stack.liveRole).toBe("back");
-		expect(applied).toEqual([0]);
 
-		start?.();
-		expect(animations.at(-1)).toMatchObject({ from: 0, to: 1 });
+		expect(stack.ghost).toBeNull();
+		expect(start).toBeUndefined();
+		expect(animations).toHaveLength(0);
+		expect(stack.canSwipeBack).toBe(false);
 	});
 
 	it("treats a forward history move as a push", async () => {
@@ -235,7 +270,7 @@ describe("PageStackState swipe back", () => {
 
 		expect(animations.at(-1)).toMatchObject({
 			to: 1,
-			easing: COMMIT_EASING,
+			easing: motion.commitEasing,
 		});
 		expect(back).not.toHaveBeenCalled();
 
@@ -317,7 +352,7 @@ describe("PageStackState swipe back", () => {
 
 		expect(animations.at(-1)).toMatchObject({
 			to: 0,
-			easing: CANCEL_EASING,
+			easing: motion.cancelEasing,
 		});
 		await settleLast(animations);
 
@@ -416,6 +451,71 @@ describe("PageStackState swipe back", () => {
 	});
 });
 
+describe("PageStackState back gesture during the slide-in", () => {
+	async function slidingIn() {
+		const harness = makeStack();
+		const start = await harness.stack.navigate(
+			navigationEvent({ from: "/settings", to: "/settings/app" }),
+		);
+		start?.();
+		const slideIn = harness.animations.at(-1)!;
+		slideIn.reached = 0.6;
+		return { ...harness, slideIn };
+	}
+
+	it("picks the page up where the slide-in has reached and lets the finger drive the rest of the way", async () => {
+		const { stack, applied, slideIn } = await slidingIn();
+
+		expect(stack.beginSwipeBack()).toBe(true);
+		expect(applied.at(-1)).toBe(0.6);
+		await flushMicrotasks();
+		expect(stack.ghost?.path).toBe("/settings");
+
+		stack.trackSwipeBack(0.5);
+		expect(applied.at(-1)).toBeCloseTo(0.8);
+
+		slideIn.reached = 0;
+		stack.trackSwipeBack(0.5);
+		expect(applied.at(-1)).toBe(0.5);
+	});
+
+	it("commits from where the picked-up page is and goes back once", async () => {
+		const back = vi.spyOn(history, "back").mockImplementation(() => {});
+		const { stack, animations } = await slidingIn();
+
+		stack.beginSwipeBack();
+		stack.trackSwipeBack(0.5);
+		stack.commitSwipeBack();
+
+		expect(animations.at(-1)).toMatchObject({
+			from: expect.closeTo(0.8),
+			to: 1,
+			easing: motion.commitEasing,
+		});
+		await settleLast(animations);
+		expect(back).toHaveBeenCalledTimes(1);
+	});
+
+	it("finishes the slide-in when the gesture is canceled", async () => {
+		const back = vi.spyOn(history, "back").mockImplementation(() => {});
+		const { stack, applied, animations } = await slidingIn();
+
+		stack.beginSwipeBack();
+		stack.trackSwipeBack(0.5);
+		stack.cancelSwipeBack();
+
+		expect(animations.at(-1)).toMatchObject({
+			from: expect.closeTo(0.8),
+			to: 0,
+			easing: motion.cancelEasing,
+		});
+		await settleLast(animations);
+		expect(back).not.toHaveBeenCalled();
+		expect(stack.ghost).toBeNull();
+		expect(applied.at(-1)).toBe(0);
+	});
+});
+
 describe("PageStackState commit with nothing to go back to", () => {
 	it("restores the pane instead of navigating into an empty history", async () => {
 		const harness = makeStack({ canGoBack: false });
@@ -451,6 +551,23 @@ describe("PageStackState state under interruption", () => {
 			stack.tracking,
 			"a live gesture must not outlive a navigation",
 		).toBe(false);
+	});
+
+	it("turns a push around from where it had reached, not from a full page", async () => {
+		const { stack, applied, animations } = makeStack();
+		const entering = await stack.navigate(
+			navigationEvent({ from: "/settings", to: "/settings/app" }),
+		);
+		entering?.();
+		animations.at(-1)!.reached = 0.7;
+
+		const leaving = await stack.navigate(
+			navigationEvent({ from: "/settings/app", to: "/settings" }),
+		);
+		expect(stack.ghost?.path).toBe("/settings/app");
+		expect(applied.at(-1)).toBe(0.7);
+		leaving?.();
+		expect(animations.at(-1)).toMatchObject({ from: 0.7, to: 1 });
 	});
 
 	it("ignores the settle starter of a superseded navigation", async () => {

@@ -1,15 +1,23 @@
 <script lang="ts">
-	import { EyeSlashIcon } from "phosphor-svelte";
+	import EyeSlashIcon from "phosphor-svelte/lib/EyeSlashIcon";
 
 	import { unhideUser } from "$lib/api/browse/hides";
-	import { showErrorToast } from "$lib/api/error-toast";
 	import { Button } from "$lib/components/ui/button";
 	import * as Empty from "$lib/components/ui/empty";
+	import {
+		applyViewabilityChange,
+		type PendingViewabilityChange,
+	} from "./profile-state.svelte";
 
-	let { profileId, onRefresh }: { profileId: number; onRefresh: () => void } =
-		$props();
-
-	let submitting = $state(false);
+	let {
+		profileId,
+		changingViewability,
+		markViewable,
+	}: {
+		profileId: number;
+		changingViewability: boolean;
+		markViewable: () => PendingViewabilityChange;
+	} = $props();
 </script>
 
 <Empty.Root>
@@ -21,23 +29,13 @@
 		<Empty.Description>
 			<Button
 				variant="secondary"
-				disabled={submitting}
-				onclick={async () => {
-					if (submitting) return;
-					submitting = true;
-					try {
-						await unhideUser({ profileId });
-						onRefresh();
-					} catch (error) {
-						console.error(error);
-						showErrorToast({
-							label: "Failed to unhide user",
-							error,
-						});
-					} finally {
-						submitting = false;
-					}
-				}}>Unhide</Button
+				disabled={changingViewability}
+				onclick={() =>
+					applyViewabilityChange({
+						change: markViewable,
+						request: () => unhideUser({ profileId }),
+						failureLabel: "Failed to unhide user",
+					})}>Unhide</Button
 			>
 		</Empty.Description>
 	</Empty.Header>

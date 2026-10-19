@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { MicrophoneIcon } from "phosphor-svelte";
+	import MicrophoneIcon from "phosphor-svelte/lib/MicrophoneIcon";
 
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
 	import PrimaryComposerButton from "../PrimaryComposerButton.svelte";

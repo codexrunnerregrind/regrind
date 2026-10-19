@@ -95,6 +95,32 @@
 			]
 		},
 		"opener:default",
+		{
+			"identifier": "opener:allow-open-url",
+			"deny": [
+				{
+					"url": "http://tauri.localhost*"
+				},
+				{
+					"url": "https://tauri.localhost*"
+				},
+				{
+					"url": "https://app.opengrind.org*"
+				},
+				{
+					"url": "http://ogmedia.localhost*"
+				},
+				{
+					"url": "https://ogmedia.localhost*"
+				},
+				{
+					"url": "http://localhost*"
+				},
+				{
+					"url": "http://127.0.0.1*"
+				}
+			]
+		},
 		"clipboard-manager:default",
 		"clipboard-manager:allow-write-text",
 		"clipboard-manager:allow-read-text",

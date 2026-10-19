@@ -1,10 +1,20 @@
+use std::io::Cursor;
+
 use base64::{engine::general_purpose::STANDARD, Engine as _};
+use image::{ImageFormat, ImageReader};
 use serde::{Deserialize, Serialize};
 
 use crate::api::rest::{encode_response, RawResponse};
 use crate::error::AppError;
 use crate::photo;
 use crate::state::AppState;
+use crate::upload::file::{
+	open_photo, profile_of, signed_in_as, unless_session_changes, Race,
+};
+use crate::upload::picked::PickedFile;
+
+const NOT_A_PHOTO: &str = "Only photos can be sent here";
+const UNREADABLE_SIZE: &str = "That photo's size can't be read";
 
 const MAX_AUDIO_BYTES: usize = 32 * 1024 * 1024;
 
@@ -52,33 +62,78 @@ fn parsed_upload(
 	parsed_json(client, response)
 }
 
+fn with_square_thumb(path: &str, jpeg: &[u8]) -> Result<String, AppError> {
+	let (width, height) =
+		ImageReader::with_format(Cursor::new(jpeg), ImageFormat::Jpeg)
+			.into_dimensions()
+			.map_err(|_| AppError::Media(UNREADABLE_SIZE.to_owned()))?;
+	let separator = if path.contains('?') { '&' } else { '?' };
+	Ok(format!(
+		"{path}{separator}thumbCoords={}",
+		centre_square_thumb_coords(width, height)
+	))
+}
+
+/// Takes either a picked `file` or base64 `data` with its `content_type`.
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 pub async fn upload_media(
 	app: tauri::AppHandle,
 	state: tauri::State<'_, AppState>,
 	path: String,
 	signed: bool,
-	content_type: String,
+	file: Option<PickedFile>,
+	square_thumb: Option<bool>,
+	content_type: Option<String>,
 	// Base64, because raw byte arrays over the Tauri IPC are unreliable.
 	// https://github.com/tauri-apps/tauri/issues/10573
-	data: String,
+	data: Option<String>,
 ) -> Result<String, AppError> {
-	let bytes = STANDARD.decode(&data).map_err(|e| {
-		AppError::Http(format!("Failed to decode base64 media: {e}"))
-	})?;
-	let photo = photo::normalize(&app, bytes, content_type).await?;
-
+	let _single_use = file.as_ref().map(|file| file.single_use(&app));
 	let client = state.client()?;
+	let mut sessions = client.session_receiver();
+	let Some(profile_id) = profile_of(&sessions.borrow()).map(str::to_owned)
+	else {
+		return Err(AppError::NotSignedIn);
+	};
+	let photo = match (file, data) {
+		(Some(file), _) => {
+			let Some(bytes) = open_photo(app.clone(), file).await? else {
+				return Err(AppError::Media(NOT_A_PHOTO.to_owned()));
+			};
+			photo::normalize(&app, bytes, photo::JPEG.to_owned()).await?
+		}
+		(None, Some(data)) => {
+			let bytes = STANDARD.decode(&data).map_err(|e| {
+				AppError::Http(format!("Failed to decode base64 media: {e}"))
+			})?;
+			let content_type = content_type.unwrap_or_default();
+			photo::normalize(&app, bytes, content_type).await?
+		}
+		(None, None) => return Err(AppError::Media(NOT_A_PHOTO.to_owned())),
+	};
+	let path = if square_thumb.unwrap_or(false) {
+		with_square_thumb(&path, &photo.bytes)?
+	} else {
+		path
+	};
+
+	if !signed_in_as(&sessions.borrow(), &profile_id) {
+		return Err(AppError::SessionCleared);
+	}
 	let request = client.request(grindr::Method::POST, &path);
 	let request = if signed {
 		request.signed_bytes(&photo.content_type, photo.bytes)
 	} else {
 		request.bytes(&photo.content_type, photo.bytes)
 	};
-	let raw = request
-		.send()
-		.await
-		.map_err(|e| AppError::from_client_error(e, &client))?;
+	let raw = unless_session_changes(Race {
+		sessions: &mut sessions,
+		profile_id: &profile_id,
+		send: request.send(),
+	})
+	.await?
+	.map_err(|e| AppError::from_client_error(e, &client))?;
 
 	encode_response(&RawResponse {
 		status: raw.status,
@@ -548,7 +603,37 @@ pub async fn upload_profile_image(
 
 #[cfg(test)]
 mod tests {
+	use image::DynamicImage;
+
 	use super::*;
+
+	fn jpeg(width: u32, height: u32) -> Vec<u8> {
+		let mut bytes = Vec::new();
+		DynamicImage::new_rgb8(width, height)
+			.write_to(&mut Cursor::new(&mut bytes), ImageFormat::Jpeg)
+			.expect("encode");
+		bytes
+	}
+
+	#[test]
+	fn centers_a_square_thumb_on_a_portrait_photo() {
+		assert_eq!(
+			with_square_thumb(
+				"/v4/media/upload?takenOnGrindr=false",
+				&jpeg(768, 1024)
+			)
+			.expect("path"),
+			"/v4/media/upload?takenOnGrindr=false&thumbCoords=896,0,768,128"
+		);
+	}
+
+	#[test]
+	fn a_photo_whose_size_cannot_be_read_is_refused() {
+		let refused = with_square_thumb("/v4/media/upload", b"not a jpeg")
+			.expect_err("refused");
+
+		assert!(matches!(refused, AppError::Media(_)));
+	}
 
 	#[test]
 	fn the_centre_square_of_a_landscape_photo_is_its_middle() {

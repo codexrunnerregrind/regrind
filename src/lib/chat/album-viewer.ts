@@ -507,7 +507,7 @@ export async function openAlbumLightbox(
 		return false;
 	};
 	lightbox.on("beforeOpen", () => {
-		backGestureEventHandlers.add(onBackGesture);
+		backGestureEventHandlers.set(onBackGesture, "overlay");
 	});
 	lightbox.on("close", () => {
 		backGestureEventHandlers.delete(onBackGesture);

@@ -1,11 +1,26 @@
 import { invoke } from "@tauri-apps/api/core";
 import z from "zod";
 
-import { invokeRest } from "$lib/api/transport";
+import { signedInProfileId } from "$lib/api/current-session";
+import { uploadRefusalMessage } from "$lib/api/methods";
+import { invokeRest, uploadFileRest } from "$lib/api/transport";
 import { demoEnabled, demoUploadChatMedia } from "$lib/demo";
 import { mediaUrlSchema } from "$lib/model/media";
+import {
+	CHAT_MEDIA_MAX_BYTES,
+	CHAT_MEDIA_MAX_LABEL,
+} from "$lib/model/messaging/chat-media-limits";
+import {
+	inspectMediaFile,
+	mediaFileDescriptor,
+	type MediaFileInspection,
+} from "$lib/platform/media-file";
+import { type PickedMedia, readMediaBytes } from "$lib/platform/media-picker";
 import { toBase64 } from "$lib/util/base64";
 import { saveMediaToDrawer } from "./drawer";
+
+const VIDEO_CONTENT_TYPE = "video/mp4";
+const PHOTO_CONTENT_TYPE = "image/jpeg";
 
 // Only the id is depended on. A photo's response carries a CDN url and a hash
 // too, but nothing here should lose an upload the server accepted over a field
@@ -17,6 +32,21 @@ const mediaUploadResponseSchema = z.object({
 });
 
 export type MediaUploadResponse = z.infer<typeof mediaUploadResponseSchema>;
+
+export class UnsupportedChatMediaError extends Error {
+	constructor() {
+		super("That file isn't a photo or video");
+		this.name = "UnsupportedChatMediaError";
+	}
+}
+
+export function chatMediaFailureMessage(error: unknown): string {
+	if (error instanceof UnsupportedChatMediaError) return error.message;
+	return (
+		uploadRefusalMessage({ error, limitLabel: CHAT_MEDIA_MAX_LABEL }) ??
+		"Couldn't upload photo or video"
+	);
+}
 
 function chatMediaUploadPath(takenOnGrindr: boolean): string {
 	return takenOnGrindr
@@ -165,4 +195,61 @@ export async function addMediaToDrawer({
 	// The caller re-reads the drawer: the server describes what it kept better
 	// than an upload response and a guessed timestamp can.
 	return { mediaId: uploaded.mediaId };
+}
+
+function uploadedContentType({
+	media,
+	inspection,
+}: {
+	media: PickedMedia;
+	inspection: MediaFileInspection;
+}): string {
+	const fallback =
+		inspection.kind === "video" ? VIDEO_CONTENT_TYPE : PHOTO_CONTENT_TYPE;
+	return media.source === "web" ? (media.mimeType ?? fallback) : fallback;
+}
+
+function streamedUploadPath(inspection: MediaFileInspection): string {
+	const query = new URLSearchParams({ takenOnGrindr: "false" });
+	if (inspection.kind === "video") {
+		if (inspection.durationMs !== undefined) {
+			query.set("length", String(inspection.durationMs));
+		}
+		query.set("looping", "false");
+	}
+	return `/v5/chat/media/upload?${query}`;
+}
+
+export type UploadedChatMedia = MediaUploadResponse & {
+	contentType: string;
+	inspection: MediaFileInspection;
+};
+
+// Pasted, dropped and keyboard media stream from disk instead of crossing the IPC.
+export async function uploadChatMediaFile(
+	media: PickedMedia,
+	{ inspection: known }: { inspection?: MediaFileInspection } = {},
+): Promise<UploadedChatMedia> {
+	const inspection = known ?? (await inspectMediaFile(media));
+	if (inspection.kind === "unsupported") {
+		throw new UnsupportedChatMediaError();
+	}
+	const contentType = uploadedContentType({ media, inspection });
+	if (demoEnabled) {
+		const uploaded = demoUploadChatMedia({
+			bytes: await readMediaBytes(media),
+			contentType,
+		});
+		return { ...uploaded, contentType, inspection };
+	}
+	const profileId = await signedInProfileId();
+	if (profileId === null) throw new Error("Not signed in");
+	const { response } = await uploadFileRest(streamedUploadPath(inspection), {
+		file: mediaFileDescriptor(media),
+		part: null,
+		maxBodySize: CHAT_MEDIA_MAX_BYTES,
+		profileId,
+	});
+	const uploaded = response.jsonParsed(mediaUploadResponseSchema);
+	return { ...uploaded, contentType, inspection };
 }

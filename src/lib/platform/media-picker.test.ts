@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { androidFsMock, openMock, platformMock, readFileMock } = vi.hoisted(
-	() => ({
+const { androidFsMock, invokeMock, openMock, platformMock, readFileMock } =
+	vi.hoisted(() => ({
 		androidFsMock: {
 			getMimeType: vi.fn(),
 			readFile: vi.fn(),
@@ -10,9 +10,13 @@ const { androidFsMock, openMock, platformMock, readFileMock } = vi.hoisted(
 		openMock: vi.fn(),
 		platformMock: vi.fn(),
 		readFileMock: vi.fn(),
-	}),
-);
+		invokeMock: vi.fn(),
+	}));
 
+vi.mock("@tauri-apps/api/core", async (importOriginal) => ({
+	...(await importOriginal<typeof import("@tauri-apps/api/core")>()),
+	invoke: invokeMock,
+}));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: openMock }));
 vi.mock("@tauri-apps/plugin-fs", () => ({ readFile: readFileMock }));
 vi.mock("@tauri-apps/plugin-os", () => ({ platform: platformMock }));
@@ -47,6 +51,7 @@ function runningOnAndroid() {
 }
 
 beforeEach(() => {
+	invokeMock.mockReset();
 	openMock.mockReset();
 	platformMock.mockReset();
 	readFileMock.mockReset();
@@ -122,6 +127,7 @@ describe("pickMedia", () => {
 			],
 			multiple: false,
 		});
+		expect(invokeMock).not.toHaveBeenCalled();
 	});
 
 	it("wraps the single path a desktop picker resolves outside an array", async () => {
@@ -134,6 +140,25 @@ describe("pickMedia", () => {
 			mimeType: "image/png",
 			path: "/tmp/photo.png",
 		});
+	});
+
+	it("asks the Android content picker for one video when picking a single video", async () => {
+		runningOnAndroid();
+		vi.spyOn(crypto, "randomUUID").mockReturnValue(firstKey);
+		invokeMock.mockResolvedValue([videoUri.uri]);
+		androidFsMock.getMimeType.mockResolvedValue("video/mp4");
+
+		await expect(pickMedia("video")).resolves.toEqual({
+			source: "android",
+			key: firstKey,
+			mimeType: "video/mp4",
+			uri: videoUri,
+		});
+
+		expect(invokeMock).toHaveBeenCalledExactlyOnceWith(
+			"pick_android_media",
+			{ mimeTypes: ["video/*"], multiple: false },
+		);
 	});
 });
 
@@ -199,11 +224,55 @@ describe("pickMultipleMedia", () => {
 		});
 	});
 
-	it("uses Android gallery MIME filters and keeps the picker's URIs", async () => {
+	it("opens the Android picker for content when the system routes it to the Photo Picker", async () => {
 		runningOnAndroid();
 		vi.spyOn(crypto, "randomUUID")
 			.mockReturnValueOnce(firstKey)
 			.mockReturnValueOnce(secondKey);
+		invokeMock.mockResolvedValue([photoUri.uri, videoUri.uri]);
+		androidFsMock.getMimeType
+			.mockResolvedValueOnce("image/jpeg")
+			.mockResolvedValueOnce("video/mp4");
+
+		await expect(pickMultipleMedia("media")).resolves.toEqual([
+			{
+				source: "android",
+				key: firstKey,
+				mimeType: "image/jpeg",
+				uri: photoUri,
+			},
+			{
+				source: "android",
+				key: secondKey,
+				mimeType: "video/mp4",
+				uri: videoUri,
+			},
+		]);
+
+		expect(invokeMock).toHaveBeenCalledExactlyOnceWith(
+			"pick_android_media",
+			{ mimeTypes: ["image/*", "video/*"], multiple: true },
+		);
+		expect(androidFsMock.showOpenFilePicker).not.toHaveBeenCalled();
+		expect(openMock).not.toHaveBeenCalled();
+	});
+
+	it("resolves nothing without the gallery fallback when the Android content picker is cancelled", async () => {
+		runningOnAndroid();
+		invokeMock.mockResolvedValue([]);
+
+		await expect(pickMultipleMedia("media")).resolves.toEqual([]);
+		await expect(pickMedia("image")).resolves.toBeNull();
+
+		expect(androidFsMock.showOpenFilePicker).not.toHaveBeenCalled();
+	});
+
+	it("falls back to the Android gallery picker with the same filters when the content picker is unsupported", async () => {
+		runningOnAndroid();
+		vi.spyOn(crypto, "randomUUID")
+			.mockReturnValueOnce(firstKey)
+			.mockReturnValueOnce(secondKey);
+		invokeMock.mockResolvedValue(null);
 		androidFsMock.showOpenFilePicker.mockResolvedValue([
 			photoUri,
 			videoUri,
@@ -227,7 +296,9 @@ describe("pickMultipleMedia", () => {
 			},
 		]);
 
-		expect(androidFsMock.showOpenFilePicker).toHaveBeenCalledWith({
+		expect(
+			androidFsMock.showOpenFilePicker,
+		).toHaveBeenCalledExactlyOnceWith({
 			pickerType: "Gallery",
 			mimeTypes: ["image/*", "video/*"],
 			multiple: true,
@@ -237,11 +308,12 @@ describe("pickMultipleMedia", () => {
 		expect(openMock).not.toHaveBeenCalled();
 	});
 
-	it("narrows the Android picker to videos for the video kind", async () => {
+	it("narrows the Android gallery fallback to videos for the video kind", async () => {
 		runningOnAndroid();
+		invokeMock.mockResolvedValue(null);
 		androidFsMock.showOpenFilePicker.mockResolvedValue([]);
 
-		await pickMultipleMedia("video");
+		await expect(pickMultipleMedia("video")).resolves.toEqual([]);
 
 		expect(androidFsMock.showOpenFilePicker).toHaveBeenCalledWith({
 			pickerType: "Gallery",

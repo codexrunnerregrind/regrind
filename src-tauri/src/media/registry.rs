@@ -2,16 +2,25 @@
 pub use tauri::wry::{
 	register_stream, unregister_stream, ResponseStream, STREAM_HEADER,
 };
-
-#[cfg(all(test, not(target_os = "android")))]
-pub use stub::with_stream;
-#[cfg(not(target_os = "android"))]
-pub use stub::{
+#[cfg(all(test, target_vendor = "apple"))]
+pub use wry::with_stream;
+#[cfg(target_vendor = "apple")]
+pub use wry::{
 	register_stream, unregister_stream, ResponseStream, STREAM_HEADER,
 };
 
-#[cfg(not(target_os = "android"))]
-mod stub {
+#[cfg(all(
+	any(test, target_os = "linux"),
+	not(any(target_os = "android", target_vendor = "apple"))
+))]
+pub use local::with_stream;
+#[cfg(not(any(target_os = "android", target_vendor = "apple")))]
+pub use local::{
+	register_stream, unregister_stream, ResponseStream, STREAM_HEADER,
+};
+
+#[cfg(not(any(target_os = "android", target_vendor = "apple")))]
+mod local {
 	use std::collections::HashMap;
 	use std::io;
 	use std::sync::atomic::{AtomicU64, Ordering};
@@ -58,13 +67,15 @@ mod stub {
 		true
 	}
 
-	#[cfg(test)]
+	#[cfg(any(test, target_os = "linux"))]
 	pub fn with_stream<T>(
 		id: u64,
-		body: impl FnOnce(&mut dyn ResponseStream) -> T,
-	) -> Option<T> {
-		let entry = streams().get(&id).cloned()?;
+		body: impl FnOnce(&mut dyn ResponseStream) -> io::Result<T>,
+	) -> io::Result<T> {
+		let entry = streams().get(&id).cloned().ok_or_else(|| {
+			io::Error::new(io::ErrorKind::NotFound, "unknown stream")
+		})?;
 		let mut stream = entry.lock().unwrap_or_else(PoisonError::into_inner);
-		Some(body(&mut **stream))
+		body(&mut **stream)
 	}
 }
