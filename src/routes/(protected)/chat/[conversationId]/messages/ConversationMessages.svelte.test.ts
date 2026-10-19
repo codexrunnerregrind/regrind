@@ -102,6 +102,9 @@ async function mountConversation({
 				value: 400,
 				configurable: true,
 			});
+			// Rest on the floor first, as the opening scroll leaves it.
+			scroller.scrollTop = 600;
+			scroller.dispatchEvent(new Event("scroll"));
 			scroller.scrollTop = 100;
 			scroller.dispatchEvent(new Event("scroll"));
 			await tick();
@@ -222,5 +225,47 @@ describe("the new-messages badge", () => {
 
 		expect(conversation.scrollDownButton()).not.toBeNull();
 		expect(conversation.badge()).toBeNull();
+	});
+});
+
+describe("resting on the floor", () => {
+	afterEach(cleanup);
+
+	it("stays pinned when media grows the list under a late scroll event", async () => {
+		const conversation = await mountConversation({
+			messages: [message({ timestamp: 2000 })],
+		});
+		const { scroller } = conversation;
+		Object.defineProperty(scroller, "clientHeight", {
+			value: 400,
+			configurable: true,
+		});
+		Object.defineProperty(scroller, "scrollHeight", {
+			value: 1000,
+			configurable: true,
+		});
+		scroller.scrollTop = 600;
+		scroller.dispatchEvent(new Event("scroll"));
+
+		// A GIF decodes: the list is 300px taller, the scroll position unmoved.
+		Object.defineProperty(scroller, "scrollHeight", {
+			value: 1300,
+			configurable: true,
+		});
+		scroller.dispatchEvent(new Event("scroll"));
+		scroller.dispatchEvent(new Event("scrollend"));
+		await tick();
+
+		expect(conversation.scrollDownButton()).toBeNull();
+	});
+
+	it("unpins once the reader scrolls up", async () => {
+		const conversation = await mountConversation({
+			messages: [message({ timestamp: 2000 })],
+		});
+
+		await conversation.scrollAwayFromFloor();
+
+		expect(conversation.scrollDownButton()).not.toBeNull();
 	});
 });

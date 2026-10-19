@@ -22,6 +22,7 @@
 	const FLOOR_SLOP_PX = 16;
 
 	let atFloor = $state(true);
+	let lastScrollTop = 0;
 	// Seen-ness is tracked by message identity, never by comparing timestamps:
 	// merges adopt server timestamps for messages already on screen, and a
 	// watermark would re-count them as new.
@@ -74,17 +75,27 @@
 		}
 	}
 
+	// Only moving up leaves the floor: media decoding under a scroll event that
+	// is still in flight also opens a gap, and must not unpin the list.
+	function updateAtFloor() {
+		const top = container?.scrollTop ?? 0;
+		const movedUp = top < lastScrollTop - 1;
+		lastScrollTop = top;
+		atFloor = floorDistance() <= FLOOR_SLOP_PX || (atFloor && !movedUp);
+	}
+
 	function onContainerScroll() {
 		if (scrollingToRest) {
+			lastScrollTop = container?.scrollTop ?? 0;
 			if (floorDistance() <= 1) endScrollingToRest();
 			return;
 		}
-		atFloor = floorDistance() <= FLOOR_SLOP_PX;
+		updateAtFloor();
 	}
 
 	function onContainerScrollEnd() {
 		endScrollingToRest();
-		atFloor = floorDistance() <= FLOOR_SLOP_PX;
+		updateAtFloor();
 	}
 
 	$effect(stopSmoothScrollOnGesture);
@@ -113,6 +124,7 @@
 			scrollDone = false;
 			lastFirstId = "";
 			atFloor = true;
+			lastScrollTop = 0;
 			seenMessageIds.clear();
 			endScrollingToRest();
 		});
@@ -169,6 +181,7 @@
 			untrack(() => {
 				if (!atFloor) return;
 				el.scrollTop = el.scrollHeight;
+				lastScrollTop = el.scrollTop;
 			});
 		});
 		observer.observe(el);
