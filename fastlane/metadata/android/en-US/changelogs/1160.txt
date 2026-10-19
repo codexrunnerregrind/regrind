@@ -1,0 +1,3 @@
+- Send GIFs and Gaymoji from the new stickers button in the message field, and see them in chats and inbox previews
+- Reuse earlier uploads when adding profile photos
+- Expiring photos and unsend are more reliable: the location bypass now holds until the action finishes
