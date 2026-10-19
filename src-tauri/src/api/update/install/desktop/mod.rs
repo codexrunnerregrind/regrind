@@ -6,7 +6,17 @@ mod bundle;
 mod installer;
 #[cfg(target_os = "macos")]
 mod location;
+#[cfg(desktop)]
 mod taskbar;
+// iOS shares this module but has no taskbar.
+#[cfg(mobile)]
+mod taskbar {
+	use super::super::TransferProgress;
+	use tauri::{AppHandle, Runtime};
+
+	pub(super) fn show<R: Runtime>(_: &AppHandle<R>, _: TransferProgress) {}
+	pub(super) fn clear<R: Runtime>(_: &AppHandle<R>) {}
+}
 
 use std::fs;
 use std::path::{Path, PathBuf};
