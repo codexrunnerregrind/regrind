@@ -5,7 +5,9 @@
 	import ProhibitIcon from "phosphor-svelte/lib/ProhibitIcon";
 	import { toast } from "svelte-sonner";
 
+	import { blockUser } from "$lib/api/browse/blocks";
 	import { showErrorToast } from "$lib/api/error-toast";
+	import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
 	import { openImageGalleryLightbox } from "$lib/chat/image-gallery";
 	import BlockProfileDialog from "$lib/components/profile/BlockProfileDialog.svelte";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
@@ -124,6 +126,28 @@
 	}
 
 	let blockOpen = $state(false);
+	let blocking = $state(false);
+
+	// Their profile stops resolving once blocked, so the conversation view has
+	// nothing left to show — leave it rather than sit on a broken header.
+	function leaveConversation() {
+		void goto("/chat");
+	}
+
+	async function blockWithoutConfirming() {
+		if (blocking) return;
+		blocking = true;
+		try {
+			await blockUser({ profileId });
+			toast.success("User blocked");
+			leaveConversation();
+		} catch (error) {
+			console.error(error);
+			showErrorToast({ label: "Failed to block user", error });
+		} finally {
+			blocking = false;
+		}
+	}
 
 	$effect(() => () => teardown?.());
 </script>
@@ -154,7 +178,11 @@
 		<DropdownMenu.Item
 			variant="destructive"
 			class="w-22 flex-col gap-1.5 px-2 py-3 text-center text-caption leading-tight"
-			onSelect={() => (blockOpen = true)}
+			disabled={blocking}
+			onSelect={() => {
+				if (preferencesSnapshot().confirmBlock) blockOpen = true;
+				else void blockWithoutConfirming();
+			}}
 		>
 			<ProhibitIcon class="size-6" />
 			Block
@@ -166,9 +194,5 @@
 	bind:open={blockOpen}
 	{profileId}
 	name={conversationState.profile?.name ?? null}
-	onBlocked={() => {
-		// Their profile stops resolving once blocked, so the conversation view has
-		// nothing left to show — leave it rather than sit on a broken header.
-		void goto("/chat");
-	}}
+	onBlocked={leaveConversation}
 />

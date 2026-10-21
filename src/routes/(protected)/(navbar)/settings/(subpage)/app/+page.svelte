@@ -7,6 +7,7 @@
 	import GifIcon from "phosphor-svelte/lib/GifIcon";
 	import HeartIcon from "phosphor-svelte/lib/HeartIcon";
 	import LockKeyIcon from "phosphor-svelte/lib/LockKeyIcon";
+	import ProhibitIcon from "phosphor-svelte/lib/ProhibitIcon";
 	import SunIcon from "phosphor-svelte/lib/SunIcon";
 	import TrayArrowDownIcon from "phosphor-svelte/lib/TrayArrowDownIcon";
 	import VibrateIcon from "phosphor-svelte/lib/VibrateIcon";
@@ -108,6 +109,19 @@
 	>
 		{#snippet icon()}
 			<GifIcon weight="fill" />
+		{/snippet}
+	</PreferenceSwitchSetting>
+</SettingsGroup>
+
+<SectionHeader>Safety</SectionHeader>
+<SettingsGroup divider="full">
+	<PreferenceSwitchSetting
+		preference="confirmBlock"
+		title="Confirm before blocking"
+		description="Ask before blocking a profile. Turn off to block with a single tap."
+	>
+		{#snippet icon()}
+			<ProhibitIcon weight="fill" />
 		{/snippet}
 	</PreferenceSwitchSetting>
 </SettingsGroup>

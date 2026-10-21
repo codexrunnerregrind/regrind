@@ -10,6 +10,7 @@
 	import { blockUser } from "$lib/api/browse/blocks";
 	import { hideUser } from "$lib/api/browse/hides";
 	import { showErrorToast } from "$lib/api/error-toast";
+	import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
 	import BlockProfileDialog from "$lib/components/profile/BlockProfileDialog.svelte";
 	import { showBlockFailure } from "$lib/components/report/block-failure";
 	import ReportSheet from "$lib/components/report/ReportSheet.svelte";
@@ -183,7 +184,10 @@
 			</DropdownMenu.Item>
 			<DropdownMenu.Item
 				variant="destructive"
-				onSelect={() => (blockOpen = true)}
+				onSelect={() => {
+					if (preferencesSnapshot().confirmBlock) blockOpen = true;
+					else block();
+				}}
 			>
 				<ProhibitIcon class="size-5" />
 				Block profile

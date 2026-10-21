@@ -3,13 +3,13 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-const { reportSheetMock, blockUserMock, showBlockFailureMock } = vi.hoisted(
-	() => ({
+const { reportSheetMock, blockUserMock, showBlockFailureMock, preferences } =
+	vi.hoisted(() => ({
 		reportSheetMock: vi.fn(),
 		blockUserMock: vi.fn<() => Promise<void>>(),
 		showBlockFailureMock: vi.fn(),
-	}),
-);
+		preferences: { confirmBlock: true },
+	}));
 
 vi.mock("$lib/components/report/ReportSheet.svelte", () => ({
 	default: reportSheetMock,
@@ -17,6 +17,9 @@ vi.mock("$lib/components/report/ReportSheet.svelte", () => ({
 vi.mock("$lib/api/browse/blocks", () => ({ blockUser: blockUserMock }));
 vi.mock("$lib/api/browse/hides", () => ({ hideUser: vi.fn() }));
 vi.mock("$lib/api/error-toast", () => ({ showErrorToast: vi.fn() }));
+vi.mock("$lib/app-data/preferences.svelte", () => ({
+	preferencesSnapshot: () => preferences,
+}));
 vi.mock("$lib/components/report/block-failure", () => ({
 	showBlockFailure: showBlockFailureMock,
 }));
@@ -74,6 +77,7 @@ async function confirmBlock() {
 beforeEach(() => {
 	vi.clearAllMocks();
 	blockUserMock.mockResolvedValue(undefined);
+	preferences.confirmBlock = true;
 	applyBackGestureHandler();
 });
 
@@ -103,6 +107,21 @@ it("shows the profile as blocked once confirmed and settles once the block is co
 	});
 	expect(blocking.settle).toHaveBeenCalledOnce();
 	expect(showBlockFailureMock).not.toHaveBeenCalled();
+});
+
+it("blocks straight away when confirming blocks is turned off", async () => {
+	preferences.confirmBlock = false;
+	const { blocking, markBlocked } = renderMenu();
+
+	await fireEvent.click(await blockItem());
+	await flush();
+
+	expect(screen.queryByRole("alertdialog")).toBeNull();
+	expect(markBlocked).toHaveBeenCalledOnce();
+	expect(blockUserMock).toHaveBeenCalledExactlyOnceWith({
+		profileId: PROFILE_ID,
+	});
+	expect(blocking.settle).toHaveBeenCalledOnce();
 });
 
 it("brings the profile back and explains a block that did not stick", async () => {
