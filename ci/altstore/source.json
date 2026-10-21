@@ -35,13 +35,13 @@
 			],
 			"versions": [
 				{
-					"version": "0.1.0.16",
-					"buildVersion": "0.1.0.16",
-					"date": "2026-10-19",
-					"localizedDescription": "- Send GIFs and Gaymoji from the new stickers button in the message field, and see them in chats and inbox previews\n- Reuse earlier uploads when adding profile photos\n- Expiring photos and unsend are more reliable: the location bypass now holds until the action finishes",
-					"downloadURL": "https://github.com/codexrunnerregrind/regrind/releases/download/v0.1.0-beta.16/regrind-v0.1.0-beta.16.ipa",
-					"size": 41609813,
-					"sha256": "c38289a15c0dfc3e39b6d1c773b616ec60f0db004b2672d1a7cd62a2231724a9",
+					"version": "0.1.0.17",
+					"buildVersion": "0.1.0.17",
+					"date": "2026-10-21",
+					"localizedDescription": "- Keep screen on: new setting that stops the screen from turning off\n- Quick block: new setting to block profiles without the confirmation dialog\n- Viewed Me matching: reveals more of the blurred profiles in your viewers list\n- Android: saving photos and videos works again",
+					"downloadURL": "https://github.com/codexrunnerregrind/regrind/releases/download/v0.1.0-beta.17/regrind-v0.1.0-beta.17.ipa",
+					"size": 41631439,
+					"sha256": "cb572178de2ec7164ac5bee32ccff37a56ad03c8f47fbb2db453ec115f3955fe",
 					"minOSVersion": "14.0"
 				}
 			]
