@@ -24,7 +24,9 @@ function runningOn(osName: string) {
 	tauri.__TAURI_INTERNALS__ = {
 		convertFileSrc: (filePath, protocol = "asset") => {
 			const path = encodeURIComponent(filePath);
-			return osName === "windows" || osName === "android"
+			if (osName === "android")
+				return `https://${protocol}.localhost/${path}`;
+			return osName === "windows"
 				? `http://${protocol}.localhost/${path}`
 				: `${protocol}://localhost/${path}`;
 		},
@@ -58,7 +60,7 @@ describe("proxyMediaUrl", () => {
 	});
 
 	it("uses the http form the platforms that need it expect", () => {
-		runningOn("android");
+		runningOn("windows");
 
 		const proxied = proxyMediaUrl(PHOTO);
 
@@ -115,7 +117,7 @@ describe("profileMediaUrl", () => {
 
 describe("unproxyMediaUrl", () => {
 	it("round-trips a proxied url back to the one behind it", () => {
-		for (const os of ["macos", "android"]) {
+		for (const os of ["macos", "windows", "android"]) {
 			runningOn(os);
 
 			expect(unproxyMediaUrl(proxyMediaUrl(SIGNED))).toBe(SIGNED);

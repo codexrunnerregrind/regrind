@@ -35,10 +35,12 @@ export function proxyMediaUrl(
  * the webview: the proxy scheme means nothing to an HTTP client.
  */
 export function unproxyMediaUrl(url: string): string {
-	// `convertFileSrc` spells the proxy as a scheme, or a subdomain on windows.
+	// `convertFileSrc` spells the proxy as a scheme, or a subdomain on windows
+	// and android (https there, as the app origin is).
 	const prefix = [
 		`${MEDIA_SCHEME}://localhost/`,
 		`http://${MEDIA_SCHEME}.localhost/`,
+		`https://${MEDIA_SCHEME}.localhost/`,
 	].find((candidate) => url.startsWith(candidate));
 	if (prefix === undefined) return url;
 	// A one-character fetcher tag, then the url.
