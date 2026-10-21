@@ -3,6 +3,7 @@ import z from "zod";
 
 import { fetchRest } from "$lib/api/transport";
 import { demoEnabled, demoUploadRightNowMedia } from "$lib/demo";
+import { notePhotos } from "$lib/interest/viewer-matches";
 import { rightNowV4QuerySchema } from "$lib/model/right-now/feed/query/v4";
 import { RightNowFeedResponseSchema } from "$lib/model/right-now/feed/response/v4";
 import {
@@ -19,12 +20,26 @@ import { urlSearchParamsCodec } from "$lib/util/url-search-params";
 export async function getRightNowFeedV4(
 	query: z.infer<typeof rightNowV4QuerySchema>,
 ) {
-	return await fetchRest(
+	const feed = await fetchRest(
 		"/v4/rightnow/feed?" +
 			new URLSearchParams(
 				urlSearchParamsCodec(rightNowV4QuerySchema).encode(query),
 			).toString(),
 	).then((res) => res.jsonParsed(RightNowFeedResponseSchema));
+	notePhotos(
+		feed.items.flatMap((item) =>
+			item.type === "right_now_post_v3" || item.type === "locked_post_v1"
+				? [
+						{
+							profileId: item.data.profileId,
+							hash: item.data.mediaHash,
+							displayName: item.data.displayName,
+						},
+					]
+				: [],
+		),
+	);
+	return feed;
 }
 
 const entitlementsResponseSchema = z.looseObject({

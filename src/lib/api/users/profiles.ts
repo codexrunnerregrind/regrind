@@ -146,6 +146,13 @@ async function fetchProfile(profileId: number): Promise<Profile> {
 			throw new ProfileUnavailableError();
 		}
 	}
+	notePhotos([
+		{
+			profileId: profile.profileId,
+			hash: profile.medias?.[0]?.mediaHash,
+			displayName: profile.displayName,
+		},
+	]);
 	return profile;
 }
 

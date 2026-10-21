@@ -13,10 +13,15 @@ import { now } from "$lib/util/clock";
 // Puts blurred Viewed Me previews back to a face: by the photo hash they still
 // carry, else by their view time against the live view events we saw.
 
-const MAX_ENTRIES = 1000;
+// A few grid pages hold hundreds of photos, so the cap is sized for a month of
+// browsing rather than an hour of it (~1 MB on disk).
+const MAX_PHOTOS = 10_000;
+const MAX_VIEWS = 1000;
 const MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 const VIEW_TOLERANCE_MS = 2000;
-const SAVE_DELAY_MS = 2000;
+// The real save is when the app goes to the background; this only bounds what
+// a crash while open can lose.
+const SAVE_DELAY_MS = 60_000;
 
 const entrySchema = z.object({
 	profileId: z.int().nonnegative(),
@@ -51,6 +56,18 @@ let photos = new Map<string, ViewerMatch>();
 let views: SeenView[] = [];
 let loading: Promise<void> | null = null;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
+// In memory but not on disk yet. A seen-again profile only refreshes its age,
+// which rides along with the next save instead of causing one.
+let unsaved = false;
+// Set when the file was there but couldn't be read: saving over it would
+// replace a month of sightings with this session's.
+let readFailed = false;
+
+if (typeof document !== "undefined") {
+	document.addEventListener("visibilitychange", () => {
+		if (document.visibilityState === "hidden") flush();
+	});
+}
 
 function path(profileId: number): string {
 	return `viewer-matches.${profileId}.data`;
@@ -62,12 +79,12 @@ function prune(): void {
 		[...photos]
 			.filter(([, entry]) => entry.seenAt >= cutoff)
 			.sort(([, a], [, b]) => b.seenAt - a.seenAt)
-			.slice(0, MAX_ENTRIES),
+			.slice(0, MAX_PHOTOS),
 	);
 	views = views
 		.filter((view) => view.at >= cutoff)
 		.sort((a, b) => b.at - a.at)
-		.slice(0, MAX_ENTRIES);
+		.slice(0, MAX_VIEWS);
 }
 
 async function load(): Promise<number | null> {
@@ -77,6 +94,7 @@ async function load(): Promise<number | null> {
 	flush();
 	loading ??= (async () => {
 		let read: z.infer<typeof fileSchema> = { photos: {}, views: [] };
+		let failed = false;
 		try {
 			if (await existsAppDataFile(path(account))) {
 				read = fileSchema.parse(
@@ -85,8 +103,10 @@ async function load(): Promise<number | null> {
 			}
 		} catch (error) {
 			console.error(error);
+			failed = true;
 		}
 		if (preferencesAccount() !== account) return;
+		readFailed = failed;
 		photos = new Map(Object.entries(read.photos));
 		views = read.views;
 		loadedFor = account;
@@ -99,6 +119,8 @@ async function load(): Promise<number | null> {
 }
 
 function save(account: number): void {
+	if (readFailed) return;
+	unsaved = false;
 	prune();
 	void writeAppDataFileAtomic({
 		path: path(account),
@@ -106,20 +128,20 @@ function save(account: number): void {
 	}).catch((error: unknown) => console.error(error));
 }
 
+// Not pushed back by later changes, so a long session still saves.
 function scheduleSave(account: number): void {
-	if (saveTimer !== null) clearTimeout(saveTimer);
+	if (saveTimer !== null) return;
 	saveTimer = setTimeout(() => {
 		saveTimer = null;
 		if (loadedFor === account) save(account);
 	}, SAVE_DELAY_MS);
 }
 
-/** Writes a pending save now, before the lists are swapped for another account. */
+/** Saves now, if anything is unsaved: on an account switch, or as the app goes to the background. */
 function flush(): void {
-	if (saveTimer === null) return;
-	clearTimeout(saveTimer);
+	if (saveTimer !== null) clearTimeout(saveTimer);
 	saveTimer = null;
-	if (loadedFor !== null) save(loadedFor);
+	if (unsaved && loadedFor !== null) save(loadedFor);
 }
 
 /** Remembers whose photo each hash is. Newest sighting wins. */
@@ -128,30 +150,28 @@ export async function rememberPhotos(seen: SeenPhoto[]): Promise<void> {
 	const account = await load();
 	if (account === null) return;
 	const at = now();
+	let learned = false;
 	for (const { profileId, hash, displayName } of seen) {
 		if (!hash) continue;
 		const prev = photos.get(hash);
-		photos.set(hash, {
-			profileId,
-			displayName:
-				displayName ??
-				(prev?.profileId === profileId ? prev.displayName : null),
-			seenAt: at,
-		});
+		const name =
+			displayName ??
+			(prev?.profileId === profileId ? prev.displayName : null);
+		learned ||= prev?.profileId !== profileId || prev.displayName !== name;
+		photos.set(hash, { profileId, displayName: name, seenAt: at });
+		unsaved = true;
 	}
-	scheduleSave(account);
+	if (learned) scheduleSave(account);
 }
 
 /** Remembers who viewed us when, from a live view event. */
 export async function rememberView(view: SeenView): Promise<void> {
 	const account = await load();
 	if (account === null) return;
-	views = [
-		view,
-		...views.filter(
-			(v) => v.profileId !== view.profileId || v.at !== view.at,
-		),
-	];
+	if (views.some((v) => v.profileId === view.profileId && v.at === view.at))
+		return;
+	views = [view, ...views];
+	unsaved = true;
 	scheduleSave(account);
 }
 
@@ -174,6 +194,7 @@ function matchByPhoto(hash: string | null, cutoff: number): ViewerMatch | null {
 function matchByViewTime(
 	at: number | null,
 	cutoff: number,
+	names: () => Map<number, string>,
 ): ViewerMatch | null {
 	if (at === null) return null;
 	const near = new Set(
@@ -187,10 +208,28 @@ function matchByViewTime(
 	);
 	const [profileId] = near;
 	if (profileId === undefined || near.size !== 1) return null;
-	const named = [...photos.values()].find(
-		(entry) => entry.profileId === profileId && entry.displayName !== null,
-	);
-	return { profileId, displayName: named?.displayName ?? null, seenAt: at };
+	return {
+		profileId,
+		displayName: names().get(profileId) ?? null,
+		seenAt: at,
+	};
+}
+
+/** Each profile's most recently seen name, built on first use per call. */
+function nameIndex(): () => Map<number, string> {
+	let index: Map<number, string> | null = null;
+	return () => {
+		if (index) return index;
+		const built = new Map<number, { name: string; seenAt: number }>();
+		for (const { profileId, displayName, seenAt } of photos.values()) {
+			if (displayName === null) continue;
+			const known = built.get(profileId);
+			if (!known || known.seenAt < seenAt)
+				built.set(profileId, { name: displayName, seenAt });
+		}
+		index = new Map([...built].map(([id, { name }]) => [id, name]));
+		return index;
+	};
 }
 
 export async function matchViewers(
@@ -200,9 +239,11 @@ export async function matchViewers(
 		return previews.map(() => null);
 	}
 	const cutoff = now() - MAX_AGE_MS;
+	const names = nameIndex();
 	return previews.map(
 		({ hash, lastViewed }) =>
-			matchByPhoto(hash, cutoff) ?? matchByViewTime(lastViewed, cutoff),
+			matchByPhoto(hash, cutoff) ??
+			matchByViewTime(lastViewed, cutoff, names),
 	);
 }
 
@@ -210,6 +251,8 @@ export async function clearViewerMatches(profileId: number): Promise<void> {
 	if (loadedFor === profileId) {
 		if (saveTimer !== null) clearTimeout(saveTimer);
 		saveTimer = null;
+		readFailed = false;
+		unsaved = false;
 		photos = new Map();
 		views = [];
 		loadedFor = null;
@@ -222,6 +265,8 @@ export function resetViewerMatchesForTesting(): void {
 	saveTimer = null;
 	loadedFor = null;
 	loading = null;
+	readFailed = false;
+	unsaved = false;
 	photos = new Map();
 	views = [];
 }

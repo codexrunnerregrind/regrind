@@ -117,6 +117,89 @@ describe("viewer matches", () => {
 		expect(await matchViewedAt(at)).toBeNull();
 	});
 
+	it("names a view-time match after its latest sighting", async () => {
+		const at = clock - 60_000;
+		await rememberPhotos([{ profileId: 7, hash: A, displayName: "Old" }]);
+		clock += 1000;
+		await rememberPhotos([{ profileId: 7, hash: B, displayName: "New" }]);
+		await rememberView({ profileId: 7, at });
+		expect((await matchViewedAt(at))?.displayName).toBe("New");
+	});
+
+	it("keeps saving while sightings keep coming", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		try {
+			await rememberPhotos([{ profileId: 7, hash: A }]);
+			await vi.advanceTimersByTimeAsync(59_000);
+			await rememberPhotos([{ profileId: 8, hash: B }]);
+			await vi.advanceTimersByTimeAsync(2000);
+			expect(files.has("viewer-matches.1.data")).toBe(true);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("does not save just because a known profile was seen again", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		try {
+			await rememberPhotos([
+				{ profileId: 7, hash: A, displayName: "Sam" },
+			]);
+			await vi.runAllTimersAsync();
+			files.clear();
+			await rememberPhotos([
+				{ profileId: 7, hash: A, displayName: "Sam" },
+			]);
+			await vi.runAllTimersAsync();
+			expect(files.size).toBe(0);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
+	it("saves at once when the app goes to the background", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		const visibility = vi
+			.spyOn(document, "visibilityState", "get")
+			.mockReturnValue("hidden");
+		try {
+			await rememberPhotos([{ profileId: 7, hash: A }]);
+			document.dispatchEvent(new Event("visibilitychange"));
+			await Promise.resolve();
+			expect(files.has("viewer-matches.1.data")).toBe(true);
+		} finally {
+			visibility.mockRestore();
+			vi.useRealTimers();
+		}
+	});
+
+	it("writes nothing on the way to the background when nothing changed", async () => {
+		const visibility = vi
+			.spyOn(document, "visibilityState", "get")
+			.mockReturnValue("hidden");
+		try {
+			await matchPhotos([A]);
+			document.dispatchEvent(new Event("visibilitychange"));
+			await Promise.resolve();
+			expect(files.size).toBe(0);
+		} finally {
+			visibility.mockRestore();
+		}
+	});
+
+	it("does not save over a file it could not read", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		const unreadable = new Uint8Array([0xc1]);
+		files.set("viewer-matches.1.data", unreadable);
+		try {
+			await rememberPhotos([{ profileId: 7, hash: A }]);
+			await vi.runAllTimersAsync();
+			expect(files.get("viewer-matches.1.data")).toBe(unreadable);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	it("saves a pending change before switching accounts", async () => {
 		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
 		try {
