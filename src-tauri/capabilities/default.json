@@ -16,6 +16,9 @@
 				},
 				{
 					"path": "$APPLOCALDATA/preferences.*.data"
+				},
+				{
+					"path": "$APPLOCALDATA/viewer-matches.*.data"
 				}
 			]
 		},
@@ -27,6 +30,9 @@
 				},
 				{
 					"path": "$APPLOCALDATA/preferences.*.data"
+				},
+				{
+					"path": "$APPLOCALDATA/viewer-matches.*.data"
 				}
 			],
 			"deny": [
@@ -51,6 +57,12 @@
 					"path": "$APPLOCALDATA/preferences.*.data.tmp"
 				},
 				{
+					"path": "$APPLOCALDATA/viewer-matches.*.data"
+				},
+				{
+					"path": "$APPLOCALDATA/viewer-matches.*.data.tmp"
+				},
+				{
 					"path": "$APPCACHE/notifications/*"
 				}
 			]
@@ -69,6 +81,12 @@
 				},
 				{
 					"path": "$APPLOCALDATA/preferences.*.data.tmp"
+				},
+				{
+					"path": "$APPLOCALDATA/viewer-matches.*.data"
+				},
+				{
+					"path": "$APPLOCALDATA/viewer-matches.*.data.tmp"
 				}
 			]
 		},
@@ -80,6 +98,9 @@
 				},
 				{
 					"path": "$APPLOCALDATA/preferences.*.data"
+				},
+				{
+					"path": "$APPLOCALDATA/viewer-matches.*.data"
 				}
 			]
 		},

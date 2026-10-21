@@ -92,6 +92,30 @@ mod tests {
 	}
 
 	#[test]
+	fn an_accounts_viewer_matches_are_inside_the_scope() {
+		let path = "$APPLOCALDATA/viewer-matches.162863583.data";
+		for permission in [
+			"fs:allow-exists",
+			"fs:allow-read-file",
+			"fs:allow-write-file",
+			"fs:allow-remove",
+			"fs:allow-rename",
+		] {
+			assert!(
+				is_allowed(permission, path),
+				"{permission} does not allow {path}"
+			);
+		}
+		let temp = format!("{path}.tmp");
+		for permission in ["fs:allow-write-file", "fs:allow-rename"] {
+			assert!(
+				is_allowed(permission, &temp),
+				"{permission} does not allow {temp}"
+			);
+		}
+	}
+
+	#[test]
 	fn the_shared_preferences_file_is_still_inside_the_scope() {
 		for permission in [
 			"fs:allow-exists",
