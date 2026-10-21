@@ -92,7 +92,7 @@
 	<PreferenceSwitchSetting
 		preference="matchHiddenViewers"
 		title="Match hidden viewers"
-		description="Recognize blurred Viewed Me previews by photos you've already seen on the grid, in taps and in chats. Kept on this device for 30 days."
+		description="Recognize blurred Viewed Me previews by photos you've already seen on the grid, in taps and in chats, or by views that arrived while the app was open. Kept on this device for 30 days."
 	>
 		{#snippet icon()}
 			<FingerprintIcon weight="fill" />

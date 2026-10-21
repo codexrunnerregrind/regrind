@@ -2,8 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { resetNowForTesting, setNowForTesting } from "$lib/util/clock";
 import {
-	matchPhotos,
+	matchViewers,
 	rememberPhotos,
+	rememberView,
 	resetViewerMatchesForTesting,
 } from "./viewer-matches";
 
@@ -35,6 +36,14 @@ const B = "b".repeat(40);
 const DAY = 24 * 60 * 60 * 1000;
 
 let clock = 1_000_000_000_000;
+
+function matchPhotos(hashes: string[]) {
+	return matchViewers(hashes.map((hash) => ({ hash, lastViewed: null })));
+}
+
+function matchViewedAt(lastViewed: number) {
+	return matchViewers([{ hash: null, lastViewed }]).then(([match]) => match);
+}
 
 beforeEach(() => {
 	files.clear();
@@ -85,10 +94,44 @@ describe("viewer matches", () => {
 		expect(await matchPhotos([A])).toEqual([null]);
 	});
 
+	it("matches a photo-less preview by its view time", async () => {
+		const at = clock - 60_000;
+		await rememberPhotos([{ profileId: 7, hash: A, displayName: "Sam" }]);
+		await rememberView({ profileId: 7, at });
+		expect(await matchViewedAt(at + 1500)).toMatchObject({
+			profileId: 7,
+			displayName: "Sam",
+		});
+		expect(await matchViewedAt(at + 3000)).toBeNull();
+	});
+
+	it("leaves a view time alone when two viewers are that close", async () => {
+		const at = clock - 60_000;
+		await rememberView({ profileId: 7, at });
+		await rememberView({ profileId: 8, at: at + 1000 });
+		expect(await matchViewedAt(at)).toBeNull();
+	});
+
+	it("prefers the photo hash over the view time", async () => {
+		const at = clock - 60_000;
+		await rememberPhotos([{ profileId: 7, hash: A }]);
+		await rememberView({ profileId: 8, at });
+		const [match] = await matchViewers([{ hash: A, lastViewed: at }]);
+		expect(match?.profileId).toBe(7);
+	});
+
+	it("forgets view times after 30 days", async () => {
+		const at = clock;
+		await rememberView({ profileId: 7, at });
+		clock += 31 * DAY;
+		expect(await matchViewedAt(at)).toBeNull();
+	});
+
 	it("keeps each account's list apart and persists it", async () => {
 		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
 		try {
 			await rememberPhotos([{ profileId: 7, hash: A }]);
+			await rememberView({ profileId: 9, at: clock });
 			await vi.runAllTimersAsync();
 			expect(files.has("viewer-matches.1.data")).toBe(true);
 
@@ -98,6 +141,7 @@ describe("viewer matches", () => {
 			prefs.account = 1;
 			resetViewerMatchesForTesting();
 			expect((await matchPhotos([A]))[0]?.profileId).toBe(7);
+			expect((await matchViewedAt(clock))?.profileId).toBe(9);
 		} finally {
 			vi.useRealTimers();
 		}

@@ -4,7 +4,7 @@ const {
 	getAccountPreferencesMock,
 	getViewsMock,
 	markBlockedProfilesUnviewableMock,
-	matchPhotosMock,
+	matchViewersMock,
 	reconcileHandlers,
 	setAccountPreferencesMock,
 	showErrorToastMock,
@@ -16,9 +16,9 @@ const {
 	getAccountPreferencesMock: vi.fn(),
 	getViewsMock: vi.fn(),
 	markBlockedProfilesUnviewableMock: vi.fn(() => Promise.resolve()),
-	matchPhotosMock: vi.fn((hashes: (string | null)[]) =>
+	matchViewersMock: vi.fn((previews: unknown[]) =>
 		Promise.resolve(
-			hashes.map(
+			previews.map(
 				(): {
 					profileId: number;
 					displayName: string | null;
@@ -42,8 +42,9 @@ const {
 vi.mock("$lib/api/error-toast", () => ({ showErrorToast: showErrorToastMock }));
 vi.mock("$lib/api/interest/views", () => ({ getViews: getViewsMock }));
 vi.mock("$lib/interest/viewer-matches", () => ({
-	matchPhotos: matchPhotosMock,
+	matchViewers: matchViewersMock,
 	notePhotos: vi.fn(),
+	noteView: vi.fn(),
 }));
 vi.mock("$lib/api/settings/account", () => ({
 	getAccountPreferences: getAccountPreferencesMock,
@@ -204,7 +205,7 @@ describe("ViewsState", () => {
 
 	it("turns a preview whose photo was seen before into its profile", async () => {
 		const hash = "a".repeat(40);
-		matchPhotosMock.mockResolvedValueOnce([
+		matchViewersMock.mockResolvedValueOnce([
 			{ profileId: 42, displayName: "Sam", seenAt: 0 },
 			null,
 		]);
