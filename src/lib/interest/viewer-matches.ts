@@ -7,10 +7,7 @@ import {
 	removeAppDataFile,
 	writeAppDataFileAtomic,
 } from "$lib/app-data";
-import {
-	getPreferences,
-	preferencesAccount,
-} from "$lib/app-data/preferences.svelte";
+import { preferencesAccount } from "$lib/app-data/preferences.svelte";
 import { now } from "$lib/util/clock";
 
 // Puts blurred Viewed Me previews back to a face: by the photo hash they still
@@ -113,13 +110,9 @@ function scheduleSave(account: number): void {
 	}, SAVE_DELAY_MS);
 }
 
-async function enabled(): Promise<boolean> {
-	return (await getPreferences()).matchHiddenViewers;
-}
-
 /** Remembers whose photo each hash is. Newest sighting wins. */
 export async function rememberPhotos(seen: SeenPhoto[]): Promise<void> {
-	if (seen.length === 0 || !(await enabled())) return;
+	if (seen.length === 0) return;
 	const account = await load();
 	if (account === null) return;
 	const at = now();
@@ -139,7 +132,6 @@ export async function rememberPhotos(seen: SeenPhoto[]): Promise<void> {
 
 /** Remembers who viewed us when, from a live view event. */
 export async function rememberView(view: SeenView): Promise<void> {
-	if (!(await enabled())) return;
 	const account = await load();
 	if (account === null) return;
 	views = [
@@ -192,7 +184,7 @@ function matchByViewTime(
 export async function matchViewers(
 	previews: { hash: string | null; lastViewed: number | null }[],
 ): Promise<(ViewerMatch | null)[]> {
-	if (!(await enabled()) || (await load()) === null) {
+	if ((await load()) === null) {
 		return previews.map(() => null);
 	}
 	const cutoff = now() - MAX_AGE_MS;

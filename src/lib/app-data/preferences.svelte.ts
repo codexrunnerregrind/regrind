@@ -78,7 +78,6 @@ const preferencesSchema = z.object({
 	notifyTaps: z.boolean().default(true),
 	revealMessageRead: z.boolean().default(false),
 	revealProfileViews: z.boolean().default(false),
-	matchHiddenViewers: z.boolean().default(true),
 	// Dark rather than "system": the redesign is drawn dark-first, and a
 	// location-based app is mostly used at night. Both themes are fully
 	// specified, so switching to light or back to system is one tap away.
@@ -130,7 +129,6 @@ const accountPreferenceKeys = [
 	"notifyTaps",
 	"revealMessageRead",
 	"revealProfileViews",
-	"matchHiddenViewers",
 ] as const;
 
 const GLOBAL_PATH = "preferences.data";

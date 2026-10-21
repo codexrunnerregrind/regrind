@@ -10,7 +10,7 @@ import {
 
 const { files, prefs } = vi.hoisted(() => ({
 	files: new Map<string, Uint8Array>(),
-	prefs: { matchHiddenViewers: true, account: 1 },
+	prefs: { account: 1 },
 }));
 
 vi.mock("$lib/app-data", () => ({
@@ -26,8 +26,6 @@ vi.mock("$lib/app-data", () => ({
 	}) => Promise.resolve(void files.set(path, content)),
 }));
 vi.mock("$lib/app-data/preferences.svelte", () => ({
-	getPreferences: () =>
-		Promise.resolve({ matchHiddenViewers: prefs.matchHiddenViewers }),
 	preferencesAccount: () => prefs.account,
 }));
 
@@ -47,7 +45,6 @@ function matchViewedAt(lastViewed: number) {
 
 beforeEach(() => {
 	files.clear();
-	prefs.matchHiddenViewers = true;
 	prefs.account = 1;
 	clock = 1_000_000_000_000;
 	setNowForTesting(() => clock);
@@ -84,13 +81,6 @@ describe("viewer matches", () => {
 	it("forgets entries after 30 days", async () => {
 		await rememberPhotos([{ profileId: 7, hash: A }]);
 		clock += 31 * DAY;
-		expect(await matchPhotos([A])).toEqual([null]);
-	});
-
-	it("does nothing while turned off", async () => {
-		prefs.matchHiddenViewers = false;
-		await rememberPhotos([{ profileId: 7, hash: A }]);
-		prefs.matchHiddenViewers = true;
 		expect(await matchPhotos([A])).toEqual([null]);
 	});
 
