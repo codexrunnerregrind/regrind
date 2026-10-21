@@ -4,6 +4,7 @@
 	import DeviceMobileIcon from "phosphor-svelte/lib/DeviceMobileIcon";
 	import ExportIcon from "phosphor-svelte/lib/ExportIcon";
 	import EyeIcon from "phosphor-svelte/lib/EyeIcon";
+	import FingerprintIcon from "phosphor-svelte/lib/FingerprintIcon";
 	import GifIcon from "phosphor-svelte/lib/GifIcon";
 	import HeartIcon from "phosphor-svelte/lib/HeartIcon";
 	import LockKeyIcon from "phosphor-svelte/lib/LockKeyIcon";
@@ -86,6 +87,15 @@
 	>
 		{#snippet icon()}
 			<EyeIcon weight="fill" />
+		{/snippet}
+	</PreferenceSwitchSetting>
+	<PreferenceSwitchSetting
+		preference="matchHiddenViewers"
+		title="Match hidden viewers"
+		description="Recognize blurred Viewed Me previews by photos you've already seen on the grid, in taps and in chats. Kept on this device for 30 days."
+	>
+		{#snippet icon()}
+			<FingerprintIcon weight="fill" />
 		{/snippet}
 	</PreferenceSwitchSetting>
 	<PreferenceSwitchSetting

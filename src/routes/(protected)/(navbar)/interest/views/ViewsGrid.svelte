@@ -11,6 +11,7 @@
 	import { restoreScrollOnce } from "$lib/util/scroll-restore.svelte";
 	import EmptyViewsGrid from "./EmptyViewsGrid.svelte";
 	import UntrackedViewsGrid from "./UntrackedViewsGrid.svelte";
+	import ViewedMatch from "./ViewedMatch.svelte";
 	import ViewedPreview from "./ViewedPreview.svelte";
 	import ViewedProfile from "./ViewedProfile.svelte";
 	import { getViewsState } from "./views-state.svelte";
@@ -85,6 +86,8 @@
 					{#each views.views as entry (entry.key)}
 						{#if entry.type === "profile"}
 							<ViewedProfile view={entry.profile} />
+						{:else if entry.type === "matched"}
+							<ViewedMatch viewer={entry.viewer} />
 						{:else}
 							<ViewedPreview preview={entry.preview} />
 						{/if}

@@ -7,6 +7,7 @@ import { callMethod } from "$lib/api/methods";
 import { clearAccountPreferences } from "$lib/app-data/preferences.svelte";
 import { inboxLastViewed } from "$lib/chat/inbox-last-viewed.svelte";
 import { tapsLastViewed } from "$lib/interest/taps-last-viewed";
+import { clearViewerMatches } from "$lib/interest/viewer-matches";
 
 /**
  * Signs the account in use out and forgets it.
@@ -41,6 +42,7 @@ export async function clearAccountState(): Promise<void> {
 		marker.clearStored(profileId);
 	try {
 		await clearAccountPreferences(profileId);
+		await clearViewerMatches(profileId);
 	} catch (error) {
 		console.error(error);
 	}

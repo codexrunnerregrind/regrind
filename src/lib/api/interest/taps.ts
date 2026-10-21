@@ -2,6 +2,7 @@ import z from "zod";
 
 import { fetchRest } from "$lib/api/transport";
 import { awaitEntitlementGrant } from "$lib/entitlements/expiring-media-entitlement";
+import { notePhotos } from "$lib/interest/viewer-matches";
 import { sentTapSchema } from "$lib/model/interest/sent-tap";
 import { tapProfileSchema } from "$lib/model/interest/tap-profile";
 import { type TapType } from "$lib/model/interest/taps";
@@ -15,9 +16,17 @@ export async function getReceivedTaps() {
 	// Wait out an in-flight handover, or the distances come back measured
 	// from the granting region.
 	await awaitEntitlementGrant();
-	return await fetchRest("/v2/taps/received").then((res) =>
+	const taps = await fetchRest("/v2/taps/received").then((res) =>
 		res.jsonParsed(getReceivedTapsResponseSchema),
 	);
+	notePhotos(
+		taps.profiles.map((profile) => ({
+			profileId: profile.profileId,
+			hash: profile.profileImageMediaHash,
+			displayName: profile.displayName,
+		})),
+	);
+	return taps;
 }
 
 const getSentTapsResponseSchema = z.array(sentTapSchema);

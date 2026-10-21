@@ -60,6 +60,7 @@ const preferencesSchema = z.object({
 	geohash: geohashSchema.nullable().default(null),
 	giphyConsent: z.boolean().default(false),
 	hapticFeedback: z.boolean().default(true),
+	keepScreenOn: z.boolean().default(false),
 	// The last detected live GPS location, used while `usingCurrentLocation` is
 	// true. Kept separate from `geohash` so switching modes never clobbers the
 	// user's mock pick.
@@ -77,6 +78,7 @@ const preferencesSchema = z.object({
 	notifyTaps: z.boolean().default(true),
 	revealMessageRead: z.boolean().default(false),
 	revealProfileViews: z.boolean().default(false),
+	matchHiddenViewers: z.boolean().default(true),
 	// Dark rather than "system": the redesign is drawn dark-first, and a
 	// location-based app is mostly used at night. Both themes are fully
 	// specified, so switching to light or back to system is one tap away.
@@ -128,6 +130,7 @@ const accountPreferenceKeys = [
 	"notifyTaps",
 	"revealMessageRead",
 	"revealProfileViews",
+	"matchHiddenViewers",
 ] as const;
 
 const GLOBAL_PATH = "preferences.data";

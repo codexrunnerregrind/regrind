@@ -15,6 +15,7 @@ import {
 } from "$lib/app-data/preferences.svelte";
 import { inboxLastViewed } from "$lib/chat/inbox-last-viewed.svelte";
 import { tapsLastViewed } from "$lib/interest/taps-last-viewed";
+import { clearViewerMatches } from "$lib/interest/viewer-matches";
 
 export type { AccountSummary };
 
@@ -178,6 +179,7 @@ export async function removeAccount(profileId: number): Promise<void> {
 		marker.clearStored(profileId);
 	try {
 		await clearAccountPreferences(profileId);
+		await clearViewerMatches(profileId);
 	} catch (error) {
 		console.error(error);
 	}

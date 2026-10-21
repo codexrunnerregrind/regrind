@@ -6,6 +6,7 @@ import { updateLocation } from "$lib/api/browse/location";
 import { TtlCache } from "$lib/api/cache";
 import { clearProfileCaches, getProfiles } from "$lib/api/users/profiles";
 import { awaitEntitlementGrant } from "$lib/entitlements/expiring-media-entitlement";
+import { notePhotos } from "$lib/interest/viewer-matches";
 import { coarsenGeohash } from "$lib/model/geohash";
 import { now } from "$lib/util/clock";
 import type { cascadeV4ResponseFullProfileV1Schema } from "$lib/model/browse/grid/cascade/response/v4";
@@ -124,6 +125,19 @@ export async function getGrid(query: Parameters<typeof getCascadeV4>[0]) {
 		}
 	}
 
+	notePhotos(
+		items.flatMap((item) =>
+			item.type === "rendered"
+				? [
+						{
+							profileId: item.id,
+							hash: item.profilePhotosHashes?.[0],
+							displayName: item.displayName,
+						},
+					]
+				: [],
+		),
+	);
 	return { items, nextPage: response.nextPage, shuffled: response.shuffled };
 }
 

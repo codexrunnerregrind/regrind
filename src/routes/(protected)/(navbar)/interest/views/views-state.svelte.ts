@@ -12,14 +12,22 @@ import {
 	onProfileViewabilityChange,
 } from "$lib/api/users/profile-viewability";
 import { onProfileEdit } from "$lib/api/users/profiles";
+import { matchPhotos, notePhotos } from "$lib/interest/viewer-matches";
 import { ReconcilingListState } from "$lib/util/reconciling-list-state.svelte";
 import { viewedMeV1NewViewReceivedEventSchema, ws } from "$lib/ws.svelte";
 import type { ViewerProfile, ViewPreview } from "$lib/model/interest/views";
 
 const PAGE_SIZE = 24;
 
+/** A blurred preview put back to a face by its photo hash. */
+export type MatchedViewer = ViewPreview & {
+	profileId: number;
+	displayName: string | null;
+};
+
 type ViewsSnapshot = {
 	profiles: ViewerProfile[];
+	matched: MatchedViewer[];
 	previews: ViewPreview[];
 	viewedMeHidden: boolean;
 };
@@ -35,6 +43,7 @@ export function resetViewsCacheForTesting(): void {
 
 export type ViewGridEntry =
 	| { type: "profile"; key: string; profile: ViewerProfile }
+	| { type: "matched"; key: string; viewer: MatchedViewer }
 	| { type: "preview"; key: string; preview: ViewPreview };
 
 export class ViewsState extends ReconcilingListState<
@@ -44,6 +53,7 @@ export class ViewsState extends ReconcilingListState<
 	enablingViewedMe = $state(false);
 
 	#profiles: ViewerProfile[] = $state([]);
+	#matched: MatchedViewer[] = $state([]);
 	#previews: ViewPreview[] = $state([]);
 	#viewedMeHidden = $state(false);
 	#unsubscribeProfileEdits = onProfileEdit(({ profileId, patch }) => {
@@ -58,6 +68,9 @@ export class ViewsState extends ReconcilingListState<
 			}
 			this.#profiles = this.#profiles.filter(
 				(view) => view.profileId !== profileId,
+			);
+			this.#matched = this.#matched.filter(
+				(viewer) => viewer.profileId !== profileId,
 			);
 		},
 	);
@@ -115,6 +128,13 @@ export class ViewsState extends ReconcilingListState<
 					profile,
 				}),
 			),
+			...this.#matched.map(
+				(viewer, index): ViewGridEntry => ({
+					type: "matched",
+					key: `matched:${index}`,
+					viewer,
+				}),
+			),
 			...this.#previews.map(
 				(preview, index): ViewGridEntry => ({
 					type: "preview",
@@ -128,11 +148,13 @@ export class ViewsState extends ReconcilingListState<
 
 	/** Everyone who viewed us, the anonymous previews included. */
 	get total(): number {
-		return this.#profiles.length + this.#previews.length;
+		return this.length;
 	}
 
 	protected get length(): number {
-		return this.#profiles.length + this.#previews.length;
+		return (
+			this.#profiles.length + this.#matched.length + this.#previews.length
+		);
 	}
 
 	protected loadCache(): ViewsSnapshot | null {
@@ -147,11 +169,54 @@ export class ViewsState extends ReconcilingListState<
 			console.error(error),
 		);
 		const views = await getViews();
+		notePhotos(
+			views.profiles.map((profile) => ({
+				profileId: profile.profileId,
+				hash: profile.profileImageMediaHash,
+				displayName: profile.displayName,
+			})),
+		);
+		const { matched, previews } = await this.#matchPreviews(views);
 		const listed = views.profiles.length + views.previews.length;
 		return {
-			...views,
+			profiles: views.profiles,
+			matched,
+			previews,
 			viewedMeHidden: listed > 0 ? false : await this.#readHideViewedMe(),
 		};
+	}
+
+	async #matchPreviews({
+		profiles,
+		previews,
+	}: {
+		profiles: ViewerProfile[];
+		previews: ViewPreview[];
+	}): Promise<{ matched: MatchedViewer[]; previews: ViewPreview[] }> {
+		const matches = await matchPhotos(
+			previews.map((preview) => preview.profileImageMediaHash),
+		).catch((error: unknown) => {
+			console.error(error);
+			return previews.map(() => null);
+		});
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local scratch set
+		const listed = new Set(profiles.map((profile) => profile.profileId));
+		const matched: MatchedViewer[] = [];
+		const unmatched: ViewPreview[] = [];
+		previews.forEach((preview, index) => {
+			const match = matches[index];
+			if (!match) {
+				unmatched.push(preview);
+			} else if (!listed.has(match.profileId)) {
+				listed.add(match.profileId);
+				matched.push({
+					...preview,
+					profileId: match.profileId,
+					displayName: match.displayName,
+				});
+			}
+		});
+		return { matched, previews: unmatched };
 	}
 
 	async #readHideViewedMe(): Promise<boolean> {
@@ -168,6 +233,9 @@ export class ViewsState extends ReconcilingListState<
 	): Set<number> {
 		this.#profiles = snapshot.profiles.filter((view) =>
 			isProfileViewable(view.profileId),
+		);
+		this.#matched = snapshot.matched.filter((viewer) =>
+			isProfileViewable(viewer.profileId),
 		);
 		this.#previews = snapshot.previews;
 		this.#viewedMeHidden = snapshot.viewedMeHidden;
@@ -201,8 +269,12 @@ export class ViewsState extends ReconcilingListState<
 			};
 		}
 		this.#profiles = [next, ...this.#profiles];
+		this.#matched = this.#matched.filter(
+			(viewer) => viewer.profileId !== next.profileId,
+		);
 		cached = {
 			profiles: this.#profiles,
+			matched: this.#matched,
 			previews: this.#previews,
 			viewedMeHidden: this.#viewedMeHidden,
 		};
@@ -225,6 +297,9 @@ export class ViewsState extends ReconcilingListState<
 			(event) => {
 				const recent = event.payload.mostRecent;
 				if (!recent) return;
+				notePhotos([
+					{ profileId: recent.profileId, hash: recent.photoHash },
+				]);
 				this.upsert({
 					profileId: recent.profileId,
 					displayName: null,

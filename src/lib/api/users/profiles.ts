@@ -15,6 +15,7 @@ import {
 	onProfileViewabilityChange,
 } from "$lib/api/users/profile-viewability";
 import { demoEnabled, demoUploadProfileImage } from "$lib/demo";
+import { notePhotos } from "$lib/interest/viewer-matches";
 import { mediaHashPublicSchema } from "$lib/model/media";
 import { rightNowAttributionStatusSchema } from "$lib/model/right-now";
 import { arrayOfParsableEntries } from "$lib/model/tolerance";
@@ -197,7 +198,17 @@ export async function getProfiles(
 	const batches: number[][] = [];
 	for (let i = 0; i < profileIds.length; i += MAX_PROFILES_PER_REQUEST)
 		batches.push(profileIds.slice(i, i + MAX_PROFILES_PER_REQUEST));
-	return (await Promise.all(batches.map(fetchProfilesBatch))).flat();
+	const resolved = (
+		await Promise.all(batches.map(fetchProfilesBatch))
+	).flat();
+	notePhotos(
+		resolved.map((profile) => ({
+			profileId: profile.profileId,
+			hash: profile.medias?.[0]?.mediaHash,
+			displayName: profile.displayName,
+		})),
+	);
+	return resolved;
 }
 
 export function clearProfileCaches() {

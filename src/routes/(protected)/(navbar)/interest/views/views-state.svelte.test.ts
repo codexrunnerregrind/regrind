@@ -4,6 +4,7 @@ const {
 	getAccountPreferencesMock,
 	getViewsMock,
 	markBlockedProfilesUnviewableMock,
+	matchPhotosMock,
 	reconcileHandlers,
 	setAccountPreferencesMock,
 	showErrorToastMock,
@@ -15,6 +16,17 @@ const {
 	getAccountPreferencesMock: vi.fn(),
 	getViewsMock: vi.fn(),
 	markBlockedProfilesUnviewableMock: vi.fn(() => Promise.resolve()),
+	matchPhotosMock: vi.fn((hashes: (string | null)[]) =>
+		Promise.resolve(
+			hashes.map(
+				(): {
+					profileId: number;
+					displayName: string | null;
+					seenAt: number;
+				} | null => null,
+			),
+		),
+	),
 	reconcileHandlers: [] as (() => void | Promise<void>)[],
 	setAccountPreferencesMock: vi.fn(),
 	showErrorToastMock: vi.fn(),
@@ -29,6 +41,10 @@ const {
 
 vi.mock("$lib/api/error-toast", () => ({ showErrorToast: showErrorToastMock }));
 vi.mock("$lib/api/interest/views", () => ({ getViews: getViewsMock }));
+vi.mock("$lib/interest/viewer-matches", () => ({
+	matchPhotos: matchPhotosMock,
+	notePhotos: vi.fn(),
+}));
 vi.mock("$lib/api/settings/account", () => ({
 	getAccountPreferences: getAccountPreferencesMock,
 	setAccountPreferences: setAccountPreferencesMock,
@@ -184,6 +200,31 @@ describe("ViewsState", () => {
 		expect(state.views).toHaveLength(25);
 		expect(state.views[24]).toMatchObject({ type: "preview" });
 		expect(state.hasMore).toBe(false);
+	});
+
+	it("turns a preview whose photo was seen before into its profile", async () => {
+		const hash = "a".repeat(40);
+		matchPhotosMock.mockResolvedValueOnce([
+			{ profileId: 42, displayName: "Sam", seenAt: 0 },
+			null,
+		]);
+		getViewsMock.mockResolvedValue({
+			profiles: [profile(1)],
+			previews: [preview({ profileImageMediaHash: hash }), preview()],
+		});
+
+		const state = new ViewsState();
+		await waitForLoaded(state);
+
+		expect(state.views.map((entry) => entry.type)).toEqual([
+			"profile",
+			"matched",
+			"preview",
+		]);
+		expect(state.views[1]).toMatchObject({
+			viewer: { profileId: 42, displayName: "Sam" },
+		});
+		expect(state.total).toBe(3);
 	});
 
 	it("records initial load errors and retries", async () => {

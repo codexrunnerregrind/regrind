@@ -1,6 +1,7 @@
 import z from "zod";
 
 import { fetchRest } from "$lib/api/transport";
+import { notePhotos } from "$lib/interest/viewer-matches";
 import {
 	type Conversation,
 	conversationEntriesSchema,
@@ -29,6 +30,15 @@ export async function getConversations({
 		"/v4/inbox?" + new URLSearchParams({ page: String(page) }).toString(),
 		{ method: "POST", ...(filters ? { body: filters } : {}) },
 	).then((res) => res.jsonParsed(conversationsSchema));
+	notePhotos(
+		conversations.entries.flatMap(({ data }) =>
+			data.participants.map((participant) => ({
+				profileId: participant.profileId,
+				hash: participant.primaryMediaHash,
+				displayName: data.participants.length === 1 ? data.name : null,
+			})),
+		),
+	);
 	return conversations;
 }
 
