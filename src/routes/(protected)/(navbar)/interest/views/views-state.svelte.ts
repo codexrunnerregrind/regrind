@@ -50,6 +50,17 @@ export type ViewGridEntry =
 	| { type: "matched"; key: string; viewer: MatchedViewer }
 	| { type: "preview"; key: string; preview: ViewPreview };
 
+function lastViewedOf(entry: ViewGridEntry): number | null {
+	switch (entry.type) {
+		case "profile":
+			return entry.profile.lastViewed;
+		case "matched":
+			return entry.viewer.lastViewed;
+		case "preview":
+			return entry.preview.lastViewed;
+	}
+}
+
 export class ViewsState extends ReconcilingListState<
 	ViewerProfile,
 	ViewsSnapshot
@@ -147,6 +158,8 @@ export class ViewsState extends ReconcilingListState<
 				}),
 			),
 		];
+		// Newest view first, whichever kind of tile it is.
+		entries.sort((a, b) => (lastViewedOf(b) ?? 0) - (lastViewedOf(a) ?? 0));
 		return entries.slice(0, this.visibleCount);
 	}
 

@@ -228,6 +228,29 @@ describe("ViewsState", () => {
 		expect(state.total).toBe(3);
 	});
 
+	it("orders every kind of tile by when they viewed", async () => {
+		matchViewersMock.mockResolvedValueOnce([
+			{ profileId: 42, displayName: "Sam", seenAt: 0 },
+			null,
+		]);
+		getViewsMock.mockResolvedValue({
+			profiles: [profile(1, { lastViewed: 100 })],
+			previews: [
+				preview({ lastViewed: 300 }),
+				preview({ lastViewed: 200 }),
+			],
+		});
+
+		const state = new ViewsState();
+		await waitForLoaded(state);
+
+		expect(state.views.map((entry) => entry.type)).toEqual([
+			"matched",
+			"preview",
+			"profile",
+		]);
+	});
+
 	it("records initial load errors and retries", async () => {
 		getViewsMock
 			.mockRejectedValueOnce(new Error("offline"))
