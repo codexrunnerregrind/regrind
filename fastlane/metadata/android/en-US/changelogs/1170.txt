@@ -1,0 +1,4 @@
+- Keep screen on: new setting that stops the screen from turning off
+- Quick block: new setting to block profiles without the confirmation dialog
+- Viewed Me matching: reveals more of the blurred profiles in your viewers list
+- Android: saving photos and videos works again
