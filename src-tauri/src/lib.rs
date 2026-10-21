@@ -9,6 +9,7 @@ mod desktop_entry;
 mod error;
 mod haptics;
 mod hex;
+mod keep_screen_on;
 #[cfg(target_os = "android")]
 mod keyboard_media;
 pub mod media;
@@ -251,6 +252,7 @@ pub fn run() {
             api::session_recovery::set_app_active,
             api::session_recovery::current_session,
             haptics::play_haptic,
+            keep_screen_on::set_keep_screen_on,
             scroll_phase::set_scroll_gesture_capture,
             desktop_entry::desktop_entry_state,
             desktop_entry::desktop_entry_install,

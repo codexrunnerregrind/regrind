@@ -28,6 +28,7 @@
 	import { blockZoom } from "$lib/platform/block-zoom";
 	import { trackHoverPointer } from "$lib/platform/hover-pointer";
 	import { keepLinksInApp } from "$lib/platform/in-app-links";
+	import { applyKeepScreenOn } from "$lib/platform/keep-screen-on";
 	import { applyKeyboardInset } from "$lib/platform/keyboard-inset";
 	import { isAndroidPlatform, isMobilePlatform } from "$lib/platform/os";
 	import { installScrollGestureBridge } from "$lib/platform/scroll-gesture";
@@ -135,6 +136,10 @@
 
 	$effect(() => {
 		applyBackdropBlurQuality();
+	});
+
+	$effect(() => {
+		applyKeepScreenOn();
 	});
 
 	$effect(() => {

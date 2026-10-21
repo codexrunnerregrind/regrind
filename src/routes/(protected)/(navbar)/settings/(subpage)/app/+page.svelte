@@ -7,6 +7,7 @@
 	import GifIcon from "phosphor-svelte/lib/GifIcon";
 	import HeartIcon from "phosphor-svelte/lib/HeartIcon";
 	import LockKeyIcon from "phosphor-svelte/lib/LockKeyIcon";
+	import SunIcon from "phosphor-svelte/lib/SunIcon";
 	import TrayArrowDownIcon from "phosphor-svelte/lib/TrayArrowDownIcon";
 	import VibrateIcon from "phosphor-svelte/lib/VibrateIcon";
 	import { toast } from "svelte-sonner";
@@ -17,6 +18,7 @@
 	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
 	import { desktopEntryAvailable } from "$lib/platform/desktop-entry.svelte";
 	import { hapticsAvailable } from "$lib/platform/haptics";
+	import { keepScreenOnAvailable } from "$lib/platform/keep-screen-on";
 	import { addonInstallerAvailable } from "$lib/updates/addon.svelte";
 	import {
 		updatesSelfManaged,
@@ -46,6 +48,17 @@
 		>
 			{#snippet icon()}
 				<VibrateIcon weight="fill" />
+			{/snippet}
+		</PreferenceSwitchSetting>
+	{/if}
+	{#if keepScreenOnAvailable()}
+		<PreferenceSwitchSetting
+			preference="keepScreenOn"
+			title="Keep screen on"
+			description="Stop the screen from dimming and locking while the app is open."
+		>
+			{#snippet icon()}
+				<SunIcon weight="fill" />
 			{/snippet}
 		</PreferenceSwitchSetting>
 	{/if}
