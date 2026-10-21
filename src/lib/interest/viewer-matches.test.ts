@@ -117,6 +117,18 @@ describe("viewer matches", () => {
 		expect(await matchViewedAt(at)).toBeNull();
 	});
 
+	it("saves a pending change before switching accounts", async () => {
+		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+		try {
+			await rememberPhotos([{ profileId: 7, hash: A }]);
+			prefs.account = 2;
+			await matchPhotos([A]);
+			expect(files.has("viewer-matches.1.data")).toBe(true);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+
 	it("keeps each account's list apart and persists it", async () => {
 		vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
 		try {

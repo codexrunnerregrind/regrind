@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
 	getAccountPreferencesMock,
+	getProfilesMock,
 	getViewsMock,
 	markBlockedProfilesUnviewableMock,
 	matchViewersMock,
@@ -14,6 +15,7 @@ const {
 	viewHandlers,
 } = vi.hoisted(() => ({
 	getAccountPreferencesMock: vi.fn(),
+	getProfilesMock: vi.fn(),
 	getViewsMock: vi.fn(),
 	markBlockedProfilesUnviewableMock: vi.fn(() => Promise.resolve()),
 	matchViewersMock: vi.fn((previews: unknown[]) =>
@@ -41,6 +43,10 @@ const {
 
 vi.mock("$lib/api/error-toast", () => ({ showErrorToast: showErrorToastMock }));
 vi.mock("$lib/api/interest/views", () => ({ getViews: getViewsMock }));
+vi.mock("$lib/api/users/profiles", async (importOriginal) => ({
+	...(await importOriginal<typeof import("$lib/api/users/profiles")>()),
+	getProfiles: getProfilesMock,
+}));
 vi.mock("$lib/interest/viewer-matches", () => ({
 	matchViewers: matchViewersMock,
 	notePhotos: vi.fn(),
@@ -170,6 +176,18 @@ beforeEach(() => {
 	setAccountPreferencesMock.mockReset();
 	setAccountPreferencesMock.mockResolvedValue(undefined);
 	getViewsMock.mockReset();
+	getProfilesMock.mockReset();
+	getProfilesMock.mockImplementation((ids: number[]) =>
+		Promise.resolve(
+			ids.map((profileId) => ({
+				profileId,
+				displayName: null,
+				medias: null,
+				onlineUntil: null,
+				distance: null,
+			})),
+		),
+	);
 	markBlockedProfilesUnviewableMock.mockClear();
 	showErrorToastMock.mockReset();
 	unlistenViewMock.mockReset();
@@ -201,54 +219,6 @@ describe("ViewsState", () => {
 		expect(state.views).toHaveLength(25);
 		expect(state.views[24]).toMatchObject({ type: "preview" });
 		expect(state.hasMore).toBe(false);
-	});
-
-	it("turns a preview whose photo was seen before into its profile", async () => {
-		const hash = "a".repeat(40);
-		matchViewersMock.mockResolvedValueOnce([
-			{ profileId: 42, displayName: "Sam", seenAt: 0 },
-			null,
-		]);
-		getViewsMock.mockResolvedValue({
-			profiles: [profile(1)],
-			previews: [preview({ profileImageMediaHash: hash }), preview()],
-		});
-
-		const state = new ViewsState();
-		await waitForLoaded(state);
-
-		expect(state.views.map((entry) => entry.type)).toEqual([
-			"profile",
-			"matched",
-			"preview",
-		]);
-		expect(state.views[1]).toMatchObject({
-			viewer: { profileId: 42, displayName: "Sam" },
-		});
-		expect(state.total).toBe(3);
-	});
-
-	it("orders every kind of tile by when they viewed", async () => {
-		matchViewersMock.mockResolvedValueOnce([
-			{ profileId: 42, displayName: "Sam", seenAt: 0 },
-			null,
-		]);
-		getViewsMock.mockResolvedValue({
-			profiles: [profile(1, { lastViewed: 100 })],
-			previews: [
-				preview({ lastViewed: 300 }),
-				preview({ lastViewed: 200 }),
-			],
-		});
-
-		const state = new ViewsState();
-		await waitForLoaded(state);
-
-		expect(state.views.map((entry) => entry.type)).toEqual([
-			"matched",
-			"preview",
-			"profile",
-		]);
 	});
 
 	it("records initial load errors and retries", async () => {

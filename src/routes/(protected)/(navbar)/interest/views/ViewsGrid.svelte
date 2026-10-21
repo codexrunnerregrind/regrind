@@ -86,9 +86,7 @@
 						{#if entry.type === "profile"}
 							<ViewedProfile view={entry.profile} />
 						{:else if entry.type === "matched"}
-							<ViewedProfile
-								view={{ ...entry.viewer, onlineUntil: null }}
-							/>
+							<ViewedProfile view={entry.viewer} />
 						{:else}
 							<ViewedPreview preview={entry.preview} />
 						{/if}

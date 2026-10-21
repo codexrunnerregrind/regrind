@@ -11,7 +11,7 @@ import {
 	isProfileViewable,
 	onProfileViewabilityChange,
 } from "$lib/api/users/profile-viewability";
-import { onProfileEdit } from "$lib/api/users/profiles";
+import { getProfiles, onProfileEdit } from "$lib/api/users/profiles";
 import {
 	matchViewers,
 	notePhotos,
@@ -23,15 +23,10 @@ import type { ViewerProfile, ViewPreview } from "$lib/model/interest/views";
 
 const PAGE_SIZE = 24;
 
-/** A blurred preview put back to a face by its photo hash. */
-export type MatchedViewer = ViewPreview & {
-	profileId: number;
-	displayName: string | null;
-};
-
 type ViewsSnapshot = {
 	profiles: ViewerProfile[];
-	matched: MatchedViewer[];
+	/** Blurred previews put back to a face by viewer-matches. */
+	matched: ViewerProfile[];
 	previews: ViewPreview[];
 	viewedMeHidden: boolean;
 };
@@ -47,7 +42,7 @@ export function resetViewsCacheForTesting(): void {
 
 export type ViewGridEntry =
 	| { type: "profile"; key: string; profile: ViewerProfile }
-	| { type: "matched"; key: string; viewer: MatchedViewer }
+	| { type: "matched"; key: string; viewer: ViewerProfile }
 	| { type: "preview"; key: string; preview: ViewPreview };
 
 function lastViewedOf(entry: ViewGridEntry): number | null {
@@ -68,7 +63,7 @@ export class ViewsState extends ReconcilingListState<
 	enablingViewedMe = $state(false);
 
 	#profiles: ViewerProfile[] = $state([]);
-	#matched: MatchedViewer[] = $state([]);
+	#matched: ViewerProfile[] = $state([]);
 	#previews: ViewPreview[] = $state([]);
 	#viewedMeHidden = $state(false);
 	#unsubscribeProfileEdits = onProfileEdit(({ profileId, patch }) => {
@@ -144,9 +139,9 @@ export class ViewsState extends ReconcilingListState<
 				}),
 			),
 			...this.#matched.map(
-				(viewer, index): ViewGridEntry => ({
+				(viewer): ViewGridEntry => ({
 					type: "matched",
-					key: `matched:${index}`,
+					key: `matched:${viewer.profileId}`,
 					viewer,
 				}),
 			),
@@ -209,7 +204,7 @@ export class ViewsState extends ReconcilingListState<
 	}: {
 		profiles: ViewerProfile[];
 		previews: ViewPreview[];
-	}): Promise<{ matched: MatchedViewer[]; previews: ViewPreview[] }> {
+	}): Promise<{ matched: ViewerProfile[]; previews: ViewPreview[] }> {
 		const matches = await matchViewers(
 			previews.map((preview) => ({
 				hash: preview.profileImageMediaHash,
@@ -221,7 +216,7 @@ export class ViewsState extends ReconcilingListState<
 		});
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local scratch set
 		const listed = new Set(profiles.map((profile) => profile.profileId));
-		const matched: MatchedViewer[] = [];
+		const candidates: { preview: ViewPreview; profileId: number }[] = [];
 		const unmatched: ViewPreview[] = [];
 		previews.forEach((preview, index) => {
 			const match = matches[index];
@@ -229,13 +224,48 @@ export class ViewsState extends ReconcilingListState<
 				unmatched.push(preview);
 			} else if (!listed.has(match.profileId)) {
 				listed.add(match.profileId);
-				matched.push({
-					...preview,
-					profileId: match.profileId,
-					displayName: match.displayName,
-				});
+				candidates.push({ preview, profileId: match.profileId });
 			}
 		});
+		if (candidates.length === 0)
+			return { matched: [], previews: unmatched };
+
+		// The match only knows an id; the profile itself has the name, the
+		// current photo and the online dot. One missing from the answer is gone
+		// or hidden from us, so it stays blurred.
+		const resolved = await getProfiles(
+			candidates.map((candidate) => candidate.profileId),
+		).catch((error: unknown) => {
+			console.error(error);
+			return null;
+		});
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local lookup
+		const byId = new Map(resolved?.map((p) => [p.profileId, p]));
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- local lookup
+		const names = new Map(
+			matches.flatMap((match) =>
+				match ? [[match.profileId, match.displayName] as const] : [],
+			),
+		);
+		const matched: ViewerProfile[] = [];
+		for (const { preview, profileId } of candidates) {
+			const profile = byId.get(profileId);
+			if (resolved && !profile) {
+				unmatched.push(preview);
+				continue;
+			}
+			matched.push({
+				...preview,
+				profileId,
+				displayName:
+					profile?.displayName ?? names.get(profileId) ?? null,
+				profileImageMediaHash:
+					profile?.medias?.[0]?.mediaHash ??
+					preview.profileImageMediaHash,
+				distance: preview.distance ?? profile?.distance ?? null,
+				onlineUntil: profile?.onlineUntil ?? null,
+			});
+		}
 		return { matched, previews: unmatched };
 	}
 
@@ -261,18 +291,18 @@ export class ViewsState extends ReconcilingListState<
 		this.#viewedMeHidden = snapshot.viewedMeHidden;
 		cached = snapshot;
 		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- caller only reads .has() then drops it
-		return new Set(snapshot.profiles.map((profile) => profile.profileId));
+		return new Set(
+			[...snapshot.profiles, ...snapshot.matched].map(
+				(profile) => profile.profileId,
+			),
+		);
 	}
 
 	protected applyUpsert(fresh: ViewerProfile): void {
 		if (!isProfileViewable(fresh.profileId)) return;
-		const index = this.#profiles.findIndex(
-			(v) => v.profileId === fresh.profileId,
-		);
-		const prev = this.#profiles[index];
+		const prev = this.#takeTileOf(fresh);
 		let next = fresh;
 		if (prev) {
-			this.#profiles.splice(index, 1);
 			next = {
 				...prev,
 				...fresh,
@@ -289,14 +319,46 @@ export class ViewsState extends ReconcilingListState<
 			};
 		}
 		this.#profiles = [next, ...this.#profiles];
-		this.#matched = this.#matched.filter(
-			(viewer) => viewer.profileId !== next.profileId,
-		);
 		cached = {
 			profiles: this.#profiles,
 			matched: this.#matched,
 			previews: this.#previews,
 			viewedMeHidden: this.#viewedMeHidden,
+		};
+	}
+
+	/**
+	 * Removes and returns the tile already standing for this viewer, so a live
+	 * view moves it to the top instead of adding a second one. A blurred preview
+	 * is only recognized by its photo hash.
+	 */
+	#takeTileOf(fresh: ViewerProfile): ViewerProfile | null {
+		const listed = this.#profiles.find(
+			(v) => v.profileId === fresh.profileId,
+		);
+		if (listed) {
+			this.#profiles = this.#profiles.filter((v) => v !== listed);
+			return listed;
+		}
+		const matched = this.#matched.find(
+			(v) => v.profileId === fresh.profileId,
+		);
+		if (matched) {
+			this.#matched = this.#matched.filter((v) => v !== matched);
+			return matched;
+		}
+		const hash = fresh.profileImageMediaHash;
+		const preview =
+			hash === null
+				? undefined
+				: this.#previews.find((p) => p.profileImageMediaHash === hash);
+		if (!preview) return null;
+		this.#previews = this.#previews.filter((p) => p !== preview);
+		return {
+			...preview,
+			profileId: fresh.profileId,
+			displayName: null,
+			onlineUntil: null,
 		};
 	}
 

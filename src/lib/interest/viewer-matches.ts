@@ -74,6 +74,7 @@ async function load(): Promise<number | null> {
 	const account = preferencesAccount();
 	if (account === null) return null;
 	if (loadedFor === account) return account;
+	flush();
 	loading ??= (async () => {
 		let read: z.infer<typeof fileSchema> = { photos: {}, views: [] };
 		try {
@@ -97,17 +98,28 @@ async function load(): Promise<number | null> {
 	return loadedFor === account ? account : null;
 }
 
+function save(account: number): void {
+	prune();
+	void writeAppDataFileAtomic({
+		path: path(account),
+		content: encode({ photos: Object.fromEntries(photos), views }),
+	}).catch((error: unknown) => console.error(error));
+}
+
 function scheduleSave(account: number): void {
 	if (saveTimer !== null) clearTimeout(saveTimer);
 	saveTimer = setTimeout(() => {
 		saveTimer = null;
-		if (loadedFor !== account) return;
-		prune();
-		void writeAppDataFileAtomic({
-			path: path(account),
-			content: encode({ photos: Object.fromEntries(photos), views }),
-		}).catch((error: unknown) => console.error(error));
+		if (loadedFor === account) save(account);
 	}, SAVE_DELAY_MS);
+}
+
+/** Writes a pending save now, before the lists are swapped for another account. */
+function flush(): void {
+	if (saveTimer === null) return;
+	clearTimeout(saveTimer);
+	saveTimer = null;
+	if (loadedFor !== null) save(loadedFor);
 }
 
 /** Remembers whose photo each hash is. Newest sighting wins. */
@@ -196,6 +208,8 @@ export async function matchViewers(
 
 export async function clearViewerMatches(profileId: number): Promise<void> {
 	if (loadedFor === profileId) {
+		if (saveTimer !== null) clearTimeout(saveTimer);
+		saveTimer = null;
 		photos = new Map();
 		views = [];
 		loadedFor = null;
