@@ -38,7 +38,6 @@
 			<ProfileActionsMenu
 				profileId={profile.profileId}
 				name={profile.displayName}
-				distance={profile.showDistance ? profile.distance : null}
 				{changingViewability}
 				{markBlocked}
 				{markHidden}
