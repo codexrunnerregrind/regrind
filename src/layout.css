@@ -936,6 +936,17 @@ a {
 	border: 1px solid var(--color-border) !important;
 }
 
+/* A toast that pops up under a finger lets that tap through to the screen. */
+.toast[data-sonner-toast]:not([data-swipe-out="true"]) {
+	animation: toast-arm 400ms step-end;
+}
+
+@keyframes toast-arm {
+	from {
+		pointer-events: none;
+	}
+}
+
 /* The bubble is a small centered pill, but sonner's row spans the full width —
    and carries an invisible hit strip above it while the toaster is expanded — so
    it swallows every tap and scroll in that band for as long as it is up. Only

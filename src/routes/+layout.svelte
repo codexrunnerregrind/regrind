@@ -204,6 +204,7 @@
 			offset={toastOffset}
 			mobileOffset={toastOffset}
 			toastOptions={{ class: "toast" }}
+			swipeDirections={["top", "bottom", "left", "right"]}
 			expand
 		/>
 	</div>
