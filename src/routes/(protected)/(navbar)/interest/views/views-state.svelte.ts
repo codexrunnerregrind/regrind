@@ -12,11 +12,7 @@ import {
 	onProfileViewabilityChange,
 } from "$lib/api/users/profile-viewability";
 import { getProfiles, onProfileEdit } from "$lib/api/users/profiles";
-import {
-	matchViewers,
-	notePhotos,
-	noteView,
-} from "$lib/interest/viewer-matches";
+import { matchViewers, notePhotos } from "$lib/interest/viewer-matches";
 import { ReconcilingListState } from "$lib/util/reconciling-list-state.svelte";
 import { viewedMeV1NewViewReceivedEventSchema, ws } from "$lib/ws.svelte";
 import type { ViewerProfile, ViewPreview } from "$lib/model/interest/views";
@@ -379,10 +375,6 @@ export class ViewsState extends ReconcilingListState<
 			(event) => {
 				const recent = event.payload.mostRecent;
 				if (!recent) return;
-				notePhotos([
-					{ profileId: recent.profileId, hash: recent.photoHash },
-				]);
-				noteView({ profileId: recent.profileId, at: recent.timestamp });
 				this.upsert({
 					profileId: recent.profileId,
 					displayName: null,

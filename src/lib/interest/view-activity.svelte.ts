@@ -1,5 +1,6 @@
 import { accountScoped } from "$lib/api/account-caches";
 import { showProfileViewToast } from "$lib/components/profile-view-toast/profile-view-toast-manager";
+import { notePhotos, noteView } from "$lib/interest/viewer-matches";
 import { viewedMeV1NewViewReceivedEventSchema, ws } from "$lib/ws.svelte";
 
 export type NewProfileView = {
@@ -66,6 +67,14 @@ export class ViewActivityState {
 	}
 }
 
+// Recorded here, not in the Views grid, so a photo-less viewer can still be
+// matched by view time even if the grid wasn't opened this session.
+function onNewView(view: NewProfileView): void {
+	notePhotos([{ profileId: view.profileId, hash: view.photoHash }]);
+	noteView({ profileId: view.profileId, at: view.timestamp });
+	showProfileViewToast(view);
+}
+
 export const getViewActivityState = accountScoped(
-	() => new ViewActivityState({ onNewView: showProfileViewToast }),
+	() => new ViewActivityState({ onNewView }),
 );
