@@ -21,4 +21,7 @@
 >
 	{@render children?.()}
 </div>
-<NavBar ourProfileId={data.ourProfileId} />
+<!-- An account switch stays in this layout, and NavBar reads its account once. -->
+{#key data.ourProfileId}
+	<NavBar ourProfileId={data.ourProfileId} />
+{/key}
