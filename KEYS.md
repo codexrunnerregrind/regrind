@@ -66,6 +66,12 @@ Android JKS SHA-256 fingerprint:
 0266c7bf4936be5f94e96870755f5003c85ea27997098100bbcd55ca264e3940
 ```
 
+Apple Developer team ID:
+
+```
+L3W5ZXTBAF
+```
+
 Google Play code transparency key SHA-256 fingerprint:
 
 ```
