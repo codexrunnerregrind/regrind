@@ -1,4 +1,5 @@
 import { showErrorToast } from "$lib/api/error-toast";
+import { findSentTap } from "$lib/api/interest/taps";
 import { recordProfileView } from "$lib/api/interest/views";
 import {
 	BlockedProfileError,
@@ -12,8 +13,8 @@ import {
 	refreshProfile,
 } from "$lib/api/users/profiles";
 import { getPreferences } from "$lib/app-data/preferences.svelte";
+import { TapType } from "$lib/model/interest/taps";
 import { Generation } from "$lib/util/generation";
-import type { TapType } from "$lib/model/interest/taps";
 import type { Profile } from "$lib/model/users/profiles";
 
 export type PendingViewabilityChange = {
@@ -199,6 +200,9 @@ export class ProfileState {
 			if (this.#superseded(generation)) return;
 			this.profile = profile;
 			if (this.error === errorBeforeLoad) this.error = null;
+			if (profile.tapped && profile.tapType === null) {
+				void this.#resolveTapType(generation);
+			}
 		} catch (error) {
 			if (this.#superseded(generation)) return;
 			if (refresh && !isUnviewableProfileError(error)) {
@@ -218,6 +222,22 @@ export class ProfileState {
 				this.loading = false;
 				this.refreshing = false;
 			}
+		}
+	}
+
+	/** A tap sent from another client can come back as tapped with no type. */
+	async #resolveTapType(generation: number): Promise<void> {
+		try {
+			const existing = await findSentTap(this.profileId);
+			if (
+				!existing ||
+				this.#superseded(generation) ||
+				this.profile?.tapType !== null
+			)
+				return;
+			this.setTap(existing.tapType ?? TapType.Hot);
+		} catch (error) {
+			console.error(error);
 		}
 	}
 

@@ -3,7 +3,7 @@ import z from "zod";
 import { fetchRest } from "$lib/api/transport";
 import { awaitEntitlementGrant } from "$lib/entitlements/expiring-media-entitlement";
 import { notePhotos } from "$lib/interest/viewer-matches";
-import { sentTapSchema } from "$lib/model/interest/sent-tap";
+import { type SentTap, sentTapSchema } from "$lib/model/interest/sent-tap";
 import { tapProfileSchema } from "$lib/model/interest/tap-profile";
 import { type TapType } from "$lib/model/interest/taps";
 import type { Profile } from "$lib/model/users/profiles";
@@ -39,6 +39,14 @@ export async function getSentTaps() {
 	return await fetchRest("/v1/interactions/taps/sent").then((res) =>
 		res.jsonParsed(getSentTapsResponseSchema),
 	);
+}
+
+/** Our live tap to this profile, wherever it was sent from. */
+export async function findSentTap(
+	recipientId: Profile["profileId"],
+): Promise<SentTap | undefined> {
+	const sent = await getSentTaps();
+	return sent.find((tap) => tap.receiverId === recipientId && !tap.deleted);
 }
 
 const sendTapResponseSchema = z.object({ isMutual: z.boolean() });

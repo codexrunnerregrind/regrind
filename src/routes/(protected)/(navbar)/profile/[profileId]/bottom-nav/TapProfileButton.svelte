@@ -1,6 +1,7 @@
 <script lang="ts">
+	import { httpStatusOf } from "$lib/api/api-error";
 	import { showErrorToast } from "$lib/api/error-toast";
-	import { sendTap } from "$lib/api/interest/taps";
+	import { findSentTap, sendTap } from "$lib/api/interest/taps";
 	import TapIcon from "$lib/components/profile/TapIcon.svelte";
 	import Button from "$lib/components/ui/button/button.svelte";
 	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
@@ -29,6 +30,16 @@
 			onTap(reaction);
 			await sendTap({ recipientId: profileId, tapType: reaction });
 		} catch (error) {
+			// 400 means we already tapped them, maybe from another client.
+			if (httpStatusOf(error) === 400) {
+				const existing = await findSentTap(profileId).catch(
+					() => undefined,
+				);
+				if (existing) {
+					onTap(existing.tapType ?? reaction);
+					return;
+				}
+			}
 			console.error(error);
 			showErrorToast({ label: "Failed to send tap", error });
 			onTap(null);
