@@ -13,6 +13,7 @@
 		HiddenProfileError,
 		ProfileUnavailableError,
 	} from "$lib/api/users/profiles";
+	import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import NotFound from "$lib/components/feedback/NotFound.svelte";
@@ -30,6 +31,7 @@
 	import AboutMe from "./AboutMe.svelte";
 	import BlockedProfile from "./BlockedProfile.svelte";
 	import Distance from "./Distance.svelte";
+	import AccountCreated from "./fields/AccountCreated.svelte";
 	import Genders from "./fields/GendersPronouns.svelte";
 	import LookupField from "./fields/LookupField.svelte";
 	import Socials from "./fields/Socials.svelte";
@@ -381,6 +383,13 @@
 							<div class="mt-5.5 flex flex-col gap-2.75">
 								<span class="section-label">Socials</span>
 								<Socials socials={socialNetworks} />
+							</div>
+						{/if}
+						<!-- Grindr's own "Recently joined" beats the estimate. -->
+						{#if preferencesSnapshot().showAccountCreated && !isNew}
+							<div class="mt-5.5 flex flex-col gap-2.75">
+								<span class="section-label">Account</span>
+								<AccountCreated {profileId} />
 							</div>
 						{/if}
 					</div>

@@ -62,6 +62,7 @@ const preferencesSchema = z.object({
 	giphyConsent: z.boolean().default(false),
 	hapticFeedback: z.boolean().default(true),
 	keepScreenOn: z.boolean().default(false),
+	showAccountCreated: z.boolean().default(false),
 	// The last detected live GPS location, used while `usingCurrentLocation` is
 	// true. Kept separate from `geohash` so switching modes never clobbers the
 	// user's mock pick.

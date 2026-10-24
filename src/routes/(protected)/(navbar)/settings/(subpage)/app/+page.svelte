@@ -1,5 +1,6 @@
 <script lang="ts">
 	import BroadcastIcon from "phosphor-svelte/lib/BroadcastIcon";
+	import CalendarBlankIcon from "phosphor-svelte/lib/CalendarBlankIcon";
 	import ChecksIcon from "phosphor-svelte/lib/ChecksIcon";
 	import DeviceMobileIcon from "phosphor-svelte/lib/DeviceMobileIcon";
 	import ExportIcon from "phosphor-svelte/lib/ExportIcon";
@@ -168,6 +169,19 @@
 			<TrayArrowDownIcon weight="fill" />
 		{/snippet}
 	</SettingsRow>
+</SettingsGroup>
+
+<SectionHeader>Miscellaneous</SectionHeader>
+<SettingsGroup divider="full">
+	<PreferenceSwitchSetting
+		preference="showAccountCreated"
+		title="Account creation date (Experimental)"
+		description="Show an estimated creation date at the bottom of profiles."
+	>
+		{#snippet icon()}
+			<CalendarBlankIcon weight="fill" />
+		{/snippet}
+	</PreferenceSwitchSetting>
 </SettingsGroup>
 
 {#if updatesSelfManaged() || updatesUnsupportedReason() !== null || addonInstallerAvailable()}
