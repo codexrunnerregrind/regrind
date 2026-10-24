@@ -45,17 +45,10 @@ async function answerBlocksWith({
 	await routeDemoThroughFaultHook(page);
 }
 
-async function openProfileMenu({
-	page,
-	profile,
-}: {
-	page: Page;
-	profile: string;
-}) {
+async function openProfile({ page, profile }: { page: Page; profile: string }) {
 	await installTauriShim(page);
 	await page.goto(profile);
-	await page.getByLabel("Profile menu").click();
-	await page.getByRole("menuitem", { name: "Hide profile" }).waitFor();
+	await page.getByRole("button", { name: "Hide profile" }).waitFor();
 }
 
 async function reportAsSpam({
@@ -65,8 +58,8 @@ async function reportAsSpam({
 	page: Page;
 	profile: string;
 }) {
-	await openProfileMenu({ page, profile });
-	await page.getByRole("menuitem", { name: "Report profile" }).click();
+	await openProfile({ page, profile });
+	await page.getByRole("button", { name: "Report profile" }).click();
 
 	const drawer = page.locator(DRAWER);
 	await drawer.waitFor({ timeout: 10_000 });
@@ -81,11 +74,11 @@ async function reportAsSpam({
 }
 
 for (const profile of [BLOCKABLE_PROFILE, NON_BLOCKABLE_PROFILE]) {
-	test(`${profile} blocks from the profile menu`, async ({ page }) => {
+	test(`${profile} blocks from the profile`, async ({ page }) => {
 		test.setTimeout(240_000);
-		await openProfileMenu({ page, profile });
+		await openProfile({ page, profile });
 
-		const block = page.getByRole("menuitem", { name: "Block profile" });
+		const block = page.getByRole("button", { name: "Block profile" });
 		await expect(block).toBeEnabled();
 		await block.click();
 
@@ -128,15 +121,15 @@ test("a block from the report sheet shows at once and is taken back when it does
 test("unblocking right after blocking reports nothing", async ({ page }) => {
 	test.setTimeout(240_000);
 	await answerBlocksWith({ page, status: 200, delayMs: 1_500 });
-	await openProfileMenu({ page, profile: NON_BLOCKABLE_PROFILE });
+	await openProfile({ page, profile: NON_BLOCKABLE_PROFILE });
 
-	await page.getByRole("menuitem", { name: "Block profile" }).click();
+	await page.getByRole("button", { name: "Block profile" }).click();
 	await page.getByRole("button", { name: "Unblock" }).click();
 
 	await expect(page.getByText(BLOCKED)).toBeHidden();
-	await expect(page.getByLabel("Profile menu")).toBeEnabled({
-		timeout: 10_000,
-	});
+	await expect(
+		page.getByRole("button", { name: "Block profile" }),
+	).toBeEnabled({ timeout: 10_000 });
 	await page.waitForTimeout(1_000);
 	await expectNoToast(page, DID_NOT_STICK);
 	await expectNoToast(page, FAILED);
@@ -147,10 +140,10 @@ test("a block Grindr accepts but does not list is taken back and suggests hiding
 }) => {
 	test.setTimeout(240_000);
 	await answerBlocksWith({ page, status: 200 });
-	await openProfileMenu({ page, profile: NON_BLOCKABLE_PROFILE });
+	await openProfile({ page, profile: NON_BLOCKABLE_PROFILE });
 	const opened = await captureOpenedUrls(page);
 
-	await page.getByRole("menuitem", { name: "Block profile" }).click();
+	await page.getByRole("button", { name: "Block profile" }).click();
 
 	await expect(page.getByText(DID_NOT_STICK)).toBeVisible();
 	await expect(page.getByText(BLOCKED)).toBeHidden();
@@ -164,9 +157,9 @@ test("a block Grindr refuses reports the failure without guessing why", async ({
 }) => {
 	test.setTimeout(240_000);
 	await answerBlocksWith({ page, status: 403 });
-	await openProfileMenu({ page, profile: NON_BLOCKABLE_PROFILE });
+	await openProfile({ page, profile: NON_BLOCKABLE_PROFILE });
 
-	await page.getByRole("menuitem", { name: "Block profile" }).click();
+	await page.getByRole("button", { name: "Block profile" }).click();
 
 	await expect(page.getByText(FAILED)).toBeVisible();
 	await expectNoToast(page, DID_NOT_STICK);

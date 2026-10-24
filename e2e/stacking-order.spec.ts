@@ -9,7 +9,6 @@ const DEMO_PROFILE = "/profile/100001";
 const SHARED_ALBUM = `/settings/albums/${SHARED_ALBUM_ID}`;
 const TOAST_LABEL = "Stacking probe";
 const MENUS_REACHING_A_TOAST = [
-	{ trigger: "Profile menu", url: DEMO_PROFILE, edge: "bottom" },
 	{ trigger: "Album menu", url: SHARED_ALBUM, edge: "top" },
 ] as const;
 const MENU = '[data-slot="dropdown-menu-content"]';
@@ -113,8 +112,8 @@ for (const { trigger, url, edge } of MENUS_REACHING_A_TOAST) {
 test("the safe-area strips stay in front of an open menu and of toasts on both edges", async ({
 	page,
 }) => {
-	await page.goto(DEMO_PROFILE);
-	const menu = await openMenu({ page, trigger: "Profile menu" });
+	await page.goto(SHARED_ALBUM);
+	const menu = await openMenu({ page, trigger: "Album menu" });
 	await showRestingToast({ page, edge: "top", label: "Top probe" });
 	await showRestingToast({ page, edge: "bottom", label: "Bottom probe" });
 	const strips = page.locator(SAFE_AREA_STRIP);
@@ -125,7 +124,7 @@ test("the safe-area strips stay in front of an open menu and of toasts on both e
 	expect(toasterLevels).toHaveLength(2);
 	expect(Math.max(...toasterLevels)).toBeLessThan(Math.min(...stripLevels));
 
-	const clip = await overlap({ first: menu, second: strips.last() });
+	const clip = await overlap({ first: menu, second: strips.first() });
 	const withMenu = await page.screenshot({ clip, caret: "hide" });
 	await page.keyboard.press("Escape");
 	await expect(menu).toHaveCount(0);
@@ -140,8 +139,7 @@ test("a toast over the report sheet stays in front and takes a tap", async ({
 	page,
 }) => {
 	await page.goto(DEMO_PROFILE);
-	const menu = await openMenu({ page, trigger: "Profile menu" });
-	await menu.getByRole("menuitem", { name: "Report profile" }).click();
+	await page.getByRole("button", { name: "Report profile" }).click();
 	const sheet = page.locator(DRAWER);
 	await sheet.waitFor();
 	await animationsFinished(sheet);

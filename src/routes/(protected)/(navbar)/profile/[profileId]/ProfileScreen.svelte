@@ -13,7 +13,6 @@
 		HiddenProfileError,
 		ProfileUnavailableError,
 	} from "$lib/api/users/profiles";
-	import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import NotFound from "$lib/components/feedback/NotFound.svelte";
@@ -27,11 +26,11 @@
 		relationshipStatuses,
 		tribes,
 	} from "$lib/model/users/profiles";
+	import { longPressHandlers } from "$lib/util/long-press";
 	import { profileMediaUrl } from "$lib/util/media";
 	import AboutMe from "./AboutMe.svelte";
 	import BlockedProfile from "./BlockedProfile.svelte";
 	import Distance from "./Distance.svelte";
-	import AccountCreated from "./fields/AccountCreated.svelte";
 	import Genders from "./fields/GendersPronouns.svelte";
 	import LookupField from "./fields/LookupField.svelte";
 	import Socials from "./fields/Socials.svelte";
@@ -39,7 +38,9 @@
 	import HiddenProfile from "./HiddenProfile.svelte";
 	import ImageCarousel from "./ImageCarousel.svelte";
 	import OnlineStatus from "./OnlineStatus.svelte";
+	import { copyProfileId } from "./profile-actions";
 	import { ProfileState } from "./profile-state.svelte";
+	import ProfileAccount from "./ProfileAccount.svelte";
 	import ProfileAlbums from "./ProfileAlbums.svelte";
 	import ProfileHealth from "./ProfileHealth.svelte";
 	import ProfileNote from "./ProfileNote.svelte";
@@ -126,6 +127,10 @@
 	const profile = $derived(profileState.profile);
 	const error = $derived(profileState.error);
 	const ourProfile = $derived(profileState.isOurProfile);
+
+	const nameLongPress = longPressHandlers(
+		() => void copyProfileId(profileState.profileId),
+	);
 </script>
 
 {#if error}
@@ -242,7 +247,6 @@
 						{profile}
 						changingViewability={profileState.changingViewability}
 						markBlocked={() => profileState.markBlocked()}
-						markHidden={() => profileState.markHidden()}
 						onFavorite={(isFavorite) =>
 							profileState.setFavorite(isFavorite)}
 					/>
@@ -252,7 +256,10 @@
 							{ "pb-24": ourProfile, "pb-40": !ourProfile },
 						]}
 					>
-						<h1 class="screen-title wrap-break-word">
+						<h1
+							class="screen-title wrap-break-word select-none"
+							{...nameLongPress}
+						>
 							{#if displayName !== null}
 								<span class="font-semibold">
 									{displayName}
@@ -385,13 +392,14 @@
 								<Socials socials={socialNetworks} />
 							</div>
 						{/if}
-						<!-- Grindr's own "Recently joined" beats the estimate. -->
-						{#if preferencesSnapshot().showAccountCreated && !isNew}
-							<div class="mt-5.5 flex flex-col gap-2.75">
-								<span class="section-label">Account</span>
-								<AccountCreated {profileId} />
-							</div>
-						{/if}
+						<ProfileAccount
+							{profileId}
+							{isNew}
+							self={ourProfile}
+							changingViewability={profileState.changingViewability}
+							markBlocked={() => profileState.markBlocked()}
+							markHidden={() => profileState.markHidden()}
+						/>
 					</div>
 				{/if}
 			</main>

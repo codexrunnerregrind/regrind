@@ -28,9 +28,7 @@ test("Escape closes a profile opened from Browse", async ({ page }) => {
 	await expect(page).toHaveURL(/\/$/);
 });
 
-test("Escape closes the profile menu, then the photo viewer, then the profile", async ({
-	page,
-}) => {
+test("Escape closes the photo viewer, then the profile", async ({ page }) => {
 	await serveImages(page, CHAT_MEDIA_HOST);
 	await serveImages(page, AVATAR_HOST);
 	await installTauriShim(page);
@@ -41,14 +39,6 @@ test("Escape closes the profile menu, then the photo viewer, then the profile", 
 		.click();
 	await profileLoaded(page);
 	const profile = profileUrl(PROFILE_WITH_PHOTOS);
-
-	await activeProfilePane(page)
-		.getByRole("button", { name: "Profile menu" })
-		.click();
-	await expect(page.getByRole("menu")).toBeVisible();
-	await page.keyboard.press("Escape");
-	await expect(page.getByRole("menu")).toHaveCount(0);
-	await expect(page).toHaveURL(profile);
 
 	await activeProfilePane(page)
 		.locator(".carousel .item[href]")

@@ -25,16 +25,9 @@ async function openProfileFromGrid(page: Page): Promise<RegExp> {
 	await tile.click();
 	await expect(page).toHaveURL(profileUrl);
 	await activeProfilePane(page)
-		.getByLabel("Profile menu")
+		.getByRole("button", { name: "Block profile" })
 		.waitFor({ timeout: 60_000 });
 	return profileUrl;
-}
-
-async function openProfileMenu(page: Page) {
-	await activeProfilePane(page).getByLabel("Profile menu").click();
-	await expect(
-		menu(page).getByRole("menuitem", { name: "Report profile" }),
-	).toBeVisible();
 }
 
 test.describe.configure({ timeout: 240_000 });
@@ -45,29 +38,6 @@ test("Back leaves a profile with no menu open", async ({ page }) => {
 	const { handled } = await systemBack(page);
 
 	expect(handled, "nothing on the profile claims Back").toBe(false);
-	await expect(page).toHaveURL(BROWSE_URL);
-});
-
-test("Back closes the profile menu and stays, the next Back leaves", async ({
-	page,
-}) => {
-	const profileUrl = await openProfileFromGrid(page);
-	await openProfileMenu(page);
-
-	expect(await startSystemBack(page)).toBe(false);
-	await cancelSystemBack(page);
-	await expect(menu(page), "a canceled gesture keeps the menu").toBeVisible();
-
-	expect(await startSystemBack(page)).toBe(false);
-	expect(await commitSystemBack(page), "the open menu takes Back").toBe(
-		false,
-	);
-	await expect(menu(page)).toHaveCount(0);
-	await expect(page).toHaveURL(profileUrl);
-
-	const { handled } = await systemBack(page);
-
-	expect(handled, "the closed menu no longer claims Back").toBe(false);
 	await expect(page).toHaveURL(BROWSE_URL);
 });
 

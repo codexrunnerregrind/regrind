@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { afterTwoFrames, historyDepth } from "./support/app";
+import { historyDepth } from "./support/app";
 import {
 	activeProfilePane,
 	openGridProfile,
@@ -55,22 +55,4 @@ test("arrow keys leave the profile alone while the lightbox is opening", async (
 	).toHaveAttribute("data-arrow-cancelled", "true");
 	await page.waitForTimeout(600);
 	expect((await pagerGeometry(page)).scrollLeft).toBe(before);
-});
-
-test("arrow keys leave the profile alone while a menu is open", async ({
-	page,
-}) => {
-	await openGridProfile(page, { nth: 1 });
-
-	await activeProfilePane(page).getByLabel("Profile menu").click();
-	await page.getByRole("menuitem").first().waitFor({ timeout: 30_000 });
-	const { scrollLeft } = await pagerGeometry(page);
-
-	await page.keyboard.press("ArrowRight");
-	await afterTwoFrames(page);
-
-	expect(
-		(await pagerGeometry(page)).scrollLeft,
-		"the menu owns the arrows",
-	).toBe(scrollLeft);
 });

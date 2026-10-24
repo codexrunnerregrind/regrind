@@ -9,8 +9,7 @@ const DEMO_CHAT = "/chat/100001:123456000";
 async function openReportSheet(page: import("@playwright/test").Page) {
 	await installTauriShim(page);
 	await page.goto(DEMO_PROFILE);
-	await page.getByLabel("Profile menu").click();
-	await page.getByRole("menuitem", { name: "Report profile" }).click();
+	await page.getByRole("button", { name: "Report profile" }).click();
 	const drawer = page.locator(DRAWER);
 	await drawer.waitFor({ timeout: 10_000 });
 	await page.waitForTimeout(700);
@@ -131,8 +130,7 @@ test("the report opens as a dialog on a desktop-width viewport", async ({
 	await page.setViewportSize({ width: 1280, height: 900 });
 	await installTauriShim(page);
 	await page.goto(DEMO_PROFILE);
-	await page.getByLabel("Profile menu").click();
-	await page.getByRole("menuitem", { name: "Report profile" }).click();
+	await page.getByRole("button", { name: "Report profile" }).click();
 
 	const dialog = page.locator('[data-slot="dialog-content"]');
 	await dialog.waitFor({ timeout: 10_000 });

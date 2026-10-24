@@ -50,7 +50,7 @@ test.describe("every control has an accessible name", () => {
 		await expectEveryControlNamed(page, "edit profile");
 
 		await page.goto(DEMO_PROFILE);
-		await page.locator('[aria-label="Profile menu"]').waitFor();
+		await page.getByRole("button", { name: "Block profile" }).waitFor();
 		await expectEveryControlNamed(page, "profile");
 	});
 

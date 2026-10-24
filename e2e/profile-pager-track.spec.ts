@@ -127,14 +127,9 @@ test("a profile hidden from the pager keeps its place", async ({ page }) => {
 	const tiles = await openGridProfile(page, { nth: 1 });
 
 	await activeProfilePane(page)
-		.getByRole("button", { name: "Profile menu" })
+		.getByRole("button", { name: "Hide profile" })
 		.click();
-	await page.getByRole("menuitem", { name: "Hide profile" }).click();
 	await expect(page.getByText("You hid this profile.")).toBeVisible();
-	await expect(
-		page.locator("body"),
-		"the closing menu no longer blocks touches",
-	).not.toHaveCSS("pointer-events", "none");
 
 	await swipeProfile(page, {
 		on: activeProfilePane(page).getByText("You hid this profile."),

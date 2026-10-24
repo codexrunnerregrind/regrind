@@ -21,8 +21,9 @@ async function openFirstGridProfile(page: Page): Promise<string> {
 }
 
 async function hideActiveProfile(page: Page) {
-	await activeProfilePane(page).getByLabel("Profile menu").click();
-	await page.getByRole("menuitem", { name: "Hide profile" }).click();
+	await activeProfilePane(page)
+		.getByRole("button", { name: "Hide profile" })
+		.click();
 	await expect(page.getByText("You hid this profile.")).toBeVisible();
 }
 
@@ -55,7 +56,7 @@ test("unhiding from the profile brings the profile back", async ({ page }) => {
 
 	await expect(page.getByText("You hid this profile.")).toHaveCount(0);
 	await expect(
-		activeProfilePane(page).getByLabel("Profile menu"),
+		activeProfilePane(page).getByRole("button", { name: "Block profile" }),
 	).toBeVisible();
 });
 

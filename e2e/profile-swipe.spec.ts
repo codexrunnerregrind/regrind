@@ -357,7 +357,9 @@ test("only the active profile is reachable, before and after a swipe", async ({
 		await expect(page.getByRole("switch")).toHaveCount(1);
 		await expect(backLink(page)).toHaveCount(1);
 		await expect(
-			activeProfilePane(page).getByLabel("Profile menu"),
+			activeProfilePane(page).getByRole("button", {
+				name: "Block profile",
+			}),
 		).toHaveCount(1);
 		await expect(
 			page.locator('[data-slot="profile-scroller"]'),
