@@ -1,7 +1,11 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
 import { SHARED_ALBUM_ID } from "./support/albums";
-import { animationsFinished, installTauriShim } from "./support/app";
+import {
+	animationsFinished,
+	DEMO_CONVERSATION,
+	installTauriShim,
+} from "./support/app";
 import { DRAWER } from "./support/drawer";
 import { showRestingToast } from "./support/toast";
 
@@ -112,8 +116,10 @@ for (const { trigger, url, edge } of MENUS_REACHING_A_TOAST) {
 test("the safe-area strips stay in front of an open menu and of toasts on both edges", async ({
 	page,
 }) => {
-	await page.goto(SHARED_ALBUM);
-	const menu = await openMenu({ page, trigger: "Album menu" });
+	// Short enough that the header menu runs into the bottom strip.
+	await page.setViewportSize({ width: 390, height: 300 });
+	await page.goto(DEMO_CONVERSATION);
+	const menu = await openMenu({ page, trigger: "Conversation menu" });
 	await showRestingToast({ page, edge: "top", label: "Top probe" });
 	await showRestingToast({ page, edge: "bottom", label: "Bottom probe" });
 	const strips = page.locator(SAFE_AREA_STRIP);
@@ -124,7 +130,7 @@ test("the safe-area strips stay in front of an open menu and of toasts on both e
 	expect(toasterLevels).toHaveLength(2);
 	expect(Math.max(...toasterLevels)).toBeLessThan(Math.min(...stripLevels));
 
-	const clip = await overlap({ first: menu, second: strips.first() });
+	const clip = await overlap({ first: menu, second: strips.last() });
 	const withMenu = await page.screenshot({ clip, caret: "hide" });
 	await page.keyboard.press("Escape");
 	await expect(menu).toHaveCount(0);
