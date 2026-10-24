@@ -48,14 +48,713 @@
 			android:launchMode="singleTask"
 			android:label="@string/main_activity_title"
 			android:name=".MainActivity"
-			android:exported="true">
+			android:exported="true" />
+
+		<!-- Launcher entries: one alias per app icon, exactly one enabled at a
+		     time (see org.regrind.appicon). The discreet ones carry a neutral
+		     label too. The discreet ones are written by scripts/gen-app-icons.ts. -->
+		<activity-alias
+			android:name=".AppIconDefault"
+			android:targetActivity=".MainActivity"
+			android:enabled="true"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher"
+			android:label="@string/main_activity_title">
 			<intent-filter>
 				<action android:name="android.intent.action.MAIN" />
 				<category android:name="android.intent.category.LAUNCHER" />
 				<!-- AndroidTV support -->
 				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
 			</intent-filter>
-		</activity>
+		</activity-alias>
+
+		<!-- gen-app-icons: aliases -->
+		<activity-alias
+			android:name=".AppIconWeather_Blue"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_weather_blue"
+			android:label="Weather">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconWeather_Teal"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_weather_teal"
+			android:label="Weather">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconWeather_Green"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_weather_green"
+			android:label="Weather">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconWeather_Purple"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_weather_purple"
+			android:label="Weather">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconWeather_Red"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_weather_red"
+			android:label="Weather">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconWeather_Orange"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_weather_orange"
+			android:label="Weather">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconWeather_Graphite"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_weather_graphite"
+			android:label="Weather">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconNotes_Blue"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_notes_blue"
+			android:label="Notes">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconNotes_Teal"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_notes_teal"
+			android:label="Notes">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconNotes_Green"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_notes_green"
+			android:label="Notes">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconNotes_Purple"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_notes_purple"
+			android:label="Notes">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconNotes_Red"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_notes_red"
+			android:label="Notes">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconNotes_Orange"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_notes_orange"
+			android:label="Notes">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconNotes_Graphite"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_notes_graphite"
+			android:label="Notes">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconCalculator_Blue"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_calculator_blue"
+			android:label="Calculator">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconCalculator_Teal"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_calculator_teal"
+			android:label="Calculator">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconCalculator_Green"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_calculator_green"
+			android:label="Calculator">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconCalculator_Purple"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_calculator_purple"
+			android:label="Calculator">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconCalculator_Red"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_calculator_red"
+			android:label="Calculator">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconCalculator_Orange"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_calculator_orange"
+			android:label="Calculator">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconCalculator_Graphite"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_calculator_graphite"
+			android:label="Calculator">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconCamera_Blue"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_camera_blue"
+			android:label="Camera">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconCamera_Teal"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_camera_teal"
+			android:label="Camera">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconCamera_Green"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_camera_green"
+			android:label="Camera">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconCamera_Purple"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_camera_purple"
+			android:label="Camera">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconCamera_Red"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_camera_red"
+			android:label="Camera">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconCamera_Orange"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_camera_orange"
+			android:label="Camera">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconCamera_Graphite"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_camera_graphite"
+			android:label="Camera">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconClock_Blue"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_clock_blue"
+			android:label="Clock">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconClock_Teal"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_clock_teal"
+			android:label="Clock">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconClock_Green"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_clock_green"
+			android:label="Clock">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconClock_Purple"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_clock_purple"
+			android:label="Clock">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconClock_Red"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_clock_red"
+			android:label="Clock">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconClock_Orange"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_clock_orange"
+			android:label="Clock">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconClock_Graphite"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_clock_graphite"
+			android:label="Clock">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconChat_Blue"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_chat_blue"
+			android:label="Chat">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconChat_Teal"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_chat_teal"
+			android:label="Chat">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconChat_Green"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_chat_green"
+			android:label="Chat">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconChat_Purple"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_chat_purple"
+			android:label="Chat">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconChat_Red"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_chat_red"
+			android:label="Chat">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconChat_Orange"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_chat_orange"
+			android:label="Chat">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconChat_Graphite"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_chat_graphite"
+			android:label="Chat">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconPhotos_Blue"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_photos_blue"
+			android:label="Photos">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconPhotos_Teal"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_photos_teal"
+			android:label="Photos">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconPhotos_Green"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_photos_green"
+			android:label="Photos">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconPhotos_Purple"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_photos_purple"
+			android:label="Photos">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconPhotos_Red"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_photos_red"
+			android:label="Photos">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconPhotos_Orange"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_photos_orange"
+			android:label="Photos">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+
+		<activity-alias
+			android:name=".AppIconPhotos_Graphite"
+			android:targetActivity=".MainActivity"
+			android:enabled="false"
+			android:exported="true"
+			android:icon="@mipmap/ic_launcher_alt_photos_graphite"
+			android:label="Photos">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+				<category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+			</intent-filter>
+		</activity-alias>
+		<!-- /gen-app-icons -->
 
 		<activity
 			android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"

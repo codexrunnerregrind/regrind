@@ -337,6 +337,7 @@
 					arm64,
 				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-Dev";
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIcon-Weather-Blue AppIcon-Weather-Teal AppIcon-Weather-Green AppIcon-Weather-Purple AppIcon-Weather-Red AppIcon-Weather-Orange AppIcon-Weather-Graphite AppIcon-Notes-Blue AppIcon-Notes-Teal AppIcon-Notes-Green AppIcon-Notes-Purple AppIcon-Notes-Red AppIcon-Notes-Orange AppIcon-Notes-Graphite AppIcon-Calculator-Blue AppIcon-Calculator-Teal AppIcon-Calculator-Green AppIcon-Calculator-Purple AppIcon-Calculator-Red AppIcon-Calculator-Orange AppIcon-Calculator-Graphite AppIcon-Camera-Blue AppIcon-Camera-Teal AppIcon-Camera-Green AppIcon-Camera-Purple AppIcon-Camera-Red AppIcon-Camera-Orange AppIcon-Camera-Graphite AppIcon-Clock-Blue AppIcon-Clock-Teal AppIcon-Clock-Green AppIcon-Clock-Purple AppIcon-Clock-Red AppIcon-Clock-Orange AppIcon-Clock-Graphite AppIcon-Chat-Blue AppIcon-Chat-Teal AppIcon-Chat-Green AppIcon-Chat-Purple AppIcon-Chat-Red AppIcon-Chat-Orange AppIcon-Chat-Graphite AppIcon-Photos-Blue AppIcon-Photos-Teal AppIcon-Photos-Green AppIcon-Photos-Purple AppIcon-Photos-Red AppIcon-Photos-Orange AppIcon-Photos-Graphite";
 				CODE_SIGN_ENTITLEMENTS = "regrind_iOS/regrind_iOS.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				ENABLE_BITCODE = NO;
@@ -369,6 +370,7 @@
 					arm64,
 				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = "AppIcon-Dev";
+				ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES = "AppIcon-Weather-Blue AppIcon-Weather-Teal AppIcon-Weather-Green AppIcon-Weather-Purple AppIcon-Weather-Red AppIcon-Weather-Orange AppIcon-Weather-Graphite AppIcon-Notes-Blue AppIcon-Notes-Teal AppIcon-Notes-Green AppIcon-Notes-Purple AppIcon-Notes-Red AppIcon-Notes-Orange AppIcon-Notes-Graphite AppIcon-Calculator-Blue AppIcon-Calculator-Teal AppIcon-Calculator-Green AppIcon-Calculator-Purple AppIcon-Calculator-Red AppIcon-Calculator-Orange AppIcon-Calculator-Graphite AppIcon-Camera-Blue AppIcon-Camera-Teal AppIcon-Camera-Green AppIcon-Camera-Purple AppIcon-Camera-Red AppIcon-Camera-Orange AppIcon-Camera-Graphite AppIcon-Clock-Blue AppIcon-Clock-Teal AppIcon-Clock-Green AppIcon-Clock-Purple AppIcon-Clock-Red AppIcon-Clock-Orange AppIcon-Clock-Graphite AppIcon-Chat-Blue AppIcon-Chat-Teal AppIcon-Chat-Green AppIcon-Chat-Purple AppIcon-Chat-Red AppIcon-Chat-Orange AppIcon-Chat-Graphite AppIcon-Photos-Blue AppIcon-Photos-Teal AppIcon-Photos-Green AppIcon-Photos-Purple AppIcon-Photos-Red AppIcon-Photos-Orange AppIcon-Photos-Graphite";
 				CODE_SIGN_ENTITLEMENTS = "regrind_iOS/regrind_iOS.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				ENABLE_BITCODE = NO;

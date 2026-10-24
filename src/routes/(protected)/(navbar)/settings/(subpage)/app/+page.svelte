@@ -18,6 +18,7 @@
 	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
 	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
 	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
+	import { appIconAvailable } from "$lib/platform/app-icon";
 	import { desktopEntryAvailable } from "$lib/platform/desktop-entry.svelte";
 	import { hapticsAvailable } from "$lib/platform/haptics";
 	import { keepScreenOnAvailable } from "$lib/platform/keep-screen-on";
@@ -129,15 +130,17 @@
 
 <SectionHeader>Security</SectionHeader>
 <SettingsGroup>
-	<SettingsRow
-		title="Discreet app icon"
-		description="Disguise ReGrind on your home screen."
-		onclick={unimplemented("Discreet app icon", 97)}
-	>
-		{#snippet icon()}
-			<DeviceMobileIcon weight="fill" />
-		{/snippet}
-	</SettingsRow>
+	{#if appIconAvailable()}
+		<SettingsRow
+			title="Discreet app icon"
+			description="Disguise ReGrind on your home screen."
+			href="/settings/app/app-icon"
+		>
+			{#snippet icon()}
+				<DeviceMobileIcon weight="fill" />
+			{/snippet}
+		</SettingsRow>
+	{/if}
 	<SettingsRow
 		title="PIN"
 		description="Require a passcode to open the app."

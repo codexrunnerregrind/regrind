@@ -88,6 +88,8 @@ apple-native-keyring-store = { version = "1.0.1", features = ["keychain", "prote
 tauri-plugin-haptics = "2"
 # UIApplication idle timer, see src/keep_screen_on.rs
 objc2 = "0.6"
+# setAlternateIconName completion handler, see src/app_icon.rs
+block2 = "0.6"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-native-keyring-store = "1.1.0"

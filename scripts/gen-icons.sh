@@ -94,3 +94,6 @@ bun tauri icon ./contrib/logo/regrind.svg -o "$TMP/mark" >/dev/null
 cp "$TMP/mark/icon.png" contrib/logo/regrind-512px.png
 cp "$TMP/mark/128x128.png" src/lib/assets/favicon.png
 sips -Z 180 "$TMP/mark/icon.png" --out contrib/logo/regrind-180px.png >/dev/null
+
+# Alternate (discreet) app icons for iOS, Android and the settings previews
+bun scripts/gen-app-icons.ts

@@ -20,6 +20,10 @@
 			back: "/settings/account",
 		},
 		[`${base}/app`]: { title: "App Settings", back: "/settings" },
+		[`${base}/app/app-icon`]: {
+			title: "Discreet app icon",
+			back: "/settings/app",
+		},
 		[`${base}/app/credits`]: {
 			title: "Credits & Licenses",
 			back: "/settings/app",

@@ -1,4 +1,5 @@
 pub mod api;
+mod app_icon;
 mod app_origin;
 mod app_settings;
 mod appearance;
@@ -196,6 +197,7 @@ pub fn run() {
         .plugin(api::facebook_oauth::plugin())
         .plugin(api::update::plugin())
         .plugin(app_settings::plugin())
+        .plugin(app_icon::plugin())
         .plugin(video::transcode::plugin())
         .plugin(media_picker::plugin())
         .manage(AppState::default())
@@ -271,6 +273,8 @@ pub fn run() {
             api::update::commands::updater_open_install_permission_settings,
             api::update::commands::updater_discard,
             app_settings::open_app_settings,
+            app_icon::get_app_icon,
+            app_icon::set_app_icon,
             media_picker::pick_android_media,
             appearance::backdrop_filter_renders,
             appearance::webview_engine,
