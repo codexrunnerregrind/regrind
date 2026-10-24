@@ -44,7 +44,8 @@ export type MediaViewerActions = {
 	onSave?: (index: number) => void | Promise<void>;
 	/**
 	 * Save every slide at once. No control of its own — it is what holding the
-	 * save glyph does. Leave it out where the slides aren't one set.
+	 * save glyph does, and the toast after saving one offers the rest. Leave it
+	 * out where the slides aren't one set.
 	 */
 	onSaveAll?: () => void | Promise<void>;
 };

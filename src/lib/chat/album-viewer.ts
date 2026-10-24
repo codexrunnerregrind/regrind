@@ -26,7 +26,11 @@ import {
 	applyPhotoSwipeVideo,
 	applyPhotoSwipeViewportSync,
 } from "$lib/util/photoswipe";
-import { downloadAllMedia, downloadMedia } from "./lightbox-download";
+import {
+	downloadAllMedia,
+	downloadMedia,
+	saveRestFollowUp,
+} from "./lightbox-download";
 import {
 	type MediaViewerActions,
 	registerMediaViewerChrome,
@@ -379,29 +383,23 @@ export async function openAlbumLightbox(
 	// Saving is offered either way — it is the viewer's own control, in the sender
 	// row rather than the reply bar. Our own albums have nobody to reply to, so
 	// that is all they get.
+	const slides = album.content.map((slide) => ({
+		url: slide.url,
+		mimeType: slide.contentType,
+		profileId: toUserId,
+	}));
+	const many = slides.length > 1;
 	const actions: MediaViewerActions = {
 		onSave: (index) => {
-			const slide = album.content[index];
+			const slide = slides[index];
 			if (!slide) return;
-			downloadMedia({
-				url: slide.url,
-				mimeType: slide.contentType,
-				profileId: toUserId,
-			});
+			downloadMedia(
+				slide,
+				many ? saveRestFollowUp(slides, index) : undefined,
+			);
 		},
 		// Only where there is more than one to save.
-		...(album.content.length > 1
-			? {
-					onSaveAll: () =>
-						downloadAllMedia(
-							album.content.map((slide) => ({
-								url: slide.url,
-								mimeType: slide.contentType,
-								profileId: toUserId,
-							})),
-						),
-				}
-			: {}),
+		...(many ? { onSaveAll: () => downloadAllMedia(slides) } : {}),
 		// A teaser's slides are synthesised — placeholder ids standing in for
 		// content we were never handed — so there is nothing on them to reply to
 		// or react to. The field stays on screen saying as much, since a bar that

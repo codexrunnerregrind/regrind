@@ -19,9 +19,16 @@ const DOWNLOAD_ICON = `
 
 export type DownloadTarget = MediaToSave;
 
+/** A button on the success toast, e.g. "Save all" after saving one of a set. */
+export type SaveFollowUp = { label: string; onClick: () => void };
+
 // `shareFromGesture` is not a failure: the media is downloaded and only needs a
 // fresh tap, so it is offered as a button rather than reported as an error.
-function reportSave(result: SaveResult, toastId: string | number): void {
+function reportSave(
+	result: SaveResult,
+	toastId: string | number,
+	followUp?: SaveFollowUp,
+): void {
 	const shareAgain = result.shareFromGesture;
 	if (shareAgain !== undefined) {
 		toast.info("Ready to save", {
@@ -34,7 +41,7 @@ function reportSave(result: SaveResult, toastId: string | number): void {
 				onClick: () => {
 					const next = toast.loading("Saving…");
 					shareAgain()
-						.then((again) => reportSave(again, next))
+						.then((again) => reportSave(again, next, followUp))
 						.catch((error: unknown) =>
 							reportSaveError(error, next),
 						);
@@ -58,7 +65,10 @@ function reportSave(result: SaveResult, toastId: string | number): void {
 	if (result.failed > 0) {
 		toast.warning(`${label} — ${result.failed} failed`, { id: toastId });
 	} else {
-		toast.success(label, { id: toastId });
+		toast.success(label, {
+			id: toastId,
+			...(followUp === undefined ? {} : { action: followUp }),
+		});
 	}
 }
 
@@ -74,11 +84,26 @@ function reportSaveError(error: unknown, toastId: string | number): void {
  * built-in toolbar button below and the media viewer's own save control, so a
  * download behaves the same wherever it was started from.
  */
-export function downloadMedia(target: DownloadTarget): void {
+export function downloadMedia(
+	target: DownloadTarget,
+	followUp?: SaveFollowUp,
+): void {
 	const toastId = toast.loading("Downloading…");
 	saveMediaToDevice(target)
-		.then((result) => reportSave(result, toastId))
+		.then((result) => reportSave(result, toastId, followUp))
 		.catch((error: unknown) => reportSaveError(error, toastId));
+}
+
+/** Offers the rest of a set on the toast for the one just saved. */
+export function saveRestFollowUp(
+	targets: DownloadTarget[],
+	savedIndex: number,
+): SaveFollowUp {
+	const rest = targets.filter((_, index) => index !== savedIndex);
+	return {
+		label: `Save ${rest.length} more`,
+		onClick: () => void downloadAllMedia(rest),
+	};
 }
 
 /** Saves a whole set, reporting progress in one toast. */

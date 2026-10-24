@@ -8,6 +8,7 @@ import {
 	downloadAllMedia,
 	downloadMedia,
 	registerLightboxDownloadButton,
+	saveRestFollowUp,
 } from "./lightbox-download";
 import {
 	type MediaViewerActions,
@@ -92,26 +93,27 @@ export async function openImageGalleryLightbox(
 	const profileId = chrome?.header.profileId ?? null;
 	// Saving moves into the chrome's sender row wherever the chrome is mounted —
 	// it hides the toolbar the download button would otherwise sit on.
+	const targets = images.map(({ url }) => ({ url, profileId }));
+	const many = targets.length > 1;
 	const actions: MediaViewerActions | undefined =
 		chrome === undefined
 			? undefined
 			: {
 					...chrome.actions,
 					onSave: (index) => {
-						const image = images[index];
-						if (image) downloadMedia({ url: image.url, profileId });
+						const target = targets[index];
+						if (target) {
+							downloadMedia(
+								target,
+								many
+									? saveRestFollowUp(targets, index)
+									: undefined,
+							);
+						}
 					},
 					// Only where there is more than one to save.
-					...(images.length > 1
-						? {
-								onSaveAll: () =>
-									downloadAllMedia(
-										images.map(({ url }) => ({
-											url,
-											profileId,
-										})),
-									),
-							}
+					...(many
+						? { onSaveAll: () => downloadAllMedia(targets) }
 						: {}),
 				};
 	const [{ default: PhotoSwipeLightboxCtor }, sizes] = await Promise.all([
