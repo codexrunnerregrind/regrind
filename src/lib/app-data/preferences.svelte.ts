@@ -9,6 +9,7 @@ import {
 	rightNowFiltersSchema,
 } from "$lib/model/browse/grid/filters";
 import { geohashSchema } from "$lib/model/geohash";
+import { type MediaSends, mediaSendSchema } from "$lib/model/media-sends";
 import {
 	type SavedLocation,
 	savedLocationSchema,
@@ -98,6 +99,10 @@ const preferencesSchema = z.object({
 	// The doodle wallpaper behind the transcript, on by default the way the
 	// official app has one. Off leaves the plain chat background.
 	chatWallpaper: z.boolean().default(true),
+	// Off by default: the drawer otherwise keeps the server's order.
+	sortMediaByFrequency: z.boolean().default(false),
+	// Sends from the chat media sheet, keyed by drawer media id.
+	mediaSends: z.record(z.string(), mediaSendSchema).default({}).catch({}),
 	stayOnline: z.boolean().default(true),
 	units: unitSystemSchema.default("metric"),
 	rightNowFilters: rightNowFiltersSchema.optional(),
@@ -131,6 +136,7 @@ const accountPreferenceKeys = [
 	"notifyTaps",
 	"revealMessageRead",
 	"revealProfileViews",
+	"mediaSends",
 ] as const;
 
 const GLOBAL_PATH = "preferences.data";
@@ -308,6 +314,14 @@ export function getAlbumGridColumnsSnapshot(): GridColumns {
 
 export function getNavBarGlassSnapshot(): boolean {
 	return snapshot.navBarGlass;
+}
+
+export function getSortMediaByFrequencySnapshot(): boolean {
+	return snapshot.sortMediaByFrequency;
+}
+
+export function getMediaSendsSnapshot(): MediaSends {
+	return snapshot.mediaSends;
 }
 
 export function getChatWallpaperSnapshot(): boolean {

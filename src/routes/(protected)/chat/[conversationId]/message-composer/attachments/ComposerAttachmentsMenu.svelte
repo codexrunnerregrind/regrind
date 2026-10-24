@@ -15,6 +15,7 @@
 	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
 	import ComposerAlbumsTab from "./ComposerAlbumsTab.svelte";
 	import ComposerLocationTab from "./ComposerLocationTab.svelte";
+	import ComposerMediaSort from "./ComposerMediaSort.svelte";
 	import ComposerMediaTab from "./ComposerMediaTab.svelte";
 
 	const FULLSIZE_TABS: Tab[] = ["media", "albums"];
@@ -182,10 +183,15 @@
 						},
 					]}
 				>
-					<div
-						data-slot="drawer-handle"
-						class="mx-auto my-3 h-1.5 w-25 rounded-full bg-muted"
-					></div>
+					<div class="relative">
+						<div
+							data-slot="drawer-handle"
+							class="mx-auto my-3 h-1.5 w-25 rounded-full bg-muted"
+						></div>
+						{#if selectedTab === "media" && !overlay}
+							<ComposerMediaSort />
+						{/if}
+					</div>
 					<Tabs.Content value="media">
 						<ComposerMediaTab
 							bind:this={tabs.media}

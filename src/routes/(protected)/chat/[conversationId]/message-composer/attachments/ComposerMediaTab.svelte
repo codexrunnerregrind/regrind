@@ -31,9 +31,8 @@
 	import { Skeleton } from "$lib/components/ui/skeleton";
 	import { videoDurationSeconds } from "$lib/platform/video-metadata";
 	import { SelectionSet } from "$lib/util/selection.svelte";
-	import { videoCall } from "$lib/video-call/call-state.svelte";
-	import { getConversationState } from "../../conversation-state.svelte";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
+	import { ComposerCall } from "./composer-call.svelte";
 	import ComposerAddMedia from "./ComposerAddMedia.svelte";
 	import {
 		imageDraft,
@@ -42,6 +41,7 @@
 		type VideoViews,
 		videoViewsControl,
 	} from "./drawer-drafts";
+	import { DrawerOrder } from "./drawer-order.svelte";
 	import {
 		type Pending,
 		pickForKind,
@@ -65,28 +65,7 @@
 	const composer = getMessageComposerContext();
 	const selected = new SelectionSet<number>(10);
 
-	// The official app pairs the two video actions in this sheet — record one,
-	// or place a call — so the call sits beside "Add video" rather than only
-	// behind the conversation menu.
-	const conversationState = $derived(getConversationState()());
-	const callBlockedReason = $derived(videoCall.blockedReason);
-	// The allowance is account-wide and already in hand, so saying what is left
-	// of it costs no request — and a call is worth starting knowing how long it
-	// can run, since the server cuts it off when the time is spent.
-	const callTimeLeft = $derived(videoCall.timeLeftLabel);
-
-	function startCall() {
-		const profile = conversationState.profile;
-		if (callBlockedReason !== null || !profile) return;
-		// The call takes the whole screen, so the sheet has no business staying
-		// open underneath it.
-		onClose();
-		void videoCall.call({
-			profileId: profile.profileId,
-			name: profile.name ?? null,
-			mediaHash: profile.mediaHash ?? null,
-		});
-	}
+	const call = new ComposerCall(() => onClose());
 
 	let media = $state<DrawerMedia[] | null>(null);
 	let error = $state<unknown>(null);
@@ -111,8 +90,15 @@
 		onSelectionChange(selected.size);
 	}
 
+	const order = new DrawerOrder(
+		() => media,
+		(items) => (media = items),
+	);
+
 	async function refresh() {
-		media = await getDrawerMedia(page.params.conversationId as string);
+		media = order.fetched(
+			await getDrawerMedia(page.params.conversationId as string),
+		);
 	}
 
 	async function load() {
@@ -266,6 +252,7 @@
 		}
 		try {
 			await deleteMediaFromDrawer(id);
+			order.deleted(id);
 		} catch (err) {
 			console.error(err);
 			toast.error("Couldn't delete media");
@@ -297,6 +284,7 @@
 		selected.clear();
 		onClose();
 		for (const item of items) item.used = true;
+		order.sent(items);
 		void composer().sendMessages(drafts);
 	}
 </script>
@@ -371,18 +359,18 @@
 					</Button>
 					<Button
 						variant="outline"
-						disabled={callBlockedReason !== null}
-						onclick={startCall}
+						disabled={call.blockedReason !== null}
+						onclick={() => call.start()}
 					>
-						{#if callBlockedReason === null}
+						{#if call.blockedReason === null}
 							<VideoCameraIcon weight="regular" />
 							Video call
-							{#if callTimeLeft !== null}
-								<span class="text-ink3">· {callTimeLeft}</span>
+							{#if call.timeLeft !== null}
+								<span class="text-ink3">· {call.timeLeft}</span>
 							{/if}
 						{:else}
 							<VideoCameraSlashIcon weight="regular" />
-							{callBlockedReason}
+							{call.blockedReason}
 						{/if}
 					</Button>
 				</Empty.Content>
@@ -416,21 +404,21 @@
 					type="button"
 					class="flex aspect-(--photo-grid-aspect) flex-col items-center justify-center gap-1 bg-card-foreground/5 text-muted-foreground transition-colors not-disabled:cursor-pointer not-disabled:hover:bg-card-foreground/10 not-disabled:hover:text-foreground disabled:opacity-50"
 					aria-label="Video call"
-					disabled={callBlockedReason !== null}
-					onclick={startCall}
+					disabled={call.blockedReason !== null}
+					onclick={() => call.start()}
 				>
-					{#if callBlockedReason === null}
+					{#if call.blockedReason === null}
 						<VideoCameraIcon weight="regular" class="size-6" />
 						<span class="text-xs font-medium">Video call</span>
-						{#if callTimeLeft !== null}
+						{#if call.timeLeft !== null}
 							<span class="text-2xs leading-none text-ink3"
-								>{callTimeLeft}</span
+								>{call.timeLeft}</span
 							>
 						{/if}
 					{:else}
 						<VideoCameraSlashIcon weight="regular" class="size-6" />
 						<span class="text-center text-xs font-medium"
-							>{callBlockedReason}</span
+							>{call.blockedReason}</span
 						>
 					{/if}
 				</button>
