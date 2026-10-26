@@ -1,0 +1,6 @@
+- Discreet app icons
+- Chat media sorted by most sent
+- Profiles show an estimated account age
+- Save the rest of a photo set from the toast
+- Block button and account footer replace the profile menu
+- Toasts dismiss with a tap or any swipe
