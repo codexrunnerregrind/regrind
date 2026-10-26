@@ -16,6 +16,9 @@
 		changingViewability,
 		markBlocked,
 		markHidden,
+		canSendView = false,
+		sendingView = false,
+		sendView = () => {},
 	}: {
 		profileId: number;
 		isNew: boolean;
@@ -23,6 +26,9 @@
 		changingViewability: boolean;
 		markBlocked: () => PendingViewabilityChange;
 		markHidden: () => PendingViewabilityChange;
+		canSendView?: boolean;
+		sendingView?: boolean;
+		sendView?: () => void;
 	} = $props();
 
 	let reportOpen = $state(false);
@@ -75,6 +81,22 @@
 	</div>
 	{#if !self}
 		<div class="mt-4.5 flex flex-col items-start gap-1">
+			{#if canSendView}
+				<button
+					type="button"
+					class="action"
+					disabled={sendingView}
+					onclick={sendView}
+				>
+					<svg viewBox="0 0 20 20">
+						<path
+							d="M2.5 10s2.8-5 7.5-5 7.5 5 7.5 5-2.8 5-7.5 5-7.5-5-7.5-5Z"
+						/>
+						<circle cx="10" cy="10" r="2.2" />
+					</svg>
+					Send profile view
+				</button>
+			{/if}
 			<button
 				type="button"
 				class="action"

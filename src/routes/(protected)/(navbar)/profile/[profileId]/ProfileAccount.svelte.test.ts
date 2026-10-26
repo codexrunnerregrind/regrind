@@ -31,12 +31,16 @@ const PROFILE_ID = 100010;
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-function renderAccount({ self = false }: { self?: boolean } = {}) {
+function renderAccount({
+	self = false,
+	canSendView = false,
+}: { self?: boolean; canSendView?: boolean } = {}) {
 	const pending = () => ({ revert: vi.fn(), settle: vi.fn() });
 	const blocking = pending();
 	const hiding = pending();
 	const markBlocked = vi.fn(() => blocking);
 	const markHidden = vi.fn(() => hiding);
+	const sendView = vi.fn();
 	render(ProfileAccount, {
 		props: {
 			profileId: PROFILE_ID,
@@ -45,9 +49,11 @@ function renderAccount({ self = false }: { self?: boolean } = {}) {
 			changingViewability: false,
 			markBlocked,
 			markHidden,
+			canSendView,
+			sendView,
 		},
 	});
-	return { blocking, markBlocked, hiding, markHidden };
+	return { blocking, markBlocked, hiding, markHidden, sendView };
 }
 
 beforeEach(() => {
@@ -109,4 +115,21 @@ it("offers neither hiding nor reporting on our own profile", () => {
 	expect(screen.queryByRole("button", { name: "Hide profile" })).toBeNull();
 	expect(screen.queryByRole("button", { name: "Report profile" })).toBeNull();
 	expect(reportSheetMock).not.toHaveBeenCalled();
+});
+
+it("sends a profile view when it was held back", async () => {
+	const { sendView } = renderAccount({ canSendView: true });
+
+	await fireEvent.click(
+		screen.getByRole("button", { name: "Send profile view" }),
+	);
+
+	expect(sendView).toHaveBeenCalledOnce();
+});
+
+it("offers no profile view to send when none was held back", () => {
+	renderAccount();
+	expect(
+		screen.queryByRole("button", { name: "Send profile view" }),
+	).toBeNull();
 });

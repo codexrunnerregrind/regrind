@@ -399,6 +399,9 @@
 							changingViewability={profileState.changingViewability}
 							markBlocked={() => profileState.markBlocked()}
 							markHidden={() => profileState.markHidden()}
+							canSendView={profileState.canSendView}
+							sendingView={profileState.sendingView}
+							sendView={() => void profileState.sendView()}
 						/>
 					</div>
 				{/if}

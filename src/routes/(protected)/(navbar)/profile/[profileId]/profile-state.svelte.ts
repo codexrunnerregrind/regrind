@@ -1,3 +1,5 @@
+import { toast } from "svelte-sonner";
+
 import { showErrorToast } from "$lib/api/error-toast";
 import { findSentTap } from "$lib/api/interest/taps";
 import { recordProfileView } from "$lib/api/interest/views";
@@ -50,6 +52,9 @@ export class ProfileState {
 	refreshing = $state(false);
 	error: Error | null = $state(null);
 	changingViewability = $state(false);
+	/** The preference held the view back or sending it failed. */
+	canSendView = $state(false);
+	sendingView = $state(false);
 
 	readonly profileId: number;
 	readonly ourProfileId: number;
@@ -94,6 +99,21 @@ export class ProfileState {
 		if (this.#viewed || this.isOurProfile) return;
 		this.#viewed = true;
 		void this.#recordView();
+	}
+
+	async sendView(): Promise<void> {
+		if (!this.canSendView || this.sendingView) return;
+		this.sendingView = true;
+		try {
+			await recordProfileView({ profileId: this.profileId });
+			this.canSendView = false;
+			toast.success("Profile view sent");
+		} catch (error) {
+			console.error(error);
+			showErrorToast({ label: "Failed to send profile view", error });
+		} finally {
+			this.sendingView = false;
+		}
 	}
 
 	destroy(): void {
@@ -244,9 +264,13 @@ export class ProfileState {
 	async #recordView(): Promise<void> {
 		try {
 			const { revealProfileViews } = await getPreferences();
-			if (!revealProfileViews) return;
+			if (!revealProfileViews) {
+				this.canSendView = true;
+				return;
+			}
 			await recordProfileView({ profileId: this.profileId });
 		} catch (error) {
+			this.canSendView = true;
 			console.error(error);
 			showErrorToast({
 				label: "Failed to record profile view preference or action",

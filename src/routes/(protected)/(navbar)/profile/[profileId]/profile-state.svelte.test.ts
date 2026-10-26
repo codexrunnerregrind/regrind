@@ -17,6 +17,7 @@ const {
 }));
 
 vi.mock("$lib/api/error-toast", () => ({ showErrorToast: showErrorToastMock }));
+vi.mock("svelte-sonner", () => ({ toast: { success: vi.fn() } }));
 vi.mock("$lib/api/interest/views", () => ({
 	recordProfileView: recordProfileViewMock,
 }));
@@ -304,6 +305,77 @@ describe("ProfileState view recording", () => {
 		expect(recordProfileViewMock).toHaveBeenCalledExactlyOnceWith({
 			profileId: PROFILE_ID,
 		});
+	});
+});
+
+describe("ProfileState manual view", () => {
+	it("offers a held-back view to send by hand, once", async () => {
+		const state = create();
+		expect(state.canSendView).toBe(false);
+		await flush();
+		expect(state.canSendView).toBe(true);
+
+		const sending = state.sendView();
+		expect(state.sendingView).toBe(true);
+		await sending;
+		expect(state.sendingView).toBe(false);
+		expect(state.canSendView).toBe(false);
+
+		await state.sendView();
+		expect(recordProfileViewMock).toHaveBeenCalledExactlyOnceWith({
+			profileId: PROFILE_ID,
+		});
+	});
+
+	it("ignores a send while one is in flight", async () => {
+		const state = create();
+		await flush();
+
+		void state.sendView();
+		await state.sendView();
+		await flush();
+
+		expect(recordProfileViewMock).toHaveBeenCalledOnce();
+	});
+
+	it("offers nothing once the view went out automatically", async () => {
+		getPreferencesMock.mockResolvedValue({ revealProfileViews: true });
+		const state = create();
+		await flush();
+
+		expect(state.canSendView).toBe(false);
+		await state.sendView();
+		expect(recordProfileViewMock).toHaveBeenCalledOnce();
+	});
+
+	it("offers a failed automatic view to send by hand", async () => {
+		getPreferencesMock.mockResolvedValue({ revealProfileViews: true });
+		recordProfileViewMock.mockRejectedValueOnce(new Error("offline"));
+		const state = create();
+		await flush();
+
+		expect(state.canSendView).toBe(true);
+	});
+
+	it("keeps the action after a failed manual send", async () => {
+		const state = create();
+		await flush();
+
+		recordProfileViewMock.mockRejectedValueOnce(new Error("offline"));
+		await state.sendView();
+
+		expect(showErrorToastMock).toHaveBeenCalledOnce();
+		expect(state.canSendView).toBe(true);
+		expect(state.sendingView).toBe(false);
+	});
+
+	it("offers nothing before a deferred profile is viewed", async () => {
+		const state = create({ recordView: false });
+		await flush();
+
+		expect(state.canSendView).toBe(false);
+		await state.sendView();
+		expect(recordProfileViewMock).not.toHaveBeenCalled();
 	});
 });
 
