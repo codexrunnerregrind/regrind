@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ArrowLeftIcon from "phosphor-svelte/lib/ArrowLeftIcon";
+	import ArrowUpRightIcon from "phosphor-svelte/lib/ArrowUpRightIcon";
 	import ShieldIcon from "phosphor-svelte/lib/ShieldIcon";
 	import XIcon from "phosphor-svelte/lib/XIcon";
 	import { untrack } from "svelte";
@@ -7,7 +8,8 @@
 	import { blockUser } from "$lib/api/browse/blocks";
 	import { showErrorToast } from "$lib/api/error-toast";
 	import { reportProfile } from "$lib/api/safety/reports";
-	import { Button } from "$lib/components/ui/button";
+	import { Button, buttonVariants } from "$lib/components/ui/button";
+	import Link from "$lib/components/ui/link/Link.svelte";
 	import RadioGroup from "$lib/components/ui/radio/RadioGroup.svelte";
 	import RadioItem from "$lib/components/ui/radio/RadioItem.svelte";
 	import * as ResponsiveDialog from "$lib/components/ui/responsive-dialog";
@@ -20,6 +22,7 @@
 		type ReportReason,
 		reportReasonSchema,
 	} from "$lib/model/safety/reports";
+	import { grindrHelpUrl } from "$lib/util/grindr-help";
 	import type { Profile } from "$lib/model/users/profiles";
 	import { showBlockFailure } from "./block-failure";
 	import { buildProfileReport } from "./report-request";
@@ -90,8 +93,13 @@
 	const copy = $derived(subjectCopy[subject]);
 	const isSpam = $derived(reason === "SPAM");
 	const reasonChosen = $derived(reason !== null);
-	const wherePickerShown = $derived(!isSpam && presetLocations === undefined);
-	const detailsShown = $derived(!isSpam);
+	const isInPersonIncident = $derived(
+		reason === "SERIOUS_IN_PERSON_INCIDENT",
+	);
+	const detailsShown = $derived(!isSpam && !isInPersonIncident);
+	const wherePickerShown = $derived(
+		detailsShown && presetLocations === undefined,
+	);
 
 	$effect(() => {
 		if (!open) return;
@@ -273,6 +281,16 @@
 								/>
 							</div>
 						{/if}
+						{#if isInPersonIncident}
+							<p
+								data-slot="report-incident-note"
+								class="px-1 text-sm text-muted-foreground"
+							>
+								Grindr's trust and safety team handles serious
+								in-person incidents through its help center. The
+								form opens in your browser.
+							</p>
+						{/if}
 					{:else}
 						<div data-slot="report-reasons">
 							<RadioGroup
@@ -304,16 +322,25 @@
 					{/if}
 				</ResponsiveDialog.Body>
 				<ResponsiveDialog.Footer>
-					<Button
-						disabled={submitting || !reasonChosen}
-						aria-busy={submitting}
-						onclick={() => void submit()}
-					>
-						{#if submitting}
-							<Spinner aria-hidden="true" />
-						{/if}
-						Submit report
-					</Button>
+					{#if isInPersonIncident}
+						<Link
+							href={grindrHelpUrl("inPersonIncidentForm")}
+							class={buttonVariants()}
+						>
+							Open help form <ArrowUpRightIcon />
+						</Link>
+					{:else}
+						<Button
+							disabled={submitting || !reasonChosen}
+							aria-busy={submitting}
+							onclick={() => void submit()}
+						>
+							{#if submitting}
+								<Spinner aria-hidden="true" />
+							{/if}
+							Submit report
+						</Button>
+					{/if}
 				</ResponsiveDialog.Footer>
 			</fieldset>
 		{/if}

@@ -15,6 +15,10 @@ import {
 	type RequestBlockKind,
 } from "$lib/api/request-blocked-state.svelte";
 import { demoCallMethod, demoEnabled } from "$lib/demo";
+import {
+	type AccountStatusError,
+	accountStatusErrorSchema,
+} from "$lib/model/authentication";
 import { geohashSchema } from "$lib/model/geohash";
 
 const maxPrettyMessageChars = 200;
@@ -32,7 +36,7 @@ const messagelessMessages: Partial<Record<ApiErrorKind, string>> = {
 };
 
 export const banInfoSchema = z.object({
-	kind: z.string(),
+	kind: z.enum(["profile", "device", "network", "underage", "unknown"]),
 	code: z.number(),
 	message: z.string(),
 	reason: z.string().nullish(),
@@ -50,6 +54,8 @@ export const restrictionSchema = z.object({
 	]),
 	region: z.string().nullish(),
 	reason: z.string().nullish(),
+	subReason: z.string().nullish(),
+	endsAt: z.int().nullish(),
 });
 export type Restriction = z.infer<typeof restrictionSchema>;
 
@@ -221,6 +227,15 @@ export function blockedKindOf(
 export function asBanned(error: unknown): BanInfo | null {
 	const parsed = z
 		.object({ kind: z.literal("Banned"), message: banInfoSchema })
+		.safeParse(error);
+	return parsed.success ? parsed.data.message : null;
+}
+
+export function asAccountStatusError(
+	error: unknown,
+): AccountStatusError | null {
+	const parsed = z
+		.object({ kind: z.literal("Api"), message: accountStatusErrorSchema })
 		.safeParse(error);
 	return parsed.success ? parsed.data.message : null;
 }

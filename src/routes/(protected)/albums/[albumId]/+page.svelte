@@ -34,6 +34,8 @@
 		albumNameByteLength,
 	} from "$lib/model/messaging/albums";
 	import { hapticImpact } from "$lib/platform/haptics";
+	import { leaveDeletedPages } from "$lib/util/deleted-pages";
+	import { earlierPathnames } from "$lib/util/history";
 	import { AlbumMediaAdder } from "./album-add-media.svelte";
 	import { AlbumLimits } from "./album-limits.svelte";
 	import { AlbumProcessingPoll } from "./album-processing.svelte";
@@ -164,7 +166,10 @@
 			await deleteAlbum({ albumId });
 			deleteAlbumOpen = false;
 			toast.success("Album deleted");
-			history.back();
+			leaveDeletedPages({
+				pathnames: [page.url.pathname],
+				parent: earlierPathnames()[0] ?? "/albums",
+			});
 		} catch (err) {
 			console.error(err);
 			showErrorToast({ label: "Failed to delete album", error: err });

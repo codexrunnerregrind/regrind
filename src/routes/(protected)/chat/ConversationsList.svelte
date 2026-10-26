@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { goto } from "$app/navigation";
-	import { page } from "$app/state";
 	import PushPinIcon from "phosphor-svelte/lib/PushPinIcon";
 	import { onDestroy, tick } from "svelte";
 
@@ -14,6 +12,7 @@
 	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
 	import { hapticImpact, hapticSelection } from "$lib/platform/haptics";
 	import { below } from "$lib/util/breakpoints.svelte";
+	import { leaveDeletedPages } from "$lib/util/deleted-pages";
 	import { restoreScrollOnce } from "$lib/util/scroll-restore.svelte";
 	import { SelectionSet } from "$lib/util/selection.svelte";
 	import { swipeTabs } from "$lib/util/swipe-tabs";
@@ -180,12 +179,13 @@
 		deleteDialogOpen = true;
 	}
 
-	async function confirmDelete() {
+	function confirmDelete() {
 		hapticImpact("medium");
 		exitSelection();
-		if (deleteIds.some((id) => id === page.params.conversationId)) {
-			await goto("/chat");
-		}
+		leaveDeletedPages({
+			pathnames: deleteIds.map((id) => `/chat/${id}`),
+			parent: "/chat",
+		});
 		const known = new Set(
 			conversations.entries.map((entry) => entry.data.conversationId),
 		);
@@ -232,7 +232,7 @@
 <DeleteConversationsDialog
 	bind:open={deleteDialogOpen}
 	count={deleteIds.length}
-	onConfirm={() => void confirmDelete()}
+	onConfirm={confirmDelete}
 />
 
 <div

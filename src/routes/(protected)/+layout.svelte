@@ -11,6 +11,7 @@
 	import { listenForKeyboardMedia } from "$lib/platform/keyboard-media.svelte";
 	import { listenForMedia } from "$lib/platform/media-intake.svelte";
 	import { startOnlineHeartbeat } from "$lib/presence/online-heartbeat";
+	import { guardDeletedPages } from "$lib/util/deleted-pages";
 	import { retryBrokenMediaWhenOnline } from "$lib/util/media-retry-signals";
 	import { videoCall } from "$lib/video-call/call-state.svelte";
 
@@ -38,6 +39,8 @@
 
 	// Let native push suppress banners for the screen already on show.
 	afterNavigate(() => push.setActiveRoute(page.url.pathname));
+
+	guardDeletedPages();
 
 	$effect(() => startOnlineHeartbeat());
 	$effect(() => retryBrokenMediaWhenOnline());
