@@ -87,6 +87,17 @@
 		),
 	);
 
+	let ourProfileState = $state(
+		untrack(
+			() =>
+				new ProfileState({
+					profileId: ourProfileId,
+					ourProfileId,
+					recordView: false,
+				}),
+		),
+	);
+
 	$effect(() => {
 		const id = profileId;
 		const ourId = ourProfileId;
@@ -131,6 +142,8 @@
 	const nameLongPress = longPressHandlers(
 		() => void copyProfileId(profileState.profileId),
 	);
+
+	const ourTags = $derived(ourProfileState.profile?.profileTags);
 </script>
 
 {#if error}
@@ -313,7 +326,11 @@
 								<Height {height} {weight} {bodyType} />
 							</div>
 						{/if}
-						<ProfileTags tags={profileTags} />
+						<ProfileTags
+							tags={profileTags}
+							{ourTags}
+							{ourProfile}
+						/>
 						{#if aboutMe !== null}
 							<AboutMe>{aboutMe}</AboutMe>
 						{/if}
