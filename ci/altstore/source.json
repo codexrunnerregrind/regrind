@@ -35,13 +35,13 @@
 			],
 			"versions": [
 				{
-					"version": "0.1.0.17",
-					"buildVersion": "0.1.0.17",
-					"date": "2026-10-21",
-					"localizedDescription": "- Keep screen on: new setting that stops the screen from turning off\n- Quick block: new setting to block profiles without the confirmation dialog\n- Viewed Me matching: reveals more of the blurred profiles in your viewers list\n- Android: saving photos and videos works again",
-					"downloadURL": "https://github.com/codexrunnerregrind/regrind/releases/download/v0.1.0-beta.17/regrind-v0.1.0-beta.17.ipa",
-					"size": 41631439,
-					"sha256": "cb572178de2ec7164ac5bee32ccff37a56ad03c8f47fbb2db453ec115f3955fe",
+					"version": "0.1.0.18",
+					"buildVersion": "0.1.0.18",
+					"date": "2026-10-26",
+					"localizedDescription": "- Discreet app icons\n- Chat media sorted by most sent\n- Profiles show an estimated account age\n- Save the rest of a photo set from the toast\n- Block button and account footer replace the profile menu\n- Toasts dismiss with a tap or any swipe",
+					"downloadURL": "https://github.com/codexrunnerregrind/regrind/releases/download/v0.1.0-beta.18/regrind-v0.1.0-beta.18.ipa",
+					"size": 44636452,
+					"sha256": "404722828ba2d024a229369a8060f8d105c5a5b46687e6e0394d2a9005ffa444",
 					"minOSVersion": "14.0"
 				}
 			]
