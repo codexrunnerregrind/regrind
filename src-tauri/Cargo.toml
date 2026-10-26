@@ -1,6 +1,6 @@
 [package]
 name = "regrind"
-version = "0.1.0-beta.18"
+version = "0.1.0-beta.19-dev"
 description = "FLOSS Grindr client"
 authors = ["Open Grind Governance (https://opengrind.org/governance)"]
 homepage = "https://opengrind.org"
