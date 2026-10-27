@@ -5,6 +5,10 @@ import z from "zod";
 import { backdropBlurCalibrationSchema } from "$lib/blur/calibration/decide";
 import { backdropBlurQualitySchema } from "$lib/blur/quality";
 import {
+	type GridFilterPreset,
+	gridFilterPresetSchema,
+} from "$lib/model/browse/grid/filter-presets";
+import {
 	gridSearchFiltersSchema,
 	rightNowFiltersSchema,
 } from "$lib/model/browse/grid/filters";
@@ -77,6 +81,7 @@ const preferencesSchema = z.object({
 	savedLocations: z.array(savedLocationSchema).default([]).catch([]),
 	onboardingComplete: z.boolean().default(false),
 	gridSearchFilters: gridSearchFiltersSchema.optional(),
+	gridFilterPresets: z.array(gridFilterPresetSchema).default([]).catch([]),
 	notifyMessages: z.boolean().default(true),
 	notifyTaps: z.boolean().default(true),
 	revealMessageRead: z.boolean().default(false),
@@ -130,6 +135,7 @@ const accountPreferenceKeys = [
 	"currentGeohash",
 	"usingCurrentLocation",
 	"gridSearchFilters",
+	"gridFilterPresets",
 	"rightNowFilters",
 	"stayOnline",
 	"notifyMessages",
@@ -292,6 +298,10 @@ export function getActiveGeohashSnapshot(): string | null {
 
 export function getSavedLocationsSnapshot(): SavedLocation[] {
 	return snapshot.savedLocations;
+}
+
+export function getGridFilterPresetsSnapshot(): GridFilterPreset[] {
+	return snapshot.gridFilterPresets;
 }
 
 export function getUnitsSnapshot(): UnitSystem {

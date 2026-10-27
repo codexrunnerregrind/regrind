@@ -4,6 +4,7 @@
 
 	import { edgeGap } from "$lib/components/feedback/refresh/scroll-geometry";
 	import AgeFilter from "$lib/components/filters/age/AgeFilterField.svelte";
+	import FilterPresets from "$lib/components/filters/FilterPresets.svelte";
 	import FilterRowGroup from "$lib/components/filters/FilterRowGroup.svelte";
 	import FilterSection from "$lib/components/filters/FilterSection.svelte";
 	import FilterSwitch from "$lib/components/filters/FilterSwitch.svelte";
@@ -239,6 +240,13 @@
 					? "No filters active"
 					: `${activeCount} active`}
 			</span>
+			<FilterPresets
+				{filters}
+				onApply={(preset) => {
+					filters = $state.snapshot(preset);
+					apply();
+				}}
+			/>
 		</Sheet.Header>
 		<div
 			class="flex max-h-full min-h-0 w-full flex-1 shrink gap-4 overflow-auto px-4 py-1 pb-4 *:flex-1 *:flex-col *:gap-5 **:break-inside-avoid max-lg:flex-col lg:gap-12"

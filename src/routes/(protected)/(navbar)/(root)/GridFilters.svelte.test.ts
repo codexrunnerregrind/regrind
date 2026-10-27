@@ -4,11 +4,16 @@ import { cleanup, render } from "@testing-library/svelte";
 import { flushSync, tick } from "svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { GridFilterPreset } from "$lib/model/browse/grid/filter-presets";
+
+const presets = vi.hoisted((): GridFilterPreset[] => []);
+
 vi.mock("$lib/app-data/preferences.svelte", () => ({
 	getPreferences: vi.fn(() => Promise.resolve({})),
 	setPreferences: vi.fn(() => Promise.resolve()),
 	preferencesSnapshot: vi.fn(() => ({ units: "metric" })),
 	preferencesAccount: vi.fn(() => null),
+	getGridFilterPresetsSnapshot: vi.fn(() => presets),
 }));
 
 vi.mock("$lib/api/users/genders", () => ({
@@ -39,6 +44,7 @@ vi.stubGlobal(
 );
 
 import { gridState } from "$lib/grid/grid-state.svelte";
+import { defaultFilters } from "$lib/model/browse/grid/filters";
 import GridFilters from "./GridFilters.svelte";
 
 function closeButton() {
@@ -66,7 +72,29 @@ function labelled(text: string) {
 }
 
 describe("GridFilters", () => {
-	afterEach(cleanup);
+	afterEach(() => {
+		cleanup();
+		presets.length = 0;
+		gridState.filters.set(defaultFilters);
+	});
+
+	it("applies a preset in one tap and closes", async () => {
+		presets.push({
+			id: "p",
+			name: "Late night",
+			filters: { ...defaultFilters, isOnline: true },
+		});
+		await gridState.filters.ready;
+		render(GridFilters, { props: { open: true } });
+		flushSync();
+
+		named("Late night").click();
+		await tick();
+		await tick();
+
+		expect(gridState.filters.value?.isOnline).toBe(true);
+		expect(document.body.textContent).not.toContain("Apply");
+	});
 
 	it("warns before closing with unapplied changes", async () => {
 		await gridState.filters.ready;
