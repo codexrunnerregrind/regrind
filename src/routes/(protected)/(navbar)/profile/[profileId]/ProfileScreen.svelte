@@ -299,6 +299,7 @@
 							<OnlineStatus
 								onlineUntil={onlineUntil ?? null}
 								{seen}
+								isVisiting={profile.isVisiting}
 								self={ourProfile}
 							/>
 							<Distance {distance} />
