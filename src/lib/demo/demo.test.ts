@@ -5,6 +5,7 @@ import { demoRoute } from "$lib/demo";
 import { demoMeProfileId } from "$lib/demo/config";
 import { cascadeV4ResponseSchema } from "$lib/model/browse/grid/cascade/response/v4";
 import { searchProfileSchema } from "$lib/model/browse/grid/search";
+import { matchesV1ResponseSchema } from "$lib/model/interest/matches";
 import { tapProfileSchema } from "$lib/model/interest/tap-profile";
 import {
 	viewerProfileSchema,
@@ -324,6 +325,20 @@ describe("demo route data matches the real schemas", () => {
 		for (const profile of views.profiles)
 			viewerProfileSchema.parse(profile);
 		for (const preview of views.previews) viewPreviewSchema.parse(preview);
+	});
+
+	it("matches validate and page through the cursor", () => {
+		const first = matchesV1ResponseSchema.parse(
+			route("/v1/matches?limit=30"),
+		);
+		expect(first.matches).toHaveLength(30);
+		expect(first.nextCursor).not.toBeNull();
+
+		const second = matchesV1ResponseSchema.parse(
+			route(`/v1/matches?limit=30&cursor=${first.nextCursor}`),
+		);
+		expect(first.matches.length + second.matches.length).toBe(first.total);
+		expect(second.nextCursor).toBeNull();
 	});
 
 	it("favorite notes validate and hydrate to valid profiles", () => {

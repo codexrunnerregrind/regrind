@@ -65,7 +65,12 @@ import {
 	demoProfileHidden,
 	demoSetHidden,
 } from "./mock/hides";
-import { demoReceivedTaps, demoSentTaps, demoViews } from "./mock/interest";
+import {
+	demoMatches,
+	demoReceivedTaps,
+	demoSentTaps,
+	demoViews,
+} from "./mock/interest";
 import {
 	demoCreateSavedPhrase,
 	demoDeleteSavedPhrase,
@@ -212,6 +217,8 @@ export function demoRoute({
 	if (rawPath === "/v1/interactions/taps/sent")
 		return ok(demoSentTaps(demoMeProfileId));
 	if (rawPath === "/v7/views/list") return ok(demoViews());
+	if (method === "GET" && rawPath === "/v1/matches")
+		return ok(demoMatches(params));
 	if (rawPath === "/v1/chat/phrases") {
 		if (method === "GET") return ok({ phrases: demoSavedPhrases() });
 		if (method === "POST") {

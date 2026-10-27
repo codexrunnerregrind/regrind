@@ -68,6 +68,11 @@ export class SentTapsState extends ReconcilingListState<
 		return this.#all.length;
 	}
 
+	/** Our live tap to this profile, if the last load had one. */
+	sentTo(profileId: number): SentTapProfile | undefined {
+		return this.#all.find((tap) => tap.profileId === profileId);
+	}
+
 	protected get length(): number {
 		return this.#all.length;
 	}

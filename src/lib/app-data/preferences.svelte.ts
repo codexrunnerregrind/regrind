@@ -41,6 +41,8 @@ export const accentColorSchema = z.enum(accentColors);
 export const gridColumnsSchema = z.union([z.literal(2), z.literal(3)]);
 export type GridColumns = z.infer<typeof gridColumnsSchema>;
 export const bubbleColorSchema = z.enum(bubbleColors);
+export const matchesCardStyleSchema = z.enum(["full", "compact"]);
+export type MatchesCardStyle = z.infer<typeof matchesCardStyleSchema>;
 
 const preferencesSchema = z.object({
 	// Defaults mirror the official app: yellow for the accent and your own
@@ -100,6 +102,8 @@ const preferencesSchema = z.object({
 	gridLastOnline: z.boolean().default(true),
 	// The "For you" band inside the grid; its Hide button turns this off.
 	gridForYou: z.boolean().default(true),
+	// Interest → Matches: two-across cards with details, or a three-across grid.
+	matchesCardStyle: matchesCardStyleSchema.default("full").catch("full"),
 	// The floating capsule, on by default. iOS draws it in the system glass
 	// material; everywhere else it is a blur behind a tint, which is the same
 	// shape and the same behaviour, only a plainer surface. Turning this off
@@ -147,6 +151,7 @@ const accountPreferenceKeys = [
 	"revealMessageRead",
 	"revealProfileViews",
 	"mediaSends",
+	"matchesCardStyle",
 ] as const;
 
 const GLOBAL_PATH = "preferences.data";
@@ -319,6 +324,10 @@ export function getThemeModeSnapshot(): ThemeMode {
 /** Grids of people: the browse grid and profile views. */
 export function getProfileGridColumnsSnapshot(): GridColumns {
 	return snapshot.profileGridColumns;
+}
+
+export function getMatchesCardStyleSnapshot(): MatchesCardStyle {
+	return snapshot.matchesCardStyle;
 }
 
 /** Grids of albums and of the photos inside them. */

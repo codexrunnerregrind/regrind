@@ -9,6 +9,8 @@
 	import { hapticSelection } from "$lib/platform/haptics";
 	import { swipeTabs } from "$lib/util/swipe-tabs";
 	import { interestTabs, rememberInterestTab } from "./interest-tab";
+	import { matchesState } from "./matches/matches-state.svelte";
+	import MatchesToolbar from "./matches/MatchesToolbar.svelte";
 	import { getViewsState } from "./views/views-state.svelte";
 
 	let {
@@ -19,7 +21,7 @@
 		data: import("./$types").LayoutData;
 	} = $props();
 
-	// All three lists are held here rather than by their pages, so every tab can
+	// Every list is held here rather than by its page, so every tab can
 	// carry its count before you have been there. It costs one load per list on
 	// entering Interest, which is also what makes a tab switch instant — the
 	// states are account-scoped, so the pages find them already filled in.
@@ -34,6 +36,10 @@
 	// is already right. The safe-area inset comes back off below — this height
 	// includes it, but the pages already sit inside it.
 	let headerHeight = $state(91);
+
+	$effect(() => {
+		matchesState.load();
+	});
 
 	// No count while a list is still loading: a 0 that turns into 34 reads as an
 	// empty tab for as long as the request takes.
@@ -50,6 +56,11 @@
 		},
 		{
 			value: interestTabs[2],
+			label: "Matches",
+			count: matchesState.loaded ? matchesState.serverTotal : null,
+		},
+		{
+			value: interestTabs[3],
 			label: "Sent",
 			count: sentTaps.loading ? null : sentTaps.total,
 		},
@@ -107,6 +118,9 @@
 		onSelect={select}
 		class="mt-4"
 	/>
+	{#if page.url.pathname === interestTabs[2]}
+		<MatchesToolbar />
+	{/if}
 </nav>
 <!-- Custom properties inherit through display:contents, so the pages below read
      the measured height without an extra box in the layout. -->

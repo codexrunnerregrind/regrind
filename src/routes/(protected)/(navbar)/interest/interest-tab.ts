@@ -11,6 +11,7 @@
 export const interestTabs = [
 	"/interest/views",
 	"/interest/taps",
+	"/interest/matches",
 	"/interest/sent",
 ] as const;
 
