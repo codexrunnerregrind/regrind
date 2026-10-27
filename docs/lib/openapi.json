@@ -22051,7 +22051,36 @@
 			},
 			"TopPicksV1": {
 				"type": "object",
-				"description": "Empty for [v4/cascade](/grindr-api/browse/grid#get-cascade).",
+				"description": "The \"For You\" row of the official app.",
+				"properties": {
+					"refreshTimestamp": {
+						"allOf": [
+							{
+								"$ref": "#/components/schemas/TimestampMs"
+							}
+						]
+					},
+					"items": {
+						"type": "array",
+						"items": {
+							"type": "object",
+							"properties": {
+								"status": {
+									"type": "string",
+									"description": "string, e.g. `\"ACTIVE\"`"
+								},
+								"profileItem": {
+									"type": "object",
+									"description": "object, [full_profile_v1](/grindr-api/browse/grid#full-profile-v1) data"
+								}
+							},
+							"required": [
+								"status",
+								"profileItem"
+							]
+						}
+					}
+				},
 				"x-render-on-tag": "browse/grid",
 				"x-display-name": "top_picks_v1",
 				"x-property-groups": [

@@ -10,6 +10,7 @@
 	import HeartIcon from "phosphor-svelte/lib/HeartIcon";
 	import LockKeyIcon from "phosphor-svelte/lib/LockKeyIcon";
 	import ProhibitIcon from "phosphor-svelte/lib/ProhibitIcon";
+	import SparkleIcon from "phosphor-svelte/lib/SparkleIcon";
 	import SunIcon from "phosphor-svelte/lib/SunIcon";
 	import TrayArrowDownIcon from "phosphor-svelte/lib/TrayArrowDownIcon";
 	import VibrateIcon from "phosphor-svelte/lib/VibrateIcon";
@@ -51,6 +52,15 @@
 	>
 		{#snippet icon()}
 			<ClockIcon weight="fill" />
+		{/snippet}
+	</PreferenceSwitchSetting>
+	<PreferenceSwitchSetting
+		preference="gridForYou"
+		title="For you"
+		description="Show recommended profiles inside the grid."
+	>
+		{#snippet icon()}
+			<SparkleIcon weight="fill" />
 		{/snippet}
 	</PreferenceSwitchSetting>
 	{#if hapticsAvailable()}

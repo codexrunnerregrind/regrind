@@ -26,6 +26,7 @@
 		onclick = undefined,
 		class: className,
 		rightNow = null,
+		portrait = false,
 		meta,
 		overlay,
 	}: {
@@ -45,6 +46,8 @@
 		onclick?: import("svelte/elements").MouseEventHandler<HTMLAnchorElement>;
 		class?: import("svelte/elements").ClassValue;
 		rightNow?: RightNowStatus | null;
+		/** 3:4 instead of square. */
+		portrait?: boolean;
 		/** A trailing label line — what this tile says beyond who it is. */
 		meta?: Snippet;
 		overlay?: Snippet;
@@ -207,7 +210,8 @@
 		{onclick}
 		aria-label={hasVisibleText ? undefined : "Profile"}
 		class={[
-			"relative flex aspect-square items-end overflow-hidden",
+			"relative flex items-end overflow-hidden",
+			{ "aspect-3/4": portrait, "aspect-square": !portrait },
 			className,
 		]}
 	>
@@ -216,7 +220,8 @@
 {:else}
 	<div
 		class={[
-			"relative flex aspect-square items-end overflow-hidden",
+			"relative flex items-end overflow-hidden",
+			{ "aspect-3/4": portrait, "aspect-square": !portrait },
 			className,
 		]}
 	>

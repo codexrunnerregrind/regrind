@@ -108,9 +108,20 @@ export const cascadeResponseAdvertV1Schema = z.object({
 	data: z.object({ cascadePlacementName: z.string() }),
 });
 
+// Shown as "For You" by the official app.
 export const cascadeResponseTopPicksV1Schema = z.object({
 	type: z.literal("top_picks_v1"),
-	data: z.object({}),
+	data: z.object({
+		refreshTimestamp: unixTimestampMsSchema.nullish(),
+		items: z
+			.array(
+				z.object({
+					status: z.string(),
+					profileItem: cascadeResponseFullProfileV1Schema.shape.data,
+				}),
+			)
+			.default([]),
+	}),
 });
 
 export const cascadeResponseHiddenProfileV1Schema = z.object({

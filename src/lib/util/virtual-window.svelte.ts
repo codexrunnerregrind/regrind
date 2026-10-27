@@ -53,6 +53,10 @@ export function virtualWindow({
 
 		const resize = new ResizeObserver(remeasure);
 		resize.observe(scroller);
+		// Content above can move the grid without a scroll, e.g. the For you
+		// band hiding, which also resizes the grid. Border box: the windowed-out
+		// rows are padding, so the content box can stay the same size.
+		resize.observe(node, { box: "border-box" });
 		scroller.addEventListener("scroll", sample, { passive: true });
 
 		return () => {

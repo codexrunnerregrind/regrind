@@ -293,6 +293,8 @@
 	--spacing-dot: 7px;
 	/* Tile label plate corner. */
 	--radius-plate: 7px;
+	/* A "For you" card. */
+	--radius-pick: 10px;
 
 	--spacing-avatar: 37.5px;
 	--spacing-list-rail: var(--list-rail);

@@ -3,16 +3,23 @@
 		ensureFavoriteNotes,
 		favoriteNote,
 	} from "$lib/api/users/favorite-notes-state.svelte";
-	import { getProfileGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
+	import {
+		getProfileGridColumnsSnapshot,
+		preferencesSnapshot,
+	} from "$lib/app-data/preferences.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import PagingSentinel from "$lib/components/shared/PagingSentinel.svelte";
 	import { gridState } from "$lib/grid/grid-state.svelte";
 	import { usernameMatches } from "$lib/model/browse/grid/filters";
 	import { armProfileDeck } from "$lib/profile/profile-deck";
-	import { virtualGrid } from "$lib/util/virtual-grid.svelte";
+	import {
+		readGridMetrics,
+		virtualGrid,
+	} from "$lib/util/virtual-grid.svelte";
 	import type { FavoriteSearch } from "$lib/favorites/favorite-search.svelte";
 	import type { GridProfile } from "$lib/grid/grid";
 	import EmptyGrid from "./EmptyGrid.svelte";
+	import ForYouRow from "./ForYouRow.svelte";
 	import GridCellSkeleton from "./GridCellSkeleton.svelte";
 	import GridProfileMiniCard from "./GridProfileMiniCard.svelte";
 	import NoNoteMatches from "./NoNoteMatches.svelte";
@@ -40,6 +47,34 @@
 	}
 
 	const gridProfiles = $derived(matchUsername(gridState.profiles));
+	const topPicks = $derived(
+		gridState.topPicks.filter((item) => item.type === "rendered"),
+	);
+
+	let columns = $state(3);
+	$effect(() => {
+		const node = gridElement;
+		if (!node) return;
+		const measure = () => {
+			columns = readGridMetrics(node).columns || 3;
+		};
+		measure();
+		const observer = new ResizeObserver(measure);
+		observer.observe(node);
+		return () => observer.disconnect();
+	});
+
+	// The For you band follows the first six rows, which get a grid of their
+	// own ahead of the virtualized one.
+	const ROWS_BEFORE_FOR_YOU = 6;
+	const leadCount = $derived(
+		!search.active &&
+			preferencesSnapshot().gridForYou &&
+			topPicks.length > 0
+			? Math.min(gridProfiles.length, columns * ROWS_BEFORE_FOR_YOU)
+			: 0,
+	);
+	const restProfiles = $derived(gridProfiles.slice(leadCount));
 
 	// Opening a profile hands it the rest of the cascade, so the profile screen
 	// can swipe between them in the order they are shown here. Armed per tap
@@ -71,15 +106,15 @@
 	);
 	const view = virtualGrid({
 		grid: () => gridElement,
-		count: () => gridProfiles.length + pendingSkeletons,
+		count: () => restProfiles.length + pendingSkeletons,
 	});
 	const visibleProfiles = $derived(
-		gridProfiles.slice(view.startIndex, view.endIndex),
+		restProfiles.slice(view.startIndex, view.endIndex),
 	);
 	const visibleSkeletons = $derived(
 		Math.max(
 			0,
-			view.endIndex - Math.max(view.startIndex, gridProfiles.length),
+			view.endIndex - Math.max(view.startIndex, restProfiles.length),
 		),
 	);
 
@@ -90,9 +125,54 @@
 	$effect(() => gridState.attachView());
 </script>
 
+{#snippet cell(item: GridProfile)}
+	{#if item.type === "rendered"}
+		<GridProfileMiniCard
+			id={item.id}
+			displayName={item.displayName}
+			distance={item.distance}
+			unread={item.unread}
+			onlineUntil={item.onlineUntil}
+			seen={item.seen}
+			isFavorite={item.isFavorite}
+			isVisiting={item.isVisiting}
+			hadRecentChat={item.hasChattedInLast24Hrs}
+			medias={item.profilePhotosHashes?.map((mediaHash) => ({
+				mediaHash,
+			})) ?? []}
+			rightNow={item.rightNow}
+			note={favoriteNote(item.id)?.notes ?? null}
+			onclick={() => armCascade(item.id)}
+		/>
+	{:else}
+		<GridCellSkeleton
+			onVisible={() => {
+				gridState
+					.resolveProfile(item.id)
+					.catch((error) => console.error(error));
+			}}
+		/>
+	{/if}
+{/snippet}
+
 <!-- The sentinel and the status line sit outside the grid: only cells may be
      direct children of .photo-grid, whose corner rules select on position. -->
 <div class="relative flex flex-1 flex-col">
+	{#if leadCount > 0}
+		<div
+			data-slot="grid-cells"
+			class="photo-grid flex-none"
+			data-grid-columns={getProfileGridColumnsSnapshot()}
+		>
+			{#each gridProfiles.slice(0, leadCount) as item (item.id)}
+				{@render cell(item)}
+			{/each}
+		</div>
+		<ForYouRow
+			profiles={topPicks}
+			refreshAt={gridState.topPicksRefreshAt}
+		/>
+	{/if}
 	<!-- Only the cascade is virtualized: search shows a short, fully-rendered
 	     list of matches, so the windowing offsets would only push it off-screen. -->
 	<div
@@ -160,33 +240,7 @@
 				<EmptyGrid />
 			{/if}
 			{#each visibleProfiles as item (item.id)}
-				{#if item.type === "rendered"}
-					<GridProfileMiniCard
-						id={item.id}
-						displayName={item.displayName}
-						distance={item.distance}
-						unread={item.unread}
-						onlineUntil={item.onlineUntil}
-						seen={item.seen}
-						isFavorite={item.isFavorite}
-						isVisiting={item.isVisiting}
-						hadRecentChat={item.hasChattedInLast24Hrs}
-						medias={item.profilePhotosHashes?.map((mediaHash) => ({
-							mediaHash,
-						})) ?? []}
-						rightNow={item.rightNow}
-						note={favoriteNote(item.id)?.notes ?? null}
-						onclick={() => armCascade(item.id)}
-					/>
-				{:else}
-					<GridCellSkeleton
-						onVisible={() => {
-							gridState
-								.resolveProfile(item.id)
-								.catch((error) => console.error(error));
-						}}
-					/>
-				{/if}
+				{@render cell(item)}
 			{/each}
 			{#each Array.from({ length: visibleSkeletons })}
 				<GridCellSkeleton />

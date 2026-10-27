@@ -129,6 +129,37 @@ describe("cascadeV4ResponseSchema", () => {
 		]);
 	});
 
+	it("parses the profiles of a top picks item", () => {
+		const parsed = cascadeV4ResponseSchema.parse(
+			response([
+				{
+					type: "top_picks_v1",
+					data: {
+						refreshTimestamp: 1_710_000_000_000,
+						items: [
+							{
+								status: "ACTIVE",
+								profileItem: {
+									...profile,
+									age: 30,
+									bodyType: 1,
+								},
+							},
+						],
+					},
+				},
+			]),
+		);
+
+		const [item] = parsed.items;
+		expect(item?.type === "top_picks_v1" && item.data.items).toEqual([
+			expect.objectContaining({
+				status: "ACTIVE",
+				profileItem: expect.objectContaining({ profileId: 1, age: 30 }),
+			}),
+		]);
+	});
+
 	it("drops an unknown explore aggregation item without failing the page", () => {
 		const exploreAggregation = (items: unknown[]) => ({
 			type: "explore_aggregation_v1",
