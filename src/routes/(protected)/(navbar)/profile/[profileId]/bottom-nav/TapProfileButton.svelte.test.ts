@@ -1,12 +1,21 @@
 // @vitest-environment jsdom
 
-import { cleanup, render } from "@testing-library/svelte";
+import { cleanup, getAllByRole, render } from "@testing-library/svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const { playHapticMock } = vi.hoisted(() => ({ playHapticMock: vi.fn() }));
 vi.mock("$lib/haptics", () => ({ playHaptic: playHapticMock }));
 
-import { contextMenuEvent } from "$lib/test/context-menu";
+const { sendTapMock } = vi.hoisted(() => ({
+	sendTapMock: vi.fn(() => Promise.resolve({ isMutual: false })),
+}));
+vi.mock("$lib/api/interest/taps", () => ({
+	sendTap: sendTapMock,
+	findSentTap: vi.fn(),
+}));
+
+import { TapType } from "$lib/model/interest/taps";
+import { contextMenuEvent, rightClick } from "$lib/test/context-menu";
 import TapProfileButton from "./TapProfileButton.svelte";
 
 function renderButton() {
@@ -37,5 +46,39 @@ describe("tap menu haptics", () => {
 		button.dispatchEvent(contextMenuEvent({ pointerType: "mouse" }));
 
 		expect(playHapticMock).not.toHaveBeenCalled();
+	});
+});
+
+describe("tap menu", () => {
+	it("offers every tap type on a long press", async () => {
+		// Let go of any touch hold an earlier test left behind.
+		window.dispatchEvent(new Event("pointerup"));
+		await new Promise((resolve) => setTimeout(resolve, 600));
+		const button = renderButton();
+
+		await rightClick(button);
+
+		expect(
+			getAllByRole(document.body, "menuitem").map((item) =>
+				item.getAttribute("aria-label"),
+			),
+		).toEqual(["Send a Cookie tap", "Send a Fire tap", "Send a Demon tap"]);
+	});
+
+	it("sends the bubble the finger is lifted on", async () => {
+		window.dispatchEvent(new Event("pointerup"));
+		await new Promise((resolve) => setTimeout(resolve, 600));
+		const button = renderButton();
+
+		await rightClick(button);
+		// jsdom lays the button out at 0,0, so the Fire bubble sits at -58,-94.
+		document.dispatchEvent(
+			new MouseEvent("pointerup", { clientX: -58, clientY: -94 }),
+		);
+
+		expect(sendTapMock).toHaveBeenCalledExactlyOnceWith({
+			recipientId: 2,
+			tapType: TapType.Hot,
+		});
 	});
 });
