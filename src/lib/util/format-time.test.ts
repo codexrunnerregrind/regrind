@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
 	formatMediaDuration,
+	formatTimeAgoShort,
 	formatTimeRelativeCustom,
 } from "$lib/util/format-time";
 
@@ -52,5 +53,21 @@ describe("formatMediaDuration", () => {
 		expect(formatMediaDuration(NaN)).toBe("0:00");
 		expect(formatMediaDuration(Infinity)).toBe("0:00");
 		expect(formatMediaDuration(-5)).toBe("0:00");
+	});
+});
+
+describe("formatTimeAgoShort", () => {
+	const now = Date.UTC(2026, 5, 10, 12);
+
+	it("picks the largest whole unit", () => {
+		expect(formatTimeAgoShort(now - 10_000, now)).toBe("1m ago");
+		expect(formatTimeAgoShort(now - 59 * 60_000, now)).toBe("59m ago");
+		expect(formatTimeAgoShort(now - 3 * 60 * 60_000, now)).toBe("3h ago");
+		expect(formatTimeAgoShort(now - 2 * 24 * 60 * 60_000, now)).toBe(
+			"2d ago",
+		);
+		expect(formatTimeAgoShort(now - 15 * 24 * 60 * 60_000, now)).toBe(
+			"2w ago",
+		);
 	});
 });

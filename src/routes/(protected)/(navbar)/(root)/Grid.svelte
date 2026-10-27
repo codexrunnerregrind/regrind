@@ -167,6 +167,7 @@
 						distance={item.distance}
 						unread={item.unread}
 						onlineUntil={item.onlineUntil}
+						seen={item.seen}
 						isFavorite={item.isFavorite}
 						isVisiting={item.isVisiting}
 						hadRecentChat={item.hasChattedInLast24Hrs}

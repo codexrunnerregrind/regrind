@@ -2,6 +2,7 @@
 	import BroadcastIcon from "phosphor-svelte/lib/BroadcastIcon";
 	import CalendarBlankIcon from "phosphor-svelte/lib/CalendarBlankIcon";
 	import ChecksIcon from "phosphor-svelte/lib/ChecksIcon";
+	import ClockIcon from "phosphor-svelte/lib/ClockIcon";
 	import DeviceMobileIcon from "phosphor-svelte/lib/DeviceMobileIcon";
 	import ExportIcon from "phosphor-svelte/lib/ExportIcon";
 	import EyeIcon from "phosphor-svelte/lib/EyeIcon";
@@ -43,6 +44,15 @@
 <SectionHeader>Display</SectionHeader>
 <SettingsGroup divider="full">
 	<UnitsSetting />
+	<PreferenceSwitchSetting
+		preference="gridLastOnline"
+		title="Last online"
+		description="Show when a profile was last online."
+	>
+		{#snippet icon()}
+			<ClockIcon weight="fill" />
+		{/snippet}
+	</PreferenceSwitchSetting>
 	{#if hapticsAvailable()}
 		<PreferenceSwitchSetting
 			preference="hapticFeedback"

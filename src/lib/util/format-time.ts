@@ -24,3 +24,13 @@ export function formatTimeRelativeCustom(date: number) {
 	else if (diff < 7 * 24 * 60 * 60 * 1000) return format(date, "EEEE");
 	else return format(date, "MMM d");
 }
+
+export function formatTimeAgoShort(date: number, now: number) {
+	const mins = Math.max(1, Math.floor((now - date) / (60 * 1000)));
+	if (mins < 60) return `${mins}m ago`;
+	const hrs = Math.floor(mins / 60);
+	if (hrs < 24) return `${hrs}h ago`;
+	const days = Math.floor(hrs / 24);
+	if (days < 7) return `${days}d ago`;
+	return `${Math.floor(days / 7)}w ago`;
+}
