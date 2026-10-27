@@ -62,6 +62,18 @@ export const cascadeV4ResponseAdvertV1Schema = z.object({
 
 export const cascadeV4ResponseTopPicksV1Schema = z.object({
 	...cascadeResponseTopPicksV1Schema.shape,
+	data: z.object({
+		...cascadeResponseTopPicksV1Schema.shape.data.shape,
+		items: z
+			.array(
+				z.object({
+					status: z.string(),
+					profileItem:
+						cascadeV4ResponseFullProfileV1Schema.shape.data,
+				}),
+			)
+			.default([]),
+	}),
 });
 
 export const cascadeV4ResponsePartialProfileV1Schema = z.object({

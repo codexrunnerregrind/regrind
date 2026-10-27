@@ -61,7 +61,11 @@ import { rendered } from "./grid-test-helpers";
 const page = (
 	ids: number[],
 	{ nextPage = null }: { nextPage?: number | null } = {},
-) => ({ items: ids.map((id) => ({ id, type: "lazy" })), nextPage });
+) => ({
+	items: ids.map((id) => ({ id, type: "lazy" })),
+	topPicks: [],
+	nextPage,
+});
 
 async function settle() {
 	await vi.waitFor(() => expect(getGridMock).toHaveBeenCalled());
@@ -358,6 +362,7 @@ describe("fetch races", () => {
 	it("a pending page cannot append onto a refreshed grid", async () => {
 		getGridMock.mockResolvedValueOnce({
 			items: [{ id: 1, type: "lazy" }],
+			topPicks: [],
 			nextPage: 2,
 		});
 		gridState.retry();

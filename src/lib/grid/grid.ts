@@ -102,9 +102,21 @@ export async function getGrid(query: Parameters<typeof getCascadeV4>[0]) {
 	const response = await getCascadeV4(query);
 	if (!query.favorites) recordStoredLocation(query.nearbyGeoHash);
 	const items: GridProfile[] = [];
+	const topPicks: GridProfile[] = [];
+	let topPicksRefreshAt: number | null = null;
 
 	for (const item of response.items) {
-		if (
+		if (item.type === "top_picks_v1") {
+			topPicksRefreshAt = item.data.refreshTimestamp ?? null;
+			for (const pick of item.data.items) {
+				topPicks.push(
+					gridProfile({
+						profile: pick.profileItem,
+						carriesAge: true,
+					}),
+				);
+			}
+		} else if (
 			item.type === "full_profile_v1" ||
 			item.type === "partial_profile_v1" ||
 			item.type === "smart_boost_profile_v1"
@@ -126,7 +138,7 @@ export async function getGrid(query: Parameters<typeof getCascadeV4>[0]) {
 	}
 
 	notePhotos(
-		items.flatMap((item) =>
+		[...items, ...topPicks].flatMap((item) =>
 			item.type === "rendered"
 				? [
 						{
@@ -138,7 +150,13 @@ export async function getGrid(query: Parameters<typeof getCascadeV4>[0]) {
 				: [],
 		),
 	);
-	return { items, nextPage: response.nextPage, shuffled: response.shuffled };
+	return {
+		items,
+		topPicks,
+		topPicksRefreshAt,
+		nextPage: response.nextPage,
+		shuffled: response.shuffled,
+	};
 }
 
 const profileCache = new TtlCache<number, RenderedGridProfile>({

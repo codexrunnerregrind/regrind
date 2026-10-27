@@ -98,6 +98,8 @@ const preferencesSchema = z.object({
 	albumGridColumns: gridColumnsSchema.default(3).catch(3),
 	// When an offline profile was last online, under its name on the grid.
 	gridLastOnline: z.boolean().default(true),
+	// The "For you" band inside the grid; its Hide button turns this off.
+	gridForYou: z.boolean().default(true),
 	// The floating capsule, on by default. iOS draws it in the system glass
 	// material; everywhere else it is a blur behind a tint, which is the same
 	// shape and the same behaviour, only a plainer surface. Turning this off

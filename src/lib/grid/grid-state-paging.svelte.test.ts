@@ -31,7 +31,11 @@ import { gridState } from "./grid-state.svelte";
 const page = (
 	ids: number[],
 	{ nextPage = null }: { nextPage?: number | null } = {},
-) => ({ items: ids.map((id) => ({ id, type: "lazy" })), nextPage });
+) => ({
+	items: ids.map((id) => ({ id, type: "lazy" })),
+	topPicks: [],
+	nextPage,
+});
 
 async function settle() {
 	await vi.waitFor(() => expect(getGridMock).toHaveBeenCalled());

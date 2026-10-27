@@ -37,6 +37,9 @@ class GridState {
 	filters = new GridSearchFiltersState({ onQueryChange: () => this.retry() });
 	items: GridProfile[] = $state.raw([]);
 	readonly profiles: GridProfile[] = $derived(dedupeGridProfiles(this.items));
+	/** The "For You" row; only the first cascade page carries it. */
+	topPicks: GridProfile[] = $state.raw([]);
+	topPicksRefreshAt: number | null = $state(null);
 	nextPage: number | null = $state(0);
 	readonly paging = new SentinelPaging({
 		loadPage: (page) => this.#loadPage(page),
@@ -85,6 +88,13 @@ class GridState {
 		isFavorite: boolean;
 	}): void {
 		patchCachedProfile({ id: profileId, patch: { isFavorite } });
+		if (this.topPicks.some((item) => item.id === profileId)) {
+			this.topPicks = this.topPicks.map((item) =>
+				item.id === profileId && item.type === "rendered"
+					? { ...item, isFavorite }
+					: item,
+			);
+		}
 		if (this.profileById(profileId)?.type !== "rendered") return;
 		this.items = this.items.map((item) =>
 			item.id === profileId && item.type === "rendered"
@@ -94,6 +104,11 @@ class GridState {
 	}
 
 	removeProfile(profileId: number): void {
+		if (this.topPicks.some((item) => item.id === profileId)) {
+			this.topPicks = this.topPicks.filter(
+				(item) => item.id !== profileId,
+			);
+		}
 		if (this.indexInProfiles(profileId) === -1) return;
 		this.items = this.items.filter((item) => item.id !== profileId);
 	}
@@ -187,6 +202,8 @@ class GridState {
 
 	#reset(): void {
 		this.items = [];
+		this.topPicks = [];
+		this.topPicksRefreshAt = null;
 		this.nextPage = 0;
 		this.loading = true;
 		this.error = null;
@@ -299,6 +316,8 @@ class GridState {
 				: [];
 			this.#firstPageIds = firstPageIds;
 			this.items = [...result.items, ...laterPages];
+			this.topPicks = result.topPicks;
+			this.topPicksRefreshAt = result.topPicksRefreshAt;
 			if (laterPages.length === 0) this.nextPage = result.nextPage;
 			this.paging.rearm();
 			this.error = null;

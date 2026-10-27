@@ -316,7 +316,7 @@ describe("getGrid", () => {
 	it("drops items that carry no profile", async () => {
 		const { items } = await cascade([
 			{ type: "advert_v1", data: {} },
-			{ type: "top_picks_v1", data: {} },
+			{ type: "top_picks_v1", data: { items: [] } },
 			{
 				type: "rewarded_profiles_entry_point_v1",
 				data: {
@@ -328,6 +328,24 @@ describe("getGrid", () => {
 		]);
 
 		expect(items).toEqual([]);
+	});
+
+	it("returns top picks apart from the grid profiles", async () => {
+		const { items, topPicks } = await cascade([
+			{ type: "full_profile_v1", data: v4Profile(1) },
+			{
+				type: "top_picks_v1",
+				data: {
+					refreshTimestamp: LAST_ONLINE,
+					items: [{ status: "ACTIVE", profileItem: v4Profile(2) }],
+				},
+			},
+		]);
+
+		expect(items.map((item) => item.id)).toEqual([1]);
+		expect(topPicks).toEqual([
+			expect.objectContaining({ type: "rendered", id: 2, age: 27 }),
+		]);
 	});
 });
 
