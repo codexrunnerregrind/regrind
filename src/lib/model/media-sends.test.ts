@@ -45,34 +45,30 @@ describe("forgetSends", () => {
 });
 
 describe("rankBySends", () => {
-	it("leaves the order alone without frequent sends", () => {
+	it("leaves the order alone without sends", () => {
+		expect(rankBySends(items, {}, 0)).toEqual(items);
+	});
+
+	it("puts every sent item first by score, the rest in order", () => {
+		let sends = recordSends({}, [3, 5, 4], 0);
+		sends = recordSends(sends, [3, 5], 0);
+		sends = recordSends(sends, [5], 0);
+		expect(rankBySends(items, sends, 0).map((i) => i.id)).toEqual([
+			5, 3, 4, 1, 2,
+		]);
+	});
+
+	it("ranks a single send above never sent", () => {
 		const sends = recordSends({}, [4], 0);
-		expect(rankBySends(items, sends, { now: 0, limit: 6 })).toEqual(items);
+		expect(rankBySends(items, sends, 0)[0]?.id).toBe(4);
 	});
 
-	it("puts frequent sends first by score, the rest in order", () => {
-		let sends = recordSends({}, [3, 5], 0);
-		sends = recordSends(sends, [3, 5], 0);
-		sends = recordSends(sends, [5], 0);
-		expect(
-			rankBySends(items, sends, { now: 0, limit: 6 }).map((i) => i.id),
-		).toEqual([5, 3, 1, 2, 4]);
-	});
-
-	it("caps the frequent block", () => {
-		let sends = recordSends({}, [3, 5], 0);
-		sends = recordSends(sends, [3, 5], 0);
-		sends = recordSends(sends, [5], 0);
-		expect(
-			rankBySends(items, sends, { now: 0, limit: 1 }).map((i) => i.id),
-		).toEqual([5, 1, 2, 3, 4]);
-	});
-
-	it("lets stale sends fall back", () => {
-		const sends = recordSends(recordSends({}, [4], 0), [4], 0);
-		expect(
-			rankBySends(items, sends, { now: 60 * DAY, limit: 6 })[0]?.id,
-		).toBe(1);
+	it("lets recent sends overtake stale ones", () => {
+		let sends = recordSends(recordSends({}, [4], 0), [4], 0);
+		sends = recordSends(sends, [2], 90 * DAY);
+		expect(rankBySends(items, sends, 90 * DAY).map((i) => i.id)).toEqual([
+			2, 4, 1, 3, 5,
+		]);
 	});
 });
 
@@ -88,7 +84,6 @@ describe("arrangeMedia", () => {
 				previous: null,
 				sends: null,
 				now: 0,
-				limit: 6,
 			}).map((i) => i.id),
 		).toEqual([1, 2, 3, 4, 5]);
 	});
@@ -100,7 +95,6 @@ describe("arrangeMedia", () => {
 				previous: items.filter((i) => i.id !== 2),
 				sends,
 				now: 0,
-				limit: 6,
 			}).map((i) => i.id),
 		).toEqual([2, 4, 1, 3, 5]);
 	});

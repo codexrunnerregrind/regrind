@@ -5,7 +5,6 @@ import {
 	rememberMediaSends,
 } from "$lib/app-data/media-sends";
 import {
-	getAlbumGridColumnsSnapshot,
 	getMediaSendsSnapshot,
 	getSortMediaByFrequencySnapshot,
 } from "$lib/app-data/preferences.svelte";
@@ -69,7 +68,6 @@ export class DrawerOrder {
 				? getMediaSendsSnapshot()
 				: null,
 			now: Date.now(),
-			limit: getAlbumGridColumnsSnapshot() * 2,
 		});
 	}
 }

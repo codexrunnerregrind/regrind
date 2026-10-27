@@ -7,8 +7,6 @@ export type MediaSends = Record<string, MediaSend>;
 
 const HALF_LIFE_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_ENTRIES = 200;
-// Two sends within about a month.
-export const FREQUENT_MIN_SCORE = 1.5;
 
 export function decayedScore(send: MediaSend | undefined, now: number): number {
 	if (send === undefined) return 0;
@@ -46,20 +44,16 @@ export function forgetSends(
 	return next;
 }
 
-/** Up to `limit` frequently sent items first, by score; the rest keep their order. */
+/** Most sent first; ties, including never sent, keep their order. */
 export function rankBySends<T extends { id: number }>(
 	items: readonly T[],
 	sends: MediaSends,
-	{ now, limit }: { now: number; limit: number },
+	now: number,
 ): T[] {
-	const frequent = items
+	return items
 		.map((item) => ({ item, score: decayedScore(sends[item.id], now) }))
-		.filter(({ score }) => score >= FREQUENT_MIN_SCORE)
 		.sort((a, b) => b.score - a.score)
-		.slice(0, limit)
 		.map(({ item }) => item);
-	const lead = new Set(frequent);
-	return [...frequent, ...items.filter((item) => !lead.has(item))];
 }
 
 /**
@@ -73,13 +67,11 @@ export function arrangeMedia<T extends { id: number }>(
 		previous,
 		sends,
 		now,
-		limit,
 	}: {
 		serverOrder: readonly number[];
 		previous: readonly T[] | null;
 		sends: MediaSends | null;
 		now: number;
-		limit: number;
 	},
 ): T[] {
 	const position = new Map(serverOrder.map((id, i) => [id, i]));
@@ -87,7 +79,7 @@ export function arrangeMedia<T extends { id: number }>(
 		(a, b) => (position.get(a.id) ?? -1) - (position.get(b.id) ?? -1),
 	);
 	if (sends === null) return base;
-	const ranked = rankBySends(base, sends, { now, limit });
+	const ranked = rankBySends(base, sends, now);
 	if (previous === null) return ranked;
 	const known = new Set(previous.map((item) => item.id));
 	return [
