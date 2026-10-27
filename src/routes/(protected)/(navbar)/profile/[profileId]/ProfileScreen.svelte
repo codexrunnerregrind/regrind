@@ -10,7 +10,9 @@
 
 	import {
 		BlockedProfileError,
+		getProfile,
 		HiddenProfileError,
+		onProfileEdit,
 		ProfileUnavailableError,
 	} from "$lib/api/users/profiles";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
@@ -87,17 +89,6 @@
 		),
 	);
 
-	let ourProfileState = $state(
-		untrack(
-			() =>
-				new ProfileState({
-					profileId: ourProfileId,
-					ourProfileId,
-					recordView: false,
-				}),
-		),
-	);
-
 	$effect(() => {
 		const id = profileId;
 		const ourId = ourProfileId;
@@ -143,7 +134,26 @@
 		() => void copyProfileId(profileState.profileId),
 	);
 
-	const ourTags = $derived(ourProfileState.profile?.profileTags);
+	// Tags we share with them are highlighted.
+	let ourTags = $state<string[]>([]);
+
+	$effect(() => {
+		const id = ourProfileId;
+		let live = true;
+		getProfile(id)
+			.then((profile) => {
+				if (live) ourTags = profile.profileTags;
+			})
+			.catch(console.error);
+		const unsubscribe = onProfileEdit(({ profileId, patch }) => {
+			if (profileId === id && patch.profileTags)
+				ourTags = patch.profileTags;
+		});
+		return () => {
+			live = false;
+			unsubscribe();
+		};
+	});
 </script>
 
 {#if error}
@@ -328,8 +338,7 @@
 						{/if}
 						<ProfileTags
 							tags={profileTags}
-							{ourTags}
-							{ourProfile}
+							ourTags={ourProfile ? [] : ourTags}
 						/>
 						{#if aboutMe !== null}
 							<AboutMe>{aboutMe}</AboutMe>
