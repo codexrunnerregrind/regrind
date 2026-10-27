@@ -53,6 +53,7 @@
 			label: "Sent",
 			count: sentTaps.loading ? null : sentTaps.total,
 		},
+		{ value: interestTabs[3], label: "Matches", count: null },
 	]);
 
 	// So the tab bar's /interest link comes back here rather than resetting.

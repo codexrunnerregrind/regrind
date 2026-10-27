@@ -12,6 +12,7 @@ export const interestTabs = [
 	"/interest/views",
 	"/interest/taps",
 	"/interest/sent",
+	"/interest/matches",
 ] as const;
 
 export type InterestTab = (typeof interestTabs)[number];
