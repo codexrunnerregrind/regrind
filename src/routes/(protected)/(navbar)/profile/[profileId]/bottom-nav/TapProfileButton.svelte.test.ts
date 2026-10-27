@@ -4,7 +4,10 @@ import { cleanup, getAllByRole, render } from "@testing-library/svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const { playHapticMock } = vi.hoisted(() => ({ playHapticMock: vi.fn() }));
-vi.mock("$lib/haptics", () => ({ playHaptic: playHapticMock }));
+vi.mock("$lib/haptics", () => ({
+	playHaptic: playHapticMock,
+	hapticImpact: vi.fn(),
+}));
 
 const { sendTapMock } = vi.hoisted(() => ({
 	sendTapMock: vi.fn(() => Promise.resolve({ isMutual: false })),
