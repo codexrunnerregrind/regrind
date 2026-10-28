@@ -105,7 +105,7 @@
 	ontouchstart={onUnsettle}
 	onclickcapture={swallowClickOutsideHeadingPane}
 	style:--interest-header="calc({headerHeight}px - var(--safe-area-top))"
-	class="screen-nav-host no-scrollbar flex snap-x snap-mandatory overflow-x-auto overflow-y-hidden"
+	class="screen-nav-host no-scrollbar flex snap-x snap-mandatory overflow-x-auto overflow-y-hidden overscroll-x-none"
 	{@attach snap.attach}
 	{@attach (node) => {
 		onPager?.(node);

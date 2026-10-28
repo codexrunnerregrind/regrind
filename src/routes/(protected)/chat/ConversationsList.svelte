@@ -311,7 +311,7 @@
 		ontouchstart={unsettle}
 		onclickcapture={swallowClickOutsideHeadingPane}
 		class={[
-			"no-scrollbar flex min-h-0 flex-1 snap-x snap-mandatory overflow-y-hidden",
+			"no-scrollbar flex min-h-0 flex-1 snap-x snap-mandatory overflow-y-hidden overscroll-x-none",
 			{ "overflow-x-hidden": selecting, "overflow-x-auto": !selecting },
 		]}
 		{@attach snap.attach}

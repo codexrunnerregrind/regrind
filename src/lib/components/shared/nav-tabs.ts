@@ -45,6 +45,7 @@ export const navTabs = [
 		swipeRoot: (id: string) =>
 			id === "/(protected)/(navbar)/interest/views" ||
 			id === "/(protected)/(navbar)/interest/taps" ||
+			id === "/(protected)/(navbar)/interest/matches" ||
 			id === "/(protected)/(navbar)/interest/sent",
 	},
 	{

@@ -48,7 +48,8 @@ export type SwipeTabsOptions = {
 
 type Instance = { node: HTMLElement; opts: SwipeTabsOptions };
 
-type Directions = { next: boolean; prev: boolean };
+// `chained`: the gesture started inside a `data-swipe-tabs-chain` scroller.
+type Directions = { next: boolean; prev: boolean; chained: boolean };
 
 /**
  * Which ways a swipe starting inside this target may still change tabs, or
@@ -58,7 +59,7 @@ type Directions = { next: boolean; prev: boolean };
  */
 function openDirections(target: EventTarget | null): Directions | null {
 	if (document.querySelector(".pswp--open")) return null;
-	const open = { next: true, prev: true };
+	const open = { next: true, prev: true, chained: false };
 	let node = target instanceof Element ? target : null;
 	while (node && node !== document.body) {
 		if (node.hasAttribute("data-swipe-tabs-ignore")) return null;
@@ -68,6 +69,7 @@ function openDirections(target: EventTarget | null): Directions | null {
 			node.scrollWidth > node.clientWidth;
 		if (scrollsX) {
 			if (!node.hasAttribute("data-swipe-tabs-chain")) return null;
+			open.chained = true;
 			const left = Math.abs(node.scrollLeft);
 			open.prev &&= left <= 1;
 			open.next &&= left >= node.scrollWidth - node.clientWidth - 1;
@@ -95,14 +97,14 @@ let samples: Sample[] = [];
 // The instances containing the touched element, innermost first, fixed at
 // touchstart: the element can be gone by the time the finger lifts.
 let chain: Instance[] = [];
-let directions: Directions = { next: true, prev: true };
+let directions: Directions = { next: true, prev: true, chained: false };
 
 function reset() {
 	touchId = null;
 	axis = null;
 	samples = [];
 	chain = [];
-	directions = { next: true, prev: true };
+	directions = { next: true, prev: true, chained: false };
 }
 
 /**
@@ -234,8 +236,37 @@ function dispatch(direction: number, candidates: Instance[]) {
 function onTouchEnd(event: TouchEvent) {
 	if (touchId === null) return;
 	const touch = tracked(event.changedTouches);
-	if (!touch) return;
+	if (touch) release(touch);
+}
+
+/**
+ * iOS cancels the touch when a scroller takes the pan, and stops sending
+ * `touchmove` first, so a swipe past a chained pager's end would otherwise be
+ * lost. Those are resolved from wherever the finger was last seen; any other
+ * cancel is a system gesture and drops the swipe.
+ */
+function onTouchCancel(event: TouchEvent) {
+	if (touchId === null) return;
+	const touch = tracked(event.changedTouches);
+	const last = samples.at(-1);
+	if (!directions.chained || !last) {
+		reset();
+		return;
+	}
+	release({ clientX: touch?.clientX ?? last.x, clientY: touch?.clientY });
+}
+
+function release(touch: { clientX: number; clientY?: number }) {
 	const dx = touch.clientX - startX;
+	// Undecided when the moves stopped short: judge the whole travel instead.
+	if (axis === null && touch.clientY !== undefined) {
+		const dy = Math.abs(touch.clientY - startY);
+		if (
+			Math.abs(dx) >= LOCK_DISTANCE &&
+			Math.abs(dx) >= dy * HORIZONTAL_BIAS
+		)
+			axis = "x";
+	}
 	const horizontal = axis === "x";
 	const velocity = releaseVelocity();
 	const candidates = chain;
@@ -265,14 +296,14 @@ function listen() {
 	window.addEventListener("touchstart", onTouchStart, passive);
 	window.addEventListener("touchmove", onTouchMove, passive);
 	window.addEventListener("touchend", onTouchEnd, passive);
-	window.addEventListener("touchcancel", reset, passive);
+	window.addEventListener("touchcancel", onTouchCancel, passive);
 }
 
 function unlisten() {
 	window.removeEventListener("touchstart", onTouchStart);
 	window.removeEventListener("touchmove", onTouchMove);
 	window.removeEventListener("touchend", onTouchEnd);
-	window.removeEventListener("touchcancel", reset);
+	window.removeEventListener("touchcancel", onTouchCancel);
 }
 
 /**

@@ -171,5 +171,55 @@ describe("swipeTabs", () => {
 			expect(onNext).not.toHaveBeenCalled();
 			expect(onPrev).not.toHaveBeenCalled();
 		});
+
+		/** A swipe the scroller takes over: a move or two, then a cancel. */
+		function cancelledSwipe(
+			target: Element,
+			{ to, moves = [to] }: { to: number; moves?: number[] },
+		) {
+			window.dispatchEvent(touchEvent("touchstart", { x: 200, target }));
+			for (const x of moves)
+				window.dispatchEvent(touchEvent("touchmove", { x, target }));
+			window.dispatchEvent(touchEvent("touchcancel", { x: to, target }));
+		}
+
+		it("takes a swipe past a marked scroller's end that iOS cancels", () => {
+			const { leaf, onPrev } = mountScroller({
+				chain: true,
+				scrollLeft: 0,
+			});
+			cancelledSwipe(leaf, { to: 320 });
+			expect(onPrev).toHaveBeenCalledOnce();
+		});
+
+		it("resolves the axis on cancel when the moves stopped early", () => {
+			const { leaf, onPrev } = mountScroller({
+				chain: true,
+				scrollLeft: 0,
+			});
+			cancelledSwipe(leaf, { to: 320, moves: [204] });
+			expect(onPrev).toHaveBeenCalledOnce();
+		});
+
+		it("drops a cancelled swipe too short to commit", () => {
+			const { leaf, onPrev } = mountScroller({
+				chain: true,
+				scrollLeft: 0,
+			});
+			vi.spyOn(Event.prototype, "timeStamp", "get").mockReturnValue(0);
+			cancelledSwipe(leaf, { to: 220 });
+			expect(onPrev).not.toHaveBeenCalled();
+		});
+
+		it("drops a cancelled swipe that did not start in a marked scroller", () => {
+			const outer = document.createElement("div");
+			const leaf = document.createElement("span");
+			outer.append(leaf);
+			document.body.append(outer);
+			const onPrev = vi.fn();
+			swipeTabs(outer, { onPrev });
+			cancelledSwipe(leaf, { to: 320 });
+			expect(onPrev).not.toHaveBeenCalled();
+		});
 	});
 });

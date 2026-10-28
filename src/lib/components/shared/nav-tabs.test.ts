@@ -52,13 +52,14 @@ describe("swipeToNavTab", () => {
 	});
 
 	it("keeps every tab's own screen swipeable", () => {
-		// Interest is three sub-tabs and has no page of its own; the rest are
+		// Interest is four sub-tabs and has no page of its own; the rest are
 		// their route as the tab bar links to it.
 		const roots = [
 			BROWSE,
 			RIGHT_NOW,
 			"/(protected)/(navbar)/interest/views",
 			"/(protected)/(navbar)/interest/taps",
+			"/(protected)/(navbar)/interest/matches",
 			"/(protected)/(navbar)/interest/sent",
 			"/(protected)/chat",
 			SETTINGS,
