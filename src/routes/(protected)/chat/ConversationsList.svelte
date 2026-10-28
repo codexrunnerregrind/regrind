@@ -1,6 +1,6 @@
 <script lang="ts">
 	import PushPinIcon from "phosphor-svelte/lib/PushPinIcon";
-	import { onDestroy, tick } from "svelte";
+	import { onDestroy, tick, untrack } from "svelte";
 
 	import { getConversations } from "$lib/chat/conversations-context.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
@@ -15,7 +15,7 @@
 	import { leaveDeletedPages } from "$lib/util/deleted-pages";
 	import { restoreScrollOnce } from "$lib/util/scroll-restore.svelte";
 	import { SelectionSet } from "$lib/util/selection.svelte";
-	import { swipeTabs } from "$lib/util/swipe-tabs";
+	import { SnapPager } from "$lib/util/snap-pager";
 	import type {
 		ConversationsState,
 		InboxTab,
@@ -64,6 +64,12 @@
 	];
 	// Held on the shared state, not locally, so it survives leaving this screen.
 	const activeTab = $derived(conversations.activeTab);
+	const activeIndex = $derived(
+		Math.max(
+			0,
+			tabs.findIndex((tab) => tab.value === activeTab),
+		),
+	);
 
 	function selectTab(value: string) {
 		if (value === activeTab) return;
@@ -71,14 +77,61 @@
 		conversations.activeTab = value as InboxTab;
 	}
 
-	// False past either end, handing the swipe to the tab-bar swipe around this
-	// list: a flick past Albums carries on to the You tab.
-	function cycleTab(delta: number): boolean {
-		const index = tabs.findIndex((tab) => tab.value === activeTab);
-		const next = tabs[index + delta];
-		if (!next) return false;
-		selectTab(next.value);
-		return true;
+	// Albums mounts the first time any of it scrolls into view.
+	let albumsMounted = $state(untrack(() => activeTab === "albums"));
+	let pager: HTMLElement | null = $state(null);
+	let paging = false;
+	let heading: number | null = null;
+	let pagerUnsettled = $state(false);
+	let settling = 0;
+
+	const snap = new SnapPager({
+		count: () => tabs.length,
+		onVisible: ({ first, last }) => {
+			if (last === 1) albumsMounted = true;
+			paging = first !== last;
+			if (paging) unsettle();
+		},
+		onHeading: (pane) => {
+			heading = pane;
+		},
+		onRest: (pane) => {
+			settle();
+			const landed = tabs[pane];
+			if (landed) conversations.activeTab = landed.value;
+		},
+	});
+
+	$effect(() => {
+		const pane = activeIndex;
+		untrack(() => snap.place(pane, { animated: true }));
+	});
+
+	function unsettle() {
+		cancelAnimationFrame(settling);
+		pagerUnsettled = true;
+	}
+
+	function settle() {
+		cancelAnimationFrame(settling);
+		settling = requestAnimationFrame(() => {
+			settling = requestAnimationFrame(() => {
+				pagerUnsettled = false;
+			});
+		});
+	}
+
+	onDestroy(() => cancelAnimationFrame(settling));
+
+	function swallowClickOutsideHeadingPane(
+		event: MouseEvent & { currentTarget: HTMLElement },
+	) {
+		if (!paging || heading === null) return;
+		const headingPane = event.currentTarget.children[heading];
+		if (event.target instanceof Node && headingPane?.contains(event.target))
+			return;
+		event.preventDefault();
+		event.stopPropagation();
 	}
 
 	const selection = new SelectionSet<string>();
@@ -235,32 +288,43 @@
 	onConfirm={confirmDelete}
 />
 
-<div
-	class="relative flex h-full w-full min-w-list-rail flex-col"
-	use:swipeTabs={{
-		enabled: mobile.current,
-		onNext: () => cycleTab(1),
-		onPrev: () => cycleTab(-1),
-	}}
->
+<div class="relative flex h-full w-full min-w-list-rail flex-col">
 	<div class="shrink-0 px-screen pt-4">
 		<h1 class="screen-title">Inbox</h1>
 		<UnderlineTabs
 			{tabs}
 			value={activeTab}
 			onSelect={selectTab}
+			scroller={pager}
+			following={pagerUnsettled}
 			class="mt-4"
 		/>
 	</div>
-	{#if activeTab === "albums"}
-		<AlbumsTab class={className} />
-	{:else}
+	<!-- A flick past Albums carries on to the tab bar's next tab. Selecting
+	     pins the pager to Messages. -->
+	<div
+		bind:this={pager}
+		data-slot="inbox-pager"
+		role="presentation"
+		data-scroll-intent="x"
+		data-swipe-tabs-chain
+		ontouchstart={unsettle}
+		onclickcapture={swallowClickOutsideHeadingPane}
+		class={[
+			"no-scrollbar flex min-h-0 flex-1 snap-x snap-mandatory overflow-y-hidden",
+			{ "overflow-x-hidden": selecting, "overflow-x-auto": !selecting },
+		]}
+		{@attach snap.attach}
+	>
 		<!-- The row sits over the list rather than above it, as the grid's quick
 		     filters do: rows scroll behind it through the same nine blur layers
 		     and background-to-transparent gradient, so nothing but the pills is
 		     opaque. Albums are not conversations, so the filters go with the tab
 		     they act on rather than sitting inert above both. -->
-		<div class="relative flex min-h-0 flex-1 flex-col">
+		<div
+			data-slot="inbox-pane-messages"
+			class="relative flex min-h-0 w-full shrink-0 snap-start flex-col"
+		>
 			<!-- Selecting takes the row away rather than leaving it inert: the
 			     selection bar covers the top of the screen while it is up, and a
 			     dead row of pills there would only collect scrolling rows behind
@@ -365,7 +429,15 @@
 			{/if}
 			<ScrollToTopButton {container} class="bottom-(--nav-clear)" />
 		</div>
-	{/if}
+		<div
+			data-slot="inbox-pane-albums"
+			class="relative flex min-h-0 w-full shrink-0 snap-start flex-col"
+		>
+			{#if albumsMounted}
+				<AlbumsTab class={className} />
+			{/if}
+		</div>
+	</div>
 </div>
 
 <style lang="postcss">

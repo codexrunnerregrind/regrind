@@ -113,4 +113,63 @@ describe("swipeTabs", () => {
 		expect(outerNext).not.toHaveBeenCalled();
 		expect(innerNext).not.toHaveBeenCalled();
 	});
+
+	describe("inside a horizontal scroller", () => {
+		function mountScroller({
+			chain,
+			scrollLeft,
+		}: {
+			chain: boolean;
+			scrollLeft: number;
+		}) {
+			const outer = document.createElement("div");
+			const scroller = document.createElement("div");
+			const leaf = document.createElement("span");
+			scroller.style.overflowX = "auto";
+			if (chain) scroller.setAttribute("data-swipe-tabs-chain", "");
+			Object.defineProperties(scroller, {
+				scrollWidth: { value: 400 },
+				clientWidth: { value: 100 },
+				scrollLeft: { value: scrollLeft },
+			});
+			scroller.append(leaf);
+			outer.append(scroller);
+			document.body.append(outer);
+			const onNext = vi.fn();
+			const onPrev = vi.fn();
+			swipeTabs(outer, { onNext, onPrev });
+			return { leaf, onNext, onPrev };
+		}
+
+		it("leaves the swipe to an unmarked scroller", () => {
+			const { leaf, onNext } = mountScroller({
+				chain: false,
+				scrollLeft: 300,
+			});
+			flick(leaf, -1);
+			expect(onNext).not.toHaveBeenCalled();
+		});
+
+		it("takes a swipe past the end a marked scroller rests at", () => {
+			const { leaf, onNext, onPrev } = mountScroller({
+				chain: true,
+				scrollLeft: 300,
+			});
+			flick(leaf, -1);
+			flick(leaf, 1);
+			expect(onNext).toHaveBeenCalledOnce();
+			expect(onPrev).not.toHaveBeenCalled();
+		});
+
+		it("leaves a marked scroller the swipes it can still scroll", () => {
+			const { leaf, onNext, onPrev } = mountScroller({
+				chain: true,
+				scrollLeft: 100,
+			});
+			flick(leaf, -1);
+			flick(leaf, 1);
+			expect(onNext).not.toHaveBeenCalled();
+			expect(onPrev).not.toHaveBeenCalled();
+		});
+	});
 });

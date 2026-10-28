@@ -1,25 +1,23 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
+	import { onDestroy } from "svelte";
 
 	import UnderlineTabs from "$lib/components/shared/UnderlineTabs.svelte";
 	import { getSentTapsState } from "$lib/interest/sent-taps-state.svelte";
 	import { getTapsState } from "$lib/interest/taps-state.svelte";
 	import { getViewActivityState } from "$lib/interest/view-activity.svelte";
 	import { hapticSelection } from "$lib/platform/haptics";
-	import { swipeTabs } from "$lib/util/swipe-tabs";
-	import { interestTabs, rememberInterestTab } from "./interest-tab";
+	import {
+		interestTabIndex,
+		interestTabs,
+		rememberInterestTab,
+	} from "./interest-tab";
+	import InterestPager from "./InterestPager.svelte";
 	import { matchesState } from "./matches/matches-state.svelte";
-	import MatchesToolbar from "./matches/MatchesToolbar.svelte";
 	import { getViewsState } from "./views/views-state.svelte";
 
-	let {
-		children,
-		data,
-	}: {
-		children?: import("svelte").Snippet;
-		data: import("./$types").LayoutData;
-	} = $props();
+	let { data }: { data: import("./$types").LayoutData } = $props();
 
 	// Every list is held here rather than by its page, so every tab can
 	// carry its count before you have been there. It costs one load per list on
@@ -80,27 +78,42 @@
 		if (activity?.hasUnseenViews) activity.markSeen();
 	});
 
-	const activeIndex = $derived(
-		Math.max(
-			0,
-			tabs.findIndex((tab) => tab.value === page.url.pathname),
-		),
-	);
+	const activeIndex = $derived(interestTabIndex(page.url.pathname));
 
 	function select(value: string) {
 		if (value === page.url.pathname) return;
 		hapticSelection();
-		void goto(value);
+		void goto(value, { replaceState: true, noScroll: true });
 	}
 
-	// False when the swipe runs off either end, which hands it to the tab-bar
-	// swipe wrapping this layout: a flick past Sent carries on to Inbox.
-	function selectIndex(index: number): boolean {
-		const tab = tabs[index];
-		if (!tab) return false;
-		select(tab.value);
-		return true;
+	// The underline tracks the pager only while it moves, and until the route
+	// catches up with where it came to rest.
+	let pager: HTMLElement | null = $state(null);
+	let pagerUnsettled = $state(false);
+	let restingTab = $state<number>();
+	let settling = 0;
+
+	const underlineFollows = $derived(
+		pagerUnsettled ||
+			(restingTab !== undefined && restingTab !== activeIndex),
+	);
+
+	function unsettle() {
+		cancelAnimationFrame(settling);
+		pagerUnsettled = true;
 	}
+
+	function settle(tab: number) {
+		restingTab = tab;
+		cancelAnimationFrame(settling);
+		settling = requestAnimationFrame(() => {
+			settling = requestAnimationFrame(() => {
+				pagerUnsettled = false;
+			});
+		});
+	}
+
+	onDestroy(() => cancelAnimationFrame(settling));
 </script>
 
 <!-- Opaque, not a blur gradient: the grid scrolls underneath, and a fading
@@ -116,21 +129,15 @@
 		{tabs}
 		value={tabs[activeIndex]?.value ?? ""}
 		onSelect={select}
+		scroller={pager}
+		following={underlineFollows}
 		class="mt-4"
 	/>
-	{#if page.url.pathname === interestTabs[2]}
-		<MatchesToolbar />
-	{/if}
 </nav>
-<!-- Custom properties inherit through display:contents, so the pages below read
-     the measured height without an extra box in the layout. -->
-<div
-	class="contents"
-	style:--interest-header="calc({headerHeight}px - var(--safe-area-top))"
-	use:swipeTabs={{
-		onNext: () => selectIndex(activeIndex + 1),
-		onPrev: () => selectIndex(activeIndex - 1),
-	}}
->
-	{@render children?.()}
-</div>
+<InterestPager
+	ourProfileId={data.ourProfileId}
+	{headerHeight}
+	onUnsettle={unsettle}
+	onSettle={settle}
+	onPager={(node) => (pager = node)}
+/>

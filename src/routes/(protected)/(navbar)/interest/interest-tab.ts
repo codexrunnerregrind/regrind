@@ -27,3 +27,10 @@ export function rememberInterestTab(pathname: string): void {
 	const match = interestTabs.find((tab) => tab === pathname);
 	if (match) lastTab = match;
 }
+
+export function interestTabIndex(pathname: string): number {
+	return Math.max(
+		0,
+		interestTabs.findIndex((tab) => tab === pathname),
+	);
+}

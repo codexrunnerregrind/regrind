@@ -12,14 +12,18 @@
 	import EmptyTapsList from "./EmptyTapsList.svelte";
 	import TapReceivedProfile from "./TapReceivedProfile.svelte";
 
-	let { ourProfileId }: { ourProfileId: number } = $props();
+	let { ourProfileId, active }: { ourProfileId: number; active: boolean } =
+		$props();
 
 	const taps = untrack(() => getTapsState(ourProfileId));
 
-	$effect(() => taps.attachView());
+	// Mounted alongside the other panes, so only the routed one counts as seen.
+	$effect(() => {
+		if (active) return taps.attachView();
+	});
 
 	$effect(() => {
-		if (taps.hasUnseen) taps.markViewed();
+		if (active && taps.hasUnseen) taps.markViewed();
 	});
 
 	let container: HTMLDivElement | null = $state(null);
@@ -42,7 +46,7 @@
 	}
 </script>
 
-<main class="screen-nav-host">
+<div class="screen-nav-host">
 	{#if !taps.loading && (taps.taps.length > 0 || !taps.error)}
 		<DataRefreshControl
 			{container}
@@ -54,7 +58,7 @@
 	<div
 		bind:this={container}
 		data-slot="taps-scroller"
-		class="pull-scroller"
+		class="pull-scroller overscroll-x-auto"
 		onscroll={() => (taps.scrollY = container?.scrollTop ?? 0)}
 	>
 		<div
@@ -95,4 +99,4 @@
 		</div>
 	</div>
 	<ScrollToTopButton {container} class="bottom-nav-clear" />
-</main>
+</div>

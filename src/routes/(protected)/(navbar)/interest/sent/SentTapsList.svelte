@@ -37,7 +37,7 @@
 	}
 </script>
 
-<main class="screen-nav-host">
+<div class="screen-nav-host">
 	{#if !taps.loading && !taps.error}
 		<DataRefreshControl
 			{container}
@@ -48,7 +48,7 @@
 	{/if}
 	<div
 		bind:this={container}
-		class="pull-scroller"
+		class="pull-scroller overscroll-x-auto"
 		onscroll={() => (taps.scrollY = container?.scrollTop ?? 0)}
 	>
 		<div
@@ -89,4 +89,4 @@
 		</div>
 	</div>
 	<ScrollToTopButton {container} class="bottom-nav-clear" />
-</main>
+</div>

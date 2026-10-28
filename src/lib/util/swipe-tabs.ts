@@ -9,7 +9,7 @@ import type { Action } from "svelte/action";
  * scrolling, horizontally scrollable rails/carousels, or the left-edge
  * swipe-back gesture.
  *
- * Instances nest. A screen with its own sub-tabs (Interest, Inbox) sits inside
+ * Instances nest. A screen with its own sub-tabs (Inbox) sits inside
  * the one that moves between the bottom bar's tabs, and a swipe is offered to
  * the innermost one first: a handler that returns `false` — "I am already at
  * that end" — passes the swipe outward, so a flick past the last sub-tab
@@ -48,20 +48,34 @@ export type SwipeTabsOptions = {
 
 type Instance = { node: HTMLElement; opts: SwipeTabsOptions };
 
-/** Whether the gesture should be skipped for a start inside this target. */
-function shouldIgnoreStart(target: EventTarget | null): boolean {
-	if (document.querySelector(".pswp--open")) return true;
+type Directions = { next: boolean; prev: boolean };
+
+/**
+ * Which ways a swipe starting inside this target may still change tabs, or
+ * null if it should be skipped. A horizontal scroller opts out, unless it is
+ * marked `data-swipe-tabs-chain`: then a swipe past whichever end it is
+ * resting at goes to the tabs, as a nested pager's would.
+ */
+function openDirections(target: EventTarget | null): Directions | null {
+	if (document.querySelector(".pswp--open")) return null;
+	const open = { next: true, prev: true };
 	let node = target instanceof Element ? target : null;
 	while (node && node !== document.body) {
-		if (node.hasAttribute("data-swipe-tabs-ignore")) return true;
+		if (node.hasAttribute("data-swipe-tabs-ignore")) return null;
 		const style = getComputedStyle(node);
 		const scrollsX =
 			(style.overflowX === "auto" || style.overflowX === "scroll") &&
 			node.scrollWidth > node.clientWidth;
-		if (scrollsX) return true;
+		if (scrollsX) {
+			if (!node.hasAttribute("data-swipe-tabs-chain")) return null;
+			const left = Math.abs(node.scrollLeft);
+			open.prev &&= left <= 1;
+			open.next &&= left >= node.scrollWidth - node.clientWidth - 1;
+			if (!open.next && !open.prev) return null;
+		}
 		node = node.parentElement;
 	}
-	return false;
+	return open;
 }
 
 /**
@@ -81,12 +95,14 @@ let samples: Sample[] = [];
 // The instances containing the touched element, innermost first, fixed at
 // touchstart: the element can be gone by the time the finger lifts.
 let chain: Instance[] = [];
+let directions: Directions = { next: true, prev: true };
 
 function reset() {
 	touchId = null;
 	axis = null;
 	samples = [];
 	chain = [];
+	directions = { next: true, prev: true };
 }
 
 /**
@@ -150,7 +166,8 @@ function onTouchStart(event: TouchEvent) {
 	const touch = event.changedTouches[0];
 	if (!touch) return;
 	if (touch.clientX <= EDGE_ZONE) return;
-	if (shouldIgnoreStart(event.target)) return;
+	const open = openDirections(event.target);
+	if (!open) return;
 
 	const candidates = chainFor(event.target);
 	if (candidates.length === 0) return;
@@ -161,6 +178,7 @@ function onTouchStart(event: TouchEvent) {
 	axis = null;
 	samples = [{ x: touch.clientX, t: event.timeStamp }];
 	chain = candidates;
+	directions = open;
 }
 
 function onTouchMove(event: TouchEvent) {
@@ -221,6 +239,7 @@ function onTouchEnd(event: TouchEvent) {
 	const horizontal = axis === "x";
 	const velocity = releaseVelocity();
 	const candidates = chain;
+	const open = directions;
 	reset();
 
 	if (!horizontal) return;
@@ -234,6 +253,7 @@ function onTouchEnd(event: TouchEvent) {
 		Math.abs(velocity) > COMMIT_VELOCITY
 			? Math.sign(velocity)
 			: Math.sign(dx);
+	if (!(direction < 0 ? open.next : open.prev)) return;
 	dispatch(direction, candidates);
 }
 
@@ -260,7 +280,7 @@ function unlisten() {
  * a layout-affecting wrapper: the node is only an anchor for the action
  * lifecycle and for working out which instance a touch belongs to.
  * Content's own vertical scroll containers are unaffected, and horizontally
- * scrollable descendants opt out via {@link shouldIgnoreStart}.
+ * scrollable descendants opt out via {@link openDirections}.
  *
  * Touch events rather than pointer events: iOS fires `pointercancel` as soon as
  * the WebView starts scrolling, which killed any swipe whose first few pixels

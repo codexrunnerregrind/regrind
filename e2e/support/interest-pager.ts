@@ -117,7 +117,7 @@ export function rowsOnScreen(page: Page, { pane }: { pane: string }) {
 
 export async function tabTrack(page: Page) {
 	const left = async (name: string) =>
-		(await page.getByRole("link", { name }).boundingBox())!.x;
+		(await page.getByRole("tab", { name }).boundingBox())!.x;
 	const views = await left("Views");
 	return { views, span: (await left("Taps")) - views };
 }
@@ -126,15 +126,15 @@ export async function glideToViews(page: Page) {
 	await page.evaluate(
 		([pagerSlot, chipSlot]) => {
 			const pager = document.querySelector<HTMLElement>(pagerSlot!)!;
-			const chip = document.querySelector<HTMLElement>(chipSlot!)!;
+			const chip = document.querySelector<HTMLElement>(chipSlot!);
 			const frames: GlideFrame[] = [];
 			window.__glideFrames = frames;
 			const sample = () => {
 				frames.push({
 					progress: pager.scrollLeft / pager.clientWidth,
 					swallowingClicks: window.__panesSwallowingClicks!(),
-					chipLeft: chip.getBoundingClientRect().x,
-					chipAnimated: chip.getAnimations().length > 0,
+					chipLeft: chip?.getBoundingClientRect().x ?? Number.NaN,
+					chipAnimated: (chip?.getAnimations().length ?? 0) > 0,
 					path: location.pathname,
 				});
 				requestAnimationFrame(sample);
@@ -144,7 +144,7 @@ export async function glideToViews(page: Page) {
 		[PAGER, CHIP],
 	);
 
-	await page.getByRole("link", { name: "Views" }).click();
+	await page.getByRole("tab", { name: "Views" }).click();
 	await expect(page).toHaveURL(new RegExp(`${VIEWS}$`));
 	await expect
 		.poll(() => page.locator(PAGER).evaluate((el) => el.scrollLeft))

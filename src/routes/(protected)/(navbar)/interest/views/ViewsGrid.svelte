@@ -34,7 +34,7 @@
 	restoreScrollOnce({ container: () => container, state: views });
 </script>
 
-<main class="screen-nav-host">
+<div class="screen-nav-host">
 	{#if !views.loading && (views.views.length > 0 || !views.error)}
 		<DataRefreshControl
 			{container}
@@ -46,7 +46,7 @@
 	<div
 		bind:this={container}
 		data-slot="views-scroller"
-		class="pull-scroller"
+		class="pull-scroller overscroll-x-auto"
 		onscroll={() => (views.scrollY = container?.scrollTop ?? 0)}
 	>
 		<div
@@ -105,4 +105,4 @@
 		</div>
 	</div>
 	<ScrollToTopButton {container} class="bottom-nav-clear" />
-</main>
+</div>

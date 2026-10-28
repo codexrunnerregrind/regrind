@@ -53,8 +53,8 @@ test("the pager starts on the routed tab and mounts only that list", async ({
 		LIST_SCROLLERS.join(),
 	);
 
-	expect(geometry.scrollWidth, "two panes wide").toBe(
-		geometry.clientWidth * 2,
+	expect(geometry.scrollWidth, "four panes wide").toBe(
+		geometry.clientWidth * 4,
 	);
 	expect(geometry.scrollLeft, "starts on Taps, the second pane").toBe(
 		geometry.clientWidth,

@@ -171,11 +171,12 @@ test("the filters belong to the inbox tab, not to albums", async ({ page }) => {
 	const star = page.getByRole("button", { name: "Favorites", exact: true });
 	await expect(star).toBeVisible();
 
+	// Messages stays mounted beside Albums in the pager, so it slides away.
 	await page.getByRole("tab", { name: "Albums" }).click();
-	await expect(star).toHaveCount(0);
+	await expect(star).not.toBeInViewport();
 
 	await page.getByRole("tab", { name: "Messages" }).click();
-	await expect(star).toBeVisible();
+	await expect(star).toBeInViewport();
 });
 
 test("the filter is session-only", async ({ page }) => {

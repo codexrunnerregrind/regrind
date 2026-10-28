@@ -12,17 +12,20 @@ export function fixedHeaderOffset({
 	$effect(() => {
 		const el = container();
 		if (!enabled() || !el) return;
+		// Only headers over this container count: a pager keeps its other
+		// panes, and their headers, mounted beside it.
 		const measure = () => {
-			const header = document.querySelector("[data-fixed-header]");
-			if (!header) {
-				px = 0;
-				return;
+			const box = el.getBoundingClientRect();
+			let bottom = box.top;
+			for (const header of document.querySelectorAll(
+				"[data-fixed-header]",
+			)) {
+				if (header.closest("[data-leaving], [data-covered]")) continue;
+				const rect = header.getBoundingClientRect();
+				if (rect.right > box.left && rect.left < box.right)
+					bottom = Math.max(bottom, rect.bottom);
 			}
-			px = Math.max(
-				0,
-				header.getBoundingClientRect().bottom -
-					el.getBoundingClientRect().top,
-			);
+			px = bottom - box.top;
 		};
 		void tick().then(measure);
 		window.addEventListener("resize", measure);

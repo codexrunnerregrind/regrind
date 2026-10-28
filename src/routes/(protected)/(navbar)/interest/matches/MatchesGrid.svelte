@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { onMount } from "svelte";
-
 	import { getMatchesCardStyleSnapshot } from "$lib/app-data/preferences.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
@@ -12,13 +10,18 @@
 	import EmptyMatchesGrid from "./EmptyMatchesGrid.svelte";
 	import MatchCard from "./MatchCard.svelte";
 	import { matchesState } from "./matches-state.svelte";
+	import MatchesToolbar from "./MatchesToolbar.svelte";
+
+	let { active }: { active: boolean } = $props();
 
 	// Held by the Interest layout. Sending a tap raises no event, so a tap sent
 	// from a profile only shows here once the list is fetched again.
 	const sentTaps = getSentTapsState.peek();
-	onMount(() => {
-		void sentTaps?.refresh();
+	$effect(() => {
+		if (active) void sentTaps?.refresh();
 	});
+
+	let toolbarHeight = $state(0);
 
 	const remainingProfilesToLoad = $derived(
 		Math.max(0, matchesState.serverTotal - matchesState.matches.length),
@@ -35,7 +38,15 @@
 	restoreScrollOnce({ container: () => container, state: matchesState });
 </script>
 
-<main class="screen-nav-host">
+<div class="screen-nav-host" style:--matches-toolbar="{toolbarHeight}px">
+	<!-- In the pane rather than the fixed header, so it slides with the grid. -->
+	<div
+		bind:clientHeight={toolbarHeight}
+		data-fixed-header
+		class="absolute inset-x-0 top-(--interest-header) z-5 bg-background px-screen"
+	>
+		<MatchesToolbar />
+	</div>
 	{#if !matchesState.loading && (matchesState.matches.length > 0 || !matchesState.error)}
 		<DataRefreshControl
 			{container}
@@ -47,12 +58,12 @@
 	<div
 		bind:this={container}
 		data-slot="matches-scroller"
-		class="pull-scroller"
+		class="pull-scroller overscroll-x-auto"
 		onscroll={() => (matchesState.scrollY = container?.scrollTop ?? 0)}
 	>
 		<div
 			data-refresh-content
-			class="@container/photo-grid min-h-overscrollable flex w-full flex-col gap-3 pt-(--interest-header) pb-nav-clear"
+			class="@container/photo-grid min-h-overscrollable flex w-full flex-col gap-3 pt-[calc(var(--interest-header)+var(--matches-toolbar))] pb-nav-clear"
 		>
 			{#if matchesState.loading && !matchesState.matches.length}
 				<div class="photo-grid" data-grid-columns={columns}>
@@ -101,4 +112,4 @@
 		</div>
 	</div>
 	<ScrollToTopButton {container} class="bottom-nav-clear" />
-</main>
+</div>

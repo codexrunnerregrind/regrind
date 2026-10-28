@@ -21,12 +21,13 @@ test("switching interest tabs never grows history", async ({ page }) => {
 		.waitFor({ timeout: FIRST_ROUTE_COMPILE_MS });
 	const atTaps = await historyDepth(page);
 
-	await page.getByRole("link", { name: "Views" }).click();
+	await page.getByRole("tab", { name: "Views" }).click();
 	await expect(page).toHaveURL(/\/interest\/views$/);
 	const atViews = await historyDepth(page);
 
+	// The tab bar returns to the last Interest tab rather than resetting.
 	await page.getByRole("link", { name: "Interest", exact: true }).click();
-	await expect(page).toHaveURL(new RegExp(`${TAPS}$`));
+	await expect(page).toHaveURL(/\/interest\/views$/);
 	const afterTab = await historyDepth(page);
 
 	expect(
