@@ -86,13 +86,12 @@ class MyRightNowPostState {
 		void this.#load();
 	}
 
-	/** Called by the feed screen on mount; only the first call fetches. */
-	ensureLoaded(): void {
-		if (this.#loaded || this.loading) return;
-		void this.#load();
-	}
-
+	/**
+	 * Rechecks the post. Moderation can refuse its text after it went up, and the
+	 * only sign of that is the text being gone from the active post.
+	 */
 	async refresh(): Promise<void> {
+		if (this.loading) return;
 		await this.#load();
 	}
 

@@ -73,7 +73,7 @@ beforeEach(() => {
 });
 
 async function loaded() {
-	myRightNowPost.ensureLoaded();
+	void myRightNowPost.refresh();
 	await vi.waitFor(() => expect(myRightNowPost.loading).toBe(false));
 }
 
@@ -87,12 +87,25 @@ describe("my right now post", () => {
 		expect(myRightNowPost.hasPost).toBe(true);
 	});
 
-	it("fetches once however many screens ask", async () => {
-		await loaded();
-		myRightNowPost.ensureLoaded();
-		myRightNowPost.ensureLoaded();
+	it("does not stack a refresh on one already in flight", async () => {
+		void myRightNowPost.refresh();
+		void myRightNowPost.refresh();
+		await vi.waitFor(() => expect(myRightNowPost.loading).toBe(false));
 
 		expect(getActiveRightNowPostMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("drops text moderation refused once refreshed", async () => {
+		getActiveRightNowPostMock.mockResolvedValue(POST);
+		await loaded();
+		getActiveRightNowPostMock.mockResolvedValue({
+			...POST,
+			activeText: null,
+		});
+
+		await myRightNowPost.refresh();
+
+		expect(myRightNowPost.post?.activeText).toBeNull();
 	});
 
 	it("still shows a post when the entitlement call fails", async () => {

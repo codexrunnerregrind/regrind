@@ -29,8 +29,9 @@
 		}),
 	);
 
-	// After mount, so the first fetch never lands mid-render.
-	onMount(() => myRightNowPost.ensureLoaded());
+	// After mount, so the first fetch never lands mid-render. Every visit, so a
+	// post whose text moderation refused does not keep showing it.
+	onMount(() => void myRightNowPost.refresh());
 
 	// The post's hour runs out while the screen is just sitting there, and the
 	// allowance it spent comes back with it.

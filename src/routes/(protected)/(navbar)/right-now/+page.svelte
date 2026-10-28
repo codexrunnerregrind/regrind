@@ -1,6 +1,7 @@
 <script lang="ts">
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import ScrollToTopButton from "$lib/components/shared/ScrollToTopButton.svelte";
+	import { myRightNowPost } from "$lib/right-now/my-post-state.svelte";
 	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
 	import MyPostButton from "./MyPostButton.svelte";
 	import RightNowFeed from "./RightNowFeed.svelte";
@@ -34,7 +35,11 @@
 			container={feedContainer}
 			updating={rightNowState.refreshing}
 			position="top"
-			onrefresh={() => void rightNowState.reload()}
+			onrefresh={() =>
+				void Promise.all([
+					rightNowState.reload(),
+					myRightNowPost.refresh(),
+				])}
 		/>
 	{/if}
 	<div
