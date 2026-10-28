@@ -1,6 +1,7 @@
 <script lang="ts">
 	import EyeSlashIcon from "phosphor-svelte/lib/EyeSlashIcon";
 	import SparkleIcon from "phosphor-svelte/lib/SparkleIcon";
+	import { untrack } from "svelte";
 	import { toast } from "svelte-sonner";
 
 	import { setPreferences } from "$lib/app-data/preferences.svelte";
@@ -14,7 +15,20 @@
 	let {
 		profiles,
 		refreshAt,
-	}: { profiles: RenderedGridProfile[]; refreshAt: number | null } = $props();
+		scrollX = 0,
+		onScrollX,
+	}: {
+		profiles: RenderedGridProfile[];
+		refreshAt: number | null;
+		scrollX?: number;
+		onScrollX?: (x: number) => void;
+	} = $props();
+
+	// Restored once on mount: coming back from a profile remounts the row.
+	function restoreScroll(el: HTMLElement) {
+		const x = untrack(() => scrollX);
+		if (x > 0) el.scrollLeft = x;
+	}
 
 	function hide() {
 		void setPreferences({ gridForYou: false });
@@ -60,7 +74,11 @@
 			Hide
 		</button>
 	</div>
-	<div class="flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]">
+	<div
+		class="flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]"
+		{@attach restoreScroll}
+		onscroll={(event) => onScrollX?.(event.currentTarget.scrollLeft)}
+	>
 		{#each profiles as item (item.id)}
 			<ProfileMiniCard
 				portrait

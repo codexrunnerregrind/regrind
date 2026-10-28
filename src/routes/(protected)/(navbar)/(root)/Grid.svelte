@@ -171,6 +171,8 @@
 		<ForYouRow
 			profiles={topPicks}
 			refreshAt={gridState.topPicksRefreshAt}
+			scrollX={gridState.forYouScrollX}
+			onScrollX={(x) => (gridState.forYouScrollX = x)}
 		/>
 	{/if}
 	<!-- Only the cascade is virtualized: search shows a short, fully-rendered

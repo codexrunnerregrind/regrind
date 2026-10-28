@@ -56,6 +56,7 @@ class GridState {
 	}
 	currentQuery: z.infer<typeof cascadeV4QuerySchema> | null = null;
 	scrollY = 0;
+	forYouScrollX = 0;
 	revealProfileId: number | null = null;
 
 	#geohash: string | null = null;
@@ -204,6 +205,7 @@ class GridState {
 		this.items = [];
 		this.topPicks = [];
 		this.topPicksRefreshAt = null;
+		this.forYouScrollX = 0;
 		this.nextPage = 0;
 		this.loading = true;
 		this.error = null;
