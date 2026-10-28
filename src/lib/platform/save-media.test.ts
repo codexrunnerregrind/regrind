@@ -155,6 +155,22 @@ describe("saveAllMediaToDevice", () => {
 		);
 	});
 
+	it("files Android saves under a folder per profile", async () => {
+		platformMock.mockReturnValue("android");
+		androidFsMock.createNewPublicImageFile.mockResolvedValue("content://1");
+
+		await saveAllMediaToDevice([
+			{ url: "https://cdn.example.com/0.jpg", profileId: 42 },
+			{ url: "https://cdn.example.com/1.jpg" },
+		]);
+
+		const paths = androidFsMock.createNewPublicImageFile.mock.calls.map(
+			([, path]) => String(path),
+		);
+		expect(paths[0]).toMatch(/^ReGrind\/42\/regrind_\d+_42_001\.jpg$/);
+		expect(paths[1]).toMatch(/^ReGrind\/regrind_\d+_002\.jpg$/);
+	});
+
 	it("hands iOS the whole set in one share sheet", async () => {
 		platformMock.mockReturnValue("ios");
 		const share = vi.fn().mockResolvedValue(undefined);

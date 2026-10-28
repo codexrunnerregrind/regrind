@@ -99,14 +99,17 @@ function buildFilename(
 		profileId,
 	}: { stamp?: string; index?: number; profileId?: number | null } = {},
 ): string {
-	// 0 stands for "unknown" in the API's profile ids.
-	const owner =
-		profileId === undefined || profileId === null || profileId <= 0
-			? ""
-			: `_${profileId}`;
+	const owner = knownProfile(profileId) ? `_${profileId}` : "";
 	const suffix =
 		index === undefined ? "" : `_${String(index + 1).padStart(3, "0")}`;
 	return `regrind_${stamp}${owner}${suffix}.${extension}`;
+}
+
+// 0 stands for "unknown" in the API's profile ids.
+function knownProfile(
+	profileId: number | null | undefined,
+): profileId is number {
+	return profileId !== undefined && profileId !== null && profileId > 0;
 }
 
 // Saves a chat image or video to the device's gallery (Android) or a
@@ -126,7 +129,7 @@ export async function saveMediaToDevice(
 	}
 
 	if (platform() === "android") {
-		await saveToAndroidGallery(media, filename);
+		await saveToAndroidGallery(media, filename, target.profileId);
 		return { saved: 1, failed: 0, cancelled: false };
 	}
 
@@ -207,7 +210,7 @@ export async function saveAllMediaToDevice(
 			} else if (demoEnabled) {
 				saveViaBrowser(toFile(media, filename), filename);
 			} else if (platform() === "android") {
-				await saveToAndroidGallery(media, filename);
+				await saveToAndroidGallery(media, filename, target.profileId);
 			} else {
 				await writeFile(await join(directory, filename), media.bytes);
 			}
@@ -265,20 +268,26 @@ async function pickSaveDirectory(): Promise<string | typeof CANCELLED> {
 	return directory === null ? CANCELLED : directory;
 }
 
+// Pictures/ReGrind/<profileId>/ (Movies/ for videos), so each profile's media
+// gets its own album in the gallery.
 async function saveToAndroidGallery(
 	media: Fetched,
 	filename: string,
+	profileId: number | null | undefined,
 ): Promise<void> {
+	const path = knownProfile(profileId)
+		? `ReGrind/${profileId}/${filename}`
+		: `ReGrind/${filename}`;
 	const uri = media.isVideo
 		? await AndroidFs.createNewPublicVideoFile(
 				"Movies",
-				filename,
+				path,
 				media.mimeType,
 				{ requestPermission: true },
 			)
 		: await AndroidFs.createNewPublicImageFile(
 				"Pictures",
-				filename,
+				path,
 				media.mimeType,
 				{ requestPermission: true },
 			);
