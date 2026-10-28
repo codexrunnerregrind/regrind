@@ -76,8 +76,10 @@ object PushFirebase {
 		}
 		try {
 			FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-				val token = task.result
-				if (task.isSuccessful && token != null) {
+				// `result` throws on a failed task, which crashed the app at launch
+				// whenever Play services could not hand out a token.
+				val token = if (task.isSuccessful) task.result else null
+				if (token != null) {
 					onToken(token)
 				} else {
 					Log.w(TAG, "failed to fetch push token", task.exception)
