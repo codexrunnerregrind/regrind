@@ -11,6 +11,7 @@
 		tabShellCovered,
 		tabShellRoot,
 	} from "$lib/components/tab-shell/tab-shell-state.svelte";
+	import { hapticSelection } from "$lib/platform/haptics";
 	import { type PanDirection, panPager } from "$lib/util/pan-pager";
 	import { remeasureScreenChrome } from "$lib/util/screen-chrome.svelte";
 	import BrowseScreen from "../(navbar)/(root)/BrowseScreen.svelte";
@@ -114,6 +115,7 @@
 		const path = tabPath(index + direction);
 		if (covered || !path) return;
 		index += direction;
+		hapticSelection();
 		void goto(path, { noScroll: true });
 	}
 

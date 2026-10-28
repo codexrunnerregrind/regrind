@@ -107,16 +107,10 @@ test("a swipe past Inbox's Albums carries on to You", async ({ page }) => {
 	await open(page, "/chat", '[data-slot="conversations-scroller"]');
 	await page.getByRole("tab", { name: "Albums" }).click();
 	const albums = '[data-slot="inbox-pane-albums"]';
-	// Settled on Albums, not still gliding there: only then is it the end.
+	// Landed on Albums, not still sliding there: the drag starts from its box.
 	await expect
-		.poll(() =>
-			page
-				.locator('[data-slot="inbox-pager"]')
-				.evaluate(
-					(el) => el.scrollWidth - el.clientWidth - el.scrollLeft,
-				),
-		)
-		.toBeLessThan(1);
+		.poll(async () => (await page.locator(albums).boundingBox())?.x)
+		.toBeCloseTo(0, 0);
 
 	await drag(page, albums, { distancePx: -200 });
 
@@ -143,13 +137,11 @@ test("a swipe inside Inbox pages Messages to Albums, not on to the next tab", as
 		distancePx: -200,
 	});
 
-	await expect
-		.poll(() =>
-			page
-				.locator('[data-slot="inbox-pager"]')
-				.evaluate((el) => el.scrollLeft / el.clientWidth),
-		)
-		.toBeCloseTo(1, 2);
+	// Resting on Albums, its last tab.
+	await expect(page.locator('[data-slot="inbox-pager"]')).toHaveAttribute(
+		"data-pan-last",
+		"",
+	);
 	await expect(page).toHaveURL(/\/chat$/);
 	expect(await shellPosition(page)).toBeCloseTo(3, 2);
 });

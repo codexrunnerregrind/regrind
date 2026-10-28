@@ -46,6 +46,11 @@ export type PanPagerOptions = {
 	/** Released short of the threshold, or cancelled: spring back. */
 	oncancel?: () => void;
 	enabled?: boolean;
+	/**
+	 * Leave a swipe it cannot page (past either end) alone instead of
+	 * rubber-banding it, so a pager around this one can take it.
+	 */
+	yieldAtEnds?: boolean;
 };
 
 type Open = { next: boolean; prev: boolean; chained: boolean };
@@ -54,7 +59,9 @@ type Open = { next: boolean; prev: boolean; chained: boolean };
  * Which ways a gesture starting inside this target may page, or null if it
  * should be skipped. A horizontal scroller opts out, unless it is marked
  * `data-swipe-tabs-chain` (a nested pager): then a swipe past whichever end it
- * rests at is this pager's, and follows the finger like any other.
+ * rests at is this pager's, and follows the finger like any other. A nested
+ * pager that is not a scroller says where it rests with `data-pan-chain` and
+ * `data-pan-first` / `data-pan-last`.
  */
 function openDirections(
 	target: EventTarget | null,
@@ -65,6 +72,12 @@ function openDirections(
 	let node = target instanceof Element ? target : null;
 	while (node && node !== root && node !== document.body) {
 		if (node.hasAttribute("data-pan-pager-ignore")) return null;
+		if (node.hasAttribute("data-pan-chain")) {
+			open.chained = true;
+			open.prev &&= node.hasAttribute("data-pan-first");
+			open.next &&= node.hasAttribute("data-pan-last");
+			if (!open.next && !open.prev) return null;
+		}
 		const style = getComputedStyle(node);
 		const scrollsX =
 			(style.overflowX === "auto" || style.overflowX === "scroll") &&
@@ -211,8 +224,14 @@ export const panPager: Action<HTMLElement, PanPagerOptions | undefined> = (
 			else return;
 		}
 		if (axis !== "x") return;
-		// A nested pager keeps the swipes it can still page itself.
-		if (!panning && !(dx < 0 ? open.next : open.prev)) {
+		// A nested pager keeps the swipes it can still page itself, and one that
+		// yields at its ends hands those on to the pager around it.
+		const toward: PanDirection = dx < 0 ? 1 : -1;
+		if (
+			!panning &&
+			(!(toward === 1 ? open.next : open.prev) ||
+				(opts.yieldAtEnds && opts.canGo?.(toward) === false))
+		) {
 			reset();
 			return;
 		}

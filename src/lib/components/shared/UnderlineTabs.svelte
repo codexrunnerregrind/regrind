@@ -12,67 +12,61 @@
 		tabs,
 		value,
 		onSelect,
-		scroller = null,
-		following = false,
+		position = null,
+		gliding = false,
 		class: className,
 	}: {
 		tabs: UnderlineTab[];
 		value: string;
 		onSelect?: (value: string) => void;
-		/** A pager with one page per tab; the underline tracks its scroll while `following`. */
-		scroller?: HTMLElement | null;
-		following?: boolean;
+		/**
+		 * Where a pager with one page per tab is, in tabs (1.5: halfway from the
+		 * second to the third). The underline and the bold label follow it.
+		 */
+		position?: number | null;
+		/** The pager is easing to rest; the underline eases with it. */
+		gliding?: boolean;
 		class?: import("svelte/elements").ClassValue;
 	} = $props();
 
+	// Matches the pager's own settle, so the two land together.
+	const GLIDE = "320ms cubic-bezier(0.22, 1, 0.36, 1)";
+
 	let list: HTMLElement | null = $state(null);
-	let bar: HTMLElement | null = $state(null);
 	let width = $state(0);
+	let spans = $state<{ left: number; width: number }[]>([]);
 
-	const tracking = $derived(
-		following && scroller !== null && "ScrollTimeline" in window,
-	);
-
-	// The page under the pager's midpoint, so the label turns bold as the
-	// underline crosses over rather than once the tab is selected.
-	let nearest = $state<number | null>(null);
-	$effect(() => {
-		const node = scroller;
-		if (!following || !node) {
-			nearest = null;
-			return;
-		}
-		const update = () => {
-			if (node.clientWidth > 0)
-				nearest = Math.round(node.scrollLeft / node.clientWidth);
-		};
-		update();
-		node.addEventListener("scroll", update, { passive: true });
-		return () => node.removeEventListener("scroll", update);
-	});
+	// The label turns bold as the underline crosses over, not once the tab is
+	// selected.
 	const shown = $derived(
-		nearest === null ? value : (tabs[nearest]?.value ?? value),
+		position === null
+			? value
+			: (tabs[Math.round(position)]?.value ?? value),
 	);
 
-	// Keyframes sit at i/(n-1): that is where page i rests in the scroll range.
 	$effect(() => {
-		if (!tracking || !list || !bar || !scroller) return;
+		if (position === null || !list) return;
 		void width;
 		void tabs.map((tab) => tab.count);
 		void shown;
-		const buttons = [...list.querySelectorAll<HTMLElement>("[role=tab]")];
-		if (buttons.length < 2) return;
-		const keyframes = buttons.map((button, index) => ({
-			offset: index / (buttons.length - 1),
-			translate: `${button.offsetLeft}px 0`,
-			scale: `${button.offsetWidth} 1`,
-		}));
-		const animation = bar.animate(keyframes, {
-			fill: "both",
-			easing: "linear",
-			timeline: new ScrollTimeline({ source: scroller, axis: "x" }),
-		});
-		return () => animation.cancel();
+		spans = [...list.querySelectorAll<HTMLElement>("[role=tab]")].map(
+			(button) => ({
+				left: button.offsetLeft,
+				width: button.offsetWidth,
+			}),
+		);
+	});
+
+	const bar = $derived.by(() => {
+		if (position === null || spans.length === 0) return null;
+		const clamped = Math.max(0, Math.min(position, spans.length - 1));
+		const from = spans[Math.floor(clamped)]!;
+		const to = spans[Math.ceil(clamped)]!;
+		const t = clamped - Math.floor(clamped);
+		return {
+			left: from.left + (to.left - from.left) * t,
+			width: from.width + (to.width - from.width) * t,
+		};
 	});
 </script>
 
@@ -111,18 +105,22 @@
 					class="ms-1 font-medium text-ink3 tabular-nums"
 					>{tab.count}</span
 				>{/if}
-			{#if active && !tracking}
+			{#if active && !bar}
 				<span
 					class="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-primary"
 				></span>
 			{/if}
 		</button>
 	{/each}
-	{#if tracking}
+	{#if bar}
 		<span
-			bind:this={bar}
 			aria-hidden="true"
 			class="pointer-events-none absolute -bottom-px left-0 h-0.5 w-px origin-left bg-primary"
+			style:translate="{bar.left}px 0"
+			style:scale="{bar.width} 1"
+			style:transition={gliding
+				? `translate ${GLIDE}, scale ${GLIDE}`
+				: "none"}
 		></span>
 	{/if}
 </div>

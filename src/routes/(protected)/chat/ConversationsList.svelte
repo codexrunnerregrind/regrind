@@ -1,11 +1,12 @@
 <script lang="ts">
 	import PushPinIcon from "phosphor-svelte/lib/PushPinIcon";
-	import { onDestroy, tick, untrack } from "svelte";
+	import { onDestroy, tick } from "svelte";
 
 	import { getConversations } from "$lib/chat/conversations-context.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
 	import ListRowSkeleton from "$lib/components/feedback/ListRowSkeleton.svelte";
+	import PagerTrack from "$lib/components/shared/PagerTrack.svelte";
 	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
 	import ScrollToTopButton from "$lib/components/shared/ScrollToTopButton.svelte";
 	import UnderlineTabs from "$lib/components/shared/UnderlineTabs.svelte";
@@ -15,7 +16,6 @@
 	import { leaveDeletedPages } from "$lib/util/deleted-pages";
 	import { restoreScrollOnce } from "$lib/util/scroll-restore.svelte";
 	import { SelectionSet } from "$lib/util/selection.svelte";
-	import { SnapPager } from "$lib/util/snap-pager";
 	import type {
 		ConversationsState,
 		InboxTab,
@@ -77,68 +77,21 @@
 		conversations.activeTab = value as InboxTab;
 	}
 
-	// The album grid is hundreds of photos, so it exists only while Albums is
-	// the tab on show or the pager has really moved towards it; it also reports
-	// Albums while it is first being laid out, hence the offset check.
-	let albumsPeeking = $state(false);
-	const albumsShown = $derived(
-		!covered && (activeTab === "albums" || albumsPeeking),
-	);
-	let pager: HTMLElement | null = $state(null);
-	let paging = false;
-	let heading: number | null = null;
-	let pagerUnsettled = $state(false);
-	let settling = 0;
+	// Where the pager is, for the underline to follow the finger.
+	let position = $state(0);
+	let gliding = $state(false);
 
-	const snap = new SnapPager({
-		count: () => tabs.length,
-		onVisible: ({ first, last }) => {
-			if (last === 1 && (pager?.scrollLeft ?? 0) > 0)
-				albumsPeeking = true;
-			paging = first !== last;
-			if (paging) unsettle();
-		},
-		onHeading: (pane) => {
-			heading = pane;
-		},
-		onRest: (pane) => {
-			settle();
-			albumsPeeking = false;
-			const landed = tabs[pane];
-			if (landed) conversations.activeTab = landed.value;
-		},
-	});
-
-	$effect(() => {
-		const pane = activeIndex;
-		untrack(() => snap.place(pane, { animated: true }));
-	});
-
-	function unsettle() {
-		cancelAnimationFrame(settling);
-		pagerUnsettled = true;
+	function swipedTo(target: number) {
+		const landed = tabs[target];
+		if (!landed) return;
+		hapticSelection();
+		conversations.activeTab = landed.value;
 	}
 
-	function settle() {
-		cancelAnimationFrame(settling);
-		settling = requestAnimationFrame(() => {
-			settling = requestAnimationFrame(() => {
-				pagerUnsettled = false;
-			});
-		});
-	}
-
-	onDestroy(() => cancelAnimationFrame(settling));
-
-	function swallowClickOutsideHeadingPane(
-		event: MouseEvent & { currentTarget: HTMLElement },
-	) {
-		if (!paging || heading === null) return;
-		const headingPane = event.currentTarget.children[heading];
-		if (event.target instanceof Node && headingPane?.contains(event.target))
-			return;
-		event.preventDefault();
-		event.stopPropagation();
+	// The album grid can be hundreds of photos, so it exists only while Albums
+	// is the tab on show or some of it is on screen mid-swipe.
+	function albumsMounted(visible: boolean): boolean {
+		return !covered && (activeTab === "albums" || visible);
 	}
 
 	const selection = new SelectionSet<string>();
@@ -302,149 +255,147 @@
 			{tabs}
 			value={activeTab}
 			onSelect={selectTab}
-			scroller={pager}
-			following={pagerUnsettled}
+			position={covered ? null : position}
+			{gliding}
 			class="mt-4"
 		/>
 	</div>
 	<!-- A flick past Albums carries on to the tab bar's next tab. Selecting
 	     pins the pager to Messages. -->
-	<div
-		bind:this={pager}
+	<PagerTrack
 		data-slot="inbox-pager"
-		role="presentation"
-		data-scroll-intent="x"
-		data-swipe-tabs-chain
-		ontouchstart={unsettle}
-		onclickcapture={swallowClickOutsideHeadingPane}
-		class={[
-			"no-scrollbar flex min-h-0 flex-1 snap-x snap-mandatory overflow-y-hidden overscroll-x-none",
-			{ "overflow-x-hidden": selecting, "overflow-x-auto": !selecting },
-		]}
-		{@attach snap.attach}
+		class="min-h-0 flex-1"
+		count={tabs.length}
+		index={activeIndex}
+		enabled={!selecting && !covered}
+		onswipe={swipedTo}
+		paneSlots={["inbox-pane-messages", "inbox-pane-albums"]}
+		bind:position
+		bind:gliding
 	>
-		<!-- The row sits over the list rather than above it, as the grid's quick
-		     filters do: rows scroll behind it through the same nine blur layers
-		     and background-to-transparent gradient, so nothing but the pills is
-		     opaque. Albums are not conversations, so the filters go with the tab
-		     they act on rather than sitting inert above both. -->
-		<div
-			data-slot="inbox-pane-messages"
-			class="relative flex min-h-0 w-full shrink-0 snap-start flex-col"
-		>
-			<!-- Selecting takes the row away rather than leaving it inert: the
+		{#snippet pane(index, { visible })}
+			<!-- The row sits over the list rather than above it, as the grid's quick
+			     filters do: rows scroll behind it through the same nine blur layers
+			     and background-to-transparent gradient, so nothing but the pills is
+			     opaque. Albums are not conversations, so the filters go with the tab
+			     they act on rather than sitting inert above both. -->
+			{#if index === 0}
+				<div class="relative flex h-full min-h-0 w-full flex-col">
+					<!-- Selecting takes the row away rather than leaving it inert: the
 			     selection bar covers the top of the screen while it is up, and a
 			     dead row of pills there would only collect scrolling rows behind
 			     it. -->
-			{#if !selecting}
-				<ProgressiveBlur
-					data-fixed-header
-					class="pointer-events-none absolute top-0 left-0 z-10 w-full"
-					bgClass="bg-linear-to-b from-background to-transparent"
-					contentClass="flex flex-col pt-3 pb-6"
-					direction="topToBottom"
-				>
-					<ConversationsFilters
-						filters={conversations.filters}
-						locked={filtersLocked}
-						onchange={(selection) =>
-							conversations.setFilters(selection)}
-						class="pointer-events-auto h-9 items-center px-screen"
-					/>
-				</ProgressiveBlur>
-			{/if}
-			<div
-				bind:this={container}
-				data-scroll-root
-				data-slot="conversations-scroller"
-				class={[
-					"flex min-h-0 flex-1 flex-col gap-0 overflow-auto overscroll-y-contain px-0 pb-0",
-					// pt-12 puts the first row at the pills' bottom edge
-					// (pt-3 + h-9), not at the overlay's: the pb-6 below them
-					// is blur tail, and rows are meant to fade out through it.
-					{
-						"pt-(--selection-bar-height)": selecting,
-						"pt-12": !selecting,
-					},
-					className,
-				]}
-				onscroll={() =>
-					(conversations.scrollY = container?.scrollTop ?? 0)}
-			>
-				{#if conversations.loading}
-					{#each Array(8)}
-						<ListRowSkeleton />
-					{/each}
-				{:else if conversations.error && visibleEntries.length === 0}
-					<div class="flex flex-1">
-						<ApiErrorDisplay
-							error={conversations.error}
-							onRetry={() => conversations.retry()}
-							class="m-auto"
-						/>
-					</div>
-				{:else}
+					{#if !selecting}
+						<ProgressiveBlur
+							data-fixed-header
+							class="pointer-events-none absolute top-0 left-0 z-10 w-full"
+							bgClass="bg-linear-to-b from-background to-transparent"
+							contentClass="flex flex-col pt-3 pb-6"
+							direction="topToBottom"
+						>
+							<ConversationsFilters
+								filters={conversations.filters}
+								locked={filtersLocked}
+								onchange={(selection) =>
+									conversations.setFilters(selection)}
+								class="pointer-events-auto h-9 items-center px-screen"
+							/>
+						</ProgressiveBlur>
+					{/if}
 					<div
-						data-refresh-content
-						class="min-h-overscrollable flex shrink-0 flex-col gap-0 pb-nav-clear"
+						bind:this={container}
+						data-scroll-root
+						data-slot="conversations-scroller"
+						class={[
+							"flex min-h-0 flex-1 flex-col gap-0 overflow-auto overscroll-y-contain px-0 pb-0",
+							// pt-12 puts the first row at the pills' bottom edge
+							// (pt-3 + h-9), not at the overlay's: the pb-6 below them
+							// is blur tail, and rows are meant to fade out through it.
+							{
+								"pt-(--selection-bar-height)": selecting,
+								"pt-12": !selecting,
+							},
+							className,
+						]}
+						onscroll={() =>
+							(conversations.scrollY = container?.scrollTop ?? 0)}
 					>
-						{#if pinnedEntries.length > 0}
-							<div
-								class="flex items-center gap-1.5 px-screen pt-5.5 pb-2.5"
-							>
-								<PushPinIcon
-									weight="fill"
-									class="size-3 text-ink3"
+						{#if conversations.loading}
+							{#each Array(8)}
+								<ListRowSkeleton />
+							{/each}
+						{:else if conversations.error && visibleEntries.length === 0}
+							<div class="flex flex-1">
+								<ApiErrorDisplay
+									error={conversations.error}
+									onRetry={() => conversations.retry()}
+									class="m-auto"
 								/>
-								<span class="section-label">Pinned</span>
 							</div>
-							<!-- The card closes the group, so the last row's separator would
-						     draw a stray line just inside its bottom edge. -->
+						{:else}
 							<div
-								class="pinned-group mx-screen overflow-hidden rounded-xl bg-card [&>:last-child_a]:after:border-b-0"
+								data-refresh-content
+								class="min-h-overscrollable flex shrink-0 flex-col gap-0 pb-nav-clear"
 							>
-								{#each pinnedEntries as conversation (conversation.data.conversationId)}
-									{@render row(conversation, true)}
+								{#if pinnedEntries.length > 0}
+									<div
+										class="flex items-center gap-1.5 px-screen pt-5.5 pb-2.5"
+									>
+										<PushPinIcon
+											weight="fill"
+											class="size-3 text-ink3"
+										/>
+										<span class="section-label">Pinned</span
+										>
+									</div>
+									<!-- The card closes the group, so the last row's separator would
+						     draw a stray line just inside its bottom edge. -->
+									<div
+										class="pinned-group mx-screen overflow-hidden rounded-xl bg-card [&>:last-child_a]:after:border-b-0"
+									>
+										{#each pinnedEntries as conversation (conversation.data.conversationId)}
+											{@render row(conversation, true)}
+										{/each}
+									</div>
+									<div class="h-5"></div>
+								{/if}
+								{#each restEntries as conversation, i (conversation.data.conversationId)}
+									{@render row(conversation, i < EAGER_COUNT)}
 								{/each}
+								<ConversationsPagingTail
+									paging={conversations.paging}
+									hasMore={conversations.nextPage !== null}
+									listEmpty={restEntries.length === 0 &&
+										pinnedEntries.length === 0}
+									filtered={conversations.filters.any}
+								/>
 							</div>
-							<div class="h-5"></div>
 						{/if}
-						{#each restEntries as conversation, i (conversation.data.conversationId)}
-							{@render row(conversation, i < EAGER_COUNT)}
-						{/each}
-						<ConversationsPagingTail
-							paging={conversations.paging}
-							hasMore={conversations.nextPage !== null}
-							listEmpty={restEntries.length === 0 &&
-								pinnedEntries.length === 0}
-							filtered={conversations.filters.any}
-						/>
 					</div>
-				{/if}
-			</div>
-			{#if !conversations.loading && (visibleEntries.length > 0 || !conversations.error)}
-				<DataRefreshControl
-					{container}
-					updating={conversations.refreshing}
-					position="top"
-					hintOffset={12}
-					onrefresh={() => {
-						hapticImpact("light");
-						void conversations.refresh();
-					}}
-				/>
+					{#if !conversations.loading && (visibleEntries.length > 0 || !conversations.error)}
+						<DataRefreshControl
+							{container}
+							updating={conversations.refreshing}
+							position="top"
+							hintOffset={12}
+							onrefresh={() => {
+								hapticImpact("light");
+								void conversations.refresh();
+							}}
+						/>
+					{/if}
+					<ScrollToTopButton
+						{container}
+						class="bottom-(--nav-clear)"
+					/>
+				</div>
+			{:else if albumsMounted(visible)}
+				<div class="relative flex h-full min-h-0 w-full flex-col">
+					<AlbumsTab class={className} />
+				</div>
 			{/if}
-			<ScrollToTopButton {container} class="bottom-(--nav-clear)" />
-		</div>
-		<div
-			data-slot="inbox-pane-albums"
-			class="relative flex min-h-0 w-full shrink-0 snap-start flex-col"
-		>
-			{#if albumsShown}
-				<AlbumsTab class={className} />
-			{/if}
-		</div>
-	</div>
+		{/snippet}
+	</PagerTrack>
 </div>
 
 <style lang="postcss">

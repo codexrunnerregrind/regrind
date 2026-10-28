@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
-	import { onDestroy } from "svelte";
 
 	import UnderlineTabs from "$lib/components/shared/UnderlineTabs.svelte";
 	import { getSentTapsState } from "$lib/interest/sent-taps-state.svelte";
@@ -93,34 +92,9 @@
 		void goto(value, { replaceState: true, noScroll: true });
 	}
 
-	// The underline tracks the pager only while it moves, and until the route
-	// catches up with where it came to rest.
-	let pager: HTMLElement | null = $state(null);
-	let pagerUnsettled = $state(false);
-	let restingTab = $state<number>();
-	let settling = 0;
-
-	const underlineFollows = $derived(
-		pagerUnsettled ||
-			(restingTab !== undefined && restingTab !== activeIndex),
-	);
-
-	function unsettle() {
-		cancelAnimationFrame(settling);
-		pagerUnsettled = true;
-	}
-
-	function settle(tab: number) {
-		restingTab = tab;
-		cancelAnimationFrame(settling);
-		settling = requestAnimationFrame(() => {
-			settling = requestAnimationFrame(() => {
-				pagerUnsettled = false;
-			});
-		});
-	}
-
-	onDestroy(() => cancelAnimationFrame(settling));
+	// Where the pager is, for the underline to follow the finger.
+	let position = $state(0);
+	let gliding = $state(false);
 </script>
 
 <!-- Opaque, not a blur gradient: the grid scrolls underneath, and a fading
@@ -136,8 +110,8 @@
 		{tabs}
 		value={tabs[activeIndex]?.value ?? ""}
 		onSelect={select}
-		scroller={pager}
-		following={underlineFollows}
+		position={active ? position : null}
+		{gliding}
 		class="mt-4"
 	/>
 </nav>
@@ -145,7 +119,6 @@
 	{ourProfileId}
 	{active}
 	{headerHeight}
-	onUnsettle={unsettle}
-	onSettle={settle}
-	onPager={(node) => (pager = node)}
+	bind:position
+	bind:gliding
 />
