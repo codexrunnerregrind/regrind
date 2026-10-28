@@ -1,4 +1,5 @@
 <script lang="ts">
+	import FlaskIcon from "phosphor-svelte/lib/FlaskIcon";
 	import GearIcon from "phosphor-svelte/lib/GearIcon";
 	import IdentificationCardIcon from "phosphor-svelte/lib/IdentificationCardIcon";
 	import ImagesSquareIcon from "phosphor-svelte/lib/ImagesSquareIcon";
@@ -71,6 +72,14 @@
 
 				<SectionHeader>About</SectionHeader>
 				<SettingsGroup>
+					<SettingsRow
+						title="Grindr experiments"
+						href="/settings/experiments"
+					>
+						{#snippet icon()}
+							<FlaskIcon weight="fill" />
+						{/snippet}
+					</SettingsRow>
 					<Socials />
 				</SettingsGroup>
 
