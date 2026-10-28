@@ -62,6 +62,28 @@ describe("snapshotPane", () => {
 		stopTracking?.();
 	});
 
+	it("carries the offsets of a pane inside the tracked element", () => {
+		const screen = mountPane(
+			'<div class="pane"><div class="scroller"></div></div><div class="other"></div>',
+		);
+		const stopTracking = trackScrolled(screen);
+		const scroller = screen.querySelector<HTMLElement>(".scroller")!;
+		const other = screen.querySelector<HTMLElement>(".other")!;
+		scroller.scrollTop = 120;
+		scroller.dispatchEvent(new Event("scroll"));
+		other.dispatchEvent(new Event("scroll"));
+
+		const pane = screen.querySelector<HTMLElement>(".pane")!;
+		const snapshot = snapshotPane(pane, "/");
+		document.body.append(snapshot.node);
+		snapshot.restore();
+
+		expect(
+			snapshot.node.querySelector<HTMLElement>(".scroller")!.scrollTop,
+		).toBe(120);
+		stopTracking?.();
+	});
+
 	it("never reads the scroll offset of an element that was not scrolled", () => {
 		const pane = mountPane('<div class="scroller"></div><p></p>');
 		const stopTracking = trackScrolled(pane);

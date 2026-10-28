@@ -67,13 +67,17 @@ function scrollCarriers({
 	pane: HTMLElement;
 	clone: HTMLElement;
 }) {
-	const scrolled = scrolledIn.get(pane);
+	// The pane may sit inside the tracked element, e.g. one tab of the shell.
+	let root: HTMLElement | null = pane;
+	while (root && !scrolledIn.has(root)) root = root.parentElement;
+	const scrolled = root && scrolledIn.get(root);
 	if (!scrolled) return [];
 	return [...scrolled].flatMap((source) => {
-		if (!pane.contains(source)) {
+		if (!root.contains(source)) {
 			scrolled.delete(source);
 			return [];
 		}
+		if (!pane.contains(source)) return [];
 		const copy = follow({
 			root: clone,
 			path: childPath({ root: pane, element: source }),
