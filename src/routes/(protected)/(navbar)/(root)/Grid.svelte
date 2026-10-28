@@ -26,8 +26,11 @@
 
 	const PAGE_SKELETONS = 20;
 
-	let { geohash, search }: { geohash: string; search: FavoriteSearch } =
-		$props();
+	let {
+		geohash,
+		search,
+		active,
+	}: { geohash: string; search: FavoriteSearch; active: boolean } = $props();
 
 	let gridElement: HTMLElement | null = $state(null);
 
@@ -122,7 +125,9 @@
 		gridState.load(geohash);
 	});
 
-	$effect(() => gridState.attachView());
+	$effect(() => {
+		if (active) return gridState.attachView();
+	});
 </script>
 
 {#snippet cell(item: GridProfile)}

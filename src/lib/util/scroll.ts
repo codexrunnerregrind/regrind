@@ -12,7 +12,10 @@ import { cubicOut } from "svelte/easing";
 export function scrollActiveViewToTop() {
 	const behavior: ScrollBehavior = "smooth";
 	window.scrollTo({ top: 0, behavior });
-	for (const el of document.querySelectorAll<HTMLElement>(
+	// In the tab shell only the pane on show; the others keep their place.
+	const scope =
+		document.querySelector("[data-tab-pane][data-active]") ?? document;
+	for (const el of scope.querySelectorAll<HTMLElement>(
 		".pull-scroller, [data-scroll-root]",
 	)) {
 		el.scrollTo({ top: 0, behavior });

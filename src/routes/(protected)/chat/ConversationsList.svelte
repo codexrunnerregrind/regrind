@@ -77,8 +77,13 @@
 		conversations.activeTab = value as InboxTab;
 	}
 
-	// Albums mounts the first time any of it scrolls into view.
-	let albumsMounted = $state(untrack(() => activeTab === "albums"));
+	// The album grid is hundreds of photos, so it exists only while Albums is
+	// the tab on show or the pager has really moved towards it; it also reports
+	// Albums while it is first being laid out, hence the offset check.
+	let albumsPeeking = $state(false);
+	const albumsShown = $derived(
+		!covered && (activeTab === "albums" || albumsPeeking),
+	);
 	let pager: HTMLElement | null = $state(null);
 	let paging = false;
 	let heading: number | null = null;
@@ -88,7 +93,8 @@
 	const snap = new SnapPager({
 		count: () => tabs.length,
 		onVisible: ({ first, last }) => {
-			if (last === 1) albumsMounted = true;
+			if (last === 1 && (pager?.scrollLeft ?? 0) > 0)
+				albumsPeeking = true;
 			paging = first !== last;
 			if (paging) unsettle();
 		},
@@ -97,6 +103,7 @@
 		},
 		onRest: (pane) => {
 			settle();
+			albumsPeeking = false;
 			const landed = tabs[pane];
 			if (landed) conversations.activeTab = landed.value;
 		},
@@ -351,7 +358,7 @@
 				data-scroll-root
 				data-slot="conversations-scroller"
 				class={[
-					"flex min-h-0 flex-1 flex-col gap-0 overflow-auto overscroll-contain px-0 pb-0",
+					"flex min-h-0 flex-1 flex-col gap-0 overflow-auto overscroll-y-contain px-0 pb-0",
 					// pt-12 puts the first row at the pills' bottom edge
 					// (pt-3 + h-9), not at the overlay's: the pb-6 below them
 					// is blur tail, and rows are meant to fade out through it.
@@ -433,7 +440,7 @@
 			data-slot="inbox-pane-albums"
 			class="relative flex min-h-0 w-full shrink-0 snap-start flex-col"
 		>
-			{#if albumsMounted}
+			{#if albumsShown}
 				<AlbumsTab class={className} />
 			{/if}
 		</div>

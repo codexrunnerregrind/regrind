@@ -48,7 +48,12 @@
 
 {#snippet tileContent()}
 	{#if coverUrl}
+		<!-- Lazy: a shared-albums grid can run to hundreds of tiles, and loading
+		     every cover at once took the WebView past its memory limit. Before
+		     `src`, which starts the load as soon as it is set. -->
 		<img
+			loading="lazy"
+			decoding="async"
 			src={coverUrl}
 			alt=""
 			class="size-full rounded-[inherit] bg-card-foreground/10 object-cover"

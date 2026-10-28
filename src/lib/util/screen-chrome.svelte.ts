@@ -18,6 +18,12 @@ function contentClearance({
 		: window.innerHeight - (box.top + parseFloat(style.paddingTop));
 }
 
+/** On a pane of the tab shell that is paged away. */
+function pagedAway(element: HTMLElement): boolean {
+	const box = element.getBoundingClientRect();
+	return box.right <= 0 || box.left >= window.innerWidth;
+}
+
 function edgeChrome(edge: Edge) {
 	const clearances = new SvelteMap<HTMLElement, number>();
 
@@ -26,7 +32,8 @@ function edgeChrome(edge: Edge) {
 			element.inert ||
 			element.closest("[data-leaving], [data-covered]") !== null ||
 			element.getClientRects().length === 0 ||
-			getComputedStyle(element).visibility === "hidden";
+			getComputedStyle(element).visibility === "hidden" ||
+			pagedAway(element);
 		clearances.set(
 			element,
 			offScreen ? 0 : contentClearance({ edge, element }),

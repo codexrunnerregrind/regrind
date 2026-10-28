@@ -883,7 +883,9 @@ a {
 
 /* Pull-to-refresh containers */
 @utility pull-scroller {
-	@apply size-full overflow-x-hidden overflow-y-auto overscroll-contain;
+	/* Contained vertically only: a sideways drag carries on to the pager the
+	   screen sits in. */
+	@apply size-full overflow-x-hidden overflow-y-auto overscroll-y-contain;
 }
 
 [data-offscreen-skip] {
@@ -1154,6 +1156,12 @@ a {
 	backdrop-filter: var(--pblur-blur);
 	-webkit-mask-image: linear-gradient(var(--pblur-dir), var(--pblur-stops));
 	mask-image: linear-gradient(var(--pblur-dir), var(--pblur-stops));
+}
+
+/* WebKit draws these wrong inside the tab shell's track while it slides (what
+   sits in front comes out blurred), so they wait for it to rest. */
+[data-tab-shell-moving] .pblur-layer {
+	backdrop-filter: none;
 }
 
 .pblur-layer[data-pblur-layer="0"] {

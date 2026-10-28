@@ -10,6 +10,7 @@
 	import * as AlertDialog from "$lib/components/ui/alert-dialog";
 	import * as Empty from "$lib/components/ui/empty";
 	import { Skeleton } from "$lib/components/ui/skeleton";
+	import { observeIntersection } from "$lib/util/observe-intersection";
 	import type { PressieSharedAlbum } from "$lib/model/messaging/albums";
 	import { AlbumOpener } from "./album-open.svelte";
 	import AlbumTile from "./AlbumTile.svelte";
@@ -24,6 +25,13 @@
 	} = $props();
 
 	const albums = $derived(sharedAlbums.albums);
+
+	// A few screens at a time, more as the end comes into reach: an account can
+	// have hundreds of shared albums, and rendering every tile at once took the
+	// WebView past its memory limit on iOS.
+	const BATCH = 24;
+	let shownCount = $state(BATCH);
+	const shown = $derived(albums?.slice(0, shownCount) ?? []);
 	const error = $derived(sharedAlbums.error);
 	const opener = new AlbumOpener();
 
@@ -111,7 +119,7 @@
 			data-grid-columns={getAlbumGridColumnsSnapshot()}
 		>
 			{@render myAlbumsTile()}
-			{#each albums as album (album.albumId)}
+			{#each shown as album (album.albumId)}
 				<AlbumTile
 					coverUrl={album.coverContent?.location ??
 						album.coverContent?.coverContent}
@@ -145,6 +153,20 @@
 				/>
 			{/each}
 		</div>
+		{#if albums && shownCount < albums.length}
+			<!-- Keyed so each batch watches afresh: an observer only reports a
+			     change, and a sentinel still in reach after a batch is not one. -->
+			{#key shownCount}
+				<div
+					class="h-0"
+					use:observeIntersection={{
+						handle: () => (shownCount += BATCH),
+						rootMargin: "400px",
+						once: true,
+					}}
+				></div>
+			{/key}
+		{/if}
 	{/if}
 </div>
 

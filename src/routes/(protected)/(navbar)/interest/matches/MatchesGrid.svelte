@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { untrack } from "svelte";
+
 	import { getMatchesCardStyleSnapshot } from "$lib/app-data/preferences.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
@@ -17,8 +19,10 @@
 	// Held by the Interest layout. Sending a tap raises no event, so a tap sent
 	// from a profile only shows here once the list is fetched again.
 	const sentTaps = getSentTapsState.peek();
+	// Untracked: the refresh reads the state it updates, and tracking those reads
+	// re-ran it forever, fetching until iOS killed the WebView.
 	$effect(() => {
-		if (active) void sentTaps?.refresh();
+		if (active) untrack(() => void sentTaps?.refresh());
 	});
 
 	let toolbarHeight = $state(0);

@@ -18,6 +18,8 @@
 	import { abortBackdropBlurTrialGesture } from "$lib/blur/calibration/trial.svelte";
 	import { hydrateBackdropCompositing } from "$lib/blur/compositing.svelte";
 	import { applyBackdropBlurQuality } from "$lib/blur/quality.svelte";
+	import { swipeableTabIndex } from "$lib/components/shared/nav-tabs";
+	import { tabShellShowing } from "$lib/components/tab-shell/tab-shell-state.svelte";
 	import { takeDemoAnnouncement } from "$lib/demo/config";
 	import {
 		applyAndroidInsets,
@@ -127,10 +129,22 @@
 
 	let screen: HTMLDivElement | null = $state(null);
 
-	beforeNavigate(({ type }) => {
+	beforeNavigate(({ type, to }) => {
 		abortBackdropBlurTrialGesture();
-		if (type !== "leave" && screen && isMobilePlatform())
+		if (type === "leave" || !screen || !isMobilePlatform()) return;
+		if (!tabShellShowing()) {
 			rememberScreen(screen);
+			return;
+		}
+		// The tab shell holds up to three screens, and copying it on every tab
+		// change had iOS kill the WebView: each copy loads all their images
+		// again. A move between its tabs needs no copy, and leaving it only
+		// the tab on show.
+		if (swipeableTabIndex(to?.route.id) !== -1) return;
+		const shown = screen.querySelector<HTMLElement>(
+			"[data-tab-pane][data-active]",
+		);
+		if (shown) rememberScreen(shown);
 	});
 	afterNavigate(() => settleSwipeBack());
 

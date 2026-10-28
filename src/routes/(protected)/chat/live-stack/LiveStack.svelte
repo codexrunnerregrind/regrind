@@ -25,13 +25,19 @@
 		keyOf,
 		base,
 		sheet,
+		externalBase,
 	}: {
 		basePath: string;
 		keyOf: (
 			target: Pick<NavigationTarget, "params" | "route" | "url">,
 		) => string | null;
-		base: Snippet<[{ covered: boolean; uncovering: boolean }]>;
+		base?: Snippet<[{ covered: boolean; uncovering: boolean }]>;
 		sheet: Snippet<[string, { leaving: boolean }]>;
+		/**
+		 * A base that lives elsewhere (the tab shell) in place of `base`: the
+		 * stack moves it and marks it covered as it would its own.
+		 */
+		externalBase?: () => HTMLElement | null;
 	} = $props();
 
 	const KEYBOARD_SETTLE_MS = 150;
@@ -44,7 +50,11 @@
 
 	const stack: LiveStackState = new LiveStackState({
 		surface: paneSurface({
-			panes: () => ({ front: sheetPane, back: basePane, dim }),
+			panes: () => ({
+				front: sheetPane,
+				back: externalBase?.() ?? basePane,
+				dim,
+			}),
 			parallax: () => !prefersReducedMotion.current,
 			motion,
 		}),
@@ -90,21 +100,34 @@
 		remeasureScreenChrome();
 	});
 
+	$effect(() => {
+		const node = externalBase?.();
+		if (!node) return;
+		node.toggleAttribute("data-covered", stack.covered);
+		node.inert = stack.sheetOpen;
+		return () => {
+			node.removeAttribute("data-covered");
+			node.inert = false;
+		};
+	});
+
 	onDestroy(() => stack.dispose());
 </script>
 
-<div
-	bind:this={basePane}
-	data-slot="live-stack-base"
-	class="fixed inset-x-0 top-0 flex h-(--viewport-height) flex-col bg-background pt-(--safe-area-top) pb-(--safe-area-bottom)"
-	style:z-index={STACK_Z.back}
-	data-covered={stack.covered || undefined}
-	inert={stack.sheetOpen}
->
-	{#if baseMounted}
-		{@render base({ covered: stack.covered, uncovering: leaving })}
-	{/if}
-</div>
+{#if !externalBase}
+	<div
+		bind:this={basePane}
+		data-slot="live-stack-base"
+		class="fixed inset-x-0 top-0 flex h-(--viewport-height) flex-col bg-background pt-(--safe-area-top) pb-(--safe-area-bottom)"
+		style:z-index={STACK_Z.back}
+		data-covered={stack.covered || undefined}
+		inert={stack.sheetOpen}
+	>
+		{#if baseMounted}
+			{@render base?.({ covered: stack.covered, uncovering: leaving })}
+		{/if}
+	</div>
+{/if}
 {#if stack.moving || stack.tracking}
 	<div
 		bind:this={dim}

@@ -49,8 +49,11 @@ export function recordFrames(page: Page): Promise<Frame[]> {
 			new Promise<Frame[]>((resolve) => {
 				const frames: Frame[] = [];
 				const x = (slot: string) => {
+					// On a phone the tab shell is the base.
 					const pane = document.querySelector(
-						`[data-slot="live-stack-${slot}"]`,
+						slot === "base"
+							? '[data-slot="live-stack-base"], [data-slot="tab-shell"]'
+							: `[data-slot="live-stack-${slot}"]`,
 					);
 					return pane
 						? new DOMMatrix(getComputedStyle(pane).transform).m41

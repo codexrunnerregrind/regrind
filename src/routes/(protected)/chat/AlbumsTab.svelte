@@ -26,7 +26,7 @@
 	bind:this={container}
 	data-scroll-root
 	class={[
-		"flex min-h-0 flex-1 flex-col overflow-auto overscroll-contain px-screen pt-2",
+		"flex min-h-0 flex-1 flex-col overflow-auto overscroll-y-contain px-screen pt-2",
 		className,
 	]}
 	onscroll={() => (sharedAlbums.scrollY = container?.scrollTop ?? 0)}

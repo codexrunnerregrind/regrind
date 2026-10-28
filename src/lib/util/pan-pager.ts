@@ -48,20 +48,38 @@ export type PanPagerOptions = {
 	enabled?: boolean;
 };
 
-/** Whether the gesture should be skipped for a start inside this target. */
-function shouldIgnoreStart(target: EventTarget | null): boolean {
-	if (document.querySelector(".pswp--open")) return true;
+type Open = { next: boolean; prev: boolean; chained: boolean };
+
+/**
+ * Which ways a gesture starting inside this target may page, or null if it
+ * should be skipped. A horizontal scroller opts out, unless it is marked
+ * `data-swipe-tabs-chain` (a nested pager): then a swipe past whichever end it
+ * rests at is this pager's, and follows the finger like any other.
+ */
+function openDirections(
+	target: EventTarget | null,
+	root: HTMLElement,
+): Open | null {
+	if (document.querySelector(".pswp--open")) return null;
+	const open = { next: true, prev: true, chained: false };
 	let node = target instanceof Element ? target : null;
-	while (node && node !== document.body) {
-		if (node.hasAttribute("data-pan-pager-ignore")) return true;
+	while (node && node !== root && node !== document.body) {
+		if (node.hasAttribute("data-pan-pager-ignore")) return null;
 		const style = getComputedStyle(node);
 		const scrollsX =
 			(style.overflowX === "auto" || style.overflowX === "scroll") &&
 			node.scrollWidth > node.clientWidth;
-		if (scrollsX) return true;
+		if (scrollsX) {
+			if (!node.hasAttribute("data-swipe-tabs-chain")) return null;
+			open.chained = true;
+			const left = Math.abs(node.scrollLeft);
+			open.prev &&= left <= 1;
+			open.next &&= left >= node.scrollWidth - node.clientWidth - 1;
+			if (!open.next && !open.prev) return null;
+		}
 		node = node.parentElement;
 	}
-	return false;
+	return open;
 }
 
 export const panPager: Action<HTMLElement, PanPagerOptions | undefined> = (
@@ -80,8 +98,12 @@ export const panPager: Action<HTMLElement, PanPagerOptions | undefined> = (
 	let panning = false;
 	// Recent positions, trimmed to VELOCITY_WINDOW, for the release velocity.
 	let samples: Sample[] = [];
+	let open: Open = { next: true, prev: true, chained: false };
+	let lifts: AbortController | null = null;
 
 	function reset() {
+		lifts?.abort();
+		lifts = null;
 		touchId = null;
 		axis = null;
 		panning = false;
@@ -123,11 +145,27 @@ export const panPager: Action<HTMLElement, PanPagerOptions | undefined> = (
 			abort();
 			return;
 		}
-		if (touchId !== null) return;
+		// One finger down while a drag is still open: its lift never arrived, so
+		// let it go rather than leave the page stuck mid-drag.
+		if (touchId !== null) abort();
 		const touch = event.changedTouches[0];
 		if (!touch) return;
 		if (touch.clientX <= EDGE_ZONE) return;
-		if (shouldIgnoreStart(event.target)) return;
+		const directions = openDirections(event.target, node);
+		if (!directions) return;
+		// On the touched element too: if it is re-rendered away mid-drag, its
+		// lift no longer bubbles up to the pager.
+		lifts?.abort();
+		lifts = new AbortController();
+		for (const [type, listener] of [
+			["touchend", onTouchEnd],
+			["touchcancel", onTouchCancel],
+		] as const)
+			event.target?.addEventListener(type, listener as EventListener, {
+				passive: true,
+				signal: lifts.signal,
+			});
+		open = directions;
 
 		touchId = touch.identifier;
 		startX = touch.clientX;
@@ -173,6 +211,11 @@ export const panPager: Action<HTMLElement, PanPagerOptions | undefined> = (
 			else return;
 		}
 		if (axis !== "x") return;
+		// A nested pager keeps the swipes it can still page itself.
+		if (!panning && !(dx < 0 ? open.next : open.prev)) {
+			reset();
+			return;
+		}
 
 		// The container carries `touch-action: pan-y`, so the WebView never
 		// starts a horizontal pan of its own; this stops the vertical scroller
@@ -186,7 +229,27 @@ export const panPager: Action<HTMLElement, PanPagerOptions | undefined> = (
 		if (touchId === null) return;
 		const touch = tracked(event.changedTouches);
 		if (!touch) return;
-		const dx = touch.clientX - startX;
+		release(touch.clientX);
+	}
+
+	/**
+	 * iOS can cancel a touch that started in a nested pager once it is under
+	 * way; that swipe is resolved from where the finger was last seen rather
+	 * than dropped. Any other cancel springs back.
+	 */
+	function onTouchCancel(event: TouchEvent) {
+		if (touchId === null) return;
+		const last =
+			tracked(event.changedTouches)?.clientX ?? samples.at(-1)?.x;
+		if (!open.chained || !panning || last === undefined) {
+			abort();
+			return;
+		}
+		release(last);
+	}
+
+	function release(x: number) {
+		const dx = x - startX;
 		const velocity = releaseVelocity();
 		const wasPanning = panning;
 		reset();
@@ -214,7 +277,7 @@ export const panPager: Action<HTMLElement, PanPagerOptions | undefined> = (
 	node.addEventListener("touchstart", onTouchStart, passive);
 	node.addEventListener("touchmove", onTouchMove, active);
 	node.addEventListener("touchend", onTouchEnd, passive);
-	node.addEventListener("touchcancel", abort, passive);
+	node.addEventListener("touchcancel", onTouchCancel, passive);
 
 	return {
 		update(next) {
@@ -224,7 +287,8 @@ export const panPager: Action<HTMLElement, PanPagerOptions | undefined> = (
 			node.removeEventListener("touchstart", onTouchStart);
 			node.removeEventListener("touchmove", onTouchMove);
 			node.removeEventListener("touchend", onTouchEnd);
-			node.removeEventListener("touchcancel", abort);
+			node.removeEventListener("touchcancel", onTouchCancel);
+			lifts?.abort();
 		},
 	};
 };

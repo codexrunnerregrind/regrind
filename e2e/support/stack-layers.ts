@@ -5,7 +5,8 @@ import { afterTwoFrames } from "./app";
 export const DARK_SCRIM = 0.8;
 export const PHONE = { width: 390, height: 844 };
 export const LIVE_STACK = {
-	base: '[data-slot="live-stack-base"]',
+	// On a phone the tab shell is the list the conversation stacks on.
+	base: '[data-slot="live-stack-base"], [data-slot="tab-shell"]',
 	sheet: '[data-slot="live-stack-sheet"]',
 	dim: '[data-slot="live-stack-dim"]',
 };

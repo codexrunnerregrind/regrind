@@ -28,6 +28,7 @@ import {
 	DARK_SCRIM,
 	edgeLineColumns,
 	expectEdgeJustLeftOf,
+	LIVE_STACK,
 	pauseMidSlide,
 	pauseOnceSliding,
 	PHONE,
@@ -52,7 +53,11 @@ const messageRow = (page: Page) =>
 
 const offsetX = (page: Page, slot: "base" | "sheet") =>
 	page
-		.locator(`[data-slot="live-stack-${slot}"]`)
+		.locator(
+			slot === "base"
+				? LIVE_STACK.base
+				: `[data-slot="live-stack-${slot}"]`,
+		)
 		.evaluate((pane) =>
 			Math.round(new DOMMatrix(getComputedStyle(pane).transform).m41),
 		);

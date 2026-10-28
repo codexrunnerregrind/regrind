@@ -5,6 +5,7 @@
 	import { reportAccountProfile } from "$lib/api/accounts.svelte";
 	import CommandCenter from "$lib/components/command-center/CommandCenter.svelte";
 	import MediaDropOverlay from "$lib/components/shared/MediaDropOverlay.svelte";
+	import { tabShellShowing } from "$lib/components/tab-shell/tab-shell-state.svelte";
 	import VideoCallOverlay from "$lib/components/video-call/VideoCallOverlay.svelte";
 	import { notifications } from "$lib/notifications/notifications.svelte";
 	import { push } from "$lib/notifications/push.svelte";
@@ -14,6 +15,7 @@
 	import { guardDeletedPages } from "$lib/util/deleted-pages";
 	import { retryBrokenMediaWhenOnline } from "$lib/util/media-retry-signals";
 	import { videoCall } from "$lib/video-call/call-state.svelte";
+	import TabShell from "./tab-shell/TabShell.svelte";
 
 	let { data, children }: import("./$types").LayoutProps = $props();
 
@@ -48,6 +50,13 @@
 	$effect(() => listenForKeyboardMedia());
 </script>
 
+<!-- The bottom bar's tabs as one pager on a phone. An account switch remounts
+     it, as it does the screens it holds. -->
+{#if tabShellShowing()}
+	{#key data.ourProfileId}
+		<TabShell ourProfileId={data.ourProfileId} />
+	{/key}
+{/if}
 {@render children()}
 <CommandCenter />
 <VideoCallOverlay />

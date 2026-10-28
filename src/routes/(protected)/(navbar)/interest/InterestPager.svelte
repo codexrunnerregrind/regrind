@@ -5,7 +5,11 @@
 
 	import { navigationPending } from "$lib/util/history";
 	import { SnapPager } from "$lib/util/snap-pager";
-	import { interestTabIndex, interestTabs } from "./interest-tab";
+	import {
+		getInterestTab,
+		interestTabIndex,
+		interestTabs,
+	} from "./interest-tab";
 	import MatchesGrid from "./matches/MatchesGrid.svelte";
 	import SentTapsList from "./sent/SentTapsList.svelte";
 	import TapsReceivedList from "./taps/TapsReceivedList.svelte";
@@ -13,12 +17,15 @@
 
 	let {
 		ourProfileId,
+		active = true,
 		headerHeight,
 		onUnsettle,
 		onSettle,
 		onPager,
 	}: {
 		ourProfileId: number;
+		/** False while the tab shell has Interest off-screen: then the route belongs to another tab. */
+		active?: boolean;
 		headerHeight: number;
 		onUnsettle: () => void;
 		onSettle: (tab: number) => void;
@@ -28,13 +35,16 @@
 	const TABS: readonly string[] = interestTabs;
 
 	// A pane mounts the first time any of it scrolls into view and stays
-	// mounted; only the routed one is `active`.
+	// mounted while Interest is on show; off-screen in the tab shell only the
+	// routed one is kept, since each list holds a screenful of photos.
 	let mounted = $state(interestTabs.map(() => false));
 	let paging = false;
 	let heading: number | null = null;
 	let restedPane: number | null = null;
 
-	const routed = $derived(interestTabIndex(page.url.pathname));
+	const routed = $derived(
+		interestTabIndex(active ? page.url.pathname : getInterestTab()),
+	);
 
 	const snap = new SnapPager({
 		count: () => TABS.length,
@@ -49,6 +59,7 @@
 		},
 		onRest: (pane) => {
 			onSettle(pane);
+			if (!active) return;
 			const landed = TABS[pane];
 			const pending = navigating.to?.url.pathname;
 			const ownReplacePending =
@@ -113,22 +124,22 @@
 	}}
 >
 	<div data-slot="interest-pane-views" class="w-full shrink-0 snap-start">
-		{#if mounted[0]}
+		{#if mounted[0] && (active || routed === 0)}
 			<ViewsGrid {ourProfileId} />
 		{/if}
 	</div>
 	<div data-slot="interest-pane-taps" class="w-full shrink-0 snap-start">
-		{#if mounted[1]}
-			<TapsReceivedList {ourProfileId} active={routed === 1} />
+		{#if mounted[1] && (active || routed === 1)}
+			<TapsReceivedList {ourProfileId} active={active && routed === 1} />
 		{/if}
 	</div>
 	<div data-slot="interest-pane-matches" class="w-full shrink-0 snap-start">
-		{#if mounted[2]}
-			<MatchesGrid active={routed === 2} />
+		{#if mounted[2] && (active || routed === 2)}
+			<MatchesGrid active={active && routed === 2} />
 		{/if}
 	</div>
 	<div data-slot="interest-pane-sent" class="w-full shrink-0 snap-start">
-		{#if mounted[3]}
+		{#if mounted[3] && (active || routed === 3)}
 			<SentTapsList {ourProfileId} />
 		{/if}
 	</div>

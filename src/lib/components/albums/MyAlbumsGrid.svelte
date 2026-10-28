@@ -1,5 +1,16 @@
+<script lang="ts" module>
+	import type { MyAlbum } from "$lib/model/messaging/albums";
+
+	// The last list seen per account, so coming back to the grid (from editing
+	// an album, say) shows it at once instead of flashing skeletons while it
+	// is fetched again.
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity -- only read once, as a mount's starting list
+	const seen = new Map<number, MyAlbum[]>();
+</script>
+
 <script lang="ts">
 	import { goto } from "$app/navigation";
+	import { page } from "$app/state";
 	import PlusIcon from "phosphor-svelte/lib/PlusIcon";
 	import { toast } from "svelte-sonner";
 
@@ -14,23 +25,29 @@
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import * as AlertDialog from "$lib/components/ui/alert-dialog";
 	import { Skeleton } from "$lib/components/ui/skeleton";
-	import type { MyAlbum } from "$lib/model/messaging/albums";
 	import AlbumTile from "./AlbumTile.svelte";
 
-	let albums = $state<MyAlbum[] | null>(null);
+	const owner: number | undefined = page.data.ourProfileId;
+	let albums = $state<MyAlbum[] | null>(
+		owner === undefined ? null : (seen.get(owner) ?? null),
+	);
 	let error = $state<unknown>(null);
 	let creating = $state(false);
 	let pendingDelete = $state<MyAlbum | null>(null);
 	let deleting = $state(false);
 
+	$effect(() => {
+		if (owner !== undefined && albums !== null) seen.set(owner, albums);
+	});
+
 	async function load() {
-		albums = null;
 		error = null;
 		try {
 			albums = await getMyAlbums();
 		} catch (err) {
 			console.error(err);
-			error = err;
+			// A list already on screen stays; only an empty grid shows the error.
+			if (albums === null) error = err;
 		}
 	}
 

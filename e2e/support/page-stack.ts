@@ -37,7 +37,12 @@ export async function openSettings(
 	if (reducedMotion) await page.emulateMedia({ reducedMotion });
 	await installTauriShim(page, { platform });
 	await page.goto(SETTINGS);
-	await pane(page).waitFor({ timeout: FIRST_ROUTE_COMPILE_MS });
+	// On a phone the tab shell shows the root, and the stack's pane waits
+	// hidden for the first push.
+	await pane(page).waitFor({
+		state: "attached",
+		timeout: FIRST_ROUTE_COMPILE_MS,
+	});
 	await page
 		.getByRole("link", { name: "App Settings" })
 		.waitFor({ timeout: FIRST_ROUTE_COMPILE_MS });

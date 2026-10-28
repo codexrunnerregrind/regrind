@@ -6,12 +6,11 @@
 		getOrCreateConversationsState,
 		setConversations,
 	} from "$lib/chat/conversations-context.svelte";
-	import { swipeToNavTab } from "$lib/components/shared/nav-tabs";
 	import NavBar from "$lib/components/shared/NavBar.svelte";
+	import { tabShellRoot } from "$lib/components/tab-shell/tab-shell-state.svelte";
 	import * as Card from "$lib/components/ui/card";
 	import * as Resizable from "$lib/components/ui/resizable";
 	import { below } from "$lib/util/breakpoints.svelte";
-	import { swipeTabs } from "$lib/util/swipe-tabs";
 	import ConversationScreen from "./[conversationId]/ConversationScreen.svelte";
 	import {
 		ComposerSheetsState,
@@ -81,26 +80,13 @@
 {/snippet}
 
 {#if mobile.current}
-	<!-- The conversation slides over a list that stays mounted underneath, so
-	     coming back finds it where it was. Inbox sits outside the (navbar)
-	     layout, so the tab-bar swipe is attached to the list here; the list's
-	     own Messages/Albums swipe nests inside and goes first. -->
+	<!-- The conversation slides over the tab shell, whose Inbox pane is the list,
+	     so coming back finds it where it was. -->
 	<LiveStack
 		basePath="/chat"
 		keyOf={(target) => target.params?.conversationId ?? null}
+		externalBase={() => tabShellRoot.current}
 	>
-		{#snippet base({ covered, uncovering })}
-			<main
-				class="flex min-h-0 flex-1 flex-col"
-				use:swipeTabs={{
-					onNext: () => swipeToNavTab(page.route.id, 1),
-					onPrev: () => swipeToNavTab(page.route.id, -1),
-				}}
-			>
-				<ConversationsList {covered} filtersLocked={uncovering} />
-			</main>
-			<NavBar ourProfileId={data.ourProfileId} />
-		{/snippet}
 		{#snippet sheet(id, { leaving })}
 			<main class="flex min-h-0 max-w-full flex-1 flex-col">
 				{@render conversationScreen(id, leaving)}

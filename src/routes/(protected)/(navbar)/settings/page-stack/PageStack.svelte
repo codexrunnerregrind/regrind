@@ -18,7 +18,19 @@
 	let {
 		scope,
 		children,
-	}: { scope: string; children?: import("svelte").Snippet } = $props();
+		rootPane,
+		rootElsewhere = false,
+	}: {
+		scope: string;
+		children?: import("svelte").Snippet;
+		/**
+		 * The scope's root screen when something else shows it (the tab shell):
+		 * this stack's own pane then stays out of the way, and a push snapshots
+		 * that screen instead.
+		 */
+		rootPane?: () => HTMLElement | null;
+		rootElsewhere?: boolean;
+	} = $props();
 
 	let pane: HTMLElement | null = $state(null);
 	let dim: HTMLElement | null = $state(null);
@@ -37,7 +49,7 @@
 			motion,
 		}),
 		motion,
-		livePane: () => pane,
+		livePane: () => rootPane?.() ?? pane,
 		reducedMotion: () => prefersReducedMotion.current,
 		scope: untrack(() => scope),
 		pushedFrom: pushedFromChain({
@@ -57,6 +69,11 @@
 		const snapshot = stack.ghost;
 		if (!snapshot) return;
 		snapshot.node.style.zIndex = ghostZ;
+		// A root screen snapshotted from the tab shell is a pane in its pager,
+		// not a fixed layer of its own.
+		snapshot.node.style.position = "fixed";
+		snapshot.node.style.inset = "0";
+		snapshot.node.classList.add("bg-background");
 		host.append(snapshot.node);
 		return () => snapshot.node.remove();
 	};
@@ -73,7 +90,10 @@
 		data-slot="page-stack-pane"
 		class={[
 			"fixed inset-0 bg-background pt-(--safe-area-top) pb-(--content-pb)",
-			{ "shadow-(--stack-edge)": motion.edge },
+			{
+				"shadow-(--stack-edge)": motion.edge,
+				"pointer-events-none invisible": rootElsewhere,
+			},
 		]}
 		style:z-index={liveZ}
 	>

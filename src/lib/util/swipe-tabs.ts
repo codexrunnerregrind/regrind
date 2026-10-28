@@ -56,6 +56,9 @@ type Directions = { next: boolean; prev: boolean; chained: boolean };
  * null if it should be skipped. A horizontal scroller opts out, unless it is
  * marked `data-swipe-tabs-chain`: then a swipe past whichever end it is
  * resting at goes to the tabs, as a nested pager's would.
+ *
+ * A `data-swipe-tabs-host` is itself the tabs' pager and takes every other
+ * swipe natively, so only the ones a chained pager hands it get through.
  */
 function openDirections(target: EventTarget | null): Directions | null {
 	if (document.querySelector(".pswp--open")) return null;
@@ -63,6 +66,8 @@ function openDirections(target: EventTarget | null): Directions | null {
 	let node = target instanceof Element ? target : null;
 	while (node && node !== document.body) {
 		if (node.hasAttribute("data-swipe-tabs-ignore")) return null;
+		if (node.hasAttribute("data-swipe-tabs-host"))
+			return open.chained ? open : null;
 		const style = getComputedStyle(node);
 		const scrollsX =
 			(style.overflowX === "auto" || style.overflowX === "scroll") &&

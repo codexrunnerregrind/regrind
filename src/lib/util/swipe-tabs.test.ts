@@ -222,4 +222,52 @@ describe("swipeTabs", () => {
 			expect(onPrev).not.toHaveBeenCalled();
 		});
 	});
+
+	describe("inside the tabs' own pager", () => {
+		function mountHost({ innerLeft }: { innerLeft: number | null }) {
+			const host = document.createElement("div");
+			host.setAttribute("data-swipe-tabs-host", "");
+			host.style.overflowX = "auto";
+			Object.defineProperties(host, {
+				scrollWidth: { value: 500 },
+				clientWidth: { value: 100 },
+				scrollLeft: { value: 200 },
+			});
+			const leaf = document.createElement("span");
+			if (innerLeft === null) host.append(leaf);
+			else {
+				const inner = document.createElement("div");
+				inner.style.overflowX = "auto";
+				inner.setAttribute("data-swipe-tabs-chain", "");
+				Object.defineProperties(inner, {
+					scrollWidth: { value: 400 },
+					clientWidth: { value: 100 },
+					scrollLeft: { value: innerLeft },
+				});
+				inner.append(leaf);
+				host.append(inner);
+			}
+			document.body.append(host);
+			const onNext = vi.fn();
+			const onPrev = vi.fn();
+			swipeTabs(host, { onNext, onPrev });
+			return { leaf, onNext, onPrev };
+		}
+
+		it("leaves its own swipes to it", () => {
+			const { leaf, onNext, onPrev } = mountHost({ innerLeft: null });
+			flick(leaf, -1);
+			flick(leaf, 1);
+			expect(onNext).not.toHaveBeenCalled();
+			expect(onPrev).not.toHaveBeenCalled();
+		});
+
+		it("takes a swipe an inner pager hands on past its end", () => {
+			const { leaf, onNext, onPrev } = mountHost({ innerLeft: 300 });
+			flick(leaf, -1);
+			flick(leaf, 1);
+			expect(onNext).toHaveBeenCalledOnce();
+			expect(onPrev).not.toHaveBeenCalled();
+		});
+	});
 });

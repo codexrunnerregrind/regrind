@@ -453,7 +453,8 @@ test("a back swipe started while the last one is still sliding out goes back fro
 	await page.evaluate(() => history.back());
 	await expect(page).toHaveURL(new RegExp(`${SETTINGS}$`));
 	await expect(ghost(page)).toHaveCount(0, { timeout: 5_000 });
-	await expect(pane(page)).toContainText("Sign Out");
+	// Back on the root, which the tab shell shows on a phone.
+	await expect(page.getByRole("button", { name: "Sign Out" })).toBeVisible();
 });
 
 test("canceling the system back gesture stays on the page", async ({
