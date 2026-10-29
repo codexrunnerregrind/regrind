@@ -2,6 +2,7 @@
 	import { Portal } from "bits-ui";
 	import { backOut, cubicIn } from "svelte/easing";
 	import { prefersReducedMotion } from "svelte/motion";
+	import type { TransitionConfig } from "svelte/transition";
 
 	import { httpStatusOf } from "$lib/api/api-error";
 	import { showErrorToast } from "$lib/api/error-toast";
@@ -112,14 +113,12 @@
 	}
 
 	// The sent emoji springs in with a little wobble.
-	function pop() {
-		return {
-			duration: popping ? 450 : 0,
-			easing: backOut,
-			css: (t: number) =>
-				`scale: ${0.3 + 0.7 * t}; rotate: ${(1 - t) * -25}deg;`,
-		};
-	}
+	const pop: (node: Element) => TransitionConfig = () => ({
+		duration: popping ? 450 : 0,
+		easing: backOut,
+		css: (t: number) =>
+			`scale: ${0.3 + 0.7 * t}; rotate: ${(1 - t) * -25}deg;`,
+	});
 
 	function fly(particle: Particle) {
 		return (node: HTMLElement) => {

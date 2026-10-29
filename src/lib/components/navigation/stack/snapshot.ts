@@ -70,10 +70,12 @@ function scrollCarriers({
 	// The pane may sit inside the tracked element, e.g. one tab of the shell.
 	let root: HTMLElement | null = pane;
 	while (root && !scrolledIn.has(root)) root = root.parentElement;
-	const scrolled = root && scrolledIn.get(root);
+	if (!root) return [];
+	const tracked = root;
+	const scrolled = scrolledIn.get(tracked);
 	if (!scrolled) return [];
 	return [...scrolled].flatMap((source) => {
-		if (!root.contains(source)) {
+		if (!tracked.contains(source)) {
 			scrolled.delete(source);
 			return [];
 		}
