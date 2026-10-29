@@ -37,6 +37,14 @@
 			title: "Import favorites",
 			back: "/settings/advanced",
 		},
+		[`${base}/advanced/places/import`]: {
+			title: "Import saved places",
+			back: "/settings/advanced",
+		},
+		[`${base}/advanced/restore`]: {
+			title: "Restore from backup",
+			back: "/settings/advanced",
+		},
 		[`${base}/appearance`]: { title: "Appearance", back: "/settings" },
 		[`${base}/profile`]: { title: "Edit Profile", back: "/settings" },
 	};

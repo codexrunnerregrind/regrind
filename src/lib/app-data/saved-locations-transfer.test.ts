@@ -9,6 +9,7 @@ import {
 	buildSavedPlacesExport,
 	mergeSavedPlaces,
 	parseSavedPlacesExport,
+	placeImportStatus,
 	SavedPlacesImportError,
 	serializeSavedPlacesExport,
 } from "./saved-locations-transfer";
@@ -134,5 +135,28 @@ describe("saved places transfer", () => {
 			}),
 		);
 		expect(data.places[0]?.favorite).toBe(true);
+	});
+});
+
+describe("placeImportStatus", () => {
+	it("tells new, to-be-starred and already saved places apart", () => {
+		const current = [madrid, lisbon];
+		expect(placeImportStatus(current, { ...madrid, favorite: false })).toBe(
+			"saved",
+		);
+		expect(placeImportStatus(current, { ...lisbon, favorite: true })).toBe(
+			"star",
+		);
+		expect(placeImportStatus(current, { ...lisbon, favorite: false })).toBe(
+			"saved",
+		);
+		expect(
+			placeImportStatus(current, {
+				name: "Porto",
+				lat: 41.1579,
+				lon: -8.6291,
+				favorite: true,
+			}),
+		).toBe("new");
 	});
 });

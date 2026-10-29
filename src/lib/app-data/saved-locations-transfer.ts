@@ -82,6 +82,22 @@ export function parseSavedPlacesExport(text: string): SavedPlacesExport {
 	return parsed.data;
 }
 
+/**
+ * What importing a place would do: add it, star an existing recent at the same
+ * spot, or nothing because it is already saved.
+ */
+export type PlaceImportStatus = "new" | "star" | "saved";
+
+export function placeImportStatus(
+	current: readonly SavedLocation[],
+	place: ExportedPlace,
+): PlaceImportStatus {
+	const key = spotKey(place);
+	const match = current.find((location) => spotKey(location) === key);
+	if (!match) return "new";
+	return place.favorite && !match.favorite ? "star" : "saved";
+}
+
 export type SavedPlacesImportResult = {
 	locations: SavedLocation[];
 	added: number;
@@ -146,13 +162,10 @@ export function mergeSavedPlaces(
 }
 
 export async function importSavedPlaces(
-	data: SavedPlacesExport,
+	places: readonly ExportedPlace[],
 ): Promise<Omit<SavedPlacesImportResult, "locations">> {
 	const { savedLocations } = await getPreferences();
-	const { locations, ...result } = mergeSavedPlaces(
-		savedLocations,
-		data.places,
-	);
+	const { locations, ...result } = mergeSavedPlaces(savedLocations, places);
 	await setPreferences({ savedLocations: locations });
 	return result;
 }

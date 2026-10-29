@@ -26,7 +26,8 @@
 		loadFavoritesToExport,
 		serializeFavoritesExport,
 	} from "$lib/favorites/transfer";
-	import { type SaveFileResult, saveTextFile } from "$lib/platform/data-file";
+	import { saveTextFile } from "$lib/platform/data-file";
+	import { reportSaved } from "$lib/platform/save-toast";
 	import FavoriteSelectList from "../FavoriteSelectList.svelte";
 
 	let entries = $state<FavoriteTransferEntry[] | null>(kept.entries);
@@ -79,47 +80,6 @@
 		}
 	}
 
-	// `shareFromGesture` is not a failure: the file is ready and only needs a
-	// fresh tap, so it is offered as a button rather than reported as an error.
-	function report(
-		result: SaveFileResult,
-		count: number,
-		toastId: string | number,
-	): void {
-		const shareAgain = result.shareFromGesture;
-		if (shareAgain !== undefined) {
-			toast.info("Ready to save", {
-				id: toastId,
-				description: "Tap to choose where it goes.",
-				duration: Infinity,
-				action: {
-					label: "Save",
-					onClick: () => {
-						const next = toast.loading("Saving…");
-						shareAgain()
-							.then((again) => report(again, count, next))
-							.catch((caught: unknown) => {
-								toast.dismiss(next);
-								showErrorToast({
-									label: "Couldn't export favorites",
-									error: caught,
-								});
-							});
-					},
-				},
-			});
-			return;
-		}
-		if (result.cancelled) {
-			toast.dismiss(toastId);
-			return;
-		}
-		toast.success(
-			count === 1 ? "Exported 1 favorite" : `Exported ${count} favorites`,
-			{ id: toastId },
-		);
-	}
-
 	async function save() {
 		if (saving || chosen.length === 0) return;
 		saving = true;
@@ -129,7 +89,15 @@
 				favoritesExportFilename(),
 				serializeFavoritesExport(buildFavoritesExport(chosen)),
 			);
-			report(result, chosen.length, toastId);
+			const count = chosen.length;
+			reportSaved(result, {
+				toastId,
+				success:
+					count === 1
+						? "Exported 1 favorite"
+						: `Exported ${count} favorites`,
+				errorLabel: "Couldn't export favorites",
+			});
 		} catch (caught) {
 			console.error(caught);
 			toast.dismiss(toastId);

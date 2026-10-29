@@ -14,6 +14,7 @@
 	import { toast } from "svelte-sonner";
 
 	import ToastUnimplemented from "$lib/components/feedback/ToastUnimplemented.svelte";
+	import PreferenceSwitchSetting from "$lib/components/settings/PreferenceSwitchSetting.svelte";
 	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
 	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
 	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
@@ -29,7 +30,6 @@
 	import AppsMenuEntrySetting from "./AppsMenuEntrySetting.svelte";
 	import AutomaticUpdatesSetting from "./AutomaticUpdatesSetting.svelte";
 	import NotificationSettings from "./NotificationSettings.svelte";
-	import PreferenceSwitchSetting from "./PreferenceSwitchSetting.svelte";
 	import UnitsSetting from "./UnitsSetting.svelte";
 
 	function unimplemented(feature: string, issue: number) {

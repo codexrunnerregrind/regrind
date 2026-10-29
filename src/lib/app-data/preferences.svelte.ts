@@ -154,6 +154,48 @@ const accountPreferenceKeys = [
 	"matchesCardStyle",
 ] as const;
 
+/**
+ * Left out of backups: tied to this device's screen, to where the phone is, to
+ * this account's media, or carried in a section of their own (saved places).
+ */
+const portablePreferencesSchema = preferencesSchema.omit({
+	backdropBlurCalibration: true,
+	backdropBlurQuality: true,
+	geohash: true,
+	currentGeohash: true,
+	usingCurrentLocation: true,
+	savedLocations: true,
+	onboardingComplete: true,
+	mediaSends: true,
+});
+
+export type PortablePreferences = z.infer<typeof portablePreferencesSchema>;
+
+export function portablePreferences(
+	preferences: Preferences,
+): PortablePreferences {
+	return portablePreferencesSchema.parse(preferences);
+}
+
+/**
+ * The backed-up values this version understands, field by field, so one
+ * unknown or invalid entry doesn't cost the rest. Keys the file lacks stay out,
+ * leaving the current value alone.
+ */
+export function readPortablePreferences(
+	values: Record<string, unknown>,
+): Partial<Preferences> {
+	const shape: Record<string, z.ZodType> = portablePreferencesSchema.shape;
+	const read: Record<string, unknown> = {};
+	for (const [key, value] of Object.entries(values)) {
+		if (!Object.hasOwn(shape, key)) continue;
+		const parsed = shape[key]?.safeParse(value);
+		if (parsed?.success && parsed.data !== undefined)
+			read[key] = parsed.data;
+	}
+	return read;
+}
+
 const GLOBAL_PATH = "preferences.data";
 
 function accountPath(profileId: number): string {
