@@ -50,6 +50,7 @@
 
 <PagerTrack
 	data-slot="interest-pager"
+	role="main"
 	class="screen-nav-host"
 	style="--interest-header: calc({headerHeight}px - var(--safe-area-top))"
 	count={interestTabs.length}

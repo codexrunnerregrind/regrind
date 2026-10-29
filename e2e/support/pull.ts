@@ -3,8 +3,10 @@ import type { Locator, Page } from "@playwright/test";
 import { FIRST_ROUTE_COMPILE_MS, installTauriShim } from "./app";
 
 export const BUTTON_ROW_PX = 56;
-export const CONVERSATION_ROW = "a[href^='/chat/']";
 export const CONVERSATIONS_SCROLLER = '[data-slot="conversations-scroller"]';
+// Within the list: the tab shell keeps neighbouring screens mounted, and those
+// have links to conversations of their own.
+export const CONVERSATION_ROW = `${CONVERSATIONS_SCROLLER} a[href^='/chat/']`;
 
 export type PullSnapshot = {
 	phase: string | undefined;
@@ -62,6 +64,12 @@ export async function installFakeOverscroll(page: Page): Promise<void> {
 	});
 }
 
+/**
+ * The refresh control on show. The tab shell keeps neighbouring screens and
+ * sub-tabs mounted, each with its own control, inside inert panes.
+ */
+export const REFRESH_CONTROL = "[data-refresh-phase]:not([inert] *)";
+
 export async function openInbox(page: Page) {
 	await installTauriShim(page);
 	await installFakeOverscroll(page);
@@ -70,7 +78,7 @@ export async function openInbox(page: Page) {
 		.locator(CONVERSATION_ROW)
 		.first()
 		.waitFor({ timeout: FIRST_ROUTE_COMPILE_MS });
-	await page.locator("[data-refresh-phase]").waitFor({ state: "attached" });
+	await page.locator(REFRESH_CONTROL).waitFor({ state: "attached" });
 	await page.waitForTimeout(600);
 }
 
@@ -89,7 +97,7 @@ export async function driveInOneGesture<K extends string>(
 		await page.evaluate(`(async () => {
 		const scroller = document.querySelector('${CONVERSATIONS_SCROLLER}');
 		if (!scroller) throw new Error("conversations scroller not found");
-		const overlay = document.querySelector("[data-refresh-phase]");
+		const overlay = document.querySelector('${REFRESH_CONTROL}');
 		if (!overlay) throw new Error("refresh control not found");
 		const band = overlay.querySelector('[data-slot="refresh-band"]');
 		if (!band) throw new Error("refresh band not found");

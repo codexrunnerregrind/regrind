@@ -15,6 +15,7 @@ import {
 	CONVERSATIONS_SCROLLER,
 	driveInOneGesture,
 	openInbox,
+	REFRESH_CONTROL,
 	refreshButton,
 	topOf,
 } from "./support/pull";
@@ -37,10 +38,7 @@ const SLIDE_SLIP_PX = 2;
 
 async function openRefreshableTaps(page: Page) {
 	await openTaps(page);
-	await page
-		.locator("[data-refresh-phase]")
-		.first()
-		.waitFor({ state: "attached" });
+	await page.locator(REFRESH_CONTROL).first().waitFor({ state: "attached" });
 	await page.waitForTimeout(600);
 }
 
@@ -49,7 +47,7 @@ async function openBrowse(page: Page) {
 	await installTauriShim(page);
 	await openGrid(page);
 	await page.locator(BROWSE_TILE).first().waitFor();
-	await page.locator("[data-refresh-phase]").waitFor({ state: "attached" });
+	await page.locator(REFRESH_CONTROL).waitFor({ state: "attached" });
 	await page.waitForTimeout(600);
 }
 

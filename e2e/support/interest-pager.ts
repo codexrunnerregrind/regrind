@@ -9,7 +9,9 @@ import {
 
 export const TAPS = "/interest/taps";
 export const VIEWS = "/interest/views";
-export const TAP_ROW = 'a[href^="/profile/"]';
+// Within the taps list: the neighbouring lists are mounted too, with profile
+// links of their own.
+export const TAP_ROW = '[data-slot="taps-scroller"] a[href^="/profile/"]';
 export const PAGER = '[data-slot="interest-pager"]';
 export const VIEWS_PANE = '[data-slot="interest-pane-views"]';
 export const TAPS_PANE = '[data-slot="interest-pane-taps"]';
