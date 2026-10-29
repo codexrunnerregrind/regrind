@@ -12,6 +12,7 @@
 		ids,
 		activeId,
 		ourProfileId,
+		profileThumbHash = null,
 		onactive,
 		extend,
 	}: {
@@ -19,6 +20,7 @@
 		ids: number[];
 		activeId: number;
 		ourProfileId: number;
+		profileThumbHash?: string | null;
 		/** The profile a swipe landed on, as soon as it is committed to. */
 		onactive?: (profileId: number) => void;
 		/** Grows `ids` past what was loaded when the profile was opened. */
@@ -156,6 +158,9 @@
 						profileId={pane.id}
 						{ourProfileId}
 						active={pane.index === index}
+						profileThumbHash={pane.index === index
+							? profileThumbHash
+							: null}
 						{register}
 					/>
 				</div>

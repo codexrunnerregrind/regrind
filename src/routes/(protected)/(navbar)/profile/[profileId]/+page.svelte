@@ -14,6 +14,9 @@
 
 	const ourProfileId = $derived(data.ourProfileId);
 	const routeId = $derived(Number(page.params.profileId));
+	const profileThumbHash = $derived(
+		page.url.searchParams.get("profileThumbHash"),
+	);
 
 	/** The list this profile was opened from, or just this profile on its own. */
 	function deckFor(profileId: number): ProfileDeck {
@@ -89,4 +92,5 @@
 	{ourProfileId}
 	{onactive}
 	extend={deck.extend ? extend : undefined}
+	{profileThumbHash}
 />

@@ -3,7 +3,7 @@
 	import "@fontsource-variable/ibm-plex-sans/wght-italic.css";
 
 	import "../layout.css";
-	import { afterNavigate, beforeNavigate } from "$app/navigation";
+	import { afterNavigate, beforeNavigate, onNavigate } from "$app/navigation";
 	import IconContext from "phosphor-svelte/lib/IconContext";
 	import { onMount } from "svelte";
 	import { toast, Toaster } from "svelte-sonner";
@@ -113,6 +113,7 @@
 	});
 
 	import { env } from "$env/dynamic/public";
+	import type { Navigation } from "@sveltejs/kit";
 
 	import faviconPng from "$lib/assets/favicon.png";
 	import AccountStatusAlert from "$lib/components/feedback/AccountStatusAlert.svelte";
@@ -148,6 +149,26 @@
 		if (shown) rememberScreen(shown);
 	});
 	afterNavigate(() => settleSwipeBack());
+
+	onNavigate((navigation: Navigation) => {
+		if (!document.startViewTransition) return;
+
+		const fromPath = navigation.from?.url.pathname ?? "";
+		const toPath = navigation.to?.url.pathname ?? "";
+
+		const isThumbnailTransition =
+			(fromPath === "/" && toPath.startsWith("/profile")) ||
+			(toPath === "/" && fromPath.startsWith("/profile"));
+
+		if (!isThumbnailTransition) return;
+
+		return new Promise<void>((resolve) => {
+			document.startViewTransition(async () => {
+				resolve();
+				await navigation.complete;
+			});
+		});
+	});
 
 	$effect(() => {
 		applyBackdropBlurQuality();

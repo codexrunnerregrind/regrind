@@ -206,7 +206,7 @@
 
 {#if href !== null}
 	<a
-		{href}
+		href={href + "?profileThumbHash=" + (mediaHash ?? "")}
 		{onclick}
 		aria-label={hasVisibleText ? undefined : "Profile"}
 		class={[
@@ -214,6 +214,9 @@
 			{ "aspect-3/4": portrait, "aspect-square": !portrait },
 			className,
 		]}
+		style:view-transition-name={mediaHash
+			? `thumb-${mediaHash}`
+			: undefined}
 	>
 		{@render content()}
 	</a>
