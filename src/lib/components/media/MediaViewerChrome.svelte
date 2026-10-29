@@ -21,6 +21,7 @@
 		type MediaViewerStamp,
 	} from "$lib/chat/media-viewer-chrome";
 	import { hapticImpact, hapticNotification } from "$lib/platform/haptics";
+	import { trackKeyboardOverlap } from "$lib/platform/keyboard-inset";
 	import { formatTimeRelativeCustom } from "$lib/util/format-time";
 	import { HoldGesture } from "$lib/util/hold-gesture.svelte";
 	import { profileMediaUrl } from "$lib/util/media";
@@ -71,6 +72,11 @@
 			style.removeProperty("--viewer-bar-height");
 		}
 	});
+	// --keyboard-height misses a keyboard reopened in the viewer; measure it.
+	let keyboardLift = $state(0);
+	$effect(() =>
+		trackKeyboardOverlap(pswp.element, (px) => (keyboardLift = px)),
+	);
 	// Once there is something to send, the bar becomes the chat composer's: the
 	// tap and chat buttons give up their place to a single send button beside
 	// the field, and give it their width back when the draft is cleared.
@@ -479,9 +485,14 @@
 		<!-- The reply bar: a pill field and two round buttons on the viewer's own
 		     chip fill, matching the composers elsewhere in the app. Floats over the
 		     photo on a scrim, so the controls carry their own fill (blurred, since
-		     what's behind them is the photo rather than a bar). -->
+		     what's behind them is the photo rather than a bar).
+		     Lifted by what the keyboard covers of the viewer (see `keyboardLift`).
+		     A translate, so the height the media is padded by stays put. -->
 		<form
 			bind:clientHeight={barHeight}
+			style:transform={keyboardLift > 0
+				? `translateY(-${keyboardLift}px)`
+				: undefined}
 			class="pswp__hide-on-close pointer-events-auto relative flex items-center bg-linear-to-t from-black/70 to-transparent px-screen pt-6 pb-[calc(26px+var(--safe-area-bottom,0px))]"
 			onpointerdown={stopPointer}
 			onsubmit={sendReply}

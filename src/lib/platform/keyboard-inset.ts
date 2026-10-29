@@ -133,3 +133,45 @@ export function applyKeyboardInset(): () => void {
 		root.style.removeProperty("--keyboard-height");
 	};
 }
+
+/**
+ * Reports how far the keyboard covers the bottom of `element`, measured
+ * against the visual viewport so it holds on every iOS keyboard path and stays
+ * 0 where the webview is resized around the keys.
+ */
+export function trackKeyboardOverlap(
+	element: HTMLElement | undefined,
+	onChange: (overlap: number) => void,
+): () => void {
+	const viewport = window.visualViewport;
+	if (!viewport || !element) return () => {};
+
+	const measure = () => {
+		const bottom = element.getBoundingClientRect().bottom;
+		onChange(
+			Math.max(
+				0,
+				Math.round(bottom - viewport.offsetTop - viewport.height),
+			),
+		);
+	};
+	const measureAfterFocus = () => {
+		measure();
+		requestAnimationFrame(measure);
+	};
+
+	viewport.addEventListener("resize", measure);
+	viewport.addEventListener("scroll", measure);
+	window.addEventListener("resize", measure);
+	document.addEventListener("focusin", measureAfterFocus);
+	document.addEventListener("focusout", measureAfterFocus);
+	measure();
+
+	return () => {
+		viewport.removeEventListener("resize", measure);
+		viewport.removeEventListener("scroll", measure);
+		window.removeEventListener("resize", measure);
+		document.removeEventListener("focusin", measureAfterFocus);
+		document.removeEventListener("focusout", measureAfterFocus);
+	};
+}
