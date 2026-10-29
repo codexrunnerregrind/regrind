@@ -35,13 +35,13 @@
 			],
 			"versions": [
 				{
-					"version": "0.1.0.18",
-					"buildVersion": "0.1.0.18",
-					"date": "2026-10-26",
-					"localizedDescription": "- Discreet app icons\n- Chat media sorted by most sent\n- Profiles show an estimated account age\n- Save the rest of a photo set from the toast\n- Block button and account footer replace the profile menu\n- Toasts dismiss with a tap or any swipe",
-					"downloadURL": "https://github.com/codexrunnerregrind/regrind/releases/download/v0.1.0-beta.18/regrind-v0.1.0-beta.18.ipa",
-					"size": 44636452,
-					"sha256": "404722828ba2d024a229369a8060f8d105c5a5b46687e6e0394d2a9005ffa444",
+					"version": "0.1.0.19",
+					"buildVersion": "0.1.0.19",
+					"date": "2026-10-29",
+					"localizedDescription": "- For You profiles on the grid\n- Backup and restore under Settings > Advanced\n- Best matches tab in Interest\n- Long-press the tap button to pick a tap type\n- Grid filter presets\n- Last online time on the grid\n- Common tags highlighted on profiles\n- Saved media goes into a folder per profile\n- Fixed a crash at launch when the push token fetch fails",
+					"downloadURL": "https://github.com/codexrunnerregrind/regrind/releases/download/v0.1.0-beta.19/regrind-v0.1.0-beta.19.ipa",
+					"size": 44684625,
+					"sha256": "ce5bc46a0784d49811f688b83b0fb0c61105cddf181a4611b41562b05a26884f",
 					"minOSVersion": "14.0"
 				}
 			]
