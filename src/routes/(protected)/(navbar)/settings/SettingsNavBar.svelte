@@ -28,13 +28,22 @@
 			title: "Credits & Licenses",
 			back: "/settings/app",
 		},
-		[`${base}/app/favorites/export`]: {
+		[`${base}/advanced`]: { title: "Advanced", back: "/settings" },
+		[`${base}/advanced/favorites/export`]: {
 			title: "Export favorites",
-			back: "/settings/app",
+			back: "/settings/advanced",
 		},
-		[`${base}/app/favorites/import`]: {
+		[`${base}/advanced/favorites/import`]: {
 			title: "Import favorites",
-			back: "/settings/app",
+			back: "/settings/advanced",
+		},
+		[`${base}/advanced/backup`]: {
+			title: "Create backup",
+			back: "/settings/advanced",
+		},
+		[`${base}/advanced/restore`]: {
+			title: "Restore from backup",
+			back: "/settings/advanced",
 		},
 		[`${base}/appearance`]: { title: "Appearance", back: "/settings" },
 		[`${base}/profile`]: { title: "Edit Profile", back: "/settings" },
