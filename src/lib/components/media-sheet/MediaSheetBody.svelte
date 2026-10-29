@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from "svelte";
+	import type { Attachment } from "svelte/attachments";
 
 	import { preferredScrollBehavior } from "$lib/util/reduced-motion";
 
@@ -86,6 +87,30 @@
 		};
 	}
 
+	const holdSizeWhileTouched: Attachment<HTMLElement> = (scroller) => {
+		let release: (() => void) | null = null;
+		const hold = () => {
+			release ??= holdSize();
+		};
+		const releaseOnceUntouched = (event: TouchEvent) => {
+			if (event.touches.length > 0) return;
+			release?.();
+			release = null;
+		};
+		scroller.addEventListener("touchstart", hold, { passive: true });
+		scroller.addEventListener("touchend", releaseOnceUntouched, {
+			passive: true,
+		});
+		scroller.addEventListener("touchcancel", releaseOnceUntouched, {
+			passive: true,
+		});
+		return () => {
+			scroller.removeEventListener("touchstart", hold);
+			scroller.removeEventListener("touchend", releaseOnceUntouched);
+			scroller.removeEventListener("touchcancel", releaseOnceUntouched);
+		};
+	};
+
 	function onScroll() {
 		const scrollTop = sheet?.scrollTop ?? 0;
 		atTop = scrollTop < 1;
@@ -138,10 +163,11 @@
 	data-slot="sheet-scroller"
 	data-at-top={fullsize && atTop ? "" : undefined}
 	onscroll={onScroll}
+	{@attach holdSizeWhileTouched}
 	class={[
 		"group/sheet no-scrollbar overflow-x-hidden overscroll-contain select-none",
 		{
-			"h-full scroll-pb-[calc(--spacing(30)+var(--bar-content-gap))] overflow-y-auto":
+			"h-full scroll-pb-(--sheet-actions-clearance) overflow-y-auto":
 				fullsize,
 			"h-fit": !fullsize,
 			"touch-pan-down": fullsize && atTop,
@@ -158,7 +184,7 @@
 	<div
 		data-slot="sheet-panel"
 		class={[
-			"flex flex-col rounded-t-4xl bg-popover px-4 pb-20 shadow-xl ring-1 ring-border ring-inset",
+			"flex flex-col rounded-t-4xl bg-popover px-4 pb-(--sheet-panel-padding-bottom) shadow-xl ring-1 ring-border ring-inset",
 			{ "min-h-full": fullsize },
 		]}
 	>

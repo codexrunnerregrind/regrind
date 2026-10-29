@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import { DEV_SERVER_URL } from "../playwright.config";
 import {
 	DEMO_CONVERSATION,
 	installTauriShim,
@@ -260,58 +261,78 @@ test.describe("composer stickers sheet", () => {
 		await page.waitForTimeout(800);
 
 		type Sample = { at: number; offset: number; opacity: number };
-		const flight = await tile.evaluate(
-			(tileElement) =>
-				new Promise<{ turn: Sample; samples: Sample[] }>((resolve) => {
-					const pill = () =>
-						document.querySelector<HTMLElement>(
-							'[data-slot="sheet-actions"]',
-						)!;
-					const samples: Sample[] = [];
-					let started = 0;
-					const measure = (): Sample => {
-						const style = getComputedStyle(pill());
-						return {
-							at: performance.now() - started,
-							offset: new DOMMatrix(style.transform).m42,
-							opacity: Number(style.opacity),
+		const { samples, picked } = await tile.evaluate(
+			(tileElement, wellOnItsWayOutPx) =>
+				new Promise<{ samples: Sample[]; picked: number }>(
+					(resolve) => {
+						const samples: Sample[] = [];
+						let picked = -1;
+						const sample = (at: number) => {
+							const pill = document.querySelector<HTMLElement>(
+								'[data-slot="sheet-actions"]',
+							);
+							if (!pill) return resolve({ samples, picked });
+							const style = getComputedStyle(pill);
+							const { m42: offset } = new DOMMatrix(
+								style.transform,
+							);
+							samples.push({
+								at,
+								offset,
+								opacity: Number(style.opacity),
+							});
+							if (picked < 0 && offset >= wellOnItsWayOutPx) {
+								picked = samples.length - 1;
+								(tileElement as HTMLElement).click();
+							}
+							if (picked >= 0 && at - samples[picked]!.at >= 900)
+								resolve({ samples, picked });
+							else requestAnimationFrame(sample);
 						};
-					};
-					(tileElement as HTMLElement).click();
-					setTimeout(() => {
-						started = performance.now();
-						const turn = measure();
 						(tileElement as HTMLElement).click();
-						const sample = () => {
-							samples.push(measure());
-							if (performance.now() - started < 900)
-								requestAnimationFrame(sample);
-							else resolve({ turn, samples });
-						};
 						requestAnimationFrame(sample);
-					}, 260);
-				}),
+					},
+				),
+			40,
 		);
 
-		const { turn, samples } = flight;
-		expect(turn.offset, "the pill was well on its way out").toBeGreaterThan(
-			20,
+		expect(picked, "the pill was well on its way out").toBeGreaterThan(0);
+		const pick = samples[picked]!;
+		const lastOut = samples[picked - 1]!;
+		const outboundPxPerMs =
+			(pick.offset - lastOut.offset) / (pick.at - lastOut.at);
+		const sincePick = samples
+			.slice(picked)
+			.map(({ at, ...style }) => ({ at: at - pick.at, ...style }));
+		const turned = sincePick.findIndex(
+			({ offset }, index) =>
+				(sincePick[index + 1]?.offset ?? offset) <= offset,
 		);
+		const turn = sincePick[turned]!;
+		const homeward = sincePick.slice(turned);
 		expect(
-			Math.max(...samples.map(({ offset }) => offset)),
+			turned,
+			"the pill turns back within two frames of the pick",
+		).toBeLessThanOrEqual(2);
+		expect(
+			turn.offset - pick.offset,
+			"the pill turns where its flight out had got to",
+		).toBeLessThanOrEqual(2 * outboundPxPerMs * turn.at + 1);
+		expect(
+			Math.max(...homeward.map(({ offset }) => offset)),
 			"the pill turns back without dropping below where it was",
 		).toBeLessThanOrEqual(turn.offset + 25);
 		expect(
-			Math.min(...samples.map(({ opacity }) => opacity)),
+			Math.min(...homeward.map(({ opacity }) => opacity)),
 			"the pill never fades further once it turns",
 		).toBeGreaterThanOrEqual(turn.opacity - 0.15);
 		expect(
-			samples.some(
+			homeward.some(
 				({ at, offset }) => at <= 300 && offset < turn.offset / 2,
 			),
 			"the pill is halfway home within 300 ms, not stalled",
 		).toBe(true);
-		expect(samples.at(-1)).toMatchObject({ offset: 0, opacity: 1 });
+		expect(homeward.at(-1)).toMatchObject({ offset: 0, opacity: 1 });
 	});
 
 	test("switching tabs keeps the GIF search and its results", async ({
@@ -410,37 +431,41 @@ test.describe("sticker grid layout", () => {
 		}
 	});
 
-	test("the Gaymoji skeleton fills three whole rows at every width", async ({
-		page,
-	}) => {
-		await holdDemoRequests(page, { pathPrefix: GAYMOJI_MANIFEST_PATH });
-		await openStickers(page);
-		await stickersTab(page, { name: "Gaymoji" }).click();
-		const skeleton = gaymojiPanel(page).locator(STICKER_GRID_SKELETON);
-		await expect(skeleton).toBeVisible();
+	test.describe(() => {
+		test.use({ baseURL: DEV_SERVER_URL });
 
-		for (const { viewport, gaymoji } of LAYOUTS) {
-			await page.setViewportSize({ width: viewport, height: 800 });
-			await page.waitForTimeout(100);
-			const layout = await skeleton.evaluate((grid) => {
-				const tiles = [...grid.children].filter((tile) =>
-					tile.checkVisibility(),
-				);
-				return {
-					tiles: tiles.length,
-					rows: new Set(
-						tiles.map((tile) =>
-							Math.round(tile.getBoundingClientRect().top),
-						),
-					).size,
-				};
-			});
-			expect({ viewport, ...layout }).toEqual({
-				viewport,
-				tiles: gaymoji * 3,
-				rows: 3,
-			});
-		}
+		test("the Gaymoji skeleton fills three whole rows at every width", async ({
+			page,
+		}) => {
+			await holdDemoRequests(page, { pathPrefix: GAYMOJI_MANIFEST_PATH });
+			await openStickers(page);
+			await stickersTab(page, { name: "Gaymoji" }).click();
+			const skeleton = gaymojiPanel(page).locator(STICKER_GRID_SKELETON);
+			await expect(skeleton).toBeVisible();
+
+			for (const { viewport, gaymoji } of LAYOUTS) {
+				await page.setViewportSize({ width: viewport, height: 800 });
+				await page.waitForTimeout(100);
+				const layout = await skeleton.evaluate((grid) => {
+					const tiles = [...grid.children].filter((tile) =>
+						tile.checkVisibility(),
+					);
+					return {
+						tiles: tiles.length,
+						rows: new Set(
+							tiles.map((tile) =>
+								Math.round(tile.getBoundingClientRect().top),
+							),
+						).size,
+					};
+				});
+				expect({ viewport, ...layout }).toEqual({
+					viewport,
+					tiles: gaymoji * 3,
+					rows: 3,
+				});
+			}
+		});
 	});
 
 	test("GIF tiles are 4:3 and Gaymoji tiles are square", async ({ page }) => {
@@ -491,9 +516,17 @@ test.describe("composer sheet tab bars", () => {
 			await page.locator(tile).first().click();
 			const pill = page.locator('[data-slot="sheet-actions"]');
 			await expect(pill).toBeVisible();
-			await pill.evaluate((el) =>
-				Promise.all(el.getAnimations().map((a) => a.finished)),
-			);
+			await expect
+				.poll(() =>
+					pill.evaluate((el) => {
+						const style = getComputedStyle(el);
+						return {
+							offset: new DOMMatrix(style.transform).m42,
+							opacity: Number(style.opacity),
+						};
+					}),
+				)
+				.toEqual({ offset: 0, opacity: 1 });
 			const gap = async () => {
 				const pillBox = (await pill.boundingBox())!;
 				const barBox = (await bar.boundingBox())!;
