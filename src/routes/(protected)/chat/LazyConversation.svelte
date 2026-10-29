@@ -50,7 +50,7 @@
 {:else}
 	<div
 		data-slot="conversation-placeholder"
-		class="box-content h-24 shrink-0 rounded-2xl border border-transparent bg-muted/30"
+		class="h-(--conversation-row-height) shrink-0 rounded-2xl bg-muted/30"
 		{@attach enqueue}
 		{@attach promoteInView}
 		use:observeIntersection={{

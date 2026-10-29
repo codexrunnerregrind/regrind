@@ -6,7 +6,10 @@ import { MountQueue } from "./mount-queue";
 
 const BUDGET_MS = 4;
 
-function harness({ mountCostMs = 0 }: { mountCostMs?: number } = {}) {
+function harness({
+	mountCostMs = 0,
+	onDrained,
+}: { mountCostMs?: number; onDrained?: () => void } = {}) {
 	let clock = 0;
 	let lastHandle = 0;
 	const frames = new Map<number, () => void>();
@@ -22,6 +25,7 @@ function harness({ mountCostMs = 0 }: { mountCostMs?: number } = {}) {
 		now: () => clock,
 		flush: () => (clock += mountCostMs),
 		budgetMs: BUDGET_MS,
+		onDrained,
 	});
 
 	function placeholder(name: string) {
@@ -142,6 +146,22 @@ describe("MountQueue", () => {
 		runFrame();
 
 		expect(pendingFrames()).toBe(0);
+	});
+
+	it("reports drained once the last row mounts, not before", () => {
+		const onDrained = vi.fn();
+		const { add, runFrame } = harness({
+			mountCostMs: BUDGET_MS,
+			onDrained,
+		});
+		add({ name: "a" });
+		add({ name: "b" });
+
+		runFrame();
+		expect(onDrained).not.toHaveBeenCalled();
+
+		runFrame();
+		expect(onDrained).toHaveBeenCalledOnce();
 	});
 
 	it("never mounts a cancelled row", () => {

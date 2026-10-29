@@ -19,6 +19,7 @@ type MountQueueOptions = {
 	now?: () => number;
 	flush?: () => void;
 	budgetMs?: number;
+	onDrained?: () => void;
 };
 
 function precedes({ task, other }: { task: MountTask; other: MountTask }) {
@@ -38,6 +39,7 @@ export class MountQueue {
 	#now: () => number;
 	#flush: () => void;
 	#budgetMs: number;
+	#onDrained: (() => void) | undefined;
 
 	constructor({
 		requestFrame = (callback) => requestAnimationFrame(callback),
@@ -45,12 +47,14 @@ export class MountQueue {
 		now = () => performance.now(),
 		flush = () => flushSync(),
 		budgetMs = FRAME_BUDGET_MS,
+		onDrained,
 	}: MountQueueOptions = {}) {
 		this.#requestFrame = requestFrame;
 		this.#cancelFrame = cancelFrame;
 		this.#now = now;
 		this.#flush = flush;
 		this.#budgetMs = budgetMs;
+		this.#onDrained = onDrained;
 	}
 
 	add({ node, mount }: { node: Node; mount: () => void }): MountTicket {
@@ -95,6 +99,8 @@ export class MountQueue {
 		} finally {
 			if ([...this.#tasks].some((task) => task.node.isConnected)) {
 				this.#schedule();
+			} else {
+				this.#onDrained?.();
 			}
 		}
 	}

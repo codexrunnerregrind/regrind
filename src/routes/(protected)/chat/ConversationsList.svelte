@@ -1,6 +1,12 @@
+<script lang="ts" module>
+	// A mounted row's height, which placeholders take. Kept across remounts so a
+	// list rebuilt at its saved scroll lays out as it was left.
+	let rowHeight = $state(90);
+</script>
+
 <script lang="ts">
 	import PushPinIcon from "phosphor-svelte/lib/PushPinIcon";
-	import { onDestroy, tick } from "svelte";
+	import { onDestroy, tick, untrack } from "svelte";
 
 	import { getConversations } from "$lib/chat/conversations-context.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
@@ -40,11 +46,13 @@
 	} = $props();
 
 	const EAGER_COUNT = 10;
+	const ROW_OVERSCAN = 3;
+	const PLACEHOLDER = '[data-slot="conversation-placeholder"]';
 
 	const conversations: ConversationsState = getConversations();
 	const mobile = below("split");
 	const visibleEntries = $derived(conversations.visibleEntries);
-	const mountQueue = new MountQueue();
+	const mountQueue = new MountQueue({ onDrained: () => (restoring = false) });
 
 	onDestroy(() => mountQueue.destroy());
 
@@ -216,6 +224,54 @@
 	const restEntries = $derived(
 		visibleEntries.filter((entry) => !entry.data.pinned),
 	);
+
+	// Back from a profile the list mounts again at its saved scroll: the rows
+	// on screen there mount at once instead of flashing as placeholders.
+	const restoredRows = untrack(() => {
+		const top = conversations.scrollY;
+		if (top <= 0) return null;
+		return {
+			from:
+				Math.floor(top / rowHeight) -
+				pinnedEntries.length -
+				ROW_OVERSCAN,
+			to:
+				Math.ceil((top + window.innerHeight) / rowHeight) +
+				ROW_OVERSCAN,
+		};
+	});
+
+	// WebKit's scroll anchoring shifts a restored list by a row while its
+	// placeholders mount, so it is off until they have.
+	let restoring = $state(restoredRows !== null);
+
+	let content: HTMLDivElement | null = $state(null);
+
+	$effect(() => {
+		if (restoring && content && !content.querySelector(PLACEHOLDER))
+			restoring = false;
+	});
+
+	$effect(() => {
+		void visibleEntries;
+		if (!content) return;
+		const link = content.querySelector(
+			':scope > :not(.pinned-group) a[href^="/chat/"]',
+		);
+		let row = link;
+		while (row && row.parentElement !== content) row = row.parentElement;
+		const height = row?.getBoundingClientRect().height;
+		if (height) rowHeight = height;
+	});
+
+	function mountsEagerly(index: number): boolean {
+		if (index < EAGER_COUNT) return true;
+		return (
+			restoredRows !== null &&
+			index >= restoredRows.from &&
+			index <= restoredRows.to
+		);
+	}
 </script>
 
 {#snippet row(conversation: ConversationEntry, eager: boolean)}
@@ -314,6 +370,7 @@
 							{
 								"pt-(--selection-bar-height)": selecting,
 								"pt-12": !selecting,
+								"[overflow-anchor:none]": restoring,
 							},
 							className,
 						]}
@@ -334,7 +391,9 @@
 							</div>
 						{:else}
 							<div
+								bind:this={content}
 								data-refresh-content
+								style:--conversation-row-height="{rowHeight}px"
 								class="min-h-overscrollable flex shrink-0 flex-col gap-0 pb-nav-clear"
 							>
 								{#if pinnedEntries.length > 0}
@@ -360,7 +419,10 @@
 									<div class="h-5"></div>
 								{/if}
 								{#each restEntries as conversation, i (conversation.data.conversationId)}
-									{@render row(conversation, i < EAGER_COUNT)}
+									{@render row(
+										conversation,
+										mountsEagerly(i),
+									)}
 								{/each}
 								<ConversationsPagingTail
 									paging={conversations.paging}
