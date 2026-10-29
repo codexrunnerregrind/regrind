@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DatabaseIcon from "phosphor-svelte/lib/DatabaseIcon";
 	import GearIcon from "phosphor-svelte/lib/GearIcon";
 	import IdentificationCardIcon from "phosphor-svelte/lib/IdentificationCardIcon";
 	import ImagesSquareIcon from "phosphor-svelte/lib/ImagesSquareIcon";
@@ -65,6 +66,11 @@
 					<SettingsRow title="Appearance" href="/settings/appearance">
 						{#snippet icon()}
 							<PaletteIcon weight="fill" />
+						{/snippet}
+					</SettingsRow>
+					<SettingsRow title="Advanced" href="/settings/advanced">
+						{#snippet icon()}
+							<DatabaseIcon weight="fill" />
 						{/snippet}
 					</SettingsRow>
 				</SettingsGroup>
