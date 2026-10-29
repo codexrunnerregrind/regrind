@@ -1,0 +1,9 @@
+- For You profiles on the grid
+- Backup and restore under Settings > Advanced
+- Best matches tab in Interest
+- Long-press the tap button to pick a tap type
+- Grid filter presets
+- Last online time on the grid
+- Common tags highlighted on profiles
+- Saved media goes into a folder per profile
+- Fixed a crash at launch when the push token fetch fails
