@@ -3,6 +3,7 @@
 	import StarIcon from "phosphor-svelte/lib/StarIcon";
 
 	import { genderFilterFlag } from "$lib/api/feature-flags-state.svelte";
+	import { getGridFilterPresetsSnapshot } from "$lib/app-data/preferences.svelte";
 	import CommandCenterTrigger from "$lib/components/command-center/CommandCenterTrigger.svelte";
 	import {
 		ACTIVE_FILTER,
@@ -12,6 +13,7 @@
 	import * as ToggleGroup from "$lib/components/ui/toggle-group";
 	import { gridState } from "$lib/grid/grid-state.svelte";
 	import { defaultFilters } from "$lib/model/browse/grid/filters";
+	import { deepEqual } from "$lib/util/deep-equal";
 	import AgeQuickFilter from "./AgeQuickFilter.svelte";
 	import PositionQuickFilter from "./PositionQuickFilter.svelte";
 	import { sentFilterKeysWithoutQuickFilter } from "./quick-filters";
@@ -32,6 +34,11 @@
 		}).length > 0 ||
 			(filters.usernameEnabled && filters.username.trim() !== ""),
 	);
+	const activePreset = $derived(
+		getGridFilterPresetsSnapshot().find((preset) =>
+			deepEqual(preset.filters, filters),
+		),
+	);
 </script>
 
 <!-- Every "on" filter in this row uses the same inverted fill, whichever kind of
@@ -39,11 +46,16 @@
      item. ACTIVE_FILTER is that one style. -->
 <Button
 	variant="secondary"
-	aria-label="All filters"
+	aria-label={activePreset
+		? `All filters: ${activePreset.name}`
+		: "All filters"}
 	onclick={() => (openFilters.all = true)}
-	class={{ [ACTIVE_FILTER]: sheetOnlyFiltersOn }}
+	class={{ [ACTIVE_FILTER]: sheetOnlyFiltersOn || activePreset }}
 >
 	<SlidersHorizontalIcon />
+	{#if activePreset}
+		<span class="max-w-32 truncate">{activePreset.name}</span>
+	{/if}
 </Button>
 <Button
 	variant="secondary"
