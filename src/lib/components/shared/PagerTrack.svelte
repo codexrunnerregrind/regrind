@@ -11,11 +11,11 @@
 
 <script lang="ts">
 	import { untrack } from "svelte";
-	import { prefersReducedMotion } from "svelte/motion";
 	import type { Snippet } from "svelte";
 	import type { HTMLAttributes } from "svelte/elements";
 
 	import { type PanDirection, panPager } from "$lib/util/pan-pager";
+	import { reducedMotion } from "$lib/util/reduced-motion";
 
 	/**
 	 * Sub-tabs side by side on one track that the finger drags and a transform
@@ -87,7 +87,7 @@
 
 	function slideTo(target: number) {
 		leaving = shownIndex;
-		gliding = !prefersReducedMotion.current;
+		gliding = !reducedMotion.current;
 		dragX = 0;
 		shownIndex = target;
 		if (!gliding) leaving = null;
@@ -113,7 +113,7 @@
 	}
 
 	function springBack() {
-		gliding = dragX !== 0 && !prefersReducedMotion.current;
+		gliding = dragX !== 0 && !reducedMotion.current;
 		dragX = 0;
 	}
 

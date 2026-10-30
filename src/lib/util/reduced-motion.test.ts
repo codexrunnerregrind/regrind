@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { TransitionConfig } from "svelte/transition";
 
 import {
+	reducedMotion as combined,
 	fadeWhenReducedMotion,
 	fly,
 	instantWhenReducedMotion,
@@ -11,8 +12,12 @@ import {
 } from "./reduced-motion";
 
 const reducedMotion = vi.hoisted(() => ({ current: false }));
+const setting = vi.hoisted(() => ({ reduceMotion: false }));
 
 vi.mock("svelte/motion", () => ({ prefersReducedMotion: reducedMotion }));
+vi.mock("$lib/app-data/preferences.svelte", () => ({
+	getReduceMotionSnapshot: () => setting.reduceMotion,
+}));
 
 function sliding(node: HTMLElement, { distance }: { distance: number }) {
 	void node;
@@ -26,6 +31,7 @@ function sliding(node: HTMLElement, { distance }: { distance: number }) {
 
 afterEach(() => {
 	reducedMotion.current = false;
+	setting.reduceMotion = false;
 	document.body.replaceChildren();
 });
 
@@ -85,6 +91,20 @@ describe("preferredScrollBehavior", () => {
 
 	it("jumps instantly under reduced motion", () => {
 		reducedMotion.current = true;
+		expect(preferredScrollBehavior()).toBe("instant");
+	});
+});
+
+describe("reducedMotion", () => {
+	it("follows the device", () => {
+		expect(combined.current).toBe(false);
+		reducedMotion.current = true;
+		expect(combined.current).toBe(true);
+	});
+
+	it("is on with the app setting while the device allows motion", () => {
+		setting.reduceMotion = true;
+		expect(combined.current).toBe(true);
 		expect(preferredScrollBehavior()).toBe("instant");
 	});
 });

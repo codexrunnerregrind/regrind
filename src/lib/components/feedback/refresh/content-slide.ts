@@ -1,5 +1,6 @@
-import { prefersReducedMotion, Tween } from "svelte/motion";
+import { Tween } from "svelte/motion";
 
+import { reducedMotion } from "$lib/util/reduced-motion";
 import type { PullPosition } from "./scroll-chain";
 
 const CONTENT_SELECTOR = ":scope > [data-refresh-content]";
@@ -41,7 +42,7 @@ export function contentSlide({
 	let startedAt = 0;
 
 	const contentOf = (scroller: HTMLElement) =>
-		prefersReducedMotion.current
+		reducedMotion.current
 			? null
 			: scroller.querySelector<HTMLElement>(CONTENT_SELECTOR);
 

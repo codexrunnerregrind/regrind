@@ -1,7 +1,7 @@
 <script lang="ts">
 	import CaretUpIcon from "phosphor-svelte/lib/CaretUpIcon";
-	import { prefersReducedMotion } from "svelte/motion";
 
+	import { reducedMotion } from "$lib/util/reduced-motion";
 	import { glideScrollTop } from "$lib/util/scroll";
 	import { cn } from "$lib/util/utils";
 	import ScrollJumpButton from "./ScrollJumpButton.svelte";
@@ -81,7 +81,7 @@
 		if (!el) return;
 		releaseGlide();
 		visible = false;
-		if (prefersReducedMotion.current) {
+		if (reducedMotion.current) {
 			el.scrollTop = 0;
 			lastTop = 0;
 			return;

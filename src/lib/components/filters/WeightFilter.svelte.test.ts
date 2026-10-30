@@ -8,6 +8,7 @@ const preferences = vi.hoisted(() => ({ units: "metric" }));
 
 vi.mock("$lib/app-data/preferences.svelte", () => ({
 	preferencesSnapshot: () => preferences,
+	getReduceMotionSnapshot: () => false,
 }));
 
 import { formatWeightKg, kgToPounds } from "$lib/util/units";

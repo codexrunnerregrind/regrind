@@ -5,6 +5,8 @@
 @custom-variant dark (&:is(.dark *));
 @custom-variant hover (&:hover:where([data-hover-pointer] *));
 @custom-variant can-hover (&:where([data-hover-pointer] *));
+/* Set from the device's preference or the app's Reduce motion setting. */
+@custom-variant motion-reduce (&:where([data-reduce-motion] *));
 
 /* The "Nearby" palette (design_handoff_nearby_app/README.md § Design tokens).
    Hex values are copied verbatim from the handoff table so the two can be
@@ -927,10 +929,8 @@ a {
 	transition: transform 400ms ease;
 }
 
-@media (prefers-reduced-motion: reduce) {
-	[data-sonner-toaster][data-y-position="bottom"] {
-		transition: none;
-	}
+:where([data-reduce-motion]) [data-sonner-toaster][data-y-position="bottom"] {
+	transition: none;
 }
 
 .toast[data-styled="true"] {
@@ -997,7 +997,7 @@ a {
 	}
 }
 
-@media (prefers-reduced-motion: reduce) {
+:where([data-reduce-motion]) {
 	.incoming-message-toast[data-sonner-toast] {
 		--fly-out: translateY(0);
 		transition: opacity 180ms ease-out !important;

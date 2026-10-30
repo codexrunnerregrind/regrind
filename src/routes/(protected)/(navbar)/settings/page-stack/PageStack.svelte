@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onNavigate } from "$app/navigation";
 	import { untrack } from "svelte";
-	import { prefersReducedMotion } from "svelte/motion";
 	import type { Attachment } from "svelte/attachments";
 
 	import {
@@ -12,6 +11,7 @@
 	import { paneSurface } from "$lib/components/navigation/stack/surface";
 	import { attachSystemBackGesture } from "$lib/platform/system-back-gesture";
 	import { earlierPathnames } from "$lib/util/history";
+	import { reducedMotion } from "$lib/util/reduced-motion";
 	import { pushedFromChain } from "./hierarchy";
 	import { PageStackState } from "./page-stack-state.svelte";
 
@@ -45,12 +45,12 @@
 					? { front: pane, back: ghost, dim }
 					: { front: ghost, back: pane, dim };
 			},
-			parallax: () => !prefersReducedMotion.current,
+			parallax: () => !reducedMotion.current,
 			motion,
 		}),
 		motion,
 		livePane: () => rootPane?.() ?? pane,
-		reducedMotion: () => prefersReducedMotion.current,
+		reducedMotion: () => reducedMotion.current,
 		scope: untrack(() => scope),
 		pushedFrom: pushedFromChain({
 			pathname: location.pathname,

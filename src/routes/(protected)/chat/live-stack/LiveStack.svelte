@@ -2,7 +2,6 @@
 	import { onNavigate } from "$app/navigation";
 	import { page } from "$app/state";
 	import { onDestroy, onMount, type Snippet, untrack } from "svelte";
-	import { prefersReducedMotion } from "svelte/motion";
 	import type { NavigationTarget } from "@sveltejs/kit";
 	import type { Attachment } from "svelte/attachments";
 
@@ -17,6 +16,7 @@
 	} from "$lib/platform/android-native-bridge";
 	import { attachSystemBackGesture } from "$lib/platform/system-back-gesture";
 	import { earlierPathnames } from "$lib/util/history";
+	import { reducedMotion } from "$lib/util/reduced-motion";
 	import { remeasureScreenChrome } from "$lib/util/screen-chrome.svelte";
 	import { LiveStackState } from "./live-stack-state.svelte";
 
@@ -55,14 +55,14 @@
 				back: externalBase?.() ?? basePane,
 				dim,
 			}),
-			parallax: () => !prefersReducedMotion.current,
+			parallax: () => !reducedMotion.current,
 			motion,
 		}),
 		motion,
 		top: () => keyOf(page),
 		keyOf: (target) => keyOf(target),
 		scope: untrack(() => basePath),
-		reducedMotion: () => prefersReducedMotion.current,
+		reducedMotion: () => reducedMotion.current,
 		backLandsOnBase: () => earlierPathnames()[0] === basePath,
 		keyboardVisible: () => softKeyboardVisibility() === true,
 		keyboardHidden: () =>

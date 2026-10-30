@@ -1,4 +1,3 @@
-import { prefersReducedMotion } from "svelte/motion";
 import type { Attachment } from "svelte/attachments";
 
 import { isLinuxPlatform, isMacosPlatform } from "$lib/platform/os";
@@ -7,6 +6,7 @@ import {
 	scrollGesture,
 	type ScrollGestureState,
 } from "$lib/platform/scroll-gesture";
+import { reducedMotion as motionReduced } from "$lib/util/reduced-motion";
 
 const ALIGNED_PX = 1;
 const CLIENT_WIDTH_ROUNDING_PX = 1;
@@ -55,7 +55,7 @@ export class SnapPager {
 		fingerPhase = isMacosPlatform() || isLinuxPlatform()
 			? scrollGesture
 			: null,
-		reducedMotion = () => prefersReducedMotion.current,
+		reducedMotion = () => motionReduced.current,
 	}: {
 		count: () => number;
 		onVisible: (positions: VisiblePositions) => void;

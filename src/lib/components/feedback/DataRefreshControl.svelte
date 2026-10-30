@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { untrack } from "svelte";
 	import { cubicOut, expoOut } from "svelte/easing";
-	import { prefersReducedMotion, Tween } from "svelte/motion";
+	import { Tween } from "svelte/motion";
 	import type { TransitionConfig } from "svelte/transition";
 
 	import { Button } from "$lib/components/ui/button";
-	import { scale } from "$lib/util/reduced-motion";
+	import { reducedMotion, scale } from "$lib/util/reduced-motion";
 	import { attachPullInputs } from "./refresh/attach-inputs";
 	import { contentSlide, PacingTween } from "./refresh/content-slide";
 	import {
@@ -96,7 +96,7 @@
 	const DISC_WINDOW = DISC_REST + DISC_TRAVEL + DISC_SIZE + DISC_SHADOW;
 	const discTop = new Tween(DISC_START, { duration: 250, easing: cubicOut });
 	const settleMotion = () =>
-		prefersReducedMotion.current ? { duration: 0 } : undefined;
+		reducedMotion.current ? { duration: 0 } : undefined;
 
 	function discDragTop(displayPx: number): number {
 		const drag = Math.min(1, displayPx / ARM_PX);

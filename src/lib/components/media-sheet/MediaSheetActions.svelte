@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { expoOut, sineIn } from "svelte/easing";
-	import { prefersReducedMotion } from "svelte/motion";
 	import type { Snippet } from "svelte";
 	import type { TransitionConfig } from "svelte/transition";
 
 	import { Badge } from "$lib/components/ui/badge";
 	import { Button } from "$lib/components/ui/button";
 	import { Spinner } from "$lib/components/ui/spinner";
+	import { reducedMotion } from "$lib/util/reduced-motion";
 	import { cn } from "$lib/util/utils";
 
 	let {
@@ -38,7 +38,7 @@
 				duration: intro ? 600 : 400,
 				easing: intro ? expoOut : sineIn,
 				css: (t, u) =>
-					prefersReducedMotion.current
+					reducedMotion.current
 						? `opacity: ${t}`
 						: `transform: translateY(${u * FLIGHT_PX}px); opacity: ${t}`,
 			};

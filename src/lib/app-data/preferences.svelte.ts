@@ -109,6 +109,8 @@ const preferencesSchema = z.object({
 	// shape and the same behaviour, only a plainer surface. Turning this off
 	// returns the docked bar the redesign shipped with.
 	navBarGlass: z.boolean().default(true),
+	// Reduced motion even when the device doesn't ask for it.
+	reduceMotion: z.boolean().default(false),
 	// The doodle wallpaper behind the transcript, on by default the way the
 	// official app has one. Off leaves the plain chat background.
 	chatWallpaper: z.boolean().default(true),
@@ -379,6 +381,10 @@ export function getAlbumGridColumnsSnapshot(): GridColumns {
 
 export function getNavBarGlassSnapshot(): boolean {
 	return snapshot.navBarGlass;
+}
+
+export function getReduceMotionSnapshot(): boolean {
+	return snapshot.reduceMotion;
 }
 
 export function getSortMediaByFrequencySnapshot(): boolean {

@@ -1,3 +1,5 @@
+import { reducedMotion } from "$lib/util/reduced-motion";
+
 // A shared-element morph between the Post pill and the sheet it opens. The sheet
 // itself does the moving: it is clipped down to the pill's rect and the clip
 // grows out to its own edges, so its contents come in through a widening window
@@ -19,10 +21,6 @@ let active: {
 	animation: Animation;
 	veil: HTMLElement;
 } | null = null;
-
-function prefersReducedMotion() {
-	return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
 
 /** The sheet's own surface, read off the pseudo-element that draws it. */
 function surfaceOf(panel: HTMLElement) {
@@ -85,7 +83,7 @@ function isDisplaced(panel: HTMLElement) {
 export function morphOpen(pill: HTMLElement, panel: HTMLElement) {
 	reset();
 	pill.style.opacity = "0";
-	if (prefersReducedMotion()) return;
+	if (reducedMotion.current) return;
 
 	// The morph *is* the entrance; vaul's slide would otherwise run under it. It
 	// stays suppressed for as long as the drawer is open — handing it back early
@@ -124,7 +122,7 @@ export function morphOpen(pill: HTMLElement, panel: HTMLElement) {
 export function morphClose(pill: HTMLElement, panel: HTMLElement) {
 	reset();
 
-	if (prefersReducedMotion() || isDisplaced(panel)) {
+	if (reducedMotion.current || isDisplaced(panel)) {
 		// vaul owns the exit, and bits-ui waits on its animation to unmount.
 		panel.style.animation = "";
 		pill.style.opacity = "";

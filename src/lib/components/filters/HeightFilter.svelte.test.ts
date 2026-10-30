@@ -8,6 +8,7 @@ const preferences = vi.hoisted(() => ({ units: "metric" }));
 
 vi.mock("$lib/app-data/preferences.svelte", () => ({
 	preferencesSnapshot: () => preferences,
+	getReduceMotionSnapshot: () => false,
 }));
 
 import { HEIGHT_CM_MAX, HEIGHT_CM_MIN } from "$lib/model/browse/grid/filters";

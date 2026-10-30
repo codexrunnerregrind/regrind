@@ -6,6 +6,15 @@ import {
 	type TransitionConfig,
 } from "svelte/transition";
 
+import { getReduceMotionSnapshot } from "$lib/app-data/preferences.svelte";
+
+/** The device's reduced-motion preference, or the app's own setting. */
+export const reducedMotion = {
+	get current(): boolean {
+		return prefersReducedMotion.current || getReduceMotionSnapshot();
+	},
+};
+
 export function fadeWhenReducedMotion<
 	Target extends Element,
 	Rest extends unknown[],
@@ -14,7 +23,7 @@ export function fadeWhenReducedMotion<
 ): (node: Target, ...rest: Rest) => TransitionConfig {
 	return (node, ...rest) => {
 		const config = transition(node, ...rest);
-		if (!prefersReducedMotion.current) return config;
+		if (!reducedMotion.current) return config;
 		const opacity = Number(getComputedStyle(node).opacity);
 		return {
 			delay: config.delay,
@@ -32,9 +41,7 @@ export function instantWhenReducedMotion<
 	transition: (node: Target, ...rest: Rest) => TransitionConfig,
 ): (node: Target, ...rest: Rest) => TransitionConfig {
 	return (node, ...rest) =>
-		prefersReducedMotion.current
-			? { duration: 0 }
-			: transition(node, ...rest);
+		reducedMotion.current ? { duration: 0 } : transition(node, ...rest);
 }
 
 export const fly = fadeWhenReducedMotion(flyTransition);
@@ -42,5 +49,5 @@ export const scale = fadeWhenReducedMotion(scaleTransition);
 export const slide = instantWhenReducedMotion(slideTransition);
 
 export function preferredScrollBehavior(): ScrollBehavior {
-	return prefersReducedMotion.current ? "instant" : "smooth";
+	return reducedMotion.current ? "instant" : "smooth";
 }

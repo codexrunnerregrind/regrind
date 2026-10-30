@@ -45,6 +45,7 @@
 	import { startAddonUpdateWatch } from "$lib/updates/addon.svelte";
 	import { updatesSelfManaged } from "$lib/updates/capability.svelte";
 	import { startUpdateWatch } from "$lib/updates/updates-manager";
+	import { reducedMotion } from "$lib/util/reduced-motion";
 	import {
 		bottomBlurBarClearance,
 		bottomChromeClearance,
@@ -154,6 +155,14 @@
 
 	$effect(() => {
 		applyKeepScreenOn();
+	});
+
+	// For the CSS: the device's preference or the app's own setting.
+	$effect(() => {
+		document.documentElement.toggleAttribute(
+			"data-reduce-motion",
+			reducedMotion.current,
+		);
 	});
 
 	$effect(() => {

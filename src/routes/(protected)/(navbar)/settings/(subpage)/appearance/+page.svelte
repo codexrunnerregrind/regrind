@@ -8,7 +8,9 @@
 	import PaperPlaneRightIcon from "phosphor-svelte/lib/PaperPlaneRightIcon";
 	import SunIcon from "phosphor-svelte/lib/SunIcon";
 	import UsersThreeIcon from "phosphor-svelte/lib/UsersThreeIcon";
+	import WindIcon from "phosphor-svelte/lib/WindIcon";
 	import { onMount } from "svelte";
+	import { prefersReducedMotion } from "svelte/motion";
 
 	import {
 		type AccentColor,
@@ -27,6 +29,7 @@
 		getOutgoingBubbleColorSnapshot,
 		getPreferences,
 		getProfileGridColumnsSnapshot,
+		getReduceMotionSnapshot,
 		getThemeModeSnapshot,
 		preferencesLoaded,
 		setPreferences,
@@ -47,6 +50,7 @@
 	let incoming = $state<BubbleColor>(getIncomingBubbleColorSnapshot());
 	let navGlass = $state(getNavBarGlassSnapshot());
 	let wallpaper = $state(getChatWallpaperSnapshot());
+	let reduceMotion = $state(getReduceMotionSnapshot());
 
 	onMount(() => {
 		void getPreferences()
@@ -57,6 +61,7 @@
 				incoming = preferences.incomingBubbleColor;
 				navGlass = preferences.navBarGlass;
 				wallpaper = preferences.chatWallpaper;
+				reduceMotion = preferences.reduceMotion;
 			})
 			.catch((error) => {
 				console.error("Failed to load preferences", error);
@@ -271,6 +276,34 @@
 <SectionFooter>
 	How much the bars, menus and sheets blur what is behind them. Less blur
 	costs less to draw, which helps on older devices.
+</SectionFooter>
+
+<SectionHeader>Animations</SectionHeader>
+<SettingsGroup divider="none">
+	<SettingsSwitchRow
+		title="Reduce animations"
+		description="Switch screens instantly instead of sliding."
+		disabled={!preferencesLoaded() || prefersReducedMotion.current}
+		bind:checked={
+			() => reduceMotion || prefersReducedMotion.current,
+			(next: boolean) => {
+				hapticSelection();
+				reduceMotion = next;
+				persist({ reduceMotion: next });
+			}
+		}
+	>
+		{#snippet icon()}
+			<WindIcon weight="fill" />
+		{/snippet}
+	</SettingsSwitchRow>
+</SettingsGroup>
+<SectionFooter>
+	{#if prefersReducedMotion.current}
+		Already on, because Reduce Motion is turned on in your phone's settings.
+	{:else}
+		Makes the app feel quicker, especially on older phones.
+	{/if}
 </SectionFooter>
 
 <SectionHeader>Grid</SectionHeader>

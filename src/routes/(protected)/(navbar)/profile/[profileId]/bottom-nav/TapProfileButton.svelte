@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Portal } from "bits-ui";
 	import { backOut, cubicIn } from "svelte/easing";
-	import { prefersReducedMotion } from "svelte/motion";
 	import type { TransitionConfig } from "svelte/transition";
 
 	import { httpStatusOf } from "$lib/api/api-error";
@@ -12,6 +11,7 @@
 	import { hapticImpact, playHaptic } from "$lib/haptics";
 	import { TapType, tapTypes } from "$lib/model/interest/taps";
 	import { longPressHandlers } from "$lib/util/long-press";
+	import { reducedMotion } from "$lib/util/reduced-motion";
 
 	let {
 		profileId,
@@ -85,7 +85,7 @@
 
 	function celebrate(reaction: TapType) {
 		hapticImpact("medium");
-		if (prefersReducedMotion.current) return;
+		if (reducedMotion.current) return;
 		popping = true;
 		const id = Date.now();
 		burst = {
@@ -199,7 +199,7 @@
 	) {
 		return {
 			delay: out ? 0 : index * 35,
-			duration: prefersReducedMotion.current ? 0 : out ? 150 : 300,
+			duration: reducedMotion.current ? 0 : out ? 150 : 300,
 			easing: out ? cubicIn : backOut,
 			css: (t: number) => `
 				translate: calc(-50% + ${x * t}px) calc(-50% + ${y * t}px);
