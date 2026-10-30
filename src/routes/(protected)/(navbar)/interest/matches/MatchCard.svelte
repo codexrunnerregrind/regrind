@@ -11,11 +11,17 @@
 		sexualPositions,
 		sexualPositionSchema,
 	} from "$lib/model/users/profiles";
+	import {
+		appendProfileTransitionQueryParam,
+		getProfileTransitionName,
+	} from "$lib/platform/view-transitions";
 	import { getNow } from "$lib/util/now";
 	import { formatHeight, formatWeightGrams } from "$lib/util/units";
 	import type { MatchesMatch } from "$lib/model/interest/matches";
 	import type { SentTapProfile } from "$lib/model/interest/sent-tap";
 	import MatchReasonIcon from "./MatchReasonIcon.svelte";
+
+	const TRANSITION_NAME = "interestMatches";
 
 	let {
 		match,
@@ -63,6 +69,20 @@
 			.filter((part) => part !== null)
 			.join(" · ");
 	});
+
+	const hrefWithTransition = $derived(
+		appendProfileTransitionQueryParam(
+			`/profile/${profile.profileId}`,
+			TRANSITION_NAME,
+			profile.profileImageMediaHash,
+		),
+	);
+	const transitionName = $derived(
+		getProfileTransitionName(
+			TRANSITION_NAME,
+			profile.profileImageMediaHash,
+		),
+	);
 </script>
 
 {#snippet tapBadge(position: string, size: string)}
@@ -95,11 +115,12 @@
 
 {#if style === "full"}
 	<a
-		href="/profile/{profile.profileId}"
+		href={hrefWithTransition}
 		class="relative block aspect-3/4 overflow-hidden bg-media-placeholder"
 	>
 		<UserAvatar
 			mediaHash={profile.profileImageMediaHash}
+			{transitionName}
 			class="absolute inset-0 size-full"
 			size="xl"
 		/>
@@ -163,7 +184,8 @@
 		distance={profile.distance}
 		onlineUntil={profile.onlineUntil}
 		isVisiting={profile.visitingStatus ?? false}
-		href="/profile/{profile.profileId}"
+		href={hrefWithTransition}
+		{transitionName}
 	>
 		{#snippet overlay()}
 			{#if tapped}

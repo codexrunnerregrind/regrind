@@ -58,6 +58,7 @@
 		profileId,
 		ourProfileId,
 		active = true,
+		transitionName = null,
 		profileThumbHash = null,
 		register,
 	}: {
@@ -69,6 +70,7 @@
 		 * than a skeleton; they only count as viewed once they become active.
 		 */
 		active?: boolean;
+		transitionName?: string | null;
 		profileThumbHash?: string | null;
 		/**
 		 * Lends this profile's state to the pager for as long as it is mounted,
@@ -202,9 +204,7 @@
 						style:background-image={profileThumbUrl
 							? `url(${profileThumbUrl})`
 							: undefined}
-						style:view-transition-name={profileThumbHash
-							? `thumb-${profileThumbHash}`
-							: undefined}
+						style:view-transition-name={transitionName}
 					>
 						{#if profile && !profileState.loading}
 							<ImageCarousel
