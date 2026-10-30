@@ -5,7 +5,13 @@
 	import TapIcon from "$lib/components/profile/TapIcon.svelte";
 	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
 	import * as Item from "$lib/components/ui/item";
+	import {
+		appendProfileTransitionQueryParam,
+		getProfileTransitionName,
+	} from "$lib/platform/view-transitions";
 	import type { TapProfile } from "$lib/model/interest/tap-profile";
+
+	const TRANSITION_NAME = "interestTaps";
 
 	let {
 		tap,
@@ -14,6 +20,10 @@
 		tap: TapProfile;
 		onclick?: import("svelte/elements").MouseEventHandler<HTMLAnchorElement>;
 	} = $props();
+
+	const transitionName = $derived(
+		getProfileTransitionName(TRANSITION_NAME, tap.profileImageMediaHash),
+	);
 </script>
 
 {#snippet favorite()}
@@ -27,7 +37,12 @@
 		badge: tap.isFavorite ? favorite : undefined,
 	}}
 	onlineUntil={tap.onlineUntil}
-	link="/profile/{tap.profileId}"
+	link={appendProfileTransitionQueryParam(
+		`/profile/${tap.profileId}`,
+		TRANSITION_NAME,
+		tap.profileImageMediaHash,
+	)}
+	{transitionName}
 	{onclick}
 >
 	{#snippet description()}

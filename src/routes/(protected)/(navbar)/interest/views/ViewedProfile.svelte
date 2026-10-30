@@ -8,7 +8,7 @@
 	import type { ViewerProfile } from "$lib/model/interest/views";
 	import ViewedMeta from "./ViewedMeta.svelte";
 
-	const TRANSITION_NAME = "interestTaps";
+	const TRANSITION_NAME = "interestViews";
 
 	let { view }: { view: ViewerProfile } = $props();
 
