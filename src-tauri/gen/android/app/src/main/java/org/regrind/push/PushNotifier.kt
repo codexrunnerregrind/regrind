@@ -14,7 +14,7 @@ import androidx.core.app.Person
 import androidx.core.graphics.drawable.IconCompat
 import org.json.JSONObject
 import org.regrind.MainActivity
-import org.regrind.R
+import org.regrind.appicon.AppIconPlugin
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLDecoder
@@ -112,7 +112,7 @@ object PushNotifier {
 		}
 
 		val builder = NotificationCompat.Builder(context, channelId)
-			.setSmallIcon(R.drawable.ic_launcher_monochrome)
+			.setSmallIcon(AppIconPlugin.notificationIcon(context))
 			.setContentTitle(title)
 			.setContentText(text)
 			.setCategory(NotificationCompat.CATEGORY_MESSAGE)
