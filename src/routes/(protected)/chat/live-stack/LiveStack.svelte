@@ -95,12 +95,6 @@
 	$effect(() => attachSystemBackGesture(stack));
 
 	$effect(() => {
-		void stack.covered;
-		void stack.leaving;
-		remeasureScreenChrome();
-	});
-
-	$effect(() => {
 		const node = externalBase?.();
 		if (!node) return;
 		node.toggleAttribute("data-covered", stack.covered);
@@ -109,6 +103,13 @@
 			node.removeAttribute("data-covered");
 			node.inert = false;
 		};
+	});
+
+	// After the toggle above, or chrome under the base still reads as covered.
+	$effect(() => {
+		void stack.covered;
+		void stack.leaving;
+		remeasureScreenChrome();
 	});
 
 	onDestroy(() => stack.dispose());
