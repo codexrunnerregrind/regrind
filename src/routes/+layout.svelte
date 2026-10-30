@@ -113,7 +113,6 @@
 	});
 
 	import { env } from "$env/dynamic/public";
-	import type { Navigation } from "@sveltejs/kit";
 
 	import faviconPng from "$lib/assets/favicon.png";
 	import AccountStatusAlert from "$lib/components/feedback/AccountStatusAlert.svelte";
@@ -121,6 +120,7 @@
 	import GoogleHandoffConfirmAlert from "$lib/components/feedback/GoogleHandoffConfirmAlert.svelte";
 	import RequestBlockedAlert from "$lib/components/feedback/RequestBlockedAlert.svelte";
 	import SessionErrorAlert from "$lib/components/feedback/SessionErrorAlert.svelte";
+	import { viewTransition } from "$lib/platform/view-transitions";
 	import faviconSvg from "../../contrib/logo/regrind.svg";
 
 	let { children }: { children?: import("svelte").Snippet } = $props();
@@ -150,25 +150,7 @@
 	});
 	afterNavigate(() => settleSwipeBack());
 
-	onNavigate((navigation: Navigation) => {
-		if (!document.startViewTransition) return;
-
-		const fromPath = navigation.from?.url.pathname ?? "";
-		const toPath = navigation.to?.url.pathname ?? "";
-
-		const isThumbnailTransition =
-			(fromPath === "/" && toPath.startsWith("/profile")) ||
-			(toPath === "/" && fromPath.startsWith("/profile"));
-
-		if (!isThumbnailTransition) return;
-
-		return new Promise<void>((resolve) => {
-			document.startViewTransition(async () => {
-				resolve();
-				await navigation.complete;
-			});
-		});
-	});
+	onNavigate(viewTransition);
 
 	$effect(() => {
 		applyBackdropBlurQuality();

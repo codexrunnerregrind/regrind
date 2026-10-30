@@ -1,8 +1,14 @@
 <script lang="ts">
 	import { favoriteNote } from "$lib/api/users/favorite-notes-state.svelte";
 	import ProfileMiniCard from "$lib/components/profile/ProfileMiniCard.svelte";
+	import {
+		appendProfileTransitionQueryParam,
+		getProfileTransitionName,
+	} from "$lib/platform/view-transitions";
 	import type { ViewerProfile } from "$lib/model/interest/views";
 	import ViewedMeta from "./ViewedMeta.svelte";
+
+	const TRANSITION_NAME = "interestTaps";
 
 	let { view }: { view: ViewerProfile } = $props();
 
@@ -22,6 +28,14 @@
 	onlineUntil={view.onlineUntil}
 	isFavorite={view.isFavorite}
 	note={favoriteNote(view.profileId)?.notes ?? null}
-	href="/profile/{view.profileId}"
+	href={appendProfileTransitionQueryParam(
+		`/profile/${view.profileId}`,
+		TRANSITION_NAME,
+		view.profileImageMediaHash,
+	)}
 	meta={hasMeta ? meta : undefined}
+	transitionName={getProfileTransitionName(
+		TRANSITION_NAME,
+		view.profileImageMediaHash,
+	)}
 />

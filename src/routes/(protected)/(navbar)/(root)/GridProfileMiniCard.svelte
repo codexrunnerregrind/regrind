@@ -1,9 +1,15 @@
 <script lang="ts">
 	import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
 	import ProfileMiniCard from "$lib/components/profile/ProfileMiniCard.svelte";
+	import {
+		appendProfileTransitionQueryParam,
+		getProfileTransitionName,
+	} from "$lib/platform/view-transitions";
 	import { formatTimeAgoShort } from "$lib/util/format-time";
 	import { getNow } from "$lib/util/now";
 	import type { RightNowStatus } from "$lib/model/right-now";
+
+	const TRANSITION_NAME = "browseGrid";
 
 	let {
 		id,
@@ -44,6 +50,8 @@
 		if ((onlineUntil ?? 0) > now) return null;
 		return seen === null ? "Offline" : formatTimeAgoShort(seen, now);
 	});
+
+	const mediaHash = $derived(medias?.[0]?.mediaHash ?? null);
 </script>
 
 {#snippet meta()}
@@ -51,7 +59,7 @@
 {/snippet}
 
 <ProfileMiniCard
-	mediaHash={medias?.[0]?.mediaHash ?? null}
+	{mediaHash}
 	{displayName}
 	{age}
 	{distance}
@@ -64,5 +72,10 @@
 	{note}
 	meta={seenLabel === null ? undefined : meta}
 	{onclick}
-	href="/profile/{id}"
+	href={appendProfileTransitionQueryParam(
+		`/profile/${id}`,
+		TRANSITION_NAME,
+		mediaHash,
+	)}
+	transitionName={getProfileTransitionName(TRANSITION_NAME, mediaHash)}
 />

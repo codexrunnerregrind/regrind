@@ -9,16 +9,18 @@
 		mediaHash,
 		class: className = "size-80",
 		size = "md",
+		transitionName = null,
 		onload,
 	}: {
 		mediaHash: string | null;
 		class?: import("svelte/elements").ClassValue;
 		size?: "md" | "lg" | "xl";
+		transitionName?: string | null;
 		onload?: (image: HTMLImageElement) => void;
 	} = $props();
 </script>
 
-<div class={[className]}>
+<div class={[className]} style:view-transition-name={transitionName}>
 	{#if mediaHash}
 		<MediaImage
 			src={profileMediaUrl({ mediaHash, size: "thumb" })}
