@@ -2,7 +2,6 @@
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 	import { untrack } from "svelte";
-	import { prefersReducedMotion } from "svelte/motion";
 
 	import { STACK_Z } from "$lib/components/navigation/stack/motion";
 	import { navTabs } from "$lib/components/shared/nav-tabs";
@@ -13,6 +12,7 @@
 	} from "$lib/components/tab-shell/tab-shell-state.svelte";
 	import { hapticSelection } from "$lib/platform/haptics";
 	import { type PanDirection, panPager } from "$lib/util/pan-pager";
+	import { reducedMotion } from "$lib/util/reduced-motion";
 	import { remeasureScreenChrome } from "$lib/util/screen-chrome.svelte";
 	import BrowseScreen from "../(navbar)/(root)/BrowseScreen.svelte";
 	import { getInterestTab } from "../(navbar)/interest/interest-tab";
@@ -55,14 +55,15 @@
 	// The pane shown and its neighbours are mounted, and no others: five live
 	// screens (the grid's images, every Interest list) were enough for iOS to
 	// kill the WebView. One left behind is let go once the app is idle again,
-	// not mid-slide, and restores its scroll when it comes back.
+	// not mid-slide, and restores its scroll when it comes back. At rest the
+	// neighbours skip style, layout and paint (`content-visibility`).
 	let mounted = $state(navTabs.map(() => false));
 
 	$effect(() => {
 		const pane = routed;
 		untrack(() => {
 			if (pane === index) return;
-			settling = !prefersReducedMotion.current;
+			settling = !reducedMotion.current;
 			index = pane;
 		});
 	});
@@ -111,7 +112,7 @@
 
 	function go(direction: PanDirection) {
 		dragX = 0;
-		settling = !prefersReducedMotion.current;
+		settling = !reducedMotion.current;
 		const path = tabPath(index + direction);
 		if (covered || !path) return;
 		index += direction;
@@ -128,7 +129,7 @@
 
 	function springBack() {
 		dragX = 0;
-		settling = !prefersReducedMotion.current;
+		settling = !reducedMotion.current;
 	}
 </script>
 
@@ -178,6 +179,11 @@
 					aria-hidden={pane !== index ? "true" : undefined}
 					class="absolute inset-y-0 w-full overflow-hidden [contain:paint]"
 					style:left="{pane * 100}%"
+					style:content-visibility={pane === index ||
+					settling ||
+					dragX !== 0
+						? "visible"
+						: "hidden"}
 				>
 					{#if mounted[pane]}
 						{@const active = pane === routed && !covered}
