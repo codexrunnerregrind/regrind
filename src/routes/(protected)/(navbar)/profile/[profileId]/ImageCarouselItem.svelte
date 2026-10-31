@@ -6,8 +6,14 @@
 		thumb,
 		createdAt,
 		label,
-	}: { src: string; thumb: string; createdAt: number | null; label: string } =
-		$props();
+		onload,
+	}: {
+		src: string;
+		thumb: string;
+		createdAt: number | null;
+		label: string;
+		onload?: () => void;
+	} = $props();
 
 	let width: number | null = $state(null);
 	let height: number | null = $state(null);
@@ -28,13 +34,13 @@
 	<MediaImage
 		src={thumb}
 		class="absolute top-0 left-0 h-full w-full"
-		imgClass="bg-stone-700"
 		tone="photo"
 		size="xl"
 		bind:failedSrc
 		onload={(image) => {
 			width = image.naturalWidth;
 			height = image.naturalHeight;
+			onload?.();
 		}}
 	/>
 </a>

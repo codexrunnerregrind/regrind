@@ -3,7 +3,7 @@
 	import "@fontsource-variable/ibm-plex-sans/wght-italic.css";
 
 	import "../layout.css";
-	import { afterNavigate, beforeNavigate } from "$app/navigation";
+	import { afterNavigate, beforeNavigate, onNavigate } from "$app/navigation";
 	import IconContext from "phosphor-svelte/lib/IconContext";
 	import { onMount } from "svelte";
 	import { toast, Toaster } from "svelte-sonner";
@@ -120,6 +120,7 @@
 	import GoogleHandoffConfirmAlert from "$lib/components/feedback/GoogleHandoffConfirmAlert.svelte";
 	import RequestBlockedAlert from "$lib/components/feedback/RequestBlockedAlert.svelte";
 	import SessionErrorAlert from "$lib/components/feedback/SessionErrorAlert.svelte";
+	import { viewTransition } from "$lib/platform/view-transitions";
 	import faviconSvg from "../../contrib/logo/regrind.svg";
 
 	let { children }: { children?: import("svelte").Snippet } = $props();
@@ -148,6 +149,8 @@
 		if (shown) rememberScreen(shown);
 	});
 	afterNavigate(() => settleSwipeBack());
+
+	onNavigate(viewTransition);
 
 	$effect(() => {
 		applyBackdropBlurQuality();

@@ -4,6 +4,10 @@
 	import { untrack } from "svelte";
 
 	import {
+		TRANSITION_NAME_QUERY_PARAM,
+		TRANSITION_PROFILE_THUMB_QUERY_PARAM,
+	} from "$lib/platform/view-transitions";
+	import {
 		armProfileDeck,
 		claimProfileDeck,
 		type ProfileDeck,
@@ -14,6 +18,12 @@
 
 	const ourProfileId = $derived(data.ourProfileId);
 	const routeId = $derived(Number(page.params.profileId));
+	const transitionName = $derived(
+		page.url.searchParams.get(TRANSITION_NAME_QUERY_PARAM),
+	);
+	const profileThumbHash = $derived(
+		page.url.searchParams.get(TRANSITION_PROFILE_THUMB_QUERY_PARAM),
+	);
 
 	/** The list this profile was opened from, or just this profile on its own. */
 	function deckFor(profileId: number): ProfileDeck {
@@ -89,4 +99,6 @@
 	{ourProfileId}
 	{onactive}
 	extend={deck.extend ? extend : undefined}
+	{transitionName}
+	{profileThumbHash}
 />
