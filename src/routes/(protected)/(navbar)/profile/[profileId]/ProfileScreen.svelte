@@ -163,6 +163,12 @@
 			unsubscribe();
 		};
 	});
+
+	let firstCarouselImageLoaded = $state(false);
+	function onImageCarouselFullImageLoad(imageIndex: number) {
+		if (imageIndex !== 0) return;
+		firstCarouselImageLoaded = true;
+	}
 </script>
 
 {#if error}
@@ -200,11 +206,19 @@
 			>
 				<div class="relative flex max-w-full flex-col">
 					<div
-						class="relative aspect-3/4 h-auto max-h-photo w-full rounded-none bg-cover bg-center"
-						style:background-image={profileThumbUrl
-							? `url(${profileThumbUrl})`
-							: undefined}
+						class={[
+							"relative aspect-3/4 h-auto max-h-photo w-full rounded-none bg-cover",
+							{
+								"blur-lg":
+									!!profileThumbUrl &&
+									!firstCarouselImageLoaded,
+								"bg-[image:var(--bg-image-url)]":
+									!!profileThumbUrl &&
+									!firstCarouselImageLoaded,
+							},
+						]}
 						style:view-transition-name={transitionName}
+						style={`--bg-image-url: url('${profileThumbUrl}')`}
 					>
 						{#if profile && !profileState.loading}
 							<ImageCarousel
@@ -213,6 +227,7 @@
 								{ourProfileId}
 								displayName={profile.displayName}
 								self={ourProfile}
+								onload={onImageCarouselFullImageLoad}
 							/>
 							{#if !ourProfile}
 								<ProfileNote
@@ -225,9 +240,11 @@
 									chattedAt={profile.lastChatTimestamp}
 								/>
 							{/if}
-						{:else if !profileThumbUrl}
+						{/if}
+
+						{#if !profileThumbUrl || (!!profileThumbUrl && !firstCarouselImageLoaded)}
 							<Skeleton
-								class="aspect-3/4 h-auto max-h-photo w-full rounded-none"
+								class="absolute top-0 left-0 aspect-3/4 h-auto max-h-photo w-full rounded-none"
 							/>
 						{/if}
 					</div>

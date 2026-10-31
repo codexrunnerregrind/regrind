@@ -32,6 +32,7 @@
 		ourProfileId,
 		displayName = null,
 		self = false,
+		onload,
 	}: {
 		medias: {
 			mediaHash: string;
@@ -43,6 +44,7 @@
 		displayName?: string | null;
 		/** Our own profile: nobody to reply to or tap. */
 		self?: boolean;
+		onload?: (imageIndex: number) => void;
 	} = $props();
 
 	const conversationId = $derived(
@@ -239,6 +241,7 @@
 					thumb={src}
 					{createdAt}
 					label="Profile photo {index + 1} of {medias.length}"
+					onload={() => onload?.(index)}
 				/>
 			{/each}
 		</div>
