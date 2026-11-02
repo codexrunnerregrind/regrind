@@ -7,7 +7,10 @@ import {
 	genderFilterFlag,
 	refreshFeatureFlags,
 } from "$lib/api/feature-flags-state.svelte";
-import { onProfileViewabilityChange } from "$lib/api/users/profile-viewability";
+import {
+	isProfileViewable,
+	onProfileViewabilityChange,
+} from "$lib/api/users/profile-viewability";
 import { onProfileEdit } from "$lib/api/users/profiles";
 import { getActiveGeohashSnapshot } from "$lib/app-data/preferences.svelte";
 import { showsOnReturn, staysOnline } from "$lib/presence/presence-gate";
@@ -243,7 +246,9 @@ class GridState {
 		const loadedIds = new Set(this.items.map((item) => item.id));
 		this.items = [
 			...this.items,
-			...result.items.filter((item) => !loadedIds.has(item.id)),
+			...result.items.filter(
+				(item) => !loadedIds.has(item.id) && isProfileViewable(item.id),
+			),
 		];
 		this.nextPage = result.nextPage;
 	}
@@ -317,8 +322,12 @@ class GridState {
 					)
 				: [];
 			this.#firstPageIds = firstPageIds;
-			this.items = [...result.items, ...laterPages];
-			this.topPicks = result.topPicks;
+			this.items = [...result.items, ...laterPages].filter((item) =>
+				isProfileViewable(item.id),
+			);
+			this.topPicks = result.topPicks.filter((item) =>
+				isProfileViewable(item.id),
+			);
 			this.topPicksRefreshAt = result.topPicksRefreshAt;
 			if (laterPages.length === 0) this.nextPage = result.nextPage;
 			this.paging.rearm();

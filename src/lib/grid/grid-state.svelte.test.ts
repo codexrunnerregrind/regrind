@@ -154,6 +154,38 @@ describe("grid blocking", () => {
 		expect(gridState.items.map((item) => item.id)).toEqual([2]);
 	});
 
+	it("removes a blocked recommendation immediately and keeps it out of refresh results", async () => {
+		gridState.topPicks = [rendered({ id: 1 }), rendered({ id: 2 })];
+		markProfileUnviewable(1);
+		expect(gridState.topPicks.map((item) => item.id)).toEqual([2]);
+
+		let answer!: (value: {
+			items: ReturnType<typeof page>["items"];
+			topPicks: ReturnType<typeof rendered>[];
+			nextPage: number | null;
+		}) => void;
+		getGridMock.mockReturnValue(
+			new Promise((resolve) => {
+				answer = resolve;
+			}),
+		);
+		const refreshing = gridState.refresh();
+		await vi.waitFor(() => expect(getGridMock).toHaveBeenCalled());
+		markProfileUnviewable(2);
+		answer({
+			...page([1, 2, 3]),
+			topPicks: [
+				rendered({ id: 1 }),
+				rendered({ id: 2 }),
+				rendered({ id: 3 }),
+			],
+		});
+		await refreshing;
+
+		expect(gridState.topPicks.map((item) => item.id)).toEqual([3]);
+		expect(gridState.items.map((item) => item.id)).toEqual([3]);
+	});
+
 	it("refetches the grid when a profile is unblocked", async () => {
 		gridState.items = [
 			{ type: "lazy", id: 1, unread: 0, isVisiting: false },

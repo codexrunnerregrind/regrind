@@ -4,6 +4,7 @@ import { registerAccountCache } from "$lib/api/account-caches";
 import { getCascadeV4 } from "$lib/api/browse/grid";
 import { updateLocation } from "$lib/api/browse/location";
 import { TtlCache } from "$lib/api/cache";
+import { isProfileViewable } from "$lib/api/users/profile-viewability";
 import { clearProfileCaches, getProfiles } from "$lib/api/users/profiles";
 import { awaitEntitlementGrant } from "$lib/entitlements/expiring-media-entitlement";
 import { notePhotos } from "$lib/interest/viewer-matches";
@@ -137,8 +138,30 @@ export async function getGrid(query: Parameters<typeof getCascadeV4>[0]) {
 		}
 	}
 
+	// Recommendations can carry distances from an older location. Read them
+	// from the same profile endpoint used when opening a profile instead.
+	const pickIds = [...new Set(topPicks.map((pick) => pick.id))].filter(
+		isProfileViewable,
+	);
+	const resolvedPicks = pickIds.length
+		? await getProfiles(pickIds).catch((error: unknown) => {
+				console.error(error);
+				return [];
+			})
+		: [];
+	const distances = new Map(
+		resolvedPicks.map((profile) => [profile.profileId, profile.distance]),
+	);
+	const viewablePicks = topPicks
+		.filter((pick) => isProfileViewable(pick.id))
+		.map((pick) =>
+			pick.type === "rendered"
+				? { ...pick, distance: distances.get(pick.id) ?? null }
+				: pick,
+		);
+
 	notePhotos(
-		[...items, ...topPicks].flatMap((item) =>
+		[...items, ...viewablePicks].flatMap((item) =>
 			item.type === "rendered"
 				? [
 						{
@@ -151,8 +174,8 @@ export async function getGrid(query: Parameters<typeof getCascadeV4>[0]) {
 		),
 	);
 	return {
-		items,
-		topPicks,
+		items: items.filter((item) => isProfileViewable(item.id)),
+		topPicks: viewablePicks,
 		topPicksRefreshAt,
 		nextPage: response.nextPage,
 		shuffled: response.shuffled,

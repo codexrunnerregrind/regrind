@@ -100,6 +100,8 @@ const cascade = (items: unknown[]) => {
 
 describe("getGrid", () => {
 	beforeEach(() => {
+		clearAccountCaches();
+		getProfilesMock.mockReset().mockResolvedValue([]);
 		getCascadeV4Mock
 			.mockReset()
 			.mockResolvedValue({ items: [], nextPage: null, shuffled: false });
@@ -330,6 +332,48 @@ describe("getGrid", () => {
 		expect(items).toEqual([]);
 	});
 
+	it("uses current profile distances for recommendations, including hidden distances", async () => {
+		getProfilesMock.mockResolvedValue([
+			{ profileId: 2, distance: 2500 },
+			{ profileId: 3, distance: null },
+		]);
+		const { topPicks } = await cascade([
+			{
+				type: "top_picks_v1",
+				data: {
+					items: [2, 3].map((id) => ({
+						status: "ACTIVE",
+						profileItem: {
+							...v4Profile(id),
+							distanceMeters: 5_000_000,
+						},
+					})),
+				},
+			},
+		]);
+
+		expect(getProfilesMock).toHaveBeenCalledExactlyOnceWith([2, 3]);
+		expect(topPicks).toMatchObject([
+			{ id: 2, distance: 2500 },
+			{ id: 3, distance: null },
+		]);
+	});
+
+	it("keeps recommendations without a distance if profile loading fails", async () => {
+		const log = vi.spyOn(console, "error").mockImplementation(() => {});
+		getProfilesMock.mockRejectedValue(new Error("offline"));
+		const { topPicks } = await cascade([
+			{
+				type: "top_picks_v1",
+				data: {
+					items: [{ status: "ACTIVE", profileItem: v4Profile(2) }],
+				},
+			},
+		]);
+		expect(topPicks).toMatchObject([{ id: 2, distance: null }]);
+		log.mockRestore();
+	});
+
 	it("returns top picks apart from the grid profiles", async () => {
 		const { items, topPicks } = await cascade([
 			{ type: "full_profile_v1", data: v4Profile(1) },
@@ -439,6 +483,7 @@ describe("cached profiles after the stored location moves", () => {
 });
 
 describe("resolveLazyProfile", () => {
+	beforeEach(() => getProfilesMock.mockReset());
 	it("maps the resolved profile, age and last seen included", async () => {
 		getProfilesMock.mockResolvedValue([
 			{
