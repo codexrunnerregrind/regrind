@@ -17,8 +17,14 @@
 	import { playHaptic } from "$lib/haptics";
 	import { previewLabel } from "$lib/model/messaging/message-preview";
 	import { firedByTouch } from "$lib/platform/touch-origin";
+	import {
+		appendProfileTransitionQueryParam,
+		getProfileTransitionName,
+	} from "$lib/platform/view-transitions";
 	import type { Conversation } from "$lib/model/messaging/conversations";
 	import type { SelectionSet } from "$lib/util/selection.svelte";
+
+	const TRANSITION_NAME = "conversationList";
 
 	let {
 		conversation,
@@ -69,6 +75,19 @@
 	function toggleSelected() {
 		selection?.toggle(conversationId);
 	}
+
+	const mediaHash = $derived(participant?.primaryMediaHash ?? null);
+	const transitionName = $derived(
+		getProfileTransitionName(TRANSITION_NAME, mediaHash),
+	);
+	const profileLink = $derived.by(() => {
+		if (!participant) return;
+		return appendProfileTransitionQueryParam(
+			`/profile/${participant.profileId}`,
+			TRANSITION_NAME,
+			mediaHash,
+		);
+	});
 </script>
 
 {#snippet titleBadges()}
@@ -93,8 +112,8 @@
 	<ProfileItem
 		{active}
 		avatar={{
-			mediaHash: participant?.primaryMediaHash ?? null,
-			link: participant ? `/profile/${participant.profileId}` : undefined,
+			mediaHash: mediaHash,
+			link: profileLink,
 			overlay: isSelected ? selectedOverlay : undefined,
 		}}
 		title={{ value: conversation.data.name, badge: titleBadges }}
@@ -103,6 +122,7 @@
 		selected={isSelected}
 		onToggleSelected={selection ? toggleSelected : undefined}
 		onLongPress={onEnterSelection}
+		{transitionName}
 	>
 		{#snippet description()}
 			<Item.Description

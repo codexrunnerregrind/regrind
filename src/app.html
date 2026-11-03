@@ -73,6 +73,11 @@
 			.plat-unknown .wv-plat {
 				display: block;
 			}
+
+			::view-transition-old(root),
+			::view-transition-new(root) {
+				animation: none !important;
+			}
 		</style>
 		<script>
 			// Apply the system theme before first paint to avoid a flash. Once

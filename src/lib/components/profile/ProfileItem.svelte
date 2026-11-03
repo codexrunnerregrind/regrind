@@ -13,6 +13,7 @@
 		active,
 		selected,
 		link,
+		transitionName = null,
 		onclick = undefined,
 		description,
 		actions,
@@ -34,6 +35,7 @@
 		active?: boolean;
 		selected?: boolean;
 		link: string;
+		transitionName?: string | null;
 		/** Fires just before `link` navigates. Not wired to the avatar's own link. */
 		onclick?: import("svelte/elements").MouseEventHandler<HTMLAnchorElement>;
 		description?: import("svelte").Snippet;
@@ -56,6 +58,7 @@
 			<UserAvatar
 				mediaHash={avatar.mediaHash}
 				class="size-16 rounded-full bg-media-placeholder *:rounded-full"
+				{transitionName}
 			/>
 		</Avatar.Root>
 		{@render avatar.overlay?.()}

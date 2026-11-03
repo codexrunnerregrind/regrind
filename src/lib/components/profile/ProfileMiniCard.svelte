@@ -29,6 +29,7 @@
 		portrait = false,
 		meta,
 		overlay,
+		transitionName = null,
 	}: {
 		mediaHash?: string | null;
 		displayName?: string | null;
@@ -51,6 +52,7 @@
 		/** A trailing label line — what this tile says beyond who it is. */
 		meta?: Snippet;
 		overlay?: Snippet;
+		transitionName?: string | null;
 	} = $props();
 
 	const noteText = $derived(note?.trim() ?? "");
@@ -85,7 +87,7 @@
 
 {#snippet content()}
 	<div class="absolute size-full bg-media-placeholder">
-		<UserAvatar {mediaHash} class="size-full" size="xl" />
+		<UserAvatar {mediaHash} class="size-full" size="xl" {transitionName} />
 	</div>
 	{#if distance !== null}
 		<span class="profile-card-distance absolute top-1.5 right-1.5 z-1">

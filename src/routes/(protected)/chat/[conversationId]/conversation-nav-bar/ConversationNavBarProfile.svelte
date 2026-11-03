@@ -5,19 +5,40 @@
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
 	import * as Avatar from "$lib/components/ui/avatar";
 	import * as Card from "$lib/components/ui/card";
+	import {
+		appendProfileTransitionQueryParam,
+		getProfileTransitionName,
+	} from "$lib/platform/view-transitions";
 	import type { ConversationProfile } from "../conversation-state.svelte";
+
+	const TRANSITION_NAME = "conversationNavBar";
 
 	let {
 		profile,
 		typing = false,
 	}: { profile: ConversationProfile; typing?: boolean } = $props();
+
+	const hrefWithTransitionQueryParam = $derived.by(() => {
+		const href = `/profile/${profile.profileId}`;
+		if (!profile.mediaHash) return href;
+		return appendProfileTransitionQueryParam(
+			href,
+			TRANSITION_NAME,
+			profile.mediaHash,
+		);
+	});
+
+	const transitionName = $derived(
+		getProfileTransitionName(TRANSITION_NAME, profile.mediaHash),
+	);
 </script>
 
-<a href="/profile/{profile.profileId}" class="flex-1 py-4 ps-1 pe-2">
+<a href={hrefWithTransitionQueryParam} class="flex-1 py-4 ps-1 pe-2">
 	<Card.Header class="flex items-center gap-3 px-0">
 		<Avatar.Root class="size-avatar after:rounded-full">
 			<UserAvatar
 				mediaHash={profile.mediaHash ?? null}
+				{transitionName}
 				class="size-full *:rounded-full"
 				size="lg"
 			/>

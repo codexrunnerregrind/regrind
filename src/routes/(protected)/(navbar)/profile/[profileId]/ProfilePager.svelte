@@ -12,6 +12,8 @@
 		ids,
 		activeId,
 		ourProfileId,
+		transitionName = null,
+		profileThumbHash = null,
 		onactive,
 		extend,
 	}: {
@@ -19,6 +21,8 @@
 		ids: number[];
 		activeId: number;
 		ourProfileId: number;
+		transitionName?: string | null;
+		profileThumbHash?: string | null;
 		/** The profile a swipe landed on, as soon as it is committed to. */
 		onactive?: (profileId: number) => void;
 		/** Grows `ids` past what was loaded when the profile was opened. */
@@ -156,6 +160,12 @@
 						profileId={pane.id}
 						{ourProfileId}
 						active={pane.index === index}
+						transitionName={pane.index === index
+							? transitionName
+							: null}
+						profileThumbHash={pane.index === index
+							? profileThumbHash
+							: null}
 						{register}
 					/>
 				</div>
