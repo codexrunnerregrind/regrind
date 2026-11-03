@@ -24,8 +24,8 @@
 
 			<p class="text-sm/[1.45] text-muted-foreground">
 				Most assignments are used in order to drive the app behaviour,
-				what the users sees and how. Some are used in order to limit
-				access API access (mostly used for brand new features).
+				what the users sees and how. Some are used in order to limit API
+				access (mostly used for brand new features).
 			</p>
 
 			<div class="flex items-center gap-3.5">

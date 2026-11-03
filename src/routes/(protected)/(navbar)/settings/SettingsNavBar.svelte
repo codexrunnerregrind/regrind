@@ -45,12 +45,12 @@
 			title: "Restore from backup",
 			back: "/settings/advanced",
 		},
+		[`${base}/advanced/experiments`]: {
+			title: "Grindr Experiments",
+			back: "/settings/advanced",
+		},
 		[`${base}/appearance`]: { title: "Appearance", back: "/settings" },
 		[`${base}/profile`]: { title: "Edit Profile", back: "/settings" },
-		[`${base}/experiments`]: {
-			title: "Grindr Experiments",
-			back: "/settings",
-		},
 	};
 
 	const current = $derived(

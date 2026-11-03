@@ -17,6 +17,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>Grindr Experiments</title>
+</svelte:head>
+
 {#if experimentsState.loading}
 	<div class="flex justify-center">
 		<Spinner class="size-12" />
@@ -34,7 +38,9 @@
 		<ExperimentsFilterBar />
 
 		{#if experimentsState.assignments.length === 0}
-			No experiments found matching your filters
+			<p class="pt-1 pb-3.5 text-preview/[1.45] text-pretty text-ink3">
+				No experiments found matching your filters
+			</p>
 		{:else}
 			<SettingsGroup divider="full">
 				{#each experimentsState.assignments as assignment (assignment.key)}
