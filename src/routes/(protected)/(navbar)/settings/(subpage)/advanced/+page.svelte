@@ -2,6 +2,7 @@
 	import CalendarBlankIcon from "phosphor-svelte/lib/CalendarBlankIcon";
 	import ClockCounterClockwiseIcon from "phosphor-svelte/lib/ClockCounterClockwiseIcon";
 	import ExportIcon from "phosphor-svelte/lib/ExportIcon";
+	import FlaskIcon from "phosphor-svelte/lib/FlaskIcon";
 	import FloppyDiskIcon from "phosphor-svelte/lib/FloppyDiskIcon";
 	import TrayArrowDownIcon from "phosphor-svelte/lib/TrayArrowDownIcon";
 
@@ -66,4 +67,13 @@
 			<CalendarBlankIcon weight="fill" />
 		{/snippet}
 	</PreferenceSwitchSetting>
+	<SettingsRow
+		title="Grindr Experiments"
+		description="See the experiments your account is part of"
+		href="/settings/advanced/experiments"
+	>
+		{#snippet icon()}
+			<FlaskIcon weight="fill" />
+		{/snippet}
+	</SettingsRow>
 </SettingsGroup>
