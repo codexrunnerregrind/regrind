@@ -17,7 +17,7 @@ import AdvancedPage from "./+page.svelte";
 describe("Advanced settings page", () => {
 	afterEach(cleanup);
 
-	it("links the backup and favorites screens", () => {
+	it("links the backup, favorites, and experiments screens", () => {
 		render(AdvancedPage);
 		const href = (name: RegExp) =>
 			screen.getByRole("link", { name }).getAttribute("href");
@@ -28,6 +28,9 @@ describe("Advanced settings page", () => {
 		);
 		expect(href(/Import favorites/)).toBe(
 			"/settings/advanced/favorites/import",
+		);
+		expect(href(/Grindr Experiments/)).toBe(
+			"/settings/advanced/experiments",
 		);
 	});
 
