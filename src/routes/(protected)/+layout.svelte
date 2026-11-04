@@ -12,6 +12,7 @@
 	import { listenForKeyboardMedia } from "$lib/platform/keyboard-media.svelte";
 	import { listenForMedia } from "$lib/platform/media-intake.svelte";
 	import { startOnlineHeartbeat } from "$lib/presence/online-heartbeat";
+	import { listenForPrivacyFlips } from "$lib/privacy/flip-privacy.svelte";
 	import { guardDeletedPages } from "$lib/util/deleted-pages";
 	import { retryBrokenMediaWhenOnline } from "$lib/util/media-retry-signals";
 	import { videoCall } from "$lib/video-call/call-state.svelte";
@@ -44,6 +45,7 @@
 
 	guardDeletedPages();
 
+	$effect(() => listenForPrivacyFlips());
 	$effect(() => startOnlineHeartbeat());
 	$effect(() => retryBrokenMediaWhenOnline());
 	$effect(() => listenForMedia());

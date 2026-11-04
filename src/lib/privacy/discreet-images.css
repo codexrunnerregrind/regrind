@@ -1,0 +1,15 @@
+/* Shift the replaced content completely outside its clipped content box.
+ * Unlike blur or opacity this reveals no pixels, preserves each tile's size,
+ * and also covers raw images, video posters and body-level PhotoSwipe portals.
+ * Keep loading/layout callbacks intact so switching modes doesn't move chats.
+ */
+html[data-discreet-images] :is(img, video) {
+	object-position: 1000000px 1000000px !important;
+	background: var(--color-muted, #52525b) !important;
+	transition: none !important;
+}
+
+/* Editors and live video render pixels into canvases instead of images. */
+html[data-discreet-images] canvas {
+	visibility: hidden !important;
+}

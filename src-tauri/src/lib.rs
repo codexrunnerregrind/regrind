@@ -8,6 +8,7 @@ mod capabilities;
 mod context_menu;
 mod desktop_entry;
 mod error;
+mod flip_privacy;
 mod haptics;
 mod hex;
 mod keep_screen_on;
@@ -254,6 +255,7 @@ pub fn run() {
             api::session_recovery::current_session,
             haptics::play_haptic,
             keep_screen_on::set_keep_screen_on,
+            flip_privacy::set_flip_privacy,
             scroll_phase::set_scroll_gesture_capture,
             desktop_entry::desktop_entry_state,
             desktop_entry::desktop_entry_install,

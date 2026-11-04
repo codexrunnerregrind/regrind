@@ -50,6 +50,19 @@ describe("preferences split between the app and each account", () => {
 		expect(await stored(THEIRS)).toMatchObject({ geohash: "gcpvj0duqcjt" });
 	});
 
+	it("keeps hidden images enabled across account switches and reloads", async () => {
+		await usePreferencesForAccount(1);
+		expect(preferencesSnapshot().discreetImages).toBe(false);
+		await setPreferences({ discreetImages: true });
+		await usePreferencesForAccount(2);
+		expect(preferencesSnapshot().discreetImages).toBe(true);
+		expect(await stored(GLOBAL)).toMatchObject({ discreetImages: true });
+		expect(await stored(MINE)).not.toHaveProperty("discreetImages");
+		await setPreferences({ discreetImages: false });
+		await usePreferencesForAccount(1);
+		expect(preferencesSnapshot().discreetImages).toBe(false);
+	});
+
 	it("shares the look of the app across accounts", async () => {
 		await usePreferencesForAccount(1);
 		await setPreferences({ accentColor: "purple", themeMode: "light" });

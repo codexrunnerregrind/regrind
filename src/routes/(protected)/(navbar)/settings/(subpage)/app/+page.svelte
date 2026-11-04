@@ -22,6 +22,7 @@
 	import { desktopEntryAvailable } from "$lib/platform/desktop-entry.svelte";
 	import { hapticsAvailable } from "$lib/platform/haptics";
 	import { keepScreenOnAvailable } from "$lib/platform/keep-screen-on";
+	import PrivacyModeSetting from "$lib/privacy/PrivacyModeSetting.svelte";
 	import { addonInstallerAvailable } from "$lib/updates/addon.svelte";
 	import {
 		updatesSelfManaged,
@@ -94,6 +95,7 @@
 
 <SectionHeader>Privacy</SectionHeader>
 <SettingsGroup divider="full">
+	<PrivacyModeSetting />
 	<PreferenceSwitchSetting
 		preference="stayOnline"
 		title="Stay online while the app is open"

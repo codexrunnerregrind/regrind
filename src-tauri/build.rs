@@ -16,8 +16,10 @@ fn main() {
 	// See `src/video.rs`.
 	if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("ios") {
 		println!("cargo:rerun-if-changed=native/VideoTranscode.m");
+		println!("cargo:rerun-if-changed=native/FlipPrivacy.m");
 		cc::Build::new()
 			.file("native/VideoTranscode.m")
+			.file("native/FlipPrivacy.m")
 			.flag("-fobjc-arc")
 			.compile("regrind_video");
 		println!("cargo:rustc-link-lib=framework=AVFoundation");
