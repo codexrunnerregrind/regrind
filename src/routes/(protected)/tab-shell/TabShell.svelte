@@ -55,8 +55,8 @@
 	// The pane shown and its neighbours are mounted, and no others: five live
 	// screens (the grid's images, every Interest list) were enough for iOS to
 	// kill the WebView. One left behind is let go once the app is idle again,
-	// not mid-slide, and restores its scroll when it comes back. At rest the
-	// neighbours skip style, layout and paint (`content-visibility`).
+	// not mid-slide, and restores its scroll when it comes back. Neighbours stay
+	// rendered: hiding them at rest pushed their whole layout into the tap.
 	let mounted = $state(navTabs.map(() => false));
 
 	$effect(() => {
@@ -179,11 +179,6 @@
 					aria-hidden={pane !== index ? "true" : undefined}
 					class="absolute inset-y-0 w-full overflow-hidden [contain:paint]"
 					style:left="{pane * 100}%"
-					style:content-visibility={pane === index ||
-					settling ||
-					dragX !== 0
-						? "visible"
-						: "hidden"}
 				>
 					{#if mounted[pane]}
 						{@const active = pane === routed && !covered}
