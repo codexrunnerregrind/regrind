@@ -440,6 +440,8 @@
 						profileId={profile.profileId}
 						onProfile={(loaded) => {
 							if (!favoriteTouched) favorite = loaded.isFavorite;
+							if (loaded.tapped || loaded.tapType !== null)
+								tapped = true;
 						}}
 					/>
 					{#if noteText !== ""}

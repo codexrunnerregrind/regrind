@@ -3,7 +3,7 @@
 	import TapBurst, {
 		TAP_BURST_MS,
 	} from "$lib/components/profile/TapBurst.svelte";
-	import { recentGridTap } from "$lib/interest/profile-activity.svelte";
+	import { hasSentTap } from "$lib/interest/profile-activity.svelte";
 	import { TapType } from "$lib/model/interest/taps";
 	import { profilePeek } from "./peek-state.svelte";
 	import ProfilePeek from "./ProfilePeek.svelte";
@@ -49,8 +49,7 @@
 			{anchor}
 			{profile}
 			{ourProfileId}
-			tapSent={recentGridTap(profile.profileId, Date.now())?.received ===
-				false}
+			tapSent={hasSentTap(profile.profileId)}
 			onClose={() => profilePeek.close()}
 		>
 			{@render burst(true)}

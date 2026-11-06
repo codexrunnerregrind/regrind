@@ -136,6 +136,11 @@ export function recordSentTaps(
 	}
 }
 
+/** Whether this session knows of a tap we sent this profile, at any age. */
+export function hasSentTap(profileId: number): boolean {
+	return sent.has(profileId);
+}
+
 export const GRID_TAP_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 export type GridTap = { tapType: TapType; received: boolean };

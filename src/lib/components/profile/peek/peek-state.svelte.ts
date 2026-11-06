@@ -79,9 +79,18 @@ export function openProfileFrom(anchor: HTMLElement, profileId: number): void {
 	else void goto(href);
 }
 
+// So the profile screen's tap button shows it without a refetch.
+function markTapped(profileId: number): void {
+	mergeProfileEditIntoCaches({
+		cacheProfileId: profileId,
+		patch: { tapped: true, tapType: TapType.Hot },
+	});
+}
+
 export async function quickTap(profile: PeekProfile): Promise<boolean> {
 	try {
 		await sendTap({ recipientId: profile.profileId, tapType: TapType.Hot });
+		markTapped(profile.profileId);
 		toast.success(
 			profile.displayName ? `Tapped ${profile.displayName}` : "Tap sent",
 		);
@@ -89,6 +98,7 @@ export async function quickTap(profile: PeekProfile): Promise<boolean> {
 	} catch (error) {
 		if (httpStatusOf(error) === 400) {
 			toast("Already tapped");
+			markTapped(profile.profileId);
 			return true;
 		}
 		console.error(error);
