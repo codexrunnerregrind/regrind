@@ -16,7 +16,10 @@
 	import { reducedMotion } from "$lib/util/reduced-motion";
 	import { formatHeight, formatWeightGrams } from "$lib/util/units";
 
-	let { profileId }: { profileId: number } = $props();
+	let {
+		profileId,
+		onProfile,
+	}: { profileId: number; onProfile?: (profile: Profile) => void } = $props();
 
 	let profile = $state<Profile | null>(null);
 
@@ -24,7 +27,9 @@
 		let live = true;
 		getProfile(profileId)
 			.then((loaded) => {
-				if (live) profile = loaded;
+				if (!live) return;
+				profile = loaded;
+				onProfile?.(loaded);
 			})
 			.catch(() => {});
 		return () => {

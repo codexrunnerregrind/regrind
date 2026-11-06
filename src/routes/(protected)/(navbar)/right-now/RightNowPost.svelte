@@ -18,6 +18,7 @@
 		registerMediaViewerChrome,
 	} from "$lib/chat/media-viewer-chrome";
 	import DistanceFormatted from "$lib/components/profile/DistanceFormatted.svelte";
+	import { profileGestures } from "$lib/components/profile/peek/peek-state.svelte";
 	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
 	import Button from "$lib/components/ui/button/button.svelte";
 	import { TapType } from "$lib/model/interest/taps";
@@ -190,6 +191,21 @@
 		};
 	});
 
+	let avatarWrap: HTMLElement | null = $state(null);
+	const gestures = $derived(
+		profileGestures(
+			() => avatarWrap?.querySelector("a") ?? avatarWrap,
+			() => ({
+				profileId,
+				displayName,
+				mediaHash,
+				isFavorite: false,
+				distance,
+				onlineUntil,
+			}),
+		),
+	);
+
 	// Whitespace-only posts would render a blank first line and leave the row
 	// a different height from its neighbours.
 	const postText = $derived(text?.trim() ? text : null);
@@ -209,8 +225,12 @@
 <!-- Padding, gap and the inset divider mirror ProfileItem so this feed lines up
      with the inbox/taps lists (avatar at 16px, content and rule at 92px). -->
 <article
-	class="relative isolate flex w-full gap-3 py-3 ps-4 pe-4 text-sm text-muted-foreground after:pointer-events-none after:absolute after:right-4 after:bottom-0 after:left-list-inset after:border-b after:border-border/60"
+	class={[
+		"relative isolate flex w-full gap-3 py-3 ps-4 pe-4 text-sm text-muted-foreground after:pointer-events-none after:absolute after:right-4 after:bottom-0 after:left-list-inset after:border-b after:border-border/60",
+		{ "select-none": gestures !== undefined },
+	]}
 	aria-label={postAriaLabel}
+	{...gestures}
 >
 	<!-- Tapping anywhere in the row opens the poster's profile: the avatar alone
 	     is a small target in a list you scan quickly. It's an overlay rather than
@@ -223,7 +243,7 @@
 		aria-hidden="true"
 		tabindex="-1"
 	></a>
-	<div class="relative z-10">
+	<div class="relative z-10" bind:this={avatarWrap}>
 		<RightNowAvatar {profileId} {displayName} {mediaHash} {onlineUntil} />
 	</div>
 	<div class="w-full min-w-0">

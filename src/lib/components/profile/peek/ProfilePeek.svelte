@@ -76,6 +76,8 @@
 	let closing = false;
 
 	let favorite = $state(untrack(() => profile.isFavorite));
+	// Some lists don't know; the loaded profile does, unless already toggled.
+	let favoriteTouched = false;
 	let tapped = $state(untrack(() => tapSent));
 	let tapping = $state(false);
 
@@ -271,6 +273,7 @@
 	async function toggleFavorite() {
 		const next = !favorite;
 		favorite = next;
+		favoriteTouched = true;
 		hapticSelection();
 		bounce(star);
 		if (!(await quickFavorite(profile.profileId, next))) favorite = !next;
@@ -433,7 +436,12 @@
 							</span>
 						{/if}
 					</div>
-					<PeekStats profileId={profile.profileId} />
+					<PeekStats
+						profileId={profile.profileId}
+						onProfile={(loaded) => {
+							if (!favoriteTouched) favorite = loaded.isFavorite;
+						}}
+					/>
 					{#if noteText !== ""}
 						<span
 							class="line-clamp-1 text-sm text-plate-accent italic"
