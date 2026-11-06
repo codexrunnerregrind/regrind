@@ -1,6 +1,7 @@
 import {
 	isPermissionGranted,
 	onAction,
+	registerActionTypes,
 	requestPermission,
 	sendNotification,
 } from "@tauri-apps/plugin-notification";
@@ -10,6 +11,7 @@ import z from "zod";
 import { getPreferences } from "$lib/app-data/preferences.svelte";
 import { peekConversationsState } from "$lib/chat/conversations-context.svelte";
 import { cacheNotificationImage } from "$lib/notifications/notification-image";
+import { sendNotificationReply } from "$lib/notifications/notification-reply";
 import { isAndroidPlatform, isIosPlatform } from "$lib/platform/os";
 import { whileOpeningPushDeeplink } from "$lib/push/opening-deeplink";
 import { profileMediaUrl } from "$lib/util/media";
@@ -25,6 +27,16 @@ type PermissionState = "unknown" | "granted" | "denied" | "default";
 // `extra` survives the round-trip through the OS and comes back on tap, so we
 // stash the in-app route to open there.
 const notificationExtraSchema = z.object({ route: z.string().optional() });
+
+// iOS hands back only the action, the typed text and the notification id.
+const actionSchema = z.object({
+	actionId: z.string().optional(),
+	inputValue: z.string().nullish(),
+	notification: z.object({ id: z.number() }).optional(),
+});
+
+const CHAT_ACTION_TYPE = "chat-message";
+const REPLY_ACTION = "reply";
 
 // A notification is a sentence about what someone did, not an inbox row's bare
 // label. Mirrors TYPE_BODIES in PushNotifier.kt, which says the same for
@@ -91,6 +103,8 @@ class NotificationService {
 	#started = false;
 	#unlisteners: Promise<() => void>[] = [];
 	#permission: PermissionState = "unknown";
+	// Notification id -> conversation, for the reply action.
+	#chatById = new Map<number, string>();
 
 	/** Register realtime listeners for the signed-in profile. Idempotent. */
 	async start(ourProfileId: number): Promise<void> {
@@ -132,13 +146,37 @@ class NotificationService {
 			// this; open the route we stashed in `extra`.
 			safe(
 				onAction((notification) => {
-					const route = notificationExtraSchema.safeParse(
-						notification.extra,
-					).data?.route;
+					if (this.#handleReply(notification)) return;
+					// iOS drops `extra`; fall back to the id we posted under.
+					const route =
+						notificationExtraSchema.safeParse(notification.extra)
+							.data?.route ?? this.#chatRoute(notification);
 					if (route) void whileOpeningPushDeeplink(() => goto(route));
 				}).then((listener) => () => void listener.unregister()),
 			),
 		);
+
+		if (isIosPlatform()) {
+			registerActionTypes([
+				{
+					id: CHAT_ACTION_TYPE,
+					actions: [
+						{
+							id: REPLY_ACTION,
+							title: "Reply",
+							input: true,
+							inputButtonTitle: "Send",
+							inputPlaceholder: "Message",
+						},
+					],
+				},
+			]).catch((error: unknown) => {
+				console.error(
+					"[notifications] action registration failed",
+					error,
+				);
+			});
+		}
 
 		// Warm up permission on launch so the first real event can notify without a
 		// prompt racing the banner. Only if the user actually wants notifications.
@@ -151,6 +189,7 @@ class NotificationService {
 	async stop(): Promise<void> {
 		this.#started = false;
 		this.#ourProfileId = null;
+		this.#chatById.clear();
 		const unlisteners = await Promise.all(this.#unlisteners);
 		for (const unlisten of unlisteners) unlisten();
 		this.#unlisteners = [];
@@ -228,13 +267,42 @@ class NotificationService {
 			? await this.#imageAttachment(message, sender?.primaryMediaHash)
 			: undefined;
 
+		const id = Math.floor(Math.random() * 2 ** 31);
+		this.#chatById.set(id, message.conversationId);
 		sendNotification({
+			id,
 			title: senderName || "New message",
 			body: notificationBody(message),
 			group: message.conversationId,
 			extra: { route: `/chat/${message.conversationId}` },
+			actionTypeId: CHAT_ACTION_TYPE,
 			attachments,
 		});
+	}
+
+	#conversationFor(raw: unknown): string | undefined {
+		const id = actionSchema.safeParse(raw).data?.notification?.id;
+		return id === undefined ? undefined : this.#chatById.get(id);
+	}
+
+	#chatRoute(raw: unknown): string | undefined {
+		const conversationId = this.#conversationFor(raw);
+		return conversationId ? `/chat/${conversationId}` : undefined;
+	}
+
+	// True when the action was a reply, sent or not.
+	#handleReply(raw: unknown): boolean {
+		const action = actionSchema.safeParse(raw).data;
+		if (action?.actionId !== REPLY_ACTION) return false;
+		const conversationId = this.#conversationFor(raw);
+		const text = action.inputValue ?? "";
+		if (conversationId && this.#ourProfileId !== null)
+			void sendNotificationReply(
+				conversationId,
+				text,
+				this.#ourProfileId,
+			);
+		return true;
 	}
 
 	async #imageAttachment(

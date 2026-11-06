@@ -3,6 +3,7 @@ import z from "zod";
 
 import { fetchRest } from "$lib/api/transport";
 import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
+import { sendNotificationReply } from "$lib/notifications/notification-reply";
 import { isAndroidPlatform } from "$lib/platform/os";
 import { whileOpeningPushDeeplink } from "$lib/push/opening-deeplink";
 
@@ -26,6 +27,12 @@ const RESYNC_AFTER_MS = 3 * 24 * 60 * 60 * 1000;
 const RETRY_DELAYS_MS = [5_000, 20_000, 60_000, 300_000];
 
 const syncRecordSchema = z.object({ marker: z.string(), at: z.number() });
+
+const replySchema = z.object({
+	key: z.string(),
+	conversationId: z.string(),
+	text: z.string(),
+});
 
 /** Whether this device is registered for push, for the settings screen to show. */
 export type PushRegistration = "idle" | "syncing" | "registered" | "failed";
@@ -138,6 +145,22 @@ class PushService {
 		};
 		window.addEventListener("regrind:push-open", this.#onOpen);
 
+		window.__regrindNotificationReply = (raw) => {
+			const reply = replySchema.safeParse(raw).data;
+			if (!reply) return;
+			void sendNotificationReply(
+				reply.conversationId,
+				reply.text,
+				profileId,
+			).then((sent) =>
+				window.__RegrindPush?.replyResult?.(
+					reply.key,
+					reply.text,
+					sent,
+				),
+			);
+		};
+
 		// Coming back to the app is the cheapest moment to notice a sync that
 		// never landed, and the one where the network is most likely back.
 		this.#onVisible = () => {
@@ -186,6 +209,7 @@ class PushService {
 			document.removeEventListener("visibilitychange", this.#onVisible);
 			this.#onVisible = null;
 		}
+		window.__regrindNotificationReply = undefined;
 		this.#clearRetry();
 		this.#stopPrefs?.();
 		this.#stopPrefs = null;

@@ -135,6 +135,11 @@ class MainActivity : TauriActivity() {
 			runOnUiThread { NotificationPermission.openSettings(this@MainActivity) }
 		}
 
+		/** How a notification reply went; updates that notification. */
+		@JavascriptInterface fun replyResult(key: String, text: String, sent: Boolean) {
+			PushNotifier.markReplied(this@MainActivity, key, text, sent)
+		}
+
 		/** Re-ask FCM for a token, for the settings screen's retry. */
 		@JavascriptInterface fun refreshToken() {
 			PushFirebase.initialize(this@MainActivity)
@@ -405,6 +410,31 @@ class MainActivity : TauriActivity() {
 			latestFcmToken = token
 			tokenUnavailable = null
 			activityRef?.get()?.dispatchFcmToken(token)
+		}
+
+		/** Hands a notification reply to the signed-in webview. False when there is none. */
+		fun deliverNotificationReply(key: String, conversationId: String, text: String): Boolean {
+			val activity = activityRef?.get()?.takeUnless { it.isDestroyed } ?: return false
+			val webView = activity.webViewRef ?: return false
+			val payload = JSONObject()
+				.put("key", key)
+				.put("conversationId", conversationId)
+				.put("text", text)
+			val script =
+				"(function(){" +
+					"var f = window.__regrindNotificationReply;" +
+					"if (typeof f !== 'function') return 'none';" +
+					"f($payload);" +
+					"return 'ok';" +
+					"})();"
+			activity.runOnUiThread {
+				webView.evaluateJavascript(script) { result ->
+					if (result?.contains("ok") != true) {
+						PushNotifier.markReplied(activity, key, text, sent = false)
+					}
+				}
+			}
+			return true
 		}
 	}
 

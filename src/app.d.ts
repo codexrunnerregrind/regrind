@@ -26,7 +26,10 @@ declare global {
 			requestPermission?(): void;
 			openNotificationSettings?(): void;
 			refreshToken?(): void;
+			replyResult?(key: string, text: string, sent: boolean): void;
 		};
+		/** Native hands a chat notification's inline reply to this. */
+		__regrindNotificationReply?: (reply: unknown) => void;
 		__REGRIND_FCM_TOKEN?: string;
 		/** Why native has no push token, when it knows it never will. */
 		__REGRIND_FCM_UNAVAILABLE?: string;

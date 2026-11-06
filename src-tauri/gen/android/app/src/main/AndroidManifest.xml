@@ -791,6 +791,10 @@
 			android:name="org.regrind.update.InstallResultReceiver"
 			android:exported="false" />
 
+		<receiver
+			android:name="org.regrind.push.ReplyReceiver"
+			android:exported="false" />
+
 		<provider
 			android:name="androidx.core.content.FileProvider"
 			android:authorities="${applicationId}.fileprovider"

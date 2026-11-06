@@ -7,14 +7,24 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
+import android.net.Uri
 import android.util.Log
 import android.util.LruCache
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
+import androidx.core.app.RemoteInput
+import androidx.core.content.FileProvider
+import androidx.core.content.pm.ShortcutInfoCompat
+import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import org.json.JSONObject
 import org.regrind.MainActivity
 import org.regrind.appicon.AppIconPlugin
+import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLDecoder
@@ -88,28 +98,17 @@ object PushNotifier {
 			PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
 		)
 
-		// The sender's photo shows as the notification's large icon (and the
-		// MessagingStyle bubble avatar); an image/gif message expands to the
-		// picture itself. Both are best-effort — a miss falls back to text.
+		// The sender's photo is the large icon, the MessagingStyle avatar and,
+		// through the conversation shortcut, the icon Android 11+ shows in
+		// place of the app's. Best-effort — a miss falls back to text.
 		val avatar = downloadBitmap(normalizeNullableString(payload.optString("senderAvatarUrl")))
+			?.let(::circleCrop)
 		val preview = downloadBitmap(normalizeNullableString(payload.optString("previewImageUrl")))
 
-		val me = Person.Builder().setName("Me").build()
-		val senderBuilder = Person.Builder().setName(title)
+		val senderBuilder = Person.Builder().setName(title).setKey(key)
 		if (avatar != null) senderBuilder.setIcon(IconCompat.createWithBitmap(avatar))
 		val sender = senderBuilder.build()
-
-		val style: NotificationCompat.Style = when {
-			preview != null ->
-				NotificationCompat.BigPictureStyle()
-					.bigPicture(preview)
-					.setBigContentTitle(title)
-					.setSummaryText(text)
-			isTap -> NotificationCompat.BigTextStyle().bigText(text)
-			else ->
-				NotificationCompat.MessagingStyle(me)
-					.addMessage(text, System.currentTimeMillis(), sender)
-		}
+		val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
 		val builder = NotificationCompat.Builder(context, channelId)
 			.setSmallIcon(AppIconPlugin.notificationIcon(context))
@@ -119,12 +118,126 @@ object PushNotifier {
 			.setPriority(NotificationCompat.PRIORITY_HIGH)
 			.setAutoCancel(true)
 			.setContentIntent(pendingIntent)
-			.setStyle(style)
 		if (avatar != null) builder.setLargeIcon(avatar)
 
-		val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+		if (isTap) {
+			builder.setStyle(NotificationCompat.BigTextStyle().bigText(text))
+		} else {
+			// Earlier messages from this chat stay in the notification.
+			val style = activeStyle(manager, key) ?: NotificationCompat.MessagingStyle(me())
+			val message = NotificationCompat.MessagingStyle.Message(text, System.currentTimeMillis(), sender)
+			preview?.let { imageUri(context, it, key) }?.let { message.setData("image/jpeg", it) }
+			style.addMessage(message)
+			while (style.messages.size > MAX_HISTORY) style.messages.removeAt(0)
+			builder.setStyle(style)
+			if (publishShortcut(context, key, sender, avatar, route)) builder.setShortcutId(key)
+			if (conversationId != null) builder.addAction(replyAction(context, key, conversationId))
+		}
+
 		manager.notify(key, NOTIFICATION_INSTANCE_ID, builder.build())
 		Log.d(TAG, "posted notification key=$key route=$route")
+	}
+
+	/** Appends the user's reply to the chat's notification, or a failure note. */
+	fun markReplied(context: Context, key: String, text: String, sent: Boolean) {
+		val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+		val active = manager.activeNotifications.firstOrNull {
+			it.tag == key && it.id == NOTIFICATION_INSTANCE_ID
+		}?.notification ?: return
+		val style = NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(active)
+			?: NotificationCompat.MessagingStyle(me())
+		val line = if (sent) text else "Not sent: $text"
+		style.addMessage(line, System.currentTimeMillis(), null as Person?)
+		while (style.messages.size > MAX_HISTORY) style.messages.removeAt(0)
+		val builder = NotificationCompat.Builder(context, active)
+			.setStyle(style)
+			.setOnlyAlertOnce(true)
+		manager.notify(key, NOTIFICATION_INSTANCE_ID, builder.build())
+	}
+
+	private fun me(): Person = Person.Builder().setName("You").build()
+
+	private fun activeStyle(manager: NotificationManager, key: String): NotificationCompat.MessagingStyle? {
+		val active = manager.activeNotifications.firstOrNull {
+			it.tag == key && it.id == NOTIFICATION_INSTANCE_ID
+		} ?: return null
+		return NotificationCompat.MessagingStyle.extractMessagingStyleFromNotification(active.notification)
+	}
+
+	private fun replyAction(context: Context, key: String, conversationId: String): NotificationCompat.Action {
+		val input = RemoteInput.Builder(KEY_REPLY_TEXT).setLabel("Message").build()
+		val intent = Intent(context, ReplyReceiver::class.java).apply {
+			putExtra(EXTRA_KEY, key)
+			putExtra(EXTRA_CONVERSATION_ID, conversationId)
+		}
+		// Mutable: the system writes the typed text into it.
+		val pending = PendingIntent.getBroadcast(
+			context,
+			key.hashCode(),
+			intent,
+			PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+		)
+		return NotificationCompat.Action.Builder(android.R.drawable.ic_menu_send, "Reply", pending)
+			.addRemoteInput(input)
+			.setAllowGeneratedReplies(true)
+			.setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_REPLY)
+			.setShowsUserInterface(false)
+			.build()
+	}
+
+	// A long-lived shortcut makes Android treat the chat as a conversation.
+	private fun publishShortcut(
+		context: Context,
+		key: String,
+		sender: Person,
+		avatar: Bitmap?,
+		route: String?,
+	): Boolean = try {
+		val intent = Intent(context, MainActivity::class.java).apply {
+			action = Intent.ACTION_VIEW
+			if (route != null) putExtra(EXTRA_ROUTE, route)
+		}
+		val icon = avatar?.let { IconCompat.createWithBitmap(it) }
+			?: IconCompat.createWithResource(context, context.applicationInfo.icon)
+		val shortcut = ShortcutInfoCompat.Builder(context, key)
+			.setShortLabel(sender.name ?: "Chat")
+			.setPerson(sender)
+			.setLongLived(true)
+			.setIcon(icon)
+			.setIntent(intent)
+			.build()
+		ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
+		true
+	} catch (e: Exception) {
+		Log.w(TAG, "could not publish conversation shortcut", e)
+		false
+	}
+
+	private fun circleCrop(source: Bitmap): Bitmap {
+		val size = minOf(source.width, source.height)
+		val output = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+		val canvas = Canvas(output)
+		val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+		canvas.drawCircle(size / 2f, size / 2f, size / 2f, paint)
+		paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+		val left = (source.width - size) / 2f
+		val top = (source.height - size) / 2f
+		canvas.drawBitmap(source, -left, -top, paint)
+		return output
+	}
+
+	// MessagingStyle shows an inline image only from a content URI.
+	private fun imageUri(context: Context, bitmap: Bitmap, key: String): Uri? = try {
+		val dir = File(context.cacheDir, "notification-images").apply { mkdirs() }
+		val file = File(dir, "${key.hashCode()}-${System.currentTimeMillis()}.jpg")
+		file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.JPEG, 85, it) }
+		dir.listFiles()?.sortedByDescending { it.lastModified() }?.drop(MAX_IMAGES)?.forEach { it.delete() }
+		val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+		context.grantUriPermission("com.android.systemui", uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+		uri
+	} catch (e: Exception) {
+		Log.w(TAG, "could not stage notification image", e)
+		null
 	}
 
 	fun ensureChannels(context: Context) {
@@ -414,5 +527,10 @@ object PushNotifier {
 	}
 
 	const val EXTRA_ROUTE = "regrind_push_route"
+	const val EXTRA_KEY = "regrind_push_key"
+	const val EXTRA_CONVERSATION_ID = "regrind_push_conversation"
+	const val KEY_REPLY_TEXT = "regrind_reply_text"
 	private const val NOTIFICATION_INSTANCE_ID = 1
+	private const val MAX_HISTORY = 10
+	private const val MAX_IMAGES = 20
 }
