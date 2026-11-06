@@ -77,6 +77,7 @@ export async function getActiveRightNowPost(): Promise<RightNowOwnPost | null> {
 	const res = await fetchRest("/v3/rightnow/active-post");
 	if (res.status === 404) return null;
 	res.assertOk();
+	// A removed post still comes back here until it expires, marked HIDDEN.
 	return ownPostFrom(res.json());
 }
 

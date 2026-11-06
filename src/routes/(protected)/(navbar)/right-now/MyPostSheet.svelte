@@ -50,6 +50,7 @@
 
 	const post = $derived(myRightNowPost.post);
 	const editing = $derived(post !== null);
+	const hidden = $derived(myRightNowPost.hiddenPost);
 
 	let text = $state("");
 	let hosting = $state(false);
@@ -65,7 +66,9 @@
 	// re-send, so editing starts from no photo rather than a broken one.
 	$effect(() => {
 		if (!open) return;
-		const current = untrack(() => myRightNowPost.post);
+		const current = untrack(
+			() => myRightNowPost.post ?? myRightNowPost.hiddenPost,
+		);
 		text = current?.activeText ?? "";
 		hosting = current?.hosting ?? false;
 		media = [];
@@ -86,7 +89,10 @@
 
 	// Ticks on its own, so a sheet left open does not keep claiming an hour left.
 	const timeLeft = $derived(
-		postTimeLeft({ expiration: post?.expiration, nowMs: getNow() }),
+		postTimeLeft({
+			expiration: (post ?? hidden)?.expiration,
+			nowMs: getNow(),
+		}),
 	);
 
 	const tooLong = $derived(text.length > RIGHT_NOW_TEXT_LIMIT);
@@ -170,7 +176,7 @@
 				<Drawer.Title>
 					{editing ? "Your post" : "Post to Right Now"}
 				</Drawer.Title>
-				{#if editing && timeLeft !== null}
+				{#if (editing || hidden !== null) && timeLeft !== null}
 					<span
 						class="flex shrink-0 items-center gap-1.5 rounded-full bg-fuchsia-600/15 px-3 py-1.5 text-caption font-semibold text-fuchsia-600 tabular-nums"
 					>
@@ -185,7 +191,7 @@
 					</span>
 				{/if}
 			</div>
-			{#if !editing}
+			{#if !editing && hidden === null}
 				<!-- The hour is fixed, so this states it rather than offering a
 				     duration control the API has no room for. -->
 				<Drawer.Description class="text-left">

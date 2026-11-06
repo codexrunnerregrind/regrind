@@ -251,6 +251,52 @@ describe("my right now post", () => {
 		expect(myRightNowPost.hasPost).toBe(false);
 	});
 
+	it("reads a removed post as no post, but keeps it to bring back", async () => {
+		getActiveRightNowPostMock.mockResolvedValue({
+			...RUNNING,
+			postStatus: "HIDDEN",
+		});
+		await loaded();
+
+		expect(myRightNowPost.hasPost).toBe(false);
+		expect(myRightNowPost.hiddenPost?.id).toBe(42);
+		expect(myRightNowPost.lapsed).toBe(false);
+	});
+
+	it("unhides a removed post instead of spending a new one", async () => {
+		getActiveRightNowPostMock.mockResolvedValue(RUNNING);
+		await loaded();
+		await myRightNowPost.hide();
+
+		await myRightNowPost.create(DRAFT);
+
+		expect(createRightNowPostMock).not.toHaveBeenCalled();
+		expect(updateRightNowPostMock).toHaveBeenLastCalledWith({
+			postId: 42,
+			patch: {
+				hidden: false,
+				text: "around",
+				hosting: false,
+				shareLocation: "DISTANCE_ONLY",
+				media: [],
+			},
+		});
+		expect(myRightNowPost.hasPost).toBe(true);
+		expect(myRightNowPost.remaining).toBe(1);
+	});
+
+	it("posts anew once the removed post's hour is up", async () => {
+		getActiveRightNowPostMock.mockResolvedValue({
+			...LAPSED,
+			postStatus: "HIDDEN",
+		});
+		await loaded();
+
+		await myRightNowPost.create(DRAFT);
+
+		expect(createRightNowPostMock).toHaveBeenCalled();
+	});
+
 	it("leaves the post alone when the update fails", async () => {
 		getActiveRightNowPostMock.mockResolvedValue(POST);
 		updateRightNowPostMock.mockRejectedValue(new Error("nope"));

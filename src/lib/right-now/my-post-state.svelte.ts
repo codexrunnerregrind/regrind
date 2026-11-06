@@ -51,6 +51,17 @@ class MyRightNowPostState {
 	 * a new one rather than an edit that would fail.
 	 */
 	get post(): RightNowOwnPost | null {
+		const post = this.#unexpired;
+		return post?.postStatus === "HIDDEN" ? null : post;
+	}
+
+	/** A removed post with time left: posting again brings it back. */
+	get hiddenPost(): RightNowOwnPost | null {
+		const post = this.#unexpired;
+		return post?.postStatus === "HIDDEN" ? post : null;
+	}
+
+	get #unexpired(): RightNowOwnPost | null {
 		const post = this.#post;
 		if (post === null) return null;
 		return postExpired({ expiration: post.expiration, nowMs: getNow() })
@@ -69,7 +80,7 @@ class MyRightNowPostState {
 
 	/** Whether the post we were holding has run out. */
 	get lapsed(): boolean {
-		return this.#post !== null && this.post === null;
+		return this.#post !== null && this.#unexpired === null;
 	}
 
 	/**
@@ -149,6 +160,11 @@ class MyRightNowPostState {
 	 */
 	async create(draft: RightNowPostDraft): Promise<void> {
 		if (this.busy) return;
+		const hidden = this.hiddenPost;
+		if (hidden !== null) {
+			await this.#patch(hidden, draft, { hidden: false });
+			return;
+		}
 		this.busy = true;
 		try {
 			const text = draft.text.trim();
@@ -191,12 +207,21 @@ class MyRightNowPostState {
 	async update(draft: RightNowPostDraft): Promise<void> {
 		const post = this.post;
 		if (post === null || this.busy) return;
+		await this.#patch(post, draft, {});
+	}
+
+	async #patch(
+		post: RightNowOwnPost,
+		draft: RightNowPostDraft,
+		extra: { hidden?: boolean },
+	): Promise<void> {
 		this.busy = true;
 		try {
 			const text = draft.text.trim();
 			await updateRightNowPost({
 				postId: post.id,
 				patch: {
+					...extra,
 					text: text === "" ? null : text,
 					hosting: draft.hosting,
 					shareLocation: this.#shareLocation,
@@ -205,6 +230,7 @@ class MyRightNowPostState {
 			});
 			this.#post = {
 				...post,
+				...(extra.hidden === false && { postStatus: "ACTIVE" }),
 				activeText: text === "" ? null : text,
 				hosting: draft.hosting,
 				shareLocation: this.#shareLocation,
@@ -217,7 +243,7 @@ class MyRightNowPostState {
 	/**
 	 * Takes the post out of the feed. `hidden` rather than a delete: the API has
 	 * no endpoint for removing a post, and hiding is what the official app's
-	 * "remove" does.
+	 * "remove" does. The post is kept so posting again within its hour unhides it.
 	 */
 	async hide(): Promise<void> {
 		const post = this.post;
@@ -228,7 +254,7 @@ class MyRightNowPostState {
 				postId: post.id,
 				patch: { hidden: true },
 			});
-			this.#post = null;
+			this.#post = { ...post, postStatus: "HIDDEN" };
 		} finally {
 			this.busy = false;
 		}

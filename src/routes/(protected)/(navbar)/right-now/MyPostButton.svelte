@@ -18,13 +18,17 @@
 
 	// The post that is already up can always be edited: the allowance is spent on
 	// putting one up, not on changing it.
-	const locked = $derived(!myRightNowPost.allowed && !myRightNowPost.hasPost);
+	// Bringing back a removed post costs nothing either.
+	const hidden = $derived(myRightNowPost.hiddenPost);
+	const locked = $derived(
+		!myRightNowPost.allowed && !myRightNowPost.hasPost && hidden === null,
+	);
 
 	// On the button itself, so the countdown is readable without opening anything.
 	// Ticks on the shared clock rather than one of its own.
 	const timeLeft = $derived(
 		postTimeLeft({
-			expiration: myRightNowPost.post?.expiration,
+			expiration: (myRightNowPost.post ?? hidden)?.expiration,
 			nowMs: getNow(),
 		}),
 	);
@@ -100,7 +104,11 @@
 			     read as a spent allowance for as long as the fetch takes. -->
 			<span class="flex flex-col items-start leading-tight">
 				Post
-				{#if myRightNowPost.loaded}
+				{#if hidden !== null && timeLeft !== null}
+					<span class="text-xs font-medium opacity-75">
+						{timeLeft}
+					</span>
+				{:else if myRightNowPost.loaded}
 					<span class="text-xs font-medium opacity-75">
 						{myRightNowPost.remaining} left
 					</span>
