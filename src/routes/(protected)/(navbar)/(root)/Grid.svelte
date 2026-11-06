@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { page } from "$app/state";
+
 	import {
 		ensureFavoriteNotes,
 		favoriteNote,
@@ -7,12 +9,14 @@
 		getProfileGridColumnsSnapshot,
 		preferencesSnapshot,
 	} from "$lib/app-data/preferences.svelte";
+	import { getOrCreateConversationsState } from "$lib/chat/conversations-context.svelte";
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import PagingSentinel from "$lib/components/shared/PagingSentinel.svelte";
 	import { gridState } from "$lib/grid/grid-state.svelte";
 	import { ensureSentTapsLoaded } from "$lib/grid/grid-taps";
 	import { usernameMatches } from "$lib/model/browse/grid/filters";
 	import { armProfileDeck } from "$lib/profile/profile-deck";
+	import { getNow } from "$lib/util/now";
 	import {
 		readGridMetrics,
 		virtualGrid,
@@ -51,6 +55,24 @@
 	}
 
 	const gridProfiles = $derived(matchUsername(gridState.profiles));
+
+	// The cascade's `chatted` flag lags; the inbox knows about a chat at once.
+	const CHAT_WINDOW_MS = 24 * 60 * 60 * 1000;
+	const ourProfileId: number = page.data.ourProfileId;
+	const conversations = getOrCreateConversationsState(ourProfileId);
+	const recentChats = $derived.by(() => {
+		const since = getNow() - CHAT_WINDOW_MS;
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- rebuilt whole by the derived, never mutated after
+		const ids = new Set<number>();
+		for (const entry of conversations.entries) {
+			if (entry.data.lastActivityTimestamp < since) continue;
+			for (const participant of entry.data.participants) {
+				if (participant.profileId !== ourProfileId)
+					ids.add(participant.profileId);
+			}
+		}
+		return ids;
+	});
 	const topPicks = $derived(
 		gridState.topPicks.filter((item) => item.type === "rendered"),
 	);
@@ -146,7 +168,8 @@
 			seen={item.seen}
 			isFavorite={item.isFavorite}
 			isVisiting={item.isVisiting}
-			hadRecentChat={item.hasChattedInLast24Hrs}
+			hadRecentChat={item.hasChattedInLast24Hrs ||
+				recentChats.has(item.id)}
 			medias={item.profilePhotosHashes?.map((mediaHash) => ({
 				mediaHash,
 			})) ?? []}

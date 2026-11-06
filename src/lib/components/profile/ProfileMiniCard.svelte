@@ -250,8 +250,9 @@
 		</div>
 	{/if}
 	{#if framed}
+		<!-- Flush with the tile, so it reads as part of it, not a selection. -->
 		<div
-			class="pointer-events-none absolute inset-0 z-2 rounded-[inherit] ring-2 ring-sky-500 ring-inset"
+			class="chat-frame pointer-events-none absolute inset-0 z-2 rounded-[inherit]"
 		></div>
 	{/if}
 	{@render overlay?.()}
@@ -295,5 +296,11 @@
 	:global(.marker) {
 		@apply size-3.5 shrink-0;
 		filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.6));
+	}
+
+	.chat-frame {
+		box-shadow:
+			inset 0 0 0 2px var(--color-sky-400),
+			inset 0 0 14px --alpha(var(--color-sky-400) / 30%);
 	}
 </style>
