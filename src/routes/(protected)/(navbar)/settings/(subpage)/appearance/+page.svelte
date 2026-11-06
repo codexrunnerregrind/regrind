@@ -43,6 +43,7 @@
 	import { hapticSelection } from "$lib/platform/haptics";
 	import BackdropBlurSetting from "./BackdropBlurSetting.svelte";
 	import GridColumnsSetting from "./GridColumnsSetting.svelte";
+	import TextSizeSetting from "./TextSizeSetting.svelte";
 
 	let mode = $state<ThemeMode>(getThemeModeSnapshot());
 	let accent = $state<AccentColor>(getAccentColorSnapshot());
@@ -179,6 +180,14 @@
 <SectionFooter>
 	System matches your device's light or dark setting automatically.
 </SectionFooter>
+
+<SectionHeader>Text size</SectionHeader>
+<SettingsGroup divider="none">
+	<TextSizeSetting />
+</SettingsGroup>
+<SectionFooter
+	>Applies to text across the app. The preview above follows it.</SectionFooter
+>
 
 <SectionHeader>Colors</SectionHeader>
 <SettingsGroup divider="none">

@@ -3,6 +3,7 @@ import {
 	getAccentColorSnapshot,
 	getIncomingBubbleColorSnapshot,
 	getOutgoingBubbleColorSnapshot,
+	getTextScaleSnapshot,
 	getThemeModeSnapshot,
 	type ThemeMode,
 } from "./preferences.svelte";
@@ -62,6 +63,8 @@ function apply(mode: ThemeMode): void {
 
 	applyBubble(root, "out", getOutgoingBubbleColorSnapshot());
 	applyBubble(root, "in", getIncomingBubbleColorSnapshot());
+
+	root.style.setProperty("--text-scale", String(getTextScaleSnapshot()));
 }
 
 /**

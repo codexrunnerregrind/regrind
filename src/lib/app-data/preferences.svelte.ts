@@ -121,6 +121,8 @@ const preferencesSchema = z.object({
 	// The doodle wallpaper behind the transcript, on by default the way the
 	// official app has one. Off leaves the plain chat background.
 	chatWallpaper: z.boolean().default(true),
+	// Multiplies every font size; spacing stays put.
+	textScale: z.number().min(0.85).max(1.3).default(1).catch(1),
 	// Off by default: the drawer otherwise keeps the server's order.
 	sortMediaByFrequency: z.boolean().default(false),
 	// Sends from the chat media sheet, keyed by drawer media id.
@@ -404,6 +406,10 @@ export function getMediaSendsSnapshot(): MediaSends {
 
 export function getChatWallpaperSnapshot(): boolean {
 	return snapshot.chatWallpaper;
+}
+
+export function getTextScaleSnapshot(): number {
+	return snapshot.textScale;
 }
 
 export function getAccentColorSnapshot(): AccentColor {

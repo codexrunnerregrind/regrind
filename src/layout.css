@@ -260,31 +260,54 @@
 	--aspect-album: 0.78;
 	--aspect-album-photo: 0.82;
 
-	--text-2xs: 0.6875rem; /* 11px */
-	--text-3xs: 0.625rem; /* 10px */
+	/* --text-scale is the Appearance text size, set by theme.svelte.ts. */
+	--text-xs: calc(0.75rem * var(--text-scale, 1));
+	--text-sm: calc(0.875rem * var(--text-scale, 1));
+	--text-base: calc(1rem * var(--text-scale, 1));
+	--text-lg: calc(1.125rem * var(--text-scale, 1));
+	--text-xl: calc(1.25rem * var(--text-scale, 1));
+	--text-2xl: calc(1.5rem * var(--text-scale, 1));
+	--text-3xl: calc(1.875rem * var(--text-scale, 1));
+	--text-4xl: calc(2.25rem * var(--text-scale, 1));
+	--text-2xs: calc(0.6875rem * var(--text-scale, 1)); /* 11px */
+	--text-3xs: calc(0.625rem * var(--text-scale, 1)); /* 10px */
 
 	/* The redesign's type scale (handoff § Typography). These are the half-pixel
 	   sizes the mocks are drawn at; the roles they name are the ones in the
 	   handoff table, so a screen can be checked against it by class name. */
-	--text-screen-title: 1.6875rem; /* 27px — Nearby / Inbox / Settings */
-	--text-section: 0.59375rem; /* 9.5px — ACCOUNT / PINNED / ABOUT */
-	--text-row: 0.90625rem; /* 14.5px — list row title */
+	--text-screen-title: calc(
+		1.6875rem * var(--text-scale, 1)
+	); /* 27px — Nearby / Inbox / Settings */
+	--text-section: calc(
+		0.59375rem * var(--text-scale, 1)
+	); /* 9.5px — ACCOUNT / PINNED / ABOUT */
+	--text-row: calc(
+		0.90625rem * var(--text-scale, 1)
+	); /* 14.5px — list row title */
 	/* A message bubble reads a step larger than a list row: it is the thing
 	   being read, not a label being scanned. */
-	--text-bubble: 0.9375rem; /* 15px — bubble text */
-	--text-preview: 0.78125rem; /* 12.5px — message preview, chip label */
-	--text-meta: 0.71875rem; /* 11.5px — timestamp, tile name plate */
-	--text-distance: 0.65625rem; /* 10.5px — distance overlay, bubble time */
+	--text-bubble: calc(
+		0.9375rem * var(--text-scale, 1)
+	); /* 15px — bubble text */
+	--text-preview: calc(
+		0.78125rem * var(--text-scale, 1)
+	); /* 12.5px — message preview, chip label */
+	--text-meta: calc(
+		0.71875rem * var(--text-scale, 1)
+	); /* 11.5px — timestamp, tile name plate */
+	--text-distance: calc(
+		0.65625rem * var(--text-scale, 1)
+	); /* 10.5px — distance overlay, bubble time */
 
 	/* Settings/list type scale, sitting between Tailwind's xs and base. `caption`
 	   covers group labels, footnotes and row descriptions; `body` is a list row
 	   title; `title` is a card heading such as the profile hero name. */
-	--text-caption: 0.8125rem; /* 13px */
+	--text-caption: calc(0.8125rem * var(--text-scale, 1)); /* 13px */
 	/* Pushed-screen title, and the album name on the album editor. */
-	--text-detail: 1.25rem; /* 20px */
-	--text-album-name: 1.375rem; /* 22px */
-	--text-body: 0.9375rem; /* 15px */
-	--text-title: 1.0625rem; /* 17px */
+	--text-detail: calc(1.25rem * var(--text-scale, 1)); /* 20px */
+	--text-album-name: calc(1.375rem * var(--text-scale, 1)); /* 22px */
+	--text-body: calc(0.9375rem * var(--text-scale, 1)); /* 15px */
+	--text-title: calc(1.0625rem * var(--text-scale, 1)); /* 17px */
 
 	/* Horizontal screen padding for lists and headers, and the gap either side
 	   of a screen title. */
@@ -384,6 +407,7 @@
 	}
 	body {
 		@apply bg-background text-foreground;
+		font-size: calc(1rem * var(--text-scale, 1));
 	}
 	html {
 		@apply font-sans;
