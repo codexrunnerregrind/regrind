@@ -480,7 +480,7 @@
 						class="m-auto flex flex-col items-center gap-1 text-center"
 						{@attach enter(0)}
 					>
-						<span class="text-3xl">👋</span>
+						<span class="wave inline-block text-3xl">👋</span>
 						<span class="text-sm font-semibold"
 							>No messages yet</span
 						>
@@ -561,5 +561,39 @@
 <style>
 	.peek::backdrop {
 		background: transparent;
+	}
+
+	.wave {
+		transform-origin: 70% 80%;
+		animation: wave 2.2s ease-in-out 0.4s infinite;
+	}
+
+	@keyframes wave {
+		0%,
+		60%,
+		100% {
+			rotate: 0deg;
+		}
+		10%,
+		30% {
+			rotate: 16deg;
+		}
+		20%,
+		40% {
+			rotate: -10deg;
+		}
+		50% {
+			rotate: 10deg;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.wave {
+			animation: none;
+		}
+	}
+
+	:global(:root[data-reduce-motion]) .wave {
+		animation: none;
 	}
 </style>
