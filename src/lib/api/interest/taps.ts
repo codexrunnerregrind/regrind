@@ -2,6 +2,7 @@ import z from "zod";
 
 import { fetchRest } from "$lib/api/transport";
 import { awaitEntitlementGrant } from "$lib/entitlements/expiring-media-entitlement";
+import { recordSentTaps } from "$lib/interest/profile-activity.svelte";
 import { notePhotos } from "$lib/interest/viewer-matches";
 import { type SentTap, sentTapSchema } from "$lib/model/interest/sent-tap";
 import { tapProfileSchema } from "$lib/model/interest/tap-profile";
@@ -58,8 +59,12 @@ export async function sendTap({
 	recipientId: Profile["profileId"];
 	tapType: TapType;
 }) {
-	return await fetchRest("/v2/taps/add", {
+	const result = await fetchRest("/v2/taps/add", {
 		method: "POST",
 		body: { recipientId, tapType },
 	}).then((res) => res.jsonParsed(sendTapResponseSchema));
+	recordSentTaps([
+		{ profileId: recipientId, timestamp: Date.now(), tapType },
+	]);
+	return result;
 }

@@ -6,6 +6,9 @@
 	import { httpStatusOf } from "$lib/api/api-error";
 	import { showErrorToast } from "$lib/api/error-toast";
 	import { findSentTap, sendTap } from "$lib/api/interest/taps";
+	import TapBurst, {
+		TAP_BURST_MS,
+	} from "$lib/components/profile/TapBurst.svelte";
 	import TapIcon from "$lib/components/profile/TapIcon.svelte";
 	import Button from "$lib/components/ui/button/button.svelte";
 	import { hapticImpact, playHaptic } from "$lib/haptics";
@@ -56,25 +59,9 @@
 
 	const defaultTapType = TapType.Hot;
 
-	type Particle = {
-		dx: number;
-		dy: number;
-		rotate: number;
-		size: number;
-		delay: number;
-	};
-
-	const BURST_SIZE = 6;
-	const BURST_MS = 900;
-
 	let popping = $state(false);
-	let burst: {
-		id: number;
-		tapType: TapType;
-		x: number;
-		y: number;
-		particles: Particle[];
-	} | null = $state(null);
+	let burst: { id: number; tapType: TapType; x: number; y: number } | null =
+		$state(null);
 
 	function buttonCenter() {
 		const rect = root?.getBoundingClientRect();
@@ -88,28 +75,10 @@
 		if (reducedMotion.current) return;
 		popping = true;
 		const id = Date.now();
-		burst = {
-			id,
-			tapType: reaction,
-			...buttonCenter(),
-			// Upward fan, from up-left to up-right.
-			particles: Array.from({ length: BURST_SIZE }, (_, i) => {
-				const angle =
-					(-150 + (120 * (i + Math.random() * 0.6)) / BURST_SIZE) *
-					(Math.PI / 180);
-				const distance = 55 + Math.random() * 40;
-				return {
-					dx: Math.cos(angle) * distance,
-					dy: Math.sin(angle) * distance,
-					rotate: (Math.random() - 0.5) * 60,
-					size: 16 + Math.random() * 10,
-					delay: Math.random() * 90,
-				};
-			}),
-		};
+		burst = { id, tapType: reaction, ...buttonCenter() };
 		setTimeout(() => {
 			if (burst?.id === id) burst = null;
-		}, BURST_MS);
+		}, TAP_BURST_MS);
 	}
 
 	// The sent emoji springs in with a little wobble.
@@ -119,31 +88,6 @@
 		css: (t: number) =>
 			`scale: ${0.3 + 0.7 * t}; rotate: ${(1 - t) * -25}deg;`,
 	});
-
-	function fly(particle: Particle) {
-		return (node: HTMLElement) => {
-			// jsdom has no Web Animations.
-			node.animate?.(
-				[
-					{
-						transform: "translate(-50%, -50%) scale(0.4)",
-						opacity: 1,
-					},
-					{ opacity: 1, offset: 0.5 },
-					{
-						transform: `translate(-50%, -50%) translate(${particle.dx}px, ${particle.dy}px) scale(1) rotate(${particle.rotate}deg)`,
-						opacity: 0,
-					},
-				],
-				{
-					duration: BURST_MS - 200,
-					delay: particle.delay,
-					easing: "cubic-bezier(0.2, 0.7, 0.3, 1)",
-					fill: "both",
-				},
-			);
-		};
-	}
 
 	const sent = $derived(tapType !== null);
 
@@ -311,28 +255,6 @@
 {/if}
 {#if burst}
 	{#key burst.id}
-		<Portal>
-			<div
-				aria-hidden="true"
-				class="pointer-events-none fixed z-50 size-0"
-				style:left="{burst.x}px"
-				style:top="{burst.y}px"
-			>
-				{#each burst.particles as particle, i (i)}
-					<span
-						class="absolute top-0 left-0 flex"
-						style:width="{particle.size}px"
-						style:height="{particle.size}px"
-						{@attach fly(particle)}
-					>
-						<TapIcon
-							tapType={burst.tapType}
-							sent
-							class="size-full"
-						/>
-					</span>
-				{/each}
-			</div>
-		</Portal>
+		<TapBurst tapType={burst.tapType} x={burst.x} y={burst.y} />
 	{/key}
 {/if}

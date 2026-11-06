@@ -28,7 +28,15 @@ export type ReceivedTap = { timestamp: number; tapType: TapType | null };
  */
 const received = new SvelteMap<number, ReceivedTap>();
 
-registerAccountCache({ reset: () => received.clear() });
+/** The latest tap we sent each profile, as far as this session knows. */
+const sent = new SvelteMap<number, ReceivedTap>();
+
+registerAccountCache({
+	reset: () => {
+		received.clear();
+		sent.clear();
+	},
+});
 
 /** Remember a batch of received taps, keeping the latest one per sender. */
 export function recordReceivedTaps(
@@ -113,4 +121,44 @@ export function profileActivity(
 		activity.push({ kind: "chat", at: chattedAt });
 	}
 	return activity.sort((a, b) => b.at - a.at);
+}
+
+export function recordSentTaps(
+	taps: readonly (ReceivedTap & { profileId: number })[],
+): void {
+	for (const tap of taps) {
+		const known = sent.get(tap.profileId);
+		if (known !== undefined && known.timestamp >= tap.timestamp) continue;
+		sent.set(tap.profileId, {
+			timestamp: tap.timestamp,
+			tapType: tap.tapType,
+		});
+	}
+}
+
+export const GRID_TAP_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+export type GridTap = { tapType: TapType; received: boolean };
+
+/** The newest tap either way within the last 24 hours, for a grid tile. */
+export function recentGridTap(profileId: number, now: number): GridTap | null {
+	// No future check: `now` ticks every 30 s, so a tap just sent is ahead of it.
+	const fresh = (tap: ReceivedTap | undefined) =>
+		tap !== undefined && now - tap.timestamp < GRID_TAP_MAX_AGE_MS
+			? tap
+			: undefined;
+	const theirs = fresh(received.get(profileId));
+	const ours = fresh(sent.get(profileId));
+	const newest =
+		theirs !== undefined &&
+		(ours === undefined || theirs.timestamp >= ours.timestamp)
+			? { tap: theirs, received: true }
+			: ours !== undefined
+				? { tap: ours, received: false }
+				: null;
+	if (newest === null) return null;
+	return {
+		tapType: newest.tap.tapType ?? TapType.Hot,
+		received: newest.received,
+	};
 }

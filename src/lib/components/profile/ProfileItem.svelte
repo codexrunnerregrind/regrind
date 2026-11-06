@@ -1,5 +1,9 @@
 <script lang="ts">
 	import DisplayName from "$lib/components/profile/DisplayName.svelte";
+	import {
+		type PeekProfile,
+		profileGestures,
+	} from "$lib/components/profile/peek/peek-state.svelte";
 	import ProfileStatusIndicator from "$lib/components/profile/ProfileStatusIndicator.svelte";
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
 	import * as Avatar from "$lib/components/ui/avatar";
@@ -19,6 +23,7 @@
 		control,
 		onToggleSelected,
 		onLongPress,
+		peek,
 	}: {
 		avatar: {
 			mediaHash: string | null;
@@ -41,11 +46,30 @@
 		control?: import("svelte").Snippet;
 		onToggleSelected?: () => void;
 		onLongPress?: () => void;
+		/** Long-press peek and double-tap-to-tap, unless `onLongPress` is set. */
+		peek?: PeekProfile;
 	} = $props();
 
-	const longPress = $derived(
-		onLongPress ? longPressHandlers(onLongPress) : {},
-	);
+	let row: HTMLElement | null = $state(null);
+
+	// The avatar that is actually laid out; the row shows one of two.
+	function peekAnchor(): HTMLElement | null {
+		const avatars = row?.querySelectorAll<HTMLElement>(
+			"[data-slot='item-media']",
+		);
+		return (
+			[...(avatars ?? [])].find(
+				(avatar) => avatar.getBoundingClientRect().width > 0,
+			) ?? row
+		);
+	}
+
+	const longPress = $derived.by(() => {
+		if (onLongPress) return longPressHandlers(onLongPress);
+		const profile = peek;
+		if (!profile) return {};
+		return profileGestures(peekAnchor, () => profile) ?? {};
+	});
 	const linkTabindex = $derived(onToggleSelected ? -1 : undefined);
 	const accessibleName = $derived(title.value ?? title.fallback ?? "Someone");
 </script>
@@ -82,6 +106,7 @@
 	{@render actions?.()}
 {/snippet}
 <Item.Root
+	bind:ref={row}
 	variant={active ? "muted" : "default"}
 	class={[
 		"@container relative flex min-w-24 flex-nowrap items-stretch gap-0 rounded-none p-0",
@@ -90,7 +115,7 @@
 			"outline-2 -outline-offset-2 outline-primary outline-solid":
 				selected,
 			"[-webkit-touch-callout:none] **:[-webkit-touch-callout:none]":
-				!!onLongPress,
+				!!onLongPress || !!peek,
 		},
 	]}
 	{...longPress}

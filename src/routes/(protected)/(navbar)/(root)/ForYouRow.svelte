@@ -82,6 +82,7 @@
 		{#each profiles as item (item.id)}
 			<ProfileMiniCard
 				portrait
+				profileId={item.id}
 				class="w-2/5 max-w-48 shrink-0 rounded-pick"
 				mediaHash={item.profilePhotosHashes?.[0] ?? null}
 				displayName={item.displayName}

@@ -50,6 +50,7 @@
 			>
 				Double tap to <img
 					src={fireEmoji}
+					data-ui-glyph
 					alt="react with fire"
 					width="16"
 					height="16"
@@ -71,6 +72,7 @@
 			>
 				<img
 					src={fireEmoji}
+					data-ui-glyph
 					alt=""
 					width="20"
 					height="20"

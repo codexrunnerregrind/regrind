@@ -3,7 +3,8 @@
  * and also covers raw images, video posters and body-level PhotoSwipe portals.
  * Keep loading/layout callbacks intact so switching modes doesn't move chats.
  */
-html[data-discreet-images] :is(img, video) {
+/* App glyphs drawn as images (tap emoji) are UI, not media. */
+html[data-discreet-images] :is(img:not([data-ui-glyph]), video) {
 	object-position: 1000000px 1000000px !important;
 	background: var(--color-muted, #52525b) !important;
 	transition: none !important;

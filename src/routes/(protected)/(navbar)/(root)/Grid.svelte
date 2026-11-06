@@ -10,6 +10,7 @@
 	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
 	import PagingSentinel from "$lib/components/shared/PagingSentinel.svelte";
 	import { gridState } from "$lib/grid/grid-state.svelte";
+	import { ensureSentTapsLoaded } from "$lib/grid/grid-taps";
 	import { usernameMatches } from "$lib/model/browse/grid/filters";
 	import { armProfileDeck } from "$lib/profile/profile-deck";
 	import {
@@ -123,6 +124,10 @@
 
 	$effect.pre(() => {
 		gridState.load(geohash);
+	});
+
+	$effect(() => {
+		if (preferencesSnapshot().gridRecentTaps) ensureSentTapsLoaded();
 	});
 
 	$effect(() => {

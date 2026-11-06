@@ -4,6 +4,7 @@
 
 	import { reportAccountProfile } from "$lib/api/accounts.svelte";
 	import CommandCenter from "$lib/components/command-center/CommandCenter.svelte";
+	import ProfilePeekHost from "$lib/components/profile/peek/ProfilePeekHost.svelte";
 	import MediaDropOverlay from "$lib/components/shared/MediaDropOverlay.svelte";
 	import { tabShellShowing } from "$lib/components/tab-shell/tab-shell-state.svelte";
 	import VideoCallOverlay from "$lib/components/video-call/VideoCallOverlay.svelte";
@@ -63,3 +64,6 @@
 <CommandCenter />
 <VideoCallOverlay />
 <MediaDropOverlay />
+{#key data.ourProfileId}
+	<ProfilePeekHost ourProfileId={data.ourProfileId} />
+{/key}

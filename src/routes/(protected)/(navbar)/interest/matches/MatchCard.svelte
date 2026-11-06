@@ -4,6 +4,7 @@
 		preferencesSnapshot,
 	} from "$lib/app-data/preferences.svelte";
 	import DistanceFormatted from "$lib/components/profile/DistanceFormatted.svelte";
+	import { profileGestures } from "$lib/components/profile/peek/peek-state.svelte";
 	import ProfileMiniCard from "$lib/components/profile/ProfileMiniCard.svelte";
 	import TapIcon from "$lib/components/profile/TapIcon.svelte";
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
@@ -46,6 +47,23 @@
 			.join(", "),
 	);
 	const tapped = $derived(sentTap !== undefined || profile.tapped === true);
+
+	let fullCard: HTMLElement | null = $state(null);
+	const gestures = $derived(
+		profileGestures(
+			() => fullCard,
+			() => ({
+				profileId: profile.profileId,
+				displayName: profile.displayName,
+				mediaHash: profile.profileImageMediaHash,
+				isFavorite: false,
+				age: profile.age,
+				distance: profile.distance,
+				onlineUntil: profile.onlineUntil,
+				isVisiting: profile.visitingStatus ?? false,
+			}),
+		),
+	);
 	const online = $derived((profile.onlineUntil ?? 0) > getNow());
 
 	const stats = $derived.by(() => {
@@ -95,8 +113,16 @@
 
 {#if style === "full"}
 	<a
+		bind:this={fullCard}
 		href="/profile/{profile.profileId}"
-		class="relative block aspect-3/4 overflow-hidden bg-media-placeholder"
+		{...gestures}
+		class={[
+			"relative block aspect-3/4 overflow-hidden bg-media-placeholder",
+			{
+				"[-webkit-touch-callout:none] **:[-webkit-touch-callout:none]":
+					gestures !== undefined,
+			},
+		]}
 	>
 		<UserAvatar
 			mediaHash={profile.profileImageMediaHash}
@@ -157,6 +183,7 @@
 {:else}
 	<!-- The browse grid's own tile, so compact reads exactly like the grid. -->
 	<ProfileMiniCard
+		profileId={profile.profileId}
 		mediaHash={profile.profileImageMediaHash}
 		displayName={profile.displayName}
 		age={profile.age}

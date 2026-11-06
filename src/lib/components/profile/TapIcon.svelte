@@ -51,6 +51,7 @@
 {#if sent}
 	<img
 		src={emojis[tapType]}
+		data-ui-glyph
 		alt={`${tapTypes[tapType]} tap`}
 		width="24"
 		height="24"

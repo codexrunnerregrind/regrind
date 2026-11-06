@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
 	import ProfileMiniCard from "$lib/components/profile/ProfileMiniCard.svelte";
+	import { recentGridTap } from "$lib/interest/profile-activity.svelte";
 	import { formatTimeAgoShort } from "$lib/util/format-time";
 	import { getNow } from "$lib/util/now";
 	import type { RightNowStatus } from "$lib/model/right-now";
@@ -44,6 +45,15 @@
 		if ((onlineUntil ?? 0) > now) return null;
 		return seen === null ? "Offline" : formatTimeAgoShort(seen, now);
 	});
+
+	const framed = $derived(
+		preferencesSnapshot().gridChatFrame && hadRecentChat,
+	);
+	const tap = $derived(
+		preferencesSnapshot().gridRecentTaps
+			? recentGridTap(id, getNow())
+			: null,
+	);
 </script>
 
 {#snippet meta()}
@@ -51,6 +61,7 @@
 {/snippet}
 
 <ProfileMiniCard
+	profileId={id}
 	mediaHash={medias?.[0]?.mediaHash ?? null}
 	{displayName}
 	{age}
@@ -60,6 +71,8 @@
 	{isFavorite}
 	{isVisiting}
 	{hadRecentChat}
+	{framed}
+	{tap}
 	{rightNow}
 	{note}
 	meta={seenLabel === null ? undefined : meta}

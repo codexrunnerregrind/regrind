@@ -28,6 +28,14 @@
 	}}
 	onlineUntil={tap.onlineUntil}
 	link="/profile/{tap.profileId}"
+	peek={{
+		profileId: tap.profileId,
+		displayName: tap.displayName,
+		mediaHash: tap.profileImageMediaHash,
+		isFavorite: tap.isFavorite,
+		distance: tap.distance,
+		onlineUntil: tap.onlineUntil,
+	}}
 	{onclick}
 >
 	{#snippet description()}

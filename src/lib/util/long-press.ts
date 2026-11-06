@@ -71,7 +71,7 @@ function holdTouch(): void {
 	window.addEventListener("pointercancel", release, true);
 }
 
-type LongPressHandlers = Pick<
+export type LongPressHandlers = Pick<
 	HTMLAttributes<HTMLElement>,
 	| "onpointerdown"
 	| "onpointermove"

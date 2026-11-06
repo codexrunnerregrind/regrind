@@ -16,6 +16,7 @@
 {/snippet}
 
 <ProfileMiniCard
+	profileId={view.profileId}
 	mediaHash={view.profileImageMediaHash}
 	displayName={view.displayName}
 	distance={view.distance}

@@ -2,7 +2,11 @@
 	import CalendarBlankIcon from "phosphor-svelte/lib/CalendarBlankIcon";
 	import ClockCounterClockwiseIcon from "phosphor-svelte/lib/ClockCounterClockwiseIcon";
 	import ExportIcon from "phosphor-svelte/lib/ExportIcon";
+	import FireIcon from "phosphor-svelte/lib/FireIcon";
 	import FloppyDiskIcon from "phosphor-svelte/lib/FloppyDiskIcon";
+	import FrameCornersIcon from "phosphor-svelte/lib/FrameCornersIcon";
+	import HandTapIcon from "phosphor-svelte/lib/HandTapIcon";
+	import ListBulletsIcon from "phosphor-svelte/lib/ListBulletsIcon";
 	import TrayArrowDownIcon from "phosphor-svelte/lib/TrayArrowDownIcon";
 
 	import PreferenceSwitchSetting from "$lib/components/settings/PreferenceSwitchSetting.svelte";
@@ -64,6 +68,42 @@
 	>
 		{#snippet icon()}
 			<CalendarBlankIcon weight="fill" />
+		{/snippet}
+	</PreferenceSwitchSetting>
+	<PreferenceSwitchSetting
+		preference="gridChatFrame"
+		title="Frame recent chats on the grid"
+		description="Outline profiles you chatted with in the last 24 hours."
+	>
+		{#snippet icon()}
+			<FrameCornersIcon weight="fill" />
+		{/snippet}
+	</PreferenceSwitchSetting>
+	<PreferenceSwitchSetting
+		preference="gridRecentTaps"
+		title="Show taps on the grid"
+		description="Mark profiles you tapped, or that tapped you, in the last 24 hours."
+	>
+		{#snippet icon()}
+			<FireIcon weight="fill" />
+		{/snippet}
+	</PreferenceSwitchSetting>
+	<PreferenceSwitchSetting
+		preference="gridDoubleTapToTap"
+		title="Double-tap to tap"
+		description="Double-tap a profile tile or row to send it a tap. Opening a profile waits a moment for the second tap."
+	>
+		{#snippet icon()}
+			<HandTapIcon weight="fill" />
+		{/snippet}
+	</PreferenceSwitchSetting>
+	<PreferenceSwitchSetting
+		preference="gridLongPressMenu"
+		title="Profile peek"
+		description="Long-press a profile to preview your chat and message, tap, favorite or block it."
+	>
+		{#snippet icon()}
+			<ListBulletsIcon weight="fill" />
 		{/snippet}
 	</PreferenceSwitchSetting>
 </SettingsGroup>

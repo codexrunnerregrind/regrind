@@ -12,6 +12,7 @@
 	{#if type === 1}
 		<img
 			src={fireEmoji}
+			data-ui-glyph
 			alt="Fire reaction"
 			width="16"
 			height="16"

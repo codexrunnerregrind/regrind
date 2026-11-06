@@ -5,10 +5,13 @@
 	import type { Snippet } from "svelte";
 
 	import DistanceFormatted from "$lib/components/profile/DistanceFormatted.svelte";
+	import { profileGestures } from "$lib/components/profile/peek/peek-state.svelte";
 	import ProfileRightNowIndicator from "$lib/components/profile/ProfileRightNowIndicator.svelte";
 	import ProfileStatusIndicator from "$lib/components/profile/ProfileStatusIndicator.svelte";
+	import TapIcon from "$lib/components/profile/TapIcon.svelte";
 	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
 	import { getNow } from "$lib/util/now";
+	import type { GridTap } from "$lib/interest/profile-activity.svelte";
 	import type { RightNowStatus } from "$lib/model/right-now";
 
 	let {
@@ -21,6 +24,9 @@
 		isFavorite = false,
 		isVisiting = false,
 		hadRecentChat = false,
+		framed = false,
+		tap = null,
+		profileId = undefined,
 		note = null,
 		href = null,
 		onclick = undefined,
@@ -39,6 +45,11 @@
 		isFavorite?: boolean;
 		isVisiting?: boolean;
 		hadRecentChat?: boolean;
+		/** Outlined, for a recent chat. */
+		framed?: boolean;
+		tap?: GridTap | null;
+		/** Enables the long-press peek and double-tap-to-tap on the link. */
+		profileId?: number;
 		/** The note the user attached to this favorite, if any. */
 		note?: string | null;
 		href?: string | null;
@@ -54,6 +65,27 @@
 	} = $props();
 
 	const noteText = $derived(note?.trim() ?? "");
+
+	let element: HTMLElement | null = $state(null);
+	const gestures = $derived(
+		profileId === undefined
+			? undefined
+			: profileGestures(
+					() => element,
+					() => ({
+						profileId,
+						displayName,
+						mediaHash,
+						isFavorite,
+						age,
+						distance,
+						onlineUntil,
+						isVisiting,
+						rightNow,
+						note,
+					}),
+				),
+	);
 
 	// Matches what ProfileStatusIndicator itself draws, so the identity line
 	// stays for a profile whose only marker is the online dot.
@@ -95,7 +127,7 @@
 	<!-- Bare glyphs in the corner, no disc behind them: at three tiles across, a
 	     filled plate per marker is most of what you see. A shadow carries them
 	     over a light photo the same way the distance label is carried. -->
-	{#if isFavorite || hadRecentChat}
+	{#if isFavorite || hadRecentChat || tap !== null}
 		<div class="absolute inset-s-1.5 top-1.5 z-1 flex flex-col gap-1">
 			{#if isFavorite}
 				<StarIcon
@@ -112,6 +144,22 @@
 					aria-label="Chatted recently"
 					role="img"
 				/>
+			{/if}
+			{#if tap !== null}
+				<span
+					class="marker flex"
+					role="img"
+					aria-label={tap.received ? "Tapped you" : "You tapped"}
+				>
+					{#if tap.received}
+						<TapIcon tapType={tap.tapType} sent class="size-full" />
+					{:else}
+						<TapIcon
+							tapType={tap.tapType}
+							class="size-full text-plate-foreground"
+						/>
+					{/if}
+				</span>
 			{/if}
 		</div>
 	{/if}
@@ -201,16 +249,27 @@
 			{/if}
 		</div>
 	{/if}
+	{#if framed}
+		<div
+			class="pointer-events-none absolute inset-0 z-2 rounded-[inherit] ring-2 ring-sky-500 ring-inset"
+		></div>
+	{/if}
 	{@render overlay?.()}
 {/snippet}
 
 {#if href !== null}
 	<a
+		bind:this={element}
 		{href}
 		{onclick}
+		{...gestures}
 		aria-label={hasVisibleText ? undefined : "Profile"}
 		class={[
 			"relative flex items-end overflow-hidden",
+			{
+				"[-webkit-touch-callout:none] **:[-webkit-touch-callout:none]":
+					gestures !== undefined,
+			},
 			{ "aspect-3/4": portrait, "aspect-square": !portrait },
 			className,
 		]}

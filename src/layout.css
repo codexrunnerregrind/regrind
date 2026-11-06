@@ -388,6 +388,12 @@
 	html {
 		@apply font-sans;
 	}
+	/* iOS's link/image preview menu fires no contextmenu, so blockNativeMenu
+	   cannot cancel it. */
+	a,
+	img {
+		-webkit-touch-callout: none;
+	}
 }
 
 /* The window height the software keyboard leaves over, written by

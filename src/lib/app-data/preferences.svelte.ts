@@ -72,6 +72,11 @@ const preferencesSchema = z.object({
 	hapticFeedback: z.boolean().default(true),
 	keepScreenOn: z.boolean().default(false),
 	showAccountCreated: z.boolean().default(false),
+	// Grid extras. Double-tap stays opt-in: it holds every tap back ~300 ms.
+	gridChatFrame: z.boolean().default(false),
+	gridRecentTaps: z.boolean().default(false),
+	gridDoubleTapToTap: z.boolean().default(false),
+	gridLongPressMenu: z.boolean().default(true),
 	// The last detected live GPS location, used while `usingCurrentLocation` is
 	// true. Kept separate from `geohash` so switching modes never clobbers the
 	// user's mock pick.
