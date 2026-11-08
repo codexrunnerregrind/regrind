@@ -1,5 +1,6 @@
 <script lang="ts">
 	import EyeIcon from "phosphor-svelte/lib/EyeIcon";
+	import EyeSlashIcon from "phosphor-svelte/lib/EyeSlashIcon";
 	import type PhotoSwipe from "photoswipe";
 
 	import { imagesHidden, revealedImages } from "./image-privacy.svelte";
@@ -35,10 +36,11 @@
 	const stop = (event: Event) => event.stopPropagation();
 </script>
 
-{#if current !== null && imagesHidden() && !revealedImages.has(current)}
+{#if current !== null && imagesHidden()}
+	{@const revealed = revealedImages.has(current)}
 	<button
 		type="button"
-		aria-label="Reveal image"
+		aria-label={revealed ? "Hide image" : "Reveal image"}
 		class="pointer-events-auto absolute top-1/2 left-1/2 flex size-9 -translate-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm active:bg-black/60"
 		onpointerdown={stop}
 		onpointerup={stop}
@@ -46,9 +48,15 @@
 		ontouchend={stop}
 		onclick={(event) => {
 			event.stopPropagation();
-			if (current !== null) revealedImages.add(current);
+			if (current === null) return;
+			if (revealed) revealedImages.delete(current);
+			else revealedImages.add(current);
 		}}
 	>
-		<EyeIcon weight="fill" class="size-4.5" />
+		{#if revealed}
+			<EyeSlashIcon weight="fill" class="size-4.5" />
+		{:else}
+			<EyeIcon weight="fill" class="size-4.5" />
+		{/if}
 	</button>
 {/if}

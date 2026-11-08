@@ -279,7 +279,7 @@
 			onload?.(image);
 		}}
 	/>
-	{#if revealable && imageElement && imagesHidden() && !revealed}
+	{#if revealable && imageElement && imagesHidden()}
 		<RevealImageButton image={imageElement} {src} />
 	{/if}
 {:else}
