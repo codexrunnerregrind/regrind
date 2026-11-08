@@ -97,17 +97,16 @@
 <SectionHeader>Privacy</SectionHeader>
 <SettingsGroup divider="full">
 	<PrivacyModeSetting />
-	{#if privacyFeatureOn()}
-		<PreferenceSwitchSetting
-			preference="privacyToggleButton"
-			title="Floating privacy button"
-			description="Show an eye button you can drag anywhere on screen to hide or show images."
-		>
-			{#snippet icon()}
-				<EyeIcon weight="fill" />
-			{/snippet}
-		</PreferenceSwitchSetting>
-	{/if}
+	<PreferenceSwitchSetting
+		preference="privacyToggleButton"
+		title="Floating privacy button"
+		description="Show an eye button you can drag anywhere on screen to hide or show images. Needs privacy mode."
+		disabled={!privacyFeatureOn()}
+	>
+		{#snippet icon()}
+			<EyeIcon weight="fill" />
+		{/snippet}
+	</PreferenceSwitchSetting>
 	<PreferenceSwitchSetting
 		preference="stayOnline"
 		title="Stay online while the app is open"

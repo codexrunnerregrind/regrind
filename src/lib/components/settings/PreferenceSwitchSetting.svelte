@@ -13,11 +13,13 @@
 		title,
 		description,
 		icon,
+		disabled = false,
 	}: {
 		preference: BooleanPreference;
 		title: string;
 		description: string;
 		icon?: import("svelte").Snippet;
+		disabled?: boolean;
 	} = $props();
 
 	let pending = $state<boolean | null>(null);
@@ -28,7 +30,7 @@
 	{title}
 	{description}
 	{icon}
-	disabled={!preferencesLoaded()}
+	disabled={disabled || !preferencesLoaded()}
 	bind:checked={
 		() => value,
 		(newValue: boolean) => {
