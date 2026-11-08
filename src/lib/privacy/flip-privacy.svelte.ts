@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { showErrorToast } from "$lib/api/error-toast";
 import { preferencesLoaded } from "$lib/app-data/preferences.svelte";
 import { isIosPlatform } from "$lib/platform/os";
-import { toggleImagePrivacy } from "./image-privacy.svelte";
+import { privacyFeatureOn, toggleImagePrivacy } from "./image-privacy.svelte";
 
 // Preserve native start/stop ordering across rapid preference changes.
 let nativeQueue: Promise<unknown> = Promise.resolve();
@@ -17,7 +17,7 @@ function setNativeEnabled(enabled: boolean): Promise<unknown> {
 
 /** Reactive effect: the flip shortcut controls the same mode as the settings switch. */
 export function listenForPrivacyFlips(): (() => void) | undefined {
-	if (!isIosPlatform() || !preferencesLoaded()) return;
+	if (!isIosPlatform() || !preferencesLoaded() || !privacyFeatureOn()) return;
 	let active = true;
 	const flip = () => {
 		if (active && document.visibilityState === "visible")

@@ -12,7 +12,10 @@ vi.mock("$lib/app-data/preferences.svelte", () => ({
 	preferencesLoaded: () => mocks.loaded,
 }));
 vi.mock("$lib/platform/os", () => ({ isIosPlatform: () => true }));
-vi.mock("./image-privacy.svelte", () => ({ toggleImagePrivacy: mocks.toggle }));
+vi.mock("./image-privacy.svelte", () => ({
+	privacyFeatureOn: () => true,
+	toggleImagePrivacy: mocks.toggle,
+}));
 
 import { listenForPrivacyFlips } from "./flip-privacy.svelte";
 

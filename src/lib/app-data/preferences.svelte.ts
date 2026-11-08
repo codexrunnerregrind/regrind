@@ -67,6 +67,9 @@ const preferencesSchema = z.object({
 	geohash: geohashSchema.nullable().default(null),
 	// Device-wide: switching accounts must not uncover images.
 	discreetImages: z.boolean().default(false),
+	// Whether privacy mode exists at all; `discreetImages` is whether it is
+	// hiding right now. Unset follows `discreetImages`, as before the split.
+	privacyMode: z.boolean().nullable().default(null),
 	privacyToggleButton: z.boolean().default(false),
 	// Centre of the floating privacy button, as viewport fractions.
 	privacyToggleButtonPosition: z

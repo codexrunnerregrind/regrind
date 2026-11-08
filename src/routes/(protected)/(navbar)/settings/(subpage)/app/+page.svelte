@@ -22,6 +22,7 @@
 	import { desktopEntryAvailable } from "$lib/platform/desktop-entry.svelte";
 	import { hapticsAvailable } from "$lib/platform/haptics";
 	import { keepScreenOnAvailable } from "$lib/platform/keep-screen-on";
+	import { privacyFeatureOn } from "$lib/privacy/image-privacy.svelte";
 	import PrivacyModeSetting from "$lib/privacy/PrivacyModeSetting.svelte";
 	import { addonInstallerAvailable } from "$lib/updates/addon.svelte";
 	import {
@@ -96,15 +97,17 @@
 <SectionHeader>Privacy</SectionHeader>
 <SettingsGroup divider="full">
 	<PrivacyModeSetting />
-	<PreferenceSwitchSetting
-		preference="privacyToggleButton"
-		title="Floating privacy button"
-		description="Show an eye button you can drag anywhere on screen to turn privacy mode on or off."
-	>
-		{#snippet icon()}
-			<EyeIcon weight="fill" />
-		{/snippet}
-	</PreferenceSwitchSetting>
+	{#if privacyFeatureOn()}
+		<PreferenceSwitchSetting
+			preference="privacyToggleButton"
+			title="Floating privacy button"
+			description="Show an eye button you can drag anywhere on screen to hide or show images."
+		>
+			{#snippet icon()}
+				<EyeIcon weight="fill" />
+			{/snippet}
+		</PreferenceSwitchSetting>
+	{/if}
 	<PreferenceSwitchSetting
 		preference="stayOnline"
 		title="Stay online while the app is open"

@@ -15,6 +15,7 @@
 	import { listenForMedia } from "$lib/platform/media-intake.svelte";
 	import { startOnlineHeartbeat } from "$lib/presence/online-heartbeat";
 	import { listenForPrivacyFlips } from "$lib/privacy/flip-privacy.svelte";
+	import { privacyFeatureOn } from "$lib/privacy/image-privacy.svelte";
 	import PrivacyToggleButton from "$lib/privacy/PrivacyToggleButton.svelte";
 	import { guardDeletedPages } from "$lib/util/deleted-pages";
 	import { retryBrokenMediaWhenOnline } from "$lib/util/media-retry-signals";
@@ -66,7 +67,7 @@
 <CommandCenter />
 <VideoCallOverlay />
 <MediaDropOverlay />
-{#if preferencesSnapshot().privacyToggleButton}
+{#if privacyFeatureOn() && preferencesSnapshot().privacyToggleButton}
 	<PrivacyToggleButton />
 {/if}
 {#key data.ourProfileId}

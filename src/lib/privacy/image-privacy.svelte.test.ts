@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
-	preferences: { discreetImages: false },
+	preferences: { discreetImages: false, privacyMode: true },
 	save: vi.fn(),
 	error: vi.fn(),
 }));
@@ -13,7 +13,12 @@ vi.mock("$lib/app-data/preferences.svelte", () => ({
 	setPreferences: mocks.save,
 }));
 
-import { imagePrivacy, toggleImagePrivacy } from "./image-privacy.svelte";
+import {
+	imagePrivacy,
+	imagesHidden,
+	setPrivacyFeature,
+	toggleImagePrivacy,
+} from "./image-privacy.svelte";
 
 describe("image privacy toggling", () => {
 	beforeEach(() => {
@@ -21,9 +26,10 @@ describe("image privacy toggling", () => {
 		imagePrivacy.override = null;
 		imagePrivacy.pending = false;
 		mocks.preferences.discreetImages = false;
+		mocks.preferences.privacyMode = true;
 		mocks.save.mockImplementation(
-			({ discreetImages }: { discreetImages: boolean }) => {
-				mocks.preferences.discreetImages = discreetImages;
+			(values: { discreetImages: boolean; privacyMode?: boolean }) => {
+				Object.assign(mocks.preferences, values);
 				return Promise.resolve();
 			},
 		);
@@ -66,5 +72,20 @@ describe("image privacy toggling", () => {
 		expect(mocks.save).toHaveBeenCalledOnce();
 		finish();
 		await first;
+	});
+
+	it("leaves images alone while the feature is off", async () => {
+		mocks.preferences.privacyMode = false;
+		await toggleImagePrivacy();
+		expect(mocks.save).not.toHaveBeenCalled();
+		expect(imagesHidden()).toBe(false);
+	});
+
+	it("hides at once when the feature is turned on, shows all when off", async () => {
+		mocks.preferences.privacyMode = false;
+		await setPrivacyFeature(true);
+		expect(imagesHidden()).toBe(true);
+		await setPrivacyFeature(false);
+		expect(imagesHidden()).toBe(false);
 	});
 });

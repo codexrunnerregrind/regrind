@@ -15,20 +15,39 @@ export const imagePrivacy = $state<{ override: true | null; pending: boolean }>(
 // Images revealed one by one, by source; forgotten whenever privacy turns on.
 export const revealedImages = new SvelteSet<string>();
 
+export function privacyFeatureOn(): boolean {
+	const { privacyMode, discreetImages } = preferencesSnapshot();
+	return privacyMode ?? discreetImages;
+}
+
 export function imagesHidden(): boolean {
 	return (
 		!preferencesLoaded() ||
-		(imagePrivacy.override ?? preferencesSnapshot().discreetImages)
+		imagePrivacy.override === true ||
+		(privacyFeatureOn() && preferencesSnapshot().discreetImages)
 	);
 }
 
 export function toggleImagePrivacy(): Promise<void> {
+	if (!privacyFeatureOn()) return Promise.resolve();
 	return setImagePrivacy(
 		!(imagePrivacy.override ?? preferencesSnapshot().discreetImages),
 	);
 }
 
-export async function setImagePrivacy(next: boolean): Promise<void> {
+/** Turns the feature itself on (hiding at once) or off (showing everything). */
+export function setPrivacyFeature(on: boolean): Promise<void> {
+	return save({ privacyMode: on, discreetImages: on }, on);
+}
+
+export function setImagePrivacy(next: boolean): Promise<void> {
+	return save({ discreetImages: next }, next);
+}
+
+async function save(
+	values: { privacyMode?: boolean; discreetImages: boolean },
+	next: boolean,
+): Promise<void> {
 	if (imagePrivacy.pending) return;
 	imagePrivacy.pending = true;
 	if (next) {
@@ -36,7 +55,7 @@ export async function setImagePrivacy(next: boolean): Promise<void> {
 		revealedImages.clear();
 	}
 	try {
-		await setPreferences({ discreetImages: next });
+		await setPreferences(values);
 		imagePrivacy.override = null;
 	} catch (error) {
 		showErrorToast({ label: "Couldn't save image privacy setting", error });
