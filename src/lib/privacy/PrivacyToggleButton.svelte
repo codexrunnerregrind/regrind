@@ -51,8 +51,14 @@
 	});
 
 	function down(event: PointerEvent): void {
-		if (drag !== null) return;
-		(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+		// A new touch always wins: a lost pointerup must never lock the button.
+		try {
+			(event.currentTarget as HTMLElement).setPointerCapture(
+				event.pointerId,
+			);
+		} catch {
+			// Capture is best effort.
+		}
 		drag = {
 			id: event.pointerId,
 			startX: event.clientX,
@@ -75,7 +81,7 @@
 		if (drag?.id !== event.pointerId) return;
 		const ended = drag;
 		drag = null;
-		if (event.type === "pointercancel") return;
+		if (event.type !== "pointerup") return;
 		if (!ended.moved) {
 			void toggleImagePrivacy();
 			return;
@@ -107,7 +113,7 @@
 			type="button"
 			aria-label={imagesHidden() ? "Show images" : "Hide images"}
 			aria-pressed={imagesHidden()}
-			disabled={imagePrivacy.pending}
+			aria-busy={imagePrivacy.pending}
 			class={[
 				"pointer-events-auto fixed flex -translate-1/2 touch-none items-center justify-center rounded-full border border-white/15 bg-black/55 text-white shadow-lg backdrop-blur-md select-none",
 				{
@@ -127,6 +133,7 @@
 			onpointermove={move}
 			onpointerup={up}
 			onpointercancel={up}
+			onlostpointercapture={up}
 			onkeydown={(event) => {
 				if (event.key === "Enter" || event.key === " ") {
 					event.preventDefault();
