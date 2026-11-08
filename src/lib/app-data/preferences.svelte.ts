@@ -83,7 +83,7 @@ const preferencesSchema = z.object({
 	keepScreenOn: z.boolean().default(false),
 	showAccountCreated: z.boolean().default(false),
 	// Grid extras. Double-tap stays opt-in: it holds every tap back ~300 ms.
-	gridChatFrame: z.boolean().default(false),
+	gridChatFrame: z.boolean().default(true),
 	gridRecentTaps: z.boolean().default(false),
 	gridDoubleTapToTap: z.boolean().default(false),
 	gridLongPressMenu: z.boolean().default(true),

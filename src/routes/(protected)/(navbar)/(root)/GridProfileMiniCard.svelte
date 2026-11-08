@@ -70,7 +70,6 @@
 	{onlineUntil}
 	{isFavorite}
 	{isVisiting}
-	{hadRecentChat}
 	{framed}
 	{tap}
 	{rightNow}

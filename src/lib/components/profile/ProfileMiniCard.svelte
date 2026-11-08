@@ -1,5 +1,4 @@
 <script lang="ts">
-	import ChatIcon from "phosphor-svelte/lib/ChatIcon";
 	import NotePencilIcon from "phosphor-svelte/lib/NotePencilIcon";
 	import StarIcon from "phosphor-svelte/lib/StarIcon";
 	import type { Snippet } from "svelte";
@@ -23,7 +22,6 @@
 		onlineUntil = null,
 		isFavorite = false,
 		isVisiting = false,
-		hadRecentChat = false,
 		framed = false,
 		tap = null,
 		profileId = undefined,
@@ -44,7 +42,6 @@
 		onlineUntil?: number | null;
 		isFavorite?: boolean;
 		isVisiting?: boolean;
-		hadRecentChat?: boolean;
 		/** Outlined, for a recent chat. */
 		framed?: boolean;
 		tap?: GridTap | null;
@@ -127,21 +124,13 @@
 	<!-- Bare glyphs in the corner, no disc behind them: at three tiles across, a
 	     filled plate per marker is most of what you see. A shadow carries them
 	     over a light photo the same way the distance label is carried. -->
-	{#if isFavorite || hadRecentChat || tap !== null}
+	{#if isFavorite || tap !== null}
 		<div class="absolute inset-s-1.5 top-1.5 z-1 flex flex-col gap-1">
 			{#if isFavorite}
 				<StarIcon
 					weight="fill"
 					class="marker text-yellow-400"
 					aria-label="Favorite"
-					role="img"
-				/>
-			{/if}
-			{#if hadRecentChat}
-				<ChatIcon
-					weight="fill"
-					class="marker text-plate-foreground"
-					aria-label="Chatted recently"
 					role="img"
 				/>
 			{/if}
