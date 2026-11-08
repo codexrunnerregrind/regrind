@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Portal } from "bits-ui";
 	import EyeIcon from "phosphor-svelte/lib/EyeIcon";
 	import EyeSlashIcon from "phosphor-svelte/lib/EyeSlashIcon";
 	import { innerHeight, innerWidth } from "svelte/reactivity/window";
@@ -17,6 +18,7 @@
 	const SIZE = 48;
 	const MARGIN = 8;
 	const DRAG_SLOP = 6;
+	const EDGE = SIZE / 2 + MARGIN;
 
 	let drag = $state<{
 		id: number;
@@ -34,14 +36,13 @@
 	const saved = $derived(
 		dropped ??
 			preferencesSnapshot().privacyToggleButtonPosition ?? {
-				x: 0.88,
+				x: 1,
 				y: 0.72,
 			},
 	);
 
 	function clamp(value: number, max: number): number {
-		const half = SIZE / 2 + MARGIN;
-		return Math.min(Math.max(value, half), Math.max(half, max - half));
+		return Math.min(Math.max(value, EDGE), Math.max(EDGE, max - EDGE));
 	}
 
 	const center = $derived({
@@ -79,8 +80,9 @@
 			void toggleImagePrivacy();
 			return;
 		}
+		// Snap to the nearer side edge.
 		const position = {
-			x: clamp(ended.x, width) / width,
+			x: ended.x < width / 2 ? 0 : 1,
 			y: clamp(ended.y, height) / height,
 		};
 		dropped = position;
@@ -98,38 +100,46 @@
 </script>
 
 {#if width > 0}
-	<button
-		type="button"
-		aria-label={imagesHidden() ? "Show images" : "Hide images"}
-		aria-pressed={imagesHidden()}
-		disabled={imagePrivacy.pending}
-		class={[
-			"fixed z-60 flex -translate-1/2 touch-none items-center justify-center rounded-full border border-white/15 bg-black/55 text-white shadow-lg backdrop-blur-md select-none",
-			{
-				"scale-110 cursor-grabbing": drag?.moved,
-				"cursor-grab": !drag?.moved,
-			},
-		]}
-		style:width="{SIZE}px"
-		style:height="{SIZE}px"
-		style:left="{center.x}px"
-		style:top="{center.y}px"
-		onpointerdown={down}
-		onpointermove={move}
-		onpointerup={up}
-		onpointercancel={up}
-		onkeydown={(event) => {
-			if (event.key === "Enter" || event.key === " ") {
-				event.preventDefault();
-				void toggleImagePrivacy();
-			}
-		}}
-		oncontextmenu={(event) => event.preventDefault()}
-	>
-		{#if imagesHidden()}
-			<EyeSlashIcon weight="fill" class="size-6" />
-		{:else}
-			<EyeIcon weight="fill" class="size-6" />
-		{/if}
-	</button>
+	<!-- On body, above the media viewer and dialogs; a transformed ancestor
+	     would otherwise also drag it along with a swipe-back. -->
+	<Portal>
+		<button
+			type="button"
+			aria-label={imagesHidden() ? "Show images" : "Hide images"}
+			aria-pressed={imagesHidden()}
+			disabled={imagePrivacy.pending}
+			class={[
+				"pointer-events-auto fixed flex -translate-1/2 touch-none items-center justify-center rounded-full border border-white/15 bg-black/55 text-white shadow-lg backdrop-blur-md select-none",
+				{
+					"scale-110 cursor-grabbing": drag?.moved,
+					"cursor-grab": !drag?.moved,
+					"transition-[left,top] duration-200 ease-out":
+						drag === null,
+				},
+			]}
+			style:width="{SIZE}px"
+			style:height="{SIZE}px"
+			style:left="{center.x}px"
+			style:top="clamp(calc(var(--safe-area-top) + {EDGE}px), {center.y}px,
+			calc(100dvh - var(--safe-area-bottom) - {EDGE}px))"
+			style:z-index="calc(var(--z-index-drop) - 1)"
+			onpointerdown={down}
+			onpointermove={move}
+			onpointerup={up}
+			onpointercancel={up}
+			onkeydown={(event) => {
+				if (event.key === "Enter" || event.key === " ") {
+					event.preventDefault();
+					void toggleImagePrivacy();
+				}
+			}}
+			oncontextmenu={(event) => event.preventDefault()}
+		>
+			{#if imagesHidden()}
+				<EyeSlashIcon weight="fill" class="size-6" />
+			{:else}
+				<EyeIcon weight="fill" class="size-6" />
+			{/if}
+		</button>
+	</Portal>
 {/if}

@@ -36,8 +36,8 @@
 		type="button"
 		aria-label="Reveal image"
 		class={[
-			"absolute z-2 flex -translate-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm active:bg-black/60",
-			{ "size-7": box.size < 64, "size-10": box.size >= 64 },
+			"absolute z-2 flex -translate-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm active:bg-black/60",
+			{ "size-5": box.size < 64, "size-7": box.size >= 64 },
 		]}
 		style:left="{box.x}px"
 		style:top="{box.y}px"
@@ -55,7 +55,7 @@
 	>
 		<EyeIcon
 			weight="fill"
-			class={{ "size-4": box.size < 64, "size-5": box.size >= 64 }}
+			class={{ "size-3": box.size < 64, "size-3.5": box.size >= 64 }}
 		/>
 	</button>
 {/if}

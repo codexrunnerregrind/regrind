@@ -22,6 +22,7 @@
 	} from "$lib/chat/media-viewer-chrome";
 	import { hapticImpact, hapticNotification } from "$lib/platform/haptics";
 	import { trackKeyboardOverlap } from "$lib/platform/keyboard-inset";
+	import ViewerRevealButton from "$lib/privacy/ViewerRevealButton.svelte";
 	import { formatTimeRelativeCustom } from "$lib/util/format-time";
 	import { HoldGesture } from "$lib/util/hold-gesture.svelte";
 	import { profileMediaUrl } from "$lib/util/media";
@@ -360,6 +361,7 @@
 	class="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between"
 	data-media-chrome
 >
+	<ViewerRevealButton {pswp} />
 	<!-- Floats over the photo, which fills the screen: the bar is a scrim, and the
 	     glyphs on it carry their own shadow (see `.viewer-glyph`). Stays
 	     click-through as a whole so a tap anywhere it isn't covering a control
