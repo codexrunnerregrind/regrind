@@ -43,7 +43,7 @@
 		rememberScreen,
 		trackScreenScroll,
 	} from "$lib/platform/swipe-back-ghost";
-	import { imagePrivacy } from "$lib/privacy/image-privacy.svelte";
+	import { imagesHidden } from "$lib/privacy/image-privacy.svelte";
 	import { startAddonUpdateWatch } from "$lib/updates/addon.svelte";
 	import { updatesSelfManaged } from "$lib/updates/capability.svelte";
 	import { startUpdateWatch } from "$lib/updates/updates-manager";
@@ -60,8 +60,7 @@
 	$effect.pre(() => {
 		document.documentElement.toggleAttribute(
 			"data-discreet-images",
-			!preferencesLoaded() ||
-				(imagePrivacy.override ?? preferencesSnapshot().discreetImages),
+			imagesHidden(),
 		);
 	});
 

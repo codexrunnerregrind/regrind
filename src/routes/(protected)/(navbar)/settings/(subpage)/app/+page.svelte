@@ -97,6 +97,15 @@
 <SettingsGroup divider="full">
 	<PrivacyModeSetting />
 	<PreferenceSwitchSetting
+		preference="privacyToggleButton"
+		title="Floating privacy button"
+		description="Show an eye button you can drag anywhere on screen to turn privacy mode on or off."
+	>
+		{#snippet icon()}
+			<EyeIcon weight="fill" />
+		{/snippet}
+	</PreferenceSwitchSetting>
+	<PreferenceSwitchSetting
 		preference="stayOnline"
 		title="Stay online while the app is open"
 		description="Refresh your online status in the background automatically, while the app is open."

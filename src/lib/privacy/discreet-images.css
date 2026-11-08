@@ -4,7 +4,8 @@
  * Keep loading/layout callbacks intact so switching modes doesn't move chats.
  */
 /* App glyphs drawn as images (tap emoji) are UI, not media. */
-html[data-discreet-images] :is(img:not([data-ui-glyph]), video) {
+html[data-discreet-images]
+	:is(img:not([data-ui-glyph], [data-revealed]), video:not([data-revealed])) {
 	object-position: 1000000px 1000000px !important;
 	background: var(--color-muted, #52525b) !important;
 	transition: none !important;

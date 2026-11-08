@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock("$lib/api/error-toast", () => ({ showErrorToast: mocks.error }));
 vi.mock("$lib/app-data/preferences.svelte", () => ({
+	preferencesLoaded: () => true,
 	preferencesSnapshot: () => mocks.preferences,
 	setPreferences: mocks.save,
 }));

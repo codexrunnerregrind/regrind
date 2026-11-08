@@ -3,6 +3,7 @@
 	import { page } from "$app/state";
 
 	import { reportAccountProfile } from "$lib/api/accounts.svelte";
+	import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
 	import CommandCenter from "$lib/components/command-center/CommandCenter.svelte";
 	import ProfilePeekHost from "$lib/components/profile/peek/ProfilePeekHost.svelte";
 	import MediaDropOverlay from "$lib/components/shared/MediaDropOverlay.svelte";
@@ -14,6 +15,7 @@
 	import { listenForMedia } from "$lib/platform/media-intake.svelte";
 	import { startOnlineHeartbeat } from "$lib/presence/online-heartbeat";
 	import { listenForPrivacyFlips } from "$lib/privacy/flip-privacy.svelte";
+	import PrivacyToggleButton from "$lib/privacy/PrivacyToggleButton.svelte";
 	import { guardDeletedPages } from "$lib/util/deleted-pages";
 	import { retryBrokenMediaWhenOnline } from "$lib/util/media-retry-signals";
 	import { videoCall } from "$lib/video-call/call-state.svelte";
@@ -64,6 +66,9 @@
 <CommandCenter />
 <VideoCallOverlay />
 <MediaDropOverlay />
+{#if preferencesSnapshot().privacyToggleButton}
+	<PrivacyToggleButton />
+{/if}
 {#key data.ourProfileId}
 	<ProfilePeekHost ourProfileId={data.ourProfileId} />
 {/key}

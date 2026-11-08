@@ -67,6 +67,13 @@ const preferencesSchema = z.object({
 	geohash: geohashSchema.nullable().default(null),
 	// Device-wide: switching accounts must not uncover images.
 	discreetImages: z.boolean().default(false),
+	privacyToggleButton: z.boolean().default(false),
+	// Centre of the floating privacy button, as viewport fractions.
+	privacyToggleButtonPosition: z
+		.object({ x: z.number().min(0).max(1), y: z.number().min(0).max(1) })
+		.nullable()
+		.default(null)
+		.catch(null),
 	confirmBlock: z.boolean().default(false),
 	giphyConsent: z.boolean().default(false),
 	hapticFeedback: z.boolean().default(true),

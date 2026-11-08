@@ -8,6 +8,11 @@
 		mediaFailure,
 		remedyFor,
 	} from "$lib/platform/media-failure";
+	import {
+		imagesHidden,
+		revealedImages,
+	} from "$lib/privacy/image-privacy.svelte";
+	import RevealImageButton from "$lib/privacy/RevealImageButton.svelte";
 	import { now } from "$lib/util/clock";
 	import {
 		loadWhenVisible,
@@ -38,6 +43,7 @@
 		failedSrc = $bindable(null),
 		onload,
 		onexpired,
+		revealable = true,
 	}: {
 		src: string | null;
 		alt?: string;
@@ -54,6 +60,8 @@
 		failedSrc?: string | null;
 		onload?: (image: HTMLImageElement) => void;
 		onexpired?: () => Promise<void>;
+		/** Offer a per-image reveal while privacy mode hides media. */
+		revealable?: boolean;
 	} = $props();
 
 	const RETRY_DELAY_MS = 2000;
@@ -202,6 +210,7 @@
 	const loaded = $derived(shownSrc !== null && shownSrc === loadSrc);
 	const fetching = $derived(requested !== null && !loaded);
 	let imageElement = $state<HTMLImageElement>();
+	const revealed = $derived(src !== null && revealedImages.has(src));
 	let releaseSlot = () => {};
 
 	$effect.pre(() => {
@@ -249,6 +258,7 @@
 			imgClass,
 		]}
 		style:aspect-ratio={aspectRatio}
+		data-revealed={revealed || undefined}
 		onerror={() => {
 			if (!slotGranted) return;
 			releaseSlot();
@@ -269,6 +279,9 @@
 			onload?.(image);
 		}}
 	/>
+	{#if revealable && imageElement && imagesHidden() && !revealed}
+		<RevealImageButton image={imageElement} {src} />
+	{/if}
 {:else}
 	<BrokenMedia
 		{tone}
