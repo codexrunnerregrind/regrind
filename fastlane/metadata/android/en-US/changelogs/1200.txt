@@ -1,0 +1,9 @@
+- Reduce animations setting
+- Text size setting under Appearance
+- Long-press a profile to peek at chat, stats and actions
+- Grid tiles show a frame when you have a recent chat
+- Privacy mode blurs photos, under Settings > Advanced > Privacy
+- The Filters button shows the active preset name
+- Fixed For You distances and blocked profiles coming back after a refresh
+- A removed Right Now post stays hidden
+- Smoother tab switching
