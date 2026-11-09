@@ -35,13 +35,13 @@
 			],
 			"versions": [
 				{
-					"version": "0.1.0.19",
-					"buildVersion": "0.1.0.19",
-					"date": "2026-10-29",
-					"localizedDescription": "- For You profiles on the grid\n- Backup and restore under Settings > Advanced\n- Best matches tab in Interest\n- Long-press the tap button to pick a tap type\n- Grid filter presets\n- Last online time on the grid\n- Common tags highlighted on profiles\n- Saved media goes into a folder per profile\n- Fixed a crash at launch when the push token fetch fails",
-					"downloadURL": "https://github.com/codexrunnerregrind/regrind/releases/download/v0.1.0-beta.19/regrind-v0.1.0-beta.19.ipa",
-					"size": 44684625,
-					"sha256": "ce5bc46a0784d49811f688b83b0fb0c61105cddf181a4611b41562b05a26884f",
+					"version": "0.1.0.20",
+					"buildVersion": "0.1.0.20",
+					"date": "2026-11-09",
+					"localizedDescription": "- Reduce animations setting\n- Text size setting under Appearance\n- Long-press a profile to peek at chat, stats and actions\n- Grid tiles show a frame when you have a recent chat\n- Privacy mode blurs photos, under Settings > Advanced > Privacy\n- The Filters button shows the active preset name\n- Fixed For You distances and blocked profiles coming back after a refresh\n- A removed Right Now post stays hidden\n- Smoother tab switching",
+					"downloadURL": "https://github.com/codexrunnerregrind/regrind/releases/download/v0.1.0-beta.20/regrind-v0.1.0-beta.20.ipa",
+					"size": 44537713,
+					"sha256": "28039233770f96d4e2dbbae338eb1391544993ec983e903673d20cfb406cc411",
 					"minOSVersion": "14.0"
 				}
 			]
