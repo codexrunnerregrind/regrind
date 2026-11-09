@@ -2,7 +2,7 @@
 	import PaperPlaneRightIcon from "phosphor-svelte/lib/PaperPlaneRightIcon";
 
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
-	import PrimaryComposerButton from "../PrimaryComposerButton.svelte";
+	import PrimaryComposerButton from "$lib/components/shared/PrimaryComposerButton.svelte";
 
 	const { voice, disabled } = $derived(getMessageComposerContext()());
 </script>

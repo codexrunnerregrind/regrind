@@ -39,7 +39,7 @@ const HAS_FILE_STORE: bool = cfg!(any(
 
 pub fn init_keyring() -> StorageBackend {
 	static USABLE: Mutex<Option<StorageBackend>> = Mutex::new(None);
-	cached(&USABLE, probe_keyring)
+	cached(&USABLE, || probe_keyring(install_platform_store))
 }
 
 // Held across the probe so concurrent callers never probe at once.
@@ -58,25 +58,30 @@ fn cached(
 	backend
 }
 
-fn probe_keyring() -> StorageBackend {
-	let backend = match install_platform_store() {
-		Ok(()) => StorageBackend::Keyring,
-		Err(e) if HAS_FILE_STORE => {
+fn probe_keyring(
+	install_platform_store: impl FnOnce() -> Result<(), String>,
+) -> StorageBackend {
+	let file_store =
+		keyring_core::get_default_store().filter(|_| HAS_FILE_STORE);
+	match install_platform_store() {
+		Ok(()) if round_trips() => return StorageBackend::Keyring,
+		Ok(()) => {
 			tracing::warn!(
-				"[storage] no platform keyring, keeping file store: {e}"
+				"[storage] the platform keyring failed a round trip"
 			);
-			StorageBackend::File
 		}
-		Err(e) => {
-			tracing::error!("[storage] no platform keyring: {e}");
-			StorageBackend::Unavailable
-		}
+		Err(e) => tracing::warn!("[storage] no platform keyring: {e}"),
+	}
+	let Some(file_store) = file_store else {
+		tracing::error!("[storage] no credential store to fall back to");
+		return StorageBackend::Unavailable;
 	};
-	if backend != StorageBackend::Unavailable && !round_trips() {
-		tracing::error!("[storage] the credential store failed a round trip");
+	keyring_core::set_default_store(file_store);
+	if !round_trips() {
+		tracing::error!("[storage] the file store failed a round trip");
 		return StorageBackend::Unavailable;
 	}
-	backend
+	StorageBackend::File
 }
 
 #[cfg(target_os = "ios")]
@@ -326,14 +331,121 @@ mod tests {
 		}
 	}
 
+	fn install_mock_keyring(refuses_writes: bool) -> Result<(), String> {
+		use keyring_core::api::CredentialStoreApi;
+
+		let store = keyring_core::mock::Store::new().unwrap();
+		if refuses_writes {
+			store
+				.build(keyring::SERVICE, "startup-probe", None)
+				.unwrap()
+				.as_any()
+				.downcast_ref::<keyring_core::mock::Cred>()
+				.unwrap()
+				.set_error(keyring_core::Error::NoStorageAccess(
+					"the default collection is locked".into(),
+				));
+		}
+		keyring_core::set_default_store(store);
+		Ok(())
+	}
+
+	fn session_file_exists(base: &std::path::Path) -> bool {
+		base.join("credentials").join("session_42").exists()
+	}
+
 	#[test]
 	fn init_keyring_leaves_a_usable_store_behind() {
 		with_file_store(|_| {
-			let backend = init_keyring();
+			let backend = probe_keyring(install_platform_store);
 
 			assert_ne!(backend, StorageBackend::Unavailable);
 			assert!(keyring_core::get_default_store().is_some());
 			assert!(keyring_core::Entry::new("open-grind", "session:1").is_ok());
+		});
+	}
+
+	#[test]
+	fn a_keyring_that_refuses_writes_falls_back_to_the_file_store() {
+		with_file_store(|base| {
+			let backend = probe_keyring(|| install_mock_keyring(true));
+			AuthStorage::set_credentials(ME, &credentials("auth-token")).unwrap();
+
+			assert_eq!(backend, StorageBackend::File);
+			assert!(session_file_exists(base));
+		});
+	}
+
+	#[test]
+	fn a_working_keyring_takes_over_from_the_file_store() {
+		with_file_store(|base| {
+			let backend = probe_keyring(|| install_mock_keyring(false));
+			AuthStorage::set_credentials(ME, &credentials("auth-token")).unwrap();
+
+			assert_eq!(backend, StorageBackend::Keyring);
+			assert!(!session_file_exists(base));
+		});
+	}
+
+	#[test]
+	fn a_missing_keyring_keeps_the_file_store() {
+		with_file_store(|base| {
+			let backend = probe_keyring(|| Err("no secret service".to_owned()));
+			AuthStorage::set_credentials(ME, &credentials("auth-token")).unwrap();
+
+			assert_eq!(backend, StorageBackend::File);
+			assert!(session_file_exists(base));
+		});
+	}
+
+	#[test]
+	fn a_second_init_keyring_reuses_the_first_probe() {
+		with_file_store(|_| {
+			let first = init_keyring();
+			keyring_core::unset_default_store();
+
+			assert_eq!(init_keyring(), first);
+			assert!(keyring_core::get_default_store().is_none());
+		});
+	}
+
+	#[test]
+	fn a_failed_probe_is_tried_again_and_a_usable_one_is_kept() {
+		let usable = Mutex::new(None);
+
+		assert_eq!(
+			cached(&usable, || StorageBackend::Unavailable),
+			StorageBackend::Unavailable
+		);
+		assert_eq!(
+			cached(&usable, || StorageBackend::File),
+			StorageBackend::File
+		);
+		assert_eq!(
+			cached(&usable, || unreachable!("a usable backend is probed once")),
+			StorageBackend::File
+		);
+	}
+
+	#[test]
+	fn probes_from_many_threads_never_overlap() {
+		let usable = Mutex::new(None);
+		let probing = Mutex::new(());
+		let start = Barrier::new(8);
+
+		std::thread::scope(|scope| {
+			for _ in 0..8 {
+				scope.spawn(|| {
+					start.wait();
+					cached(&usable, || {
+						let _probing = probing
+							.try_lock()
+							.expect("another probe is already running");
+						std::thread::sleep(Duration::from_millis(20));
+						StorageBackend::Unavailable
+					})
+				});
+			}
 		});
 	}
 

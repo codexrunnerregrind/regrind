@@ -3,7 +3,7 @@
 	import { expoOut } from "svelte/easing";
 
 	import { scale } from "$lib/util/reduced-motion";
-	import ComposerButton from "../ComposerButton.svelte";
+	import ComposerButton from "$lib/components/shared/ComposerButton.svelte";
 	import { dropKeyboard, keepKeyboard } from "../keep-keyboard";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
 

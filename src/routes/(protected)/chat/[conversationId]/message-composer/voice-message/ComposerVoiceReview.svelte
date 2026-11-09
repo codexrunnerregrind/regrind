@@ -12,7 +12,7 @@
 	} from "$lib/chat/audio-speed";
 	import AudioWaveform from "$lib/components/audio/AudioWaveform.svelte";
 	import { formatMediaDuration } from "$lib/util/format-time";
-	import ComposerButton from "../ComposerButton.svelte";
+	import ComposerButton from "$lib/components/shared/ComposerButton.svelte";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
 
 	const { voice } = $derived(getMessageComposerContext()());
