@@ -13,7 +13,7 @@
         "@tauri-apps/plugin-dialog": "~2",
         "@tauri-apps/plugin-fs": "~2.5.1",
         "@tauri-apps/plugin-geolocation": "~2.3.2",
-        "@tauri-apps/plugin-haptics": "^2.3.2",
+        "@tauri-apps/plugin-haptics": "~2.3.2",
         "@tauri-apps/plugin-notification": "~2.3",
         "@tauri-apps/plugin-opener": "~2.5",
         "@tauri-apps/plugin-os": "~2.3.2",
@@ -375,7 +375,7 @@
 
     "@tauri-apps/plugin-geolocation": ["@tauri-apps/plugin-geolocation@2.3.2", "", { "dependencies": { "@tauri-apps/api": "^2.8.0" } }, "sha512-ONCwav1monafjeO8/JdXtRlbhZ3xgAdBYxo/62qgw99u9+y6xGsohy3avZgFZsBHA0JVNe1uJnMi+vfT5ZSFUA=="],
 
-    "@tauri-apps/plugin-haptics": ["@tauri-apps/plugin-haptics@2.4.2", "", { "dependencies": { "@tauri-apps/api": "^2.12.0" } }, "sha512-ddoEZuUWxJORcZE6AzeRUEHx4WljV9X4gXU+r08pTfX5YTwGMTIoJcLzMV9WHZIWJVWthktKAolLVaedbZ4dhA=="],
+    "@tauri-apps/plugin-haptics": ["@tauri-apps/plugin-haptics@2.3.3", "", { "dependencies": { "@tauri-apps/api": "^2.11.0" } }, "sha512-NueC58Woi2BMVIrOQHWl+mq5LqqiMDtAgaqk5sJHi7GF1dba+SNWPhKblKjTcjRdFZZ+X+gf4rl/GUhMJDyKOg=="],
 
     "@tauri-apps/plugin-notification": ["@tauri-apps/plugin-notification@2.3.3", "", { "dependencies": { "@tauri-apps/api": "^2.8.0" } }, "sha512-Zw+ZH18RJb41G4NrfHgIuofJiymusqN+q8fGUIIV7vyCH+5sSn5coqRv/MWB9qETsUs97vmU045q7OyseCV3Qg=="],
 
