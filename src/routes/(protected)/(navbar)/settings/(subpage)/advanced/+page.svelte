@@ -2,6 +2,7 @@
 	import CalendarBlankIcon from "phosphor-svelte/lib/CalendarBlankIcon";
 	import ClockCounterClockwiseIcon from "phosphor-svelte/lib/ClockCounterClockwiseIcon";
 	import ExportIcon from "phosphor-svelte/lib/ExportIcon";
+	import EyeIcon from "phosphor-svelte/lib/EyeIcon";
 	import FireIcon from "phosphor-svelte/lib/FireIcon";
 	import FloppyDiskIcon from "phosphor-svelte/lib/FloppyDiskIcon";
 	import FrameCornersIcon from "phosphor-svelte/lib/FrameCornersIcon";
@@ -13,6 +14,8 @@
 	import SectionHeader from "#lib/components/settings/SectionHeader.svelte";
 	import SettingsGroup from "#lib/components/settings/SettingsGroup.svelte";
 	import SettingsRow from "#lib/components/settings/SettingsRow.svelte";
+	import { privacyFeatureOn } from "#lib/privacy/image-privacy.svelte";
+	import PrivacyModeSetting from "#lib/privacy/PrivacyModeSetting.svelte";
 </script>
 
 <SectionHeader>Backup</SectionHeader>
@@ -57,6 +60,21 @@
 			<TrayArrowDownIcon weight="fill" />
 		{/snippet}
 	</SettingsRow>
+</SettingsGroup>
+
+<SectionHeader>Privacy</SectionHeader>
+<SettingsGroup divider="full">
+	<PrivacyModeSetting />
+	<PreferenceSwitchSetting
+		preference="privacyToggleButton"
+		title="Floating privacy button"
+		description="Show an eye button you can drag anywhere on screen to hide or show images. Needs privacy mode."
+		disabled={!privacyFeatureOn()}
+	>
+		{#snippet icon()}
+			<EyeIcon weight="fill" />
+		{/snippet}
+	</PreferenceSwitchSetting>
 </SettingsGroup>
 
 <SectionHeader>Miscellaneous</SectionHeader>

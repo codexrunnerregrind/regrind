@@ -19,16 +19,14 @@
 	import SettingsGroup from "#lib/components/settings/SettingsGroup.svelte";
 	import SettingsRow from "#lib/components/settings/SettingsRow.svelte";
 	import { appIconAvailable } from "#lib/platform/app-icon.ts";
-	import { desktopEntryAvailable } from "#lib/platform/desktop-entry.svelte.ts";
+	import { desktopEntryAvailable } from "#lib/platform/desktop-entry.svelte";
 	import { hapticsAvailable } from "#lib/platform/haptics.ts";
 	import { keepScreenOnAvailable } from "#lib/platform/keep-screen-on.ts";
-	import { privacyFeatureOn } from "#lib/privacy/image-privacy.svelte.ts";
-	import PrivacyModeSetting from "#lib/privacy/PrivacyModeSetting.svelte";
-	import { addonInstallerAvailable } from "#lib/updates/addon.svelte.ts";
+	import { addonInstallerAvailable } from "#lib/updates/addon.svelte";
 	import {
 		updatesSelfManaged,
 		updatesUnsupportedReason,
-	} from "#lib/updates/capability.svelte.ts";
+	} from "#lib/updates/capability.svelte";
 	import AppsMenuEntrySetting from "./AppsMenuEntrySetting.svelte";
 	import AutomaticUpdatesSetting from "./AutomaticUpdatesSetting.svelte";
 	import NotificationSettings from "./NotificationSettings.svelte";
@@ -96,17 +94,6 @@
 
 <SectionHeader>Privacy</SectionHeader>
 <SettingsGroup divider="full">
-	<PrivacyModeSetting />
-	<PreferenceSwitchSetting
-		preference="privacyToggleButton"
-		title="Floating privacy button"
-		description="Show an eye button you can drag anywhere on screen to hide or show images. Needs privacy mode."
-		disabled={!privacyFeatureOn()}
-	>
-		{#snippet icon()}
-			<EyeIcon weight="fill" />
-		{/snippet}
-	</PreferenceSwitchSetting>
 	<PreferenceSwitchSetting
 		preference="stayOnline"
 		title="Stay online while the app is open"
