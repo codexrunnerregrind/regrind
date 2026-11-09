@@ -37,7 +37,7 @@
 		const path = interestTabs[target];
 		if (!active || !path) return;
 		hapticSelection();
-		void goto(path, { replaceState: true, noScroll: true });
+		void goto(path, { replace: true, reset: false });
 	}
 
 	// While Interest is on show its neighbours are kept ready for a drag;

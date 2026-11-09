@@ -117,7 +117,7 @@
 		if (covered || !path) return;
 		index += direction;
 		hapticSelection();
-		void goto(path, { noScroll: true });
+		void goto(path, { reset: false });
 	}
 
 	function pan(dx: number) {

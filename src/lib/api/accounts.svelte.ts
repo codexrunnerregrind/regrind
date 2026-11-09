@@ -97,7 +97,7 @@ export async function switchAccount(profileId: number): Promise<void> {
 	await callMethod("account_switch", { profileId });
 	await adoptAccount(profileId);
 	await accountsState.reload();
-	await goto("/", { replaceState: true });
+	await goto("/", { replace: true });
 }
 
 /**
@@ -118,7 +118,7 @@ export async function cancelAddAccount(): Promise<void> {
 	const restored = accountsState.active?.profileId ?? null;
 	await adoptAccount(restored);
 	await goto(restored === null ? "/auth/sign-in" : "/", {
-		replaceState: true,
+		replace: true,
 	});
 }
 
@@ -186,5 +186,5 @@ export async function removeAccount(profileId: number): Promise<void> {
 
 	await accountsState.reload();
 	await adoptAccount(next);
-	await goto(next === null ? "/auth/sign-in" : "/", { replaceState: true });
+	await goto(next === null ? "/auth/sign-in" : "/", { replace: true });
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import "photoswipe/style.css";
-	import { env } from "$env/dynamic/public";
+	import { PUBLIC_ENABLE_BLUR_EFFECTS } from "$app/env/public";
 	import LightningIcon from "phosphor-svelte/lib/LightningIcon";
 	import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
@@ -174,7 +174,7 @@
 										"opacity-100": loaded,
 										"opacity-0": !loaded,
 										"blur-2xl":
-											env.PUBLIC_ENABLE_BLUR_EFFECTS,
+											PUBLIC_ENABLE_BLUR_EFFECTS,
 									},
 								]}
 							/>

@@ -1,5 +1,3 @@
-import { env } from "$env/dynamic/public";
-
 // The build-time env var is the default; the hidden toggle in Settings (tap the
 // app version seven times) overrides it and wins in both directions, so a demo
 // build can be switched back to the real API and vice versa.
@@ -13,9 +11,7 @@ function demoOverride(): boolean | undefined {
 
 export const demoEnabled =
 	!import.meta.env.VITEST &&
-	(demoOverride() ??
-		("PUBLIC_ENABLE_DEMO" in env ||
-			import.meta.env.OPEN_GRIND_DEMO === "1"));
+	(demoOverride() ?? import.meta.env.OPEN_GRIND_DEMO === "1");
 
 /**
  * Flip demo mode and reload. Everything downstream reads `demoEnabled` once at

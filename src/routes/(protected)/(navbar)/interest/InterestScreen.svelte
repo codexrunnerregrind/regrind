@@ -89,7 +89,7 @@
 	function select(value: string) {
 		if (value === page.url.pathname) return;
 		hapticSelection();
-		void goto(value, { replaceState: true, noScroll: true });
+		void goto(value, { replace: true, reset: false });
 	}
 
 	// Where the pager is, for the underline to follow the finger.

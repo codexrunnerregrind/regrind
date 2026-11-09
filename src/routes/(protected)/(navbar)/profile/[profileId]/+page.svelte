@@ -62,9 +62,8 @@
 		// component is reused across the param change, so the navigation costs
 		// nothing beyond keeping the history entry honest.
 		goto(`/profile/${profileId}`, {
-			replaceState: true,
-			noScroll: true,
-			keepFocus: true,
+			replace: true,
+			reset: false,
 		}).catch((error) => console.error(error));
 	}
 

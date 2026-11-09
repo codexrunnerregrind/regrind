@@ -6,7 +6,7 @@ import { execSync } from "node:child_process";
 import { readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadEnv, searchForWorkspaceRoot } from "vite";
+import { searchForWorkspaceRoot } from "vite";
 import { defineConfig } from "vitest/config";
 
 // @ts-expect-error process is a nodejs global
@@ -44,13 +44,13 @@ const grindrApiBuildNumber = scrapeHeaderConst("BUILD_NUMBER");
 const versionName = `ReGrind/${projectVersion}\ngrindr3/${grindrApiVersion};${grindrApiBuildNumber}`;
 
 // https://vite.dev/config/
-export default defineConfig(async ({ command, mode }) => ({
+export default defineConfig(async ({ command }) => ({
 	plugins: [
 		sveltekit({
 			preprocess: vitePreprocess(),
 			compilerOptions: { experimental: { async: true } },
 			adapter: adapter({ fallback: "index.html" }),
-			version: { name: versionName },
+			version: { name: versionName, pollInterval: 0 },
 		}),
 		tailwindcss(),
 	],
@@ -65,8 +65,7 @@ export default defineConfig(async ({ command, mode }) => ({
 
 	define: {
 		__DEMO__: JSON.stringify(
-			!process.env.VITEST &&
-				loadEnv(mode, root, "OPEN_GRIND_").OPEN_GRIND_DEMO === "1",
+			!process.env.VITEST && process.env.OPEN_GRIND_DEMO === "1",
 		),
 	},
 

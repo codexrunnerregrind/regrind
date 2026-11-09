@@ -10,7 +10,7 @@ I build this for myself and sideload it onto my own phone. If you want to try it
 <img src="./contrib/screenshots/right-now.webp" alt="Right Now" width="220">
 <img src="./contrib/screenshots/inbox.webp" alt="Inbox" width="220">
 
-> Every screenshot here is from demo mode (`PUBLIC_ENABLE_DEMO=1`), so it's all mock data.
+> Every screenshot here is from demo mode (`OPEN_GRIND_DEMO=1`), so it's all mock data.
 
 ## Install on iOS
 

@@ -159,7 +159,7 @@ describe("TabShell", () => {
 		drag(pager, { dx: -200 });
 
 		expect(goto).toHaveBeenCalledExactlyOnceWith("/right-now", {
-			noScroll: true,
+			reset: false,
 		});
 		expect(position(track)).toEqual({ pane: 1, dragPx: 0 });
 		expect(track.style.transition).not.toBe("none");
@@ -171,7 +171,7 @@ describe("TabShell", () => {
 		drag(pager, { dx: -200 });
 
 		expect(goto).toHaveBeenCalledExactlyOnceWith("/interest/taps", {
-			noScroll: true,
+			reset: false,
 		});
 	});
 

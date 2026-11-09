@@ -9,7 +9,7 @@ import InterestPager from "./InterestPager.svelte";
 const VIEWS = "/interest/views";
 const TAPS = "/interest/taps";
 const MATCHES = "/interest/matches";
-const REPLACE = { replaceState: true, noScroll: true };
+const REPLACE = { replace: true, reset: false };
 const WIDTH = 400;
 
 const { goto } = vi.hoisted(() => ({ goto: vi.fn() }));
@@ -26,7 +26,7 @@ vi.mock("./matches/MatchesGrid.svelte", () => ({ default: () => {} }));
 vi.mock("./sent/SentTapsList.svelte", () => ({ default: () => {} }));
 
 function mountPager(pathname: ResolvedPathname, { active = true } = {}) {
-	page.url.pathname = pathname;
+	(page.url as URL).pathname = pathname;
 	const { container } = render(InterestPager, {
 		props: { ourProfileId: 1, active, headerHeight: 91 },
 	});
@@ -110,7 +110,7 @@ describe("InterestPager", () => {
 	it("slides straight to a tab picked from the tabs", () => {
 		const { track } = mountPager(VIEWS);
 
-		page.url.pathname = "/interest/sent";
+		(page.url as URL).pathname = "/interest/sent";
 		flushSync();
 
 		expect(restingOn(track)).toBe(3);

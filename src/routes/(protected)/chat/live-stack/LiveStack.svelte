@@ -2,7 +2,7 @@
 	import { onNavigate } from "$app/navigation";
 	import { page } from "$app/state";
 	import { onDestroy, onMount, type Snippet, untrack } from "svelte";
-	import type { NavigationTarget } from "@sveltejs/kit";
+	import type { NavigationTarget } from "$app/navigation";
 	import type { Attachment } from "svelte/attachments";
 
 	import {
@@ -29,7 +29,7 @@
 	}: {
 		basePath: string;
 		keyOf: (
-			target: Pick<NavigationTarget, "params" | "route" | "url">,
+			target: Pick<NavigationTarget, "params" | "route">,
 		) => string | null;
 		base?: Snippet<[{ covered: boolean; uncovering: boolean }]>;
 		sheet: Snippet<[string, { leaving: boolean }]>;

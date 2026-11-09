@@ -18,7 +18,7 @@ const HANDOFF_EVENT = "google-oauth:handoff";
 const READY_ATTEMPTS = 25;
 const READY_POLL_MS = 200;
 
-const available = () => isTauri() && isAndroidPlatform();
+const available = () => !__DEMO__ && isTauri() && isAndroidPlatform();
 
 async function pending(): Promise<boolean> {
 	try {
