@@ -46,7 +46,8 @@
 		checksForUpdates?: boolean;
 	};
 
-	const DOWNLOAD_PAGE_URL = "https://opengrind.org/guides/download";
+	const DOWNLOAD_PAGE_URL =
+		"https://github.com/codexrunnerregrind/regrind/releases/latest";
 
 	const appeal: ExternalAction = { label: "Appeal", href: BAN_APPEAL_URL };
 
@@ -139,9 +140,9 @@
 		}
 		if (status?.kind === "unsupportedVersion") {
 			return {
-				title: "Update Open Grind",
+				title: "Update ReGrind",
 				description:
-					"Grindr no longer supports this version of Open Grind.",
+					"Grindr no longer supports this version of ReGrind.",
 				details: status.error,
 				checksForUpdates: true,
 			};

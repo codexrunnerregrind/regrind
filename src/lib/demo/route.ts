@@ -146,21 +146,6 @@ export function demoCallMethod(method: string): unknown {
 	}
 }
 
-export function demoSendCommand({
-	type,
-	payload,
-}: {
-	type: string;
-	payload: unknown;
-}): unknown {
-	switch (type) {
-		case "chat.v1.message.send":
-			return demoSentMessage(payload);
-		default:
-			return null;
-	}
-}
-
 function demoExternalRoute({
 	path,
 	method,

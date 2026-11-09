@@ -169,7 +169,8 @@ fn round_trips() -> bool {
 ))]
 mod tests {
 	use std::path::Path;
-	use std::sync::Mutex;
+	use std::sync::{Barrier, Mutex};
+	use std::time::Duration;
 
 	use super::*;
 

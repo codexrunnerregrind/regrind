@@ -3,6 +3,7 @@ pub mod auth;
 pub mod client;
 pub mod facebook_oauth;
 pub mod google_oauth;
+pub mod grindr_version;
 pub mod media_download;
 pub mod oauth;
 pub mod recaptcha;

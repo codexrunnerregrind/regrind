@@ -93,7 +93,7 @@
 		</div>
 	</Empty.Content>
 	<Link
-		href="https://git.opengrind.org/open-grind/open-grind/issues"
+		href="https://github.com/codexrunnerregrind/regrind/issues"
 		class={cn(
 			buttonVariants({ variant: "link", size: "sm" }),
 			"text-muted-foreground",

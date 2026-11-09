@@ -2,7 +2,7 @@ use std::sync::{Mutex, MutexGuard, PoisonError};
 
 use crate::error::AppError;
 
-const SERVICE: &str = "open-grind";
+pub(crate) const SERVICE: &str = "open-grind";
 
 static KEYRING_LOCK: Mutex<()> = Mutex::new(());
 

@@ -260,6 +260,7 @@ pub fn run() {
             desktop_entry::desktop_entry_state,
             desktop_entry::desktop_entry_install,
             desktop_entry::desktop_entry_remove,
+            api::grindr_version::refresh_grindr_version,
             api::update::commands::updater_capability,
             api::update::commands::updater_settings,
             api::update::commands::updater_set_auto_check,
@@ -339,6 +340,8 @@ pub fn run() {
             storage::init_file_store(app.path().app_local_data_dir()?);
 
             app.manage(storage::init_keyring());
+
+            api::grindr_version::init(app.handle());
 
             // Brings up a client per signed-in account, points the app at one,
             // and starts the tasks that persist each account's secrets and carry

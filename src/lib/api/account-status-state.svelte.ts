@@ -1,3 +1,4 @@
+import { invoke } from "@tauri-apps/api/core";
 import { SvelteSet } from "svelte/reactivity";
 
 import { registerAccountCache } from "#lib/api/account-caches.ts";
@@ -48,14 +49,44 @@ function accountStatusOf(error: AccountStatusError): AccountStatus {
 		: { kind: "unsupportedVersion", error };
 }
 
+let versionRefresh: Promise<boolean> | null = null;
+
+// A refused version first tries the one the fork publishes; a newer one
+// reloads the app onto it instead of asking for an update.
+function adoptPublishedVersion(): Promise<boolean> {
+	versionRefresh ??= invoke<boolean>("refresh_grindr_version")
+		.catch(() => false)
+		.then((result) => {
+			const changed = result === true;
+			if (changed) location.reload();
+			else versionRefresh = null;
+			return changed;
+		});
+	return versionRefresh;
+}
+
+function showUnlessVersionAdopted(
+	status: AccountStatus,
+	show: () => void,
+): void {
+	if (status.kind !== "unsupportedVersion") return show();
+	void adoptPublishedVersion().then((changed) => {
+		if (!changed) show();
+	});
+}
+
 export function showAccountStatusForError(error: AccountStatusError): void {
-	showAccountStatus(accountStatusOf(error));
+	const status = accountStatusOf(error);
+	showUnlessVersionAdopted(status, () => showAccountStatus(status));
 }
 
 export function noticeAccountStatusError(error: AccountStatusError): void {
 	const status = accountStatusOf(error);
 	if (accountStatusState.open || dismissedKinds.has(status.kind)) return;
-	showAccountStatus(status);
+	showUnlessVersionAdopted(status, () => {
+		if (accountStatusState.open || dismissedKinds.has(status.kind)) return;
+		showAccountStatus(status);
+	});
 }
 
 export function dismissAccountStatus(): void {

@@ -46,7 +46,7 @@
 				>
 			{:else}
 				If you know this is a bug in the app, <Link
-					href="https://git.opengrind.org/open-grind/open-grind/issues/new?template=.forgejo%2fissue_template%2fbug.yaml"
+					href="https://github.com/codexrunnerregrind/regrind/issues/new"
 					target="_blank">report an issue</Link
 				>.
 			{/if}

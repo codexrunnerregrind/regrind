@@ -1,7 +1,7 @@
 <script lang="ts">
 	import "photoswipe/style.css";
-	import { goto } from "$app/navigation";
 	import { PUBLIC_ENABLE_BLUR_EFFECTS } from "$app/env/public";
+	import { goto } from "$app/navigation";
 	import ChatIcon from "phosphor-svelte/lib/ChatIcon";
 	import ClockIcon from "phosphor-svelte/lib/ClockIcon";
 	import HouseIcon from "phosphor-svelte/lib/HouseIcon";

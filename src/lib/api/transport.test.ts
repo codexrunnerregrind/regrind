@@ -196,13 +196,16 @@ describe("account status errors", () => {
 			fetchRest("/v4/cascade"),
 			fetchRest("/v4/inbox"),
 		]);
-		expect(accountStatusState).toMatchObject({
-			open: true,
-			status: { kind: "unsupportedVersion" },
-		});
+		await vi.waitFor(() =>
+			expect(accountStatusState).toMatchObject({
+				open: true,
+				status: { kind: "unsupportedVersion" },
+			}),
+		);
 
 		dismissAccountStatus();
 		await fetchRest("/v3/me/prefs");
+		await Promise.resolve();
 		expect(accountStatusState.open).toBe(false);
 	});
 

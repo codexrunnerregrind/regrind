@@ -1,0 +1,139 @@
+diff --git a/src/auth.rs b/src/auth.rs
+index 4fe42e9..289b27e 100644
+--- a/src/auth.rs
++++ b/src/auth.rs
+@@ -369,7 +369,7 @@ pub(crate) struct RefreshGate {
+ 	failures: u32,
+ 	retry_at: Option<Instant>,
+ 	reported: bool,
+-	client_refused: bool,
++	client_refused: Option<String>,
+ }
+ 
+ const REFRESH_COOLDOWNS: [Duration; 4] = [
+@@ -381,7 +381,8 @@ const REFRESH_COOLDOWNS: [Duration; 4] = [
+ 
+ impl RefreshGate {
+ 	fn blocked(&self) -> bool {
+-		self.client_refused
++		self.client_refused.as_deref()
++			== Some(crate::headers::app_version().as_str())
+ 			|| self.retry_at.is_some_and(|at| Instant::now() < at)
+ 	}
+ 
+@@ -393,7 +394,9 @@ impl RefreshGate {
+ 
+ 	fn record_failure_of(&mut self, error: &GrindrError) {
+ 		self.record_failure();
+-		self.client_refused = error.refuses_client_version();
++		self.client_refused = error
++			.refuses_client_version()
++			.then(crate::headers::app_version);
+ 	}
+ 
+ 	fn clear_backoff(&mut self) {
+@@ -403,7 +406,7 @@ impl RefreshGate {
+ 
+ 	fn take_owed_recovery(&mut self) -> bool {
+ 		self.clear_backoff();
+-		self.client_refused = false;
++		self.client_refused = None;
+ 		std::mem::take(&mut self.reported)
+ 	}
+ }
+diff --git a/src/headers.rs b/src/headers.rs
+index 9c8b2e8..7bd620b 100644
+--- a/src/headers.rs
++++ b/src/headers.rs
+@@ -1,3 +1,5 @@
++use std::sync::{PoisonError, RwLock};
++
+ use wreq::header::{HeaderName, HeaderValue};
+ 
+ use crate::device::DeviceInfo;
+@@ -8,22 +10,43 @@ use crate::error::GrindrError;
+ /// Changing it is a breaking change (it can change how requests behave), so it
+ /// bumps the crate's breaking version too. The `+<apk>` suffix on the package
+ /// version mirrors this string but means nothing to Cargo on its own.
+-pub const APP_VERSION: &str = "26.22.0.192710";
+-pub(crate) const BUILD_NUMBER: &str = "192710";
++pub const APP_VERSION: &str = "26.24.0.195444";
++pub(crate) const BUILD_NUMBER: &str = "195444";
++
++static APP_VERSION_OVERRIDE: RwLock<Option<String>> = RwLock::new(None);
++
++/// Sends `version` (e.g. `26.25.0.197000`) in place of [`APP_VERSION`] from
++/// the next request on; `None` goes back to it.
++pub fn set_app_version(version: Option<String>) {
++	*APP_VERSION_OVERRIDE
++		.write()
++		.unwrap_or_else(PoisonError::into_inner) = version;
++}
++
++/// The app version requests currently carry.
++pub fn app_version() -> String {
++	APP_VERSION_OVERRIDE
++		.read()
++		.unwrap_or_else(PoisonError::into_inner)
++		.clone()
++		.unwrap_or_else(|| APP_VERSION.to_owned())
++}
+ const OKHTTP_USER_AGENT: &str = "okhttp/5.5.0";
+ 
+ const MEDIA_ACCEPT: &str = "image/webp,image/*;q=0.8";
+ 
+ /// Builds the `User-Agent` the app sends, e.g.
+-/// `grindr3/26.22.0.192710;192710;Free;Android 14;Pixel 8;Google`.
++/// `grindr3/26.24.0.195444;195444;Free;Android 14;Pixel 8;Google`.
+ ///
+ /// `subscription_tier` is usually `"Free"`.
+ pub fn build_user_agent(
+ 	device: &DeviceInfo,
+ 	subscription_tier: &str,
+ ) -> String {
++	let version = app_version();
++	let build = version.rsplit('.').next().unwrap_or(BUILD_NUMBER);
+ 	format!(
+-		"grindr3/{APP_VERSION};{BUILD_NUMBER};{subscription_tier};{};{};{}",
++		"grindr3/{version};{build};{subscription_tier};{};{};{}",
+ 		device.os, device.device_model, device.manufacturer
+ 	)
+ }
+diff --git a/src/lib.rs b/src/lib.rs
+index b62888e..f367d8f 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -72,6 +72,7 @@ pub use error::{BanInfo, BanKind, BlockKind, GrindrError, TimeoutPhase};
+ pub use headers::{
+ 	build_device_info_header, build_platform_user_agent, build_user_agent,
+ 	GrindrHeaders, APP_VERSION,
++	app_version, set_app_version,
+ };
+ pub use media::{
+ 	MediaFetcher, MediaRequest, MediaResponse, MediaStream, StreamRequest,
+diff --git a/src/request.rs b/src/request.rs
+index 137798b..0cfe5fc 100644
+--- a/src/request.rs
++++ b/src/request.rs
+@@ -285,7 +285,7 @@ impl InnerClient {
+ 		let header = authorization.map(Authorization::header);
+ 		let mut headers = GrindrHeaders::build(
+ 			&fp.device,
+-			&fp.user_agent,
++			&crate::headers::build_user_agent(&fp.device, "Free"),
+ 			header.as_deref(),
+ 			authorization.map(|_| "[FREE]"),
+ 		)?;
+diff --git a/src/ws.rs b/src/ws.rs
+index 8069a3e..f6a24cd 100644
+--- a/src/ws.rs
++++ b/src/ws.rs
+@@ -187,7 +187,7 @@ async fn connect_and_run(
+ 	let fp = inner.fingerprint().await;
+ 	let headers = GrindrHeaders::build(
+ 		&fp.device,
+-		&fp.user_agent,
++		&crate::headers::build_user_agent(&fp.device, "Free"),
+ 		Some(&authorization),
+ 		Some("[FREE]"),
+ 	)?;

@@ -134,6 +134,7 @@ base64 = { opt-level = 3 }
 
 # See https://github.com/tauri-apps/tauri/pull/15777
 [patch.crates-io]
+grindr = { path = ".patched/grindr" }
 wry = { path = ".patched/wry" }
 tauri-codegen = { path = ".patched/tauri-codegen" }
 http2 = { path = ".patched/http2" }

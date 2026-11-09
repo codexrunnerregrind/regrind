@@ -253,12 +253,12 @@ describe("phone verification", () => {
 });
 
 describe("unsupported app version", () => {
-	it("asks to update Open Grind", async () => {
+	it("asks to update ReGrind", async () => {
 		const dialog = await showError(deprecatedVersion);
 
-		expect(heading()).toBe("Update Open Grind");
+		expect(heading()).toBe("Update ReGrind");
 		expect(dialog.textContent).toContain(
-			"Grindr no longer supports this version of Open Grind.",
+			"Grindr no longer supports this version of ReGrind.",
 		);
 		expect(button("Copy details")).toBeTruthy();
 		expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
@@ -294,7 +294,7 @@ describe("unsupported app version", () => {
 		await showError(deprecatedVersion);
 
 		expect(link("Check for updates")).toBe(
-			"https://opengrind.org/guides/download",
+			"https://github.com/codexrunnerregrind/regrind/releases/latest",
 		);
 	});
 

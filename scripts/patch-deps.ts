@@ -2,6 +2,12 @@ import { $ } from "bun";
 
 const CRATES = [
 	{
+		name: "grindr",
+		version: "0.32.1+26.22.0.192710",
+		sha256: "46353b32acffb41683eb5521e41d115e09d888aa20882593568ac23b49406412",
+		keep: ["Cargo.toml", "LICENSE", "src"],
+	},
+	{
 		name: "http2",
 		version: "0.4.21",
 		sha256: "a6e23815f8ec982e1452e1d0fda921ec20a9187fb610ad003c90cc5abd65b2c4",

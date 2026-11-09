@@ -107,7 +107,7 @@ class ConversationsState {
 	#refreshRequestedSinceFetchStart = false;
 	#syncLatestInFlight: Promise<boolean> | null = null;
 	#coalescedRefresh = new CoalescedRefresh({
-		run: () => void this.refresh(),
+		run: () => void this.refresh({ automatic: true }),
 		delayMs: REFRESH_COALESCE_MS,
 	});
 	#unsubscribeProfileEdits = onProfileEdit(({ profileId, patch }) => {
@@ -151,7 +151,7 @@ class ConversationsState {
 		void this.#hardLoad();
 
 		this.#unsubscribeReconcile = reconciler.subscribe(() =>
-			this.#fetches.track(this.#reconcile()),
+			this.#fetches.track(this.#reconcile({ automatic: true })),
 		);
 
 		this.#wsPromises.push(
@@ -273,7 +273,7 @@ class ConversationsState {
 		});
 	}
 
-	async #reconcile(): Promise<void> {
+	async #reconcile({ automatic = false } = {}): Promise<void> {
 		if (this.#destroyed) return;
 		if (this.refreshing) {
 			this.#refreshRequestedSinceFetchStart = true;
@@ -368,6 +368,7 @@ class ConversationsState {
 		} catch (error) {
 			if (this.#destroyed) return;
 			console.error(error);
+			if (automatic) return;
 			showErrorToast({
 				label: "Failed to refresh conversations",
 				error,
@@ -467,8 +468,8 @@ class ConversationsState {
 		this.#reads.readOpenChat();
 	}
 
-	refresh(): Promise<void> {
-		return this.#fetches.track(this.#reconcile());
+	refresh({ automatic = false } = {}): Promise<void> {
+		return this.#fetches.track(this.#reconcile({ automatic }));
 	}
 
 	retry(): void {

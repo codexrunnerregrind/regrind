@@ -991,6 +991,8 @@ a {
 
 .profile-view-toast[data-sonner-toast] > * {
 	pointer-events: auto;
+}
+
 .toast[data-styled="true"] [data-close-button] {
 	background-color: var(--color-accent) !important;
 	color: var(--popover) !important;

@@ -21,15 +21,17 @@ describe("reportSignInFailure", () => {
 		[8, "The client version is deprecated", "unsupportedVersion"],
 	])(
 		"shows error %i in the account popup instead of a toast",
-		(code, message, kind) => {
+		async (code, message, kind) => {
 			reportSignInFailure({
 				error: { kind: "Api", message: { code, message } },
 			});
 
-			expect(accountStatusState).toMatchObject({
-				open: true,
-				status: { kind },
-			});
+			await vi.waitFor(() =>
+				expect(accountStatusState).toMatchObject({
+					open: true,
+					status: { kind },
+				}),
+			);
 			expect(toastError).not.toHaveBeenCalled();
 		},
 	);
