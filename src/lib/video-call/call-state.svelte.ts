@@ -1,29 +1,29 @@
 import { toast } from "svelte-sonner";
 
-import { showErrorToast } from "$lib/api/error-toast";
+import { showErrorToast } from "#lib/api/error-toast.ts";
 import {
 	getVideoCallInfo,
 	joinVideoCall,
 	leaveVideoCall,
 	renewVideoCall,
 	startVideoCall,
-} from "$lib/api/messaging/video-calls";
-import { getProfile } from "$lib/api/users/profiles";
+} from "#lib/api/messaging/video-calls.ts";
+import { getProfile } from "#lib/api/users/profiles.ts";
 import {
 	isVideoCallSuccess,
 	videoCallResultMessage,
-} from "$lib/model/messaging/video-calls";
-import { isMobilePlatform } from "$lib/platform/os";
+} from "#lib/model/messaging/video-calls.ts";
+import { isMobilePlatform } from "#lib/platform/os.ts";
 import {
 	webRtcSupported,
 	WebRtcUnsupportedError,
-} from "$lib/video-call/webrtc-support";
+} from "#lib/video-call/webrtc-support.ts";
 import {
 	videocallV1CallEndedEventSchema,
 	videocallV1IncomingCallEventSchema,
 	ws,
-} from "$lib/ws.svelte";
-import type { AgoraSession } from "$lib/video-call/agora-session";
+} from "#lib/ws.svelte.ts";
+import type { AgoraSession } from "#lib/video-call/agora-session.ts";
 
 export type CallPhase = "idle" | "outgoing" | "incoming" | "active";
 
@@ -414,7 +414,7 @@ class VideoCallState {
 
 	async #makeSession(): Promise<AgoraSession> {
 		if (!webRtcSupported()) throw new WebRtcUnsupportedError();
-		const { AgoraSession } = await import("$lib/video-call/agora-session");
+		const { AgoraSession } = await import("#lib/video-call/agora-session.ts");
 		const session = new AgoraSession({
 			onRemoteVideo: (play) => {
 				this.#playRemote = play;

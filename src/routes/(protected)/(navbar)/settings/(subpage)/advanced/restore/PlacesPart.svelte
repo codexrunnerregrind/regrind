@@ -4,13 +4,13 @@
 	import StarIcon from "phosphor-svelte/lib/StarIcon";
 	import type { SvelteSet } from "svelte/reactivity";
 
-	import IconTile from "$lib/components/settings/IconTile.svelte";
-	import { Checkbox } from "$lib/components/ui/checkbox";
-	import { formatCoordinates } from "$lib/model/saved-location";
+	import IconTile from "#lib/components/settings/IconTile.svelte";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.ts";
+	import { formatCoordinates } from "#lib/model/saved-location.ts";
 	import type {
 		ExportedPlace,
 		PlaceImportStatus,
-	} from "$lib/app-data/saved-locations-transfer";
+	} from "#lib/app-data/saved-locations-transfer.ts";
 
 	let {
 		rows,

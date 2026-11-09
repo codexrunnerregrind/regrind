@@ -1,8 +1,8 @@
 <script lang="ts">
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import ListRowSkeleton from "$lib/components/feedback/ListRowSkeleton.svelte";
-	import { myRightNowPost } from "$lib/right-now/my-post-state.svelte";
-	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
+	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
+	import ListRowSkeleton from "#lib/components/feedback/ListRowSkeleton.svelte";
+	import { myRightNowPost } from "#lib/right-now/my-post-state.svelte.ts";
+	import { rightNowState } from "#lib/right-now/right-now-state.svelte.ts";
 	import RightNowEmptyFeed from "./RightNowEmptyFeed.svelte";
 	import RightNowPost from "./RightNowPost.svelte";
 

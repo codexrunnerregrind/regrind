@@ -6,7 +6,7 @@ import {
 	type TransitionConfig,
 } from "svelte/transition";
 
-import { getReduceMotionSnapshot } from "$lib/app-data/preferences.svelte";
+import { getReduceMotionSnapshot } from "#lib/app-data/preferences.svelte.ts";
 
 /** The device's reduced-motion preference, or the app's own setting. */
 export const reducedMotion = {

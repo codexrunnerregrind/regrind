@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { preferencesSnapshot } from "#lib/app-data/preferences.svelte.ts";
 	import {
 		backupFilename,
 		createBackup,
 		portableSettingsCount,
 		serializeBackup,
-	} from "$lib/backup/backup";
-	import { Button } from "$lib/components/ui/button";
-	import { saveTextFile } from "$lib/platform/data-file";
-	import { reportSaved } from "$lib/platform/save-toast";
+	} from "#lib/backup/backup.ts";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import { saveTextFile } from "#lib/platform/data-file.ts";
+	import { reportSaved } from "#lib/platform/save-toast.ts";
 	import BackupPartsPicker from "../BackupPartsPicker.svelte";
 
 	let parts = $state({ places: true, settings: true });

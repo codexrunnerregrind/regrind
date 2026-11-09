@@ -6,32 +6,32 @@
 	import VideoIcon from "phosphor-svelte/lib/VideoIcon";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error-toast";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
 		ensureAlbumSharesSwept,
 		forgetAlbumShared,
 		getAlbumShared,
 		setAlbumShared,
-	} from "$lib/api/messaging/album-shares-state.svelte";
+	} from "#lib/api/messaging/album-shares-state.svelte.ts";
 	import {
 		getMyAlbums,
 		shareAlbum,
 		unshareAlbum,
-	} from "$lib/api/messaging/albums";
-	import { getAlbumGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import MediaImage from "$lib/components/shared/MediaImage.svelte";
-	import SelectionCheck from "$lib/components/shared/SelectionCheck.svelte";
-	import { Badge } from "$lib/components/ui/badge";
-	import * as Empty from "$lib/components/ui/empty";
-	import { Skeleton } from "$lib/components/ui/skeleton";
-	import { proxyMediaUrl } from "$lib/util/media";
-	import { SelectionSet } from "$lib/util/selection.svelte";
-	import type { AlbumExpiration } from "$lib/model/messaging/albums";
+	} from "#lib/api/messaging/albums.ts";
+	import { getAlbumGridColumnsSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
+	import MediaImage from "#lib/components/shared/MediaImage.svelte";
+	import SelectionCheck from "#lib/components/shared/SelectionCheck.svelte";
+	import { Badge } from "#lib/components/ui/badge/index.ts";
+	import * as Empty from "#lib/components/ui/empty/index.ts";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.ts";
+	import { proxyMediaUrl } from "#lib/util/media.ts";
+	import { SelectionSet } from "#lib/util/selection.svelte.ts";
+	import type { AlbumExpiration } from "#lib/model/messaging/albums.ts";
 	import type {
 		AlbumExpirationType,
 		MyAlbum,
-	} from "$lib/model/messaging/albums";
+	} from "#lib/model/messaging/albums.ts";
 	import { getConversationState } from "../../conversation-state.svelte";
 
 	// Expiry choices, ordered to match the official app.

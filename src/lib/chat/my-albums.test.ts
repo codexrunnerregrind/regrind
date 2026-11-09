@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { getMyAlbumsMock } = vi.hoisted(() => ({ getMyAlbumsMock: vi.fn() }));
 
-vi.mock("$lib/api/messaging/albums", () => ({ getMyAlbums: getMyAlbumsMock }));
+vi.mock("#lib/api/messaging/albums.ts", () => ({ getMyAlbums: getMyAlbumsMock }));
 
-import { resetNowForTesting, setNowForTesting } from "$lib/util/clock";
+import { resetNowForTesting, setNowForTesting } from "#lib/util/clock.ts";
 import { clearMyAlbumsCache, myAlbumCoverUrl } from "./my-albums";
 
 let clock = 0;

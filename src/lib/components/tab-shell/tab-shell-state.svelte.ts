@@ -1,8 +1,8 @@
 import { page } from "$app/state";
 import { MediaQuery } from "svelte/reactivity";
 
-import { swipeableTabIndex } from "$lib/components/shared/nav-tabs";
-import { breakpoints } from "$lib/util/breakpoints.svelte";
+import { swipeableTabIndex } from "#lib/components/shared/nav-tabs.ts";
+import { breakpoints } from "#lib/util/breakpoints.svelte.ts";
 
 const CONVERSATION = "/(protected)/chat/[conversationId]";
 

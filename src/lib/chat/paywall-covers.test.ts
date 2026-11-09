@@ -4,11 +4,11 @@ const { getAlbumsPaywallContentMock } = vi.hoisted(() => ({
 	getAlbumsPaywallContentMock: vi.fn(),
 }));
 
-vi.mock("$lib/api/messaging/albums", () => ({
+vi.mock("#lib/api/messaging/albums.ts", () => ({
 	getAlbumsPaywallContent: getAlbumsPaywallContentMock,
 }));
 
-import { resetNowForTesting, setNowForTesting } from "$lib/util/clock";
+import { resetNowForTesting, setNowForTesting } from "#lib/util/clock.ts";
 import { clearPaywallCoverCache, paywallCoverUrl } from "./paywall-covers";
 
 let clock = 0;

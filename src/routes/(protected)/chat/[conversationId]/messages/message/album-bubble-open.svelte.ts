@@ -1,14 +1,14 @@
 import { toast } from "svelte-sonner";
 
-import { showErrorToast } from "$lib/api/error-toast";
+import { showErrorToast } from "#lib/api/error-toast.ts";
 import {
 	AlbumLockedError,
 	type AlbumSharer,
 	type LoadedAlbum,
 	openAlbumLightbox,
 	resolveAlbumForViewing,
-} from "$lib/chat/album-viewer";
-import { profileMediaUrl } from "$lib/util/media";
+} from "#lib/chat/album-viewer.ts";
+import { profileMediaUrl } from "#lib/util/media.ts";
 import { getConversationState } from "../../conversation-state.svelte";
 
 /**

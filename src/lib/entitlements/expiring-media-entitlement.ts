@@ -2,12 +2,12 @@ import {
 	accountEpoch,
 	isAccountEpochCurrent,
 	registerAccountCache,
-} from "$lib/api/account-caches";
-import { updateLocation } from "$lib/api/browse/location";
-import { errorUrn, tieredFeature } from "$lib/api/error-urn";
-import { callMethod } from "$lib/api/methods";
-import { getActiveGeohashSnapshot } from "$lib/app-data/preferences.svelte";
-import { withDeadline } from "$lib/util/deadline";
+} from "#lib/api/account-caches.ts";
+import { updateLocation } from "#lib/api/browse/location.ts";
+import { errorUrn, tieredFeature } from "#lib/api/error-urn.ts";
+import { callMethod } from "#lib/api/methods.ts";
+import { getActiveGeohashSnapshot } from "#lib/app-data/preferences.svelte.ts";
+import { withDeadline } from "#lib/util/deadline.ts";
 import { randomHondurasGeohash } from "./honduras";
 
 /**

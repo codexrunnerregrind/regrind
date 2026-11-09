@@ -1,5 +1,5 @@
 <script module lang="ts">
-	import type { PlaybackSpeed } from "$lib/chat/audio-speed";
+	import type { PlaybackSpeed } from "#lib/chat/audio-speed.ts";
 
 	// Voice notes never overlap: starting one stops whichever was already
 	// playing, the way every chat client behaves.
@@ -34,14 +34,14 @@
 	import PlayIcon from "phosphor-svelte/lib/PlayIcon";
 	import { tick } from "svelte";
 
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { getSingleMessage } from "$lib/api/messaging/messages";
-	import { peaksFor } from "$lib/chat/audio-peaks";
-	import { formatSpeed, nextSpeed } from "$lib/chat/audio-speed";
-	import AudioWaveform from "$lib/components/audio/AudioWaveform.svelte";
-	import { formatMediaDuration } from "$lib/util/format-time";
-	import { observeIntersection } from "$lib/util/observe-intersection";
-	import type { AudioMessage } from "$lib/model/messaging/messages";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { getSingleMessage } from "#lib/api/messaging/messages.ts";
+	import { peaksFor } from "#lib/chat/audio-peaks.ts";
+	import { formatSpeed, nextSpeed } from "#lib/chat/audio-speed.ts";
+	import AudioWaveform from "#lib/components/audio/AudioWaveform.svelte";
+	import { formatMediaDuration } from "#lib/util/format-time.ts";
+	import { observeIntersection } from "#lib/util/observe-intersection.ts";
+	import type { AudioMessage } from "#lib/model/messaging/messages.ts";
 	import { MessageMediaState } from "./message-media.svelte";
 
 	const SKIP_SECONDS = 5;

@@ -4,11 +4,11 @@ import { cleanup, render } from "@testing-library/svelte";
 import { flushSync, tick } from "svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { GridFilterPreset } from "$lib/model/browse/grid/filter-presets";
+import type { GridFilterPreset } from "#lib/model/browse/grid/filter-presets.ts";
 
 const presets = vi.hoisted((): GridFilterPreset[] => []);
 
-vi.mock("$lib/app-data/preferences.svelte", () => ({
+vi.mock("#lib/app-data/preferences.svelte.ts", () => ({
 	getPreferences: vi.fn(() => Promise.resolve({})),
 	setPreferences: vi.fn(() => Promise.resolve()),
 	preferencesSnapshot: vi.fn(() => ({ units: "metric" })),
@@ -16,17 +16,17 @@ vi.mock("$lib/app-data/preferences.svelte", () => ({
 	getGridFilterPresetsSnapshot: vi.fn(() => presets),
 }));
 
-vi.mock("$lib/api/users/genders", () => ({
+vi.mock("#lib/api/users/genders.ts", () => ({
 	getGenders: vi.fn(() => Promise.resolve([])),
 }));
 
-vi.mock("$lib/api/users/tags", () => ({
+vi.mock("#lib/api/users/tags.ts", () => ({
 	getTags: vi.fn(() => Promise.resolve([])),
 }));
 
-vi.mock("$lib/grid/grid-state.svelte", async () => {
+vi.mock("#lib/grid/grid-state.svelte.ts", async () => {
 	const { GridSearchFiltersState } =
-		await import("$lib/grid/grid-search-filters-state.svelte");
+		await import("#lib/grid/grid-search-filters-state.svelte.ts");
 	return {
 		gridState: {
 			filters: new GridSearchFiltersState({ onQueryChange: vi.fn() }),
@@ -43,8 +43,8 @@ vi.stubGlobal(
 	},
 );
 
-import { gridState } from "$lib/grid/grid-state.svelte";
-import { defaultFilters } from "$lib/model/browse/grid/filters";
+import { gridState } from "#lib/grid/grid-state.svelte.ts";
+import { defaultFilters } from "#lib/model/browse/grid/filters.ts";
 import GridFilters from "./GridFilters.svelte";
 
 function closeButton() {

@@ -2,7 +2,7 @@
 	import ArrowClockwiseIcon from "phosphor-svelte/lib/ArrowClockwiseIcon";
 	import FlipHorizontalIcon from "phosphor-svelte/lib/FlipHorizontalIcon";
 
-	import { Spinner } from "$lib/components/ui/spinner";
+	import { Spinner } from "#lib/components/ui/spinner/index.ts";
 
 	/**
 	 * What the uploader downscales a photo to (`photo::encode::MAX_EDGE`).

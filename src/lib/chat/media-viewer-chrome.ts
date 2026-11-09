@@ -1,7 +1,7 @@
 import { mount, unmount } from "svelte";
 import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
-import MediaViewerChrome from "$lib/components/media/MediaViewerChrome.svelte";
+import MediaViewerChrome from "#lib/components/media/MediaViewerChrome.svelte";
 
 /**
  * Who the media belongs to, for the viewer's header. Given a `profileId` the

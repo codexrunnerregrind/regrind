@@ -1,14 +1,14 @@
 <script lang="ts">
 	import RulerIcon from "phosphor-svelte/lib/RulerIcon";
 
-	import { showErrorToast } from "$lib/api/error-toast";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
 		preferencesSnapshot,
 		setPreferences,
-	} from "$lib/app-data/preferences.svelte";
-	import IconTile from "$lib/components/settings/IconTile.svelte";
-	import SettingsSegmented from "$lib/components/settings/SettingsSegmented.svelte";
-	import type { UnitSystem } from "$lib/util/units";
+	} from "#lib/app-data/preferences.svelte.ts";
+	import IconTile from "#lib/components/settings/IconTile.svelte";
+	import SettingsSegmented from "#lib/components/settings/SettingsSegmented.svelte";
+	import type { UnitSystem } from "#lib/util/units.ts";
 
 	let pending = $state<UnitSystem | null>(null);
 	const value = $derived(pending ?? preferencesSnapshot().units);

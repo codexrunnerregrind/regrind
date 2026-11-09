@@ -4,8 +4,8 @@ import {
 	requestPermissions,
 } from "@tauri-apps/plugin-geolocation";
 
-import { encodeGeohash } from "$lib/model/geohash";
-import { isMobilePlatform } from "$lib/platform/os";
+import { encodeGeohash } from "#lib/model/geohash.ts";
+import { isMobilePlatform } from "#lib/platform/os.ts";
 import { setPreferences } from "./preferences.svelte";
 
 /** Whether the geolocation API is available on this platform (mobile only). */

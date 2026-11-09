@@ -1,7 +1,7 @@
 import { createContext } from "svelte";
 
-import { accountScoped } from "$lib/api/account-caches";
-import { showIncomingMessageToast } from "$lib/components/incoming-message-toast/incoming-message-toast-manager";
+import { accountScoped } from "#lib/api/account-caches.ts";
+import { showIncomingMessageToast } from "#lib/components/incoming-message-toast/incoming-message-toast-manager.ts";
 import { ConversationsState } from "./conversations-state.svelte";
 
 export const [getConversations, setConversations] =

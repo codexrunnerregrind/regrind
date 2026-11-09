@@ -10,7 +10,7 @@ const api = vi.hoisted(() => ({
 	deleteSavedPhrase: vi.fn(),
 	trackSavedPhraseUsage: vi.fn(),
 }));
-vi.mock("$lib/api/messaging/phrases", () => api);
+vi.mock("#lib/api/messaging/phrases.ts", () => api);
 
 vi.mock("./message-composer-context.svelte", () => ({
 	getMessageComposerContext: () => () => ({ disabled: false }),
@@ -25,7 +25,7 @@ vi.stubGlobal(
 	},
 );
 
-import { savedPhrases } from "$lib/chat/saved-phrases.svelte";
+import { savedPhrases } from "#lib/chat/saved-phrases.svelte.ts";
 import ComposerSavedPhrases from "./ComposerSavedPhrases.svelte";
 
 const HEY = { id: "1", text: "Hey", type: "user" };

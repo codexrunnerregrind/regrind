@@ -2,8 +2,8 @@
 	import { goto } from "$app/navigation";
 	import { toast } from "svelte-sonner";
 
-	import { getProfile } from "$lib/api/users/profiles";
-	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
+	import { getProfile } from "#lib/api/users/profiles.ts";
+	import UserAvatar from "#lib/components/profile/UserAvatar.svelte";
 
 	let {
 		profileId,

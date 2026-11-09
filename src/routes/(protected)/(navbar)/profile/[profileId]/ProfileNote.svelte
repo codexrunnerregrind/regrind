@@ -4,8 +4,8 @@
 	import {
 		ensureFavoriteNote,
 		favoriteNote,
-	} from "$lib/api/users/favorite-notes-state.svelte";
-	import { Button } from "$lib/components/ui/button";
+	} from "#lib/api/users/favorite-notes-state.svelte.ts";
+	import { Button } from "#lib/components/ui/button/index.ts";
 	import ProfileNoteEditor from "./ProfileNoteEditor.svelte";
 
 	let { profileId, isFavorite }: { profileId: number; isFavorite: boolean } =

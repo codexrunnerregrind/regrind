@@ -1,7 +1,7 @@
 <script lang="ts">
-	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
-	import * as Avatar from "$lib/components/ui/avatar";
-	import { getNow } from "$lib/util/now";
+	import UserAvatar from "#lib/components/profile/UserAvatar.svelte";
+	import * as Avatar from "#lib/components/ui/avatar/index.ts";
+	import { getNow } from "#lib/util/now.ts";
 
 	let {
 		profileId,

@@ -5,27 +5,27 @@ import "photoswipe/style.css";
 import { goto } from "$app/navigation";
 import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
-import { ApiError } from "$lib/api/api-error";
-import { signedInProfileId } from "$lib/api/current-session";
+import { ApiError } from "#lib/api/api-error.ts";
+import { signedInProfileId } from "#lib/api/current-session.ts";
 import {
 	type AlbumContentResponse,
 	getAlbumContent,
 	getAlbumsPaywallContent,
-} from "$lib/api/messaging/albums";
+} from "#lib/api/messaging/albums.ts";
 import {
 	sendAlbumContentReaction,
 	sendAlbumContentReply,
-} from "$lib/api/messaging/messages";
-import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+} from "#lib/api/messaging/messages.ts";
+import { backGestureEventHandlers } from "#lib/platform/back-gesture-event.svelte.ts";
 import {
 	measureImage,
 	measureVideo,
 	type MediaDimensions,
-} from "$lib/util/media-dimensions";
+} from "#lib/util/media-dimensions.ts";
 import {
 	applyPhotoSwipeVideo,
 	applyPhotoSwipeViewportSync,
-} from "$lib/util/photoswipe";
+} from "#lib/util/photoswipe/index.ts";
 import {
 	downloadAllMedia,
 	downloadMedia,

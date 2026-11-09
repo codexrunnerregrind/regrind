@@ -1,8 +1,8 @@
 import { toast } from "svelte-sonner";
 
-import { blockUser } from "$lib/api/browse/blocks";
-import { showErrorToast } from "$lib/api/error-toast";
-import { showBlockFailure } from "$lib/components/report/block-failure";
+import { blockUser } from "#lib/api/browse/blocks.ts";
+import { showErrorToast } from "#lib/api/error-toast.ts";
+import { showBlockFailure } from "#lib/components/report/block-failure.ts";
 import {
 	applyViewabilityChange,
 	type PendingViewabilityChange,

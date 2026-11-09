@@ -1,19 +1,19 @@
 import { toast } from "svelte-sonner";
 
-import { httpStatusOf } from "$lib/api/api-error";
-import { showErrorToast } from "$lib/api/error-toast";
+import { httpStatusOf } from "#lib/api/api-error.ts";
+import { showErrorToast } from "#lib/api/error-toast.ts";
 import {
 	addDrawerMediaToAlbum,
 	type AlbumContentResponse,
 	getAlbumStorageLimits,
 	uploadAlbumContent,
 	uploadAlbumPhotoBytes,
-} from "$lib/api/messaging/albums";
-import { clearMyAlbumsCache } from "$lib/chat/my-albums";
-import { albumMediaCounts } from "$lib/components/album/album";
-import { PhotoEditQueue } from "$lib/components/media/photo-edit-queue.svelte";
-import { pickMultipleMedia } from "$lib/platform/media-picker";
-import type { AlbumStorageLimits } from "$lib/model/messaging/albums";
+} from "#lib/api/messaging/albums.ts";
+import { clearMyAlbumsCache } from "#lib/chat/my-albums.ts";
+import { albumMediaCounts } from "#lib/components/album/album.ts";
+import { PhotoEditQueue } from "#lib/components/media/photo-edit-queue.svelte.ts";
+import { pickMultipleMedia } from "#lib/platform/media-picker.ts";
+import type { AlbumStorageLimits } from "#lib/model/messaging/albums.ts";
 import { inspectPicks, type Uploadable } from "./album-picks";
 
 type AlbumContent = AlbumContentResponse["content"];

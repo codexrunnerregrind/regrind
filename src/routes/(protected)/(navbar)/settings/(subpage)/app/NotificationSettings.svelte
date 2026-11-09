@@ -6,15 +6,15 @@
 	import { onMount } from "svelte";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error-toast";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
 		getPreferences,
 		setPreferences,
-	} from "$lib/app-data/preferences.svelte";
-	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
-	import SettingsSwitchRow from "$lib/components/settings/SettingsSwitchRow.svelte";
-	import { notificationAccess } from "$lib/notifications/permission.svelte";
-	import { push } from "$lib/notifications/push.svelte";
+	} from "#lib/app-data/preferences.svelte.ts";
+	import SettingsRow from "#lib/components/settings/SettingsRow.svelte";
+	import SettingsSwitchRow from "#lib/components/settings/SettingsSwitchRow.svelte";
+	import { notificationAccess } from "#lib/notifications/permission.svelte.ts";
+	import { push } from "#lib/notifications/push.svelte.ts";
 
 	let notifyMessages = $state(false);
 	let notifyTaps = $state(false);

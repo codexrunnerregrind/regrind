@@ -1,11 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
 import z from "zod";
 
-import { fetchRest } from "$lib/api/transport";
-import { demoEnabled, demoUploadRightNowMedia } from "$lib/demo";
-import { notePhotos } from "$lib/interest/viewer-matches";
-import { rightNowV4QuerySchema } from "$lib/model/right-now/feed/query/v4";
-import { RightNowFeedResponseSchema } from "$lib/model/right-now/feed/response/v4";
+import { fetchRest } from "#lib/api/transport.ts";
+import { demoEnabled, demoUploadRightNowMedia } from "#lib/demo/index.ts";
+import { notePhotos } from "#lib/interest/viewer-matches.ts";
+import { rightNowV4QuerySchema } from "#lib/model/right-now/feed/query/v4.ts";
+import { RightNowFeedResponseSchema } from "#lib/model/right-now/feed/response/v4.ts";
 import {
 	type RightNowCreatePost,
 	type RightNowMediaUpload,
@@ -13,9 +13,9 @@ import {
 	type RightNowOwnPost,
 	rightNowOwnPostSchema,
 	type RightNowUpdatePost,
-} from "$lib/model/right-now/post";
-import { toBase64 } from "$lib/util/base64";
-import { urlSearchParamsCodec } from "$lib/util/url-search-params";
+} from "#lib/model/right-now/post.ts";
+import { toBase64 } from "#lib/util/base64.ts";
+import { urlSearchParamsCodec } from "#lib/util/url-search-params.ts";
 
 export async function getRightNowFeedV4(
 	query: z.infer<typeof rightNowV4QuerySchema>,

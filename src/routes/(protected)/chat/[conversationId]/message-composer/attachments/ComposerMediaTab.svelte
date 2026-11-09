@@ -9,28 +9,28 @@
 	import { untrack } from "svelte";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error-toast";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
 		addMediaToDrawer,
 		videoTranscodingSupported,
-	} from "$lib/api/messaging/chat-media";
+	} from "#lib/api/messaging/chat-media.ts";
 	import {
 		deleteMediaFromDrawer,
 		type DrawerMedia,
 		getDrawerMedia,
-	} from "$lib/api/messaging/drawer";
-	import { asAppError } from "$lib/api/methods";
-	import { getAlbumGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import TakenOnGrindrBadge from "$lib/components/media/TakenOnGrindrBadge.svelte";
-	import MediaImage from "$lib/components/shared/MediaImage.svelte";
-	import SelectionCheck from "$lib/components/shared/SelectionCheck.svelte";
-	import { Button } from "$lib/components/ui/button";
-	import * as ContextMenu from "$lib/components/ui/context-menu";
-	import * as Empty from "$lib/components/ui/empty";
-	import { Skeleton } from "$lib/components/ui/skeleton";
-	import { videoDurationSeconds } from "$lib/platform/video-metadata";
-	import { SelectionSet } from "$lib/util/selection.svelte";
+	} from "#lib/api/messaging/drawer.ts";
+	import { asAppError } from "#lib/api/methods.ts";
+	import { getAlbumGridColumnsSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
+	import TakenOnGrindrBadge from "#lib/components/media/TakenOnGrindrBadge.svelte";
+	import MediaImage from "#lib/components/shared/MediaImage.svelte";
+	import SelectionCheck from "#lib/components/shared/SelectionCheck.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import * as ContextMenu from "#lib/components/ui/context-menu/index.ts";
+	import * as Empty from "#lib/components/ui/empty/index.ts";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.ts";
+	import { videoDurationSeconds } from "#lib/platform/video-metadata.ts";
+	import { SelectionSet } from "#lib/util/selection.svelte.ts";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
 	import { ComposerCall } from "./composer-call.svelte";
 	import ComposerAddMedia from "./ComposerAddMedia.svelte";

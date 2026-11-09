@@ -2,16 +2,16 @@
 	import { beforeNavigate } from "$app/navigation";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { getProfiles } from "$lib/api/users/profiles";
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import ProfileActionRow from "$lib/components/profile/ProfileActionRow.svelte";
-	import ProfileActionRowSkeleton from "$lib/components/profile/ProfileActionRowSkeleton.svelte";
-	import ScrollToTopButton from "$lib/components/shared/ScrollToTopButton.svelte";
-	import { Button } from "$lib/components/ui/button";
-	import { observeIntersection } from "$lib/util/observe-intersection";
-	import { nearestScrollableAncestor } from "$lib/util/scroll";
-	import { restoreScrollOnce } from "$lib/util/scroll-restore.svelte";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { getProfiles } from "#lib/api/users/profiles.ts";
+	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
+	import ProfileActionRow from "#lib/components/profile/ProfileActionRow.svelte";
+	import ProfileActionRowSkeleton from "#lib/components/profile/ProfileActionRowSkeleton.svelte";
+	import ScrollToTopButton from "#lib/components/shared/ScrollToTopButton.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import { observeIntersection } from "#lib/util/observe-intersection.ts";
+	import { restoreScrollOnce } from "#lib/util/scroll-restore.svelte.ts";
+	import { nearestScrollableAncestor } from "#lib/util/scroll.ts";
 	import type {
 		ProfileListAction,
 		ProfileListEntry,

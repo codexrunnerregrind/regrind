@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { dragReorder } from "./drag-reorder";
 
-vi.mock("$lib/platform/haptics", () => ({
+vi.mock("#lib/platform/haptics.ts", () => ({
 	hapticImpact: () => {},
 	hapticSelection: () => {},
 }));

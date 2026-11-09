@@ -2,23 +2,23 @@ import { decode, encode } from "@msgpack/msgpack";
 import { toast } from "svelte-sonner";
 import z from "zod";
 
-import { backdropBlurCalibrationSchema } from "$lib/blur/calibration/decide";
-import { backdropBlurQualitySchema } from "$lib/blur/quality";
+import { backdropBlurCalibrationSchema } from "#lib/blur/calibration/decide.ts";
+import { backdropBlurQualitySchema } from "#lib/blur/quality.ts";
 import {
 	type GridFilterPreset,
 	gridFilterPresetSchema,
-} from "$lib/model/browse/grid/filter-presets";
+} from "#lib/model/browse/grid/filter-presets.ts";
 import {
 	gridSearchFiltersSchema,
 	rightNowFiltersSchema,
-} from "$lib/model/browse/grid/filters";
-import { geohashSchema } from "$lib/model/geohash";
-import { type MediaSends, mediaSendSchema } from "$lib/model/media-sends";
+} from "#lib/model/browse/grid/filters.ts";
+import { geohashSchema } from "#lib/model/geohash.ts";
+import { type MediaSends, mediaSendSchema } from "#lib/model/media-sends.ts";
 import {
 	type SavedLocation,
 	savedLocationSchema,
-} from "$lib/model/saved-location";
-import { type UnitSystem, unitSystemSchema } from "$lib/util/units";
+} from "#lib/model/saved-location.ts";
+import { type UnitSystem, unitSystemSchema } from "#lib/util/units.ts";
 import {
 	existsAppDataFile,
 	readAppDataFile,

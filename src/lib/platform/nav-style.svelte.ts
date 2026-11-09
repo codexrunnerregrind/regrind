@@ -1,4 +1,4 @@
-import { getNavBarGlassSnapshot } from "$lib/app-data/preferences.svelte";
+import { getNavBarGlassSnapshot } from "#lib/app-data/preferences.svelte.ts";
 
 /**
  * Whether the tab bar is the floating capsule rather than the docked bar.

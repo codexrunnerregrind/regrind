@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const preferences = vi.hoisted(() => ({ gridLastOnline: true }));
 
-vi.mock("$lib/app-data/preferences.svelte", () => ({
+vi.mock("#lib/app-data/preferences.svelte.ts", () => ({
 	preferencesSnapshot: () => preferences,
 }));
 

@@ -3,14 +3,14 @@
 	import FireIcon from "phosphor-svelte/lib/FireIcon";
 	import SmileyWinkIcon from "phosphor-svelte/lib/SmileyWinkIcon";
 
-	import cookieEmoji from "$lib/assets/emojis/cookie/72px.png";
-	import demonEmoji from "$lib/assets/emojis/demon/72px.png";
-	import fireEmoji from "$lib/assets/emojis/fire/72px.png";
-	import { TapType, tapTypes } from "$lib/model/interest/taps";
+	import cookieEmoji from "#lib/assets/emojis/cookie/72px.png";
+	import demonEmoji from "#lib/assets/emojis/demon/72px.png";
+	import fireEmoji from "#lib/assets/emojis/fire/72px.png";
+	import { TapType, tapTypes } from "#lib/model/interest/taps.ts";
 	// The default size has to be beatable: `class={["size-6", className]}` leaves
 	// the winner to stylesheet order, which is why a caller asking for a smaller
 	// emoji got a `size-6` one anyway.
-	import { cn } from "$lib/util/utils";
+	import { cn } from "#lib/util/utils.ts";
 
 	let {
 		tapType,

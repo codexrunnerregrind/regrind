@@ -3,13 +3,13 @@ import { untrack } from "svelte";
 import {
 	forgetMediaSends,
 	rememberMediaSends,
-} from "$lib/app-data/media-sends";
+} from "#lib/app-data/media-sends.ts";
 import {
 	getMediaSendsSnapshot,
 	getSortMediaByFrequencySnapshot,
-} from "$lib/app-data/preferences.svelte";
-import { arrangeMedia } from "$lib/model/media-sends";
-import type { DrawerMedia } from "$lib/api/messaging/drawer";
+} from "#lib/app-data/preferences.svelte.ts";
+import { arrangeMedia } from "#lib/model/media-sends.ts";
+import type { DrawerMedia } from "#lib/api/messaging/drawer.ts";
 
 /**
  * Orders the chat media sheet: the drawer's own order, or the most sent first.

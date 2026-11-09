@@ -4,7 +4,7 @@ import {
 	pickMedia,
 	pickMultipleMedia,
 	readMediaBytes,
-} from "$lib/platform/media-picker";
+} from "#lib/platform/media-picker.ts";
 
 /**
  * A pick waiting for the sender to frame it.

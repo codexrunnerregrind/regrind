@@ -5,24 +5,24 @@
 	import StarIcon from "phosphor-svelte/lib/StarIcon";
 	import { untrack } from "svelte";
 
-	import { getConversationMessages } from "$lib/api/messaging/messages";
-	import DistanceFormatted from "$lib/components/profile/DistanceFormatted.svelte";
-	import ProfileRightNowIndicator from "$lib/components/profile/ProfileRightNowIndicator.svelte";
-	import ProfileStatusIndicator from "$lib/components/profile/ProfileStatusIndicator.svelte";
-	import { TAP_BURST_MS } from "$lib/components/profile/TapBurst.svelte";
-	import TapIcon from "$lib/components/profile/TapIcon.svelte";
-	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
-	import MediaImage from "$lib/components/shared/MediaImage.svelte";
-	import { hapticImpact, hapticSelection } from "$lib/haptics";
-	import { TapType } from "$lib/model/interest/taps";
+	import { getConversationMessages } from "#lib/api/messaging/messages.ts";
+	import DistanceFormatted from "#lib/components/profile/DistanceFormatted.svelte";
+	import ProfileRightNowIndicator from "#lib/components/profile/ProfileRightNowIndicator.svelte";
+	import ProfileStatusIndicator from "#lib/components/profile/ProfileStatusIndicator.svelte";
+	import { TAP_BURST_MS } from "#lib/components/profile/TapBurst.svelte";
+	import TapIcon from "#lib/components/profile/TapIcon.svelte";
+	import UserAvatar from "#lib/components/profile/UserAvatar.svelte";
+	import MediaImage from "#lib/components/shared/MediaImage.svelte";
+	import { hapticImpact, hapticSelection } from "#lib/haptics.ts";
+	import { TapType } from "#lib/model/interest/taps.ts";
 	import {
 		previewFromMessage,
 		previewLabel,
-	} from "$lib/model/messaging/message-preview";
-	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
-	import { formatTimeAgoShort } from "$lib/util/format-time";
-	import { profileMediaUrl } from "$lib/util/media";
-	import { reducedMotion } from "$lib/util/reduced-motion";
+	} from "#lib/model/messaging/message-preview.ts";
+	import { dismissOnBackGesture } from "#lib/platform/back-gesture-event.svelte.ts";
+	import { formatTimeAgoShort } from "#lib/util/format-time.ts";
+	import { profileMediaUrl } from "#lib/util/media.ts";
+	import { reducedMotion } from "#lib/util/reduced-motion.ts";
 	import { bounce, enter, settled, SPRING } from "./peek-motion";
 	import {
 		conversationIdWith,

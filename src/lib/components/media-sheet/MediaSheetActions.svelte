@@ -3,11 +3,11 @@
 	import type { Snippet } from "svelte";
 	import type { TransitionConfig } from "svelte/transition";
 
-	import { Badge } from "$lib/components/ui/badge";
-	import { Button } from "$lib/components/ui/button";
-	import { Spinner } from "$lib/components/ui/spinner";
-	import { reducedMotion } from "$lib/util/reduced-motion";
-	import { cn } from "$lib/util/utils";
+	import { Badge } from "#lib/components/ui/badge/index.ts";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import { Spinner } from "#lib/components/ui/spinner/index.ts";
+	import { reducedMotion } from "#lib/util/reduced-motion.ts";
+	import { cn } from "#lib/util/utils.ts";
 
 	let {
 		label,

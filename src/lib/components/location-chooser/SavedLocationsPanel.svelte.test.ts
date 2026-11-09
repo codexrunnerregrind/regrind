@@ -10,20 +10,20 @@ const { readMock, writeMock, existsMock } = vi.hoisted(() => ({
 	existsMock: vi.fn(),
 }));
 
-vi.mock("$lib/app-data", () => ({
+vi.mock("#lib/app-data/index.ts", () => ({
 	existsAppDataFile: existsMock,
 	readAppDataFile: readMock,
 	removeAppDataFile: () => Promise.resolve(),
 	writeAppDataFileAtomic: writeMock,
 }));
 vi.mock("svelte-sonner", () => ({ toast: { error: vi.fn() } }));
-vi.mock("$lib/api/error-toast", () => ({ showErrorToast: vi.fn() }));
+vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast: vi.fn() }));
 
-import { getSavedLocationsSnapshot } from "$lib/app-data/preferences.svelte";
+import { getSavedLocationsSnapshot } from "#lib/app-data/preferences.svelte.ts";
 import {
 	rememberLocation,
 	removeSavedLocation,
-} from "$lib/app-data/saved-locations";
+} from "#lib/app-data/saved-locations.ts";
 import SavedLocationsPanel from "./SavedLocationsPanel.svelte";
 
 // jsdom has no layout, so the panel's scroll-the-edited-row-into-view call

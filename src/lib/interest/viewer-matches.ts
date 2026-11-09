@@ -6,9 +6,9 @@ import {
 	readAppDataFile,
 	removeAppDataFile,
 	writeAppDataFileAtomic,
-} from "$lib/app-data";
-import { preferencesAccount } from "$lib/app-data/preferences.svelte";
-import { now } from "$lib/util/clock";
+} from "#lib/app-data/index.ts";
+import { preferencesAccount } from "#lib/app-data/preferences.svelte.ts";
+import { now } from "#lib/util/clock.ts";
 
 // Puts blurred Viewed Me previews back to a face: by the photo hash they still
 // carry, else by their view time against the live view events we saw.

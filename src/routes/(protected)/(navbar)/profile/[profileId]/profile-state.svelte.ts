@@ -1,8 +1,8 @@
 import { toast } from "svelte-sonner";
 
-import { showErrorToast } from "$lib/api/error-toast";
-import { findSentTap } from "$lib/api/interest/taps";
-import { recordProfileView } from "$lib/api/interest/views";
+import { showErrorToast } from "#lib/api/error-toast.ts";
+import { findSentTap } from "#lib/api/interest/taps.ts";
+import { recordProfileView } from "#lib/api/interest/views.ts";
 import {
 	BlockedProfileError,
 	getProfile,
@@ -13,11 +13,11 @@ import {
 	mergeProfileEditIntoCaches,
 	ProfileUnavailableError,
 	refreshProfile,
-} from "$lib/api/users/profiles";
-import { getPreferences } from "$lib/app-data/preferences.svelte";
-import { TapType } from "$lib/model/interest/taps";
-import { Generation } from "$lib/util/generation";
-import type { Profile } from "$lib/model/users/profiles";
+} from "#lib/api/users/profiles.ts";
+import { getPreferences } from "#lib/app-data/preferences.svelte.ts";
+import { TapType } from "#lib/model/interest/taps.ts";
+import { Generation } from "#lib/util/generation.ts";
+import type { Profile } from "#lib/model/users/profiles.ts";
 
 export type PendingViewabilityChange = {
 	revert: () => void;

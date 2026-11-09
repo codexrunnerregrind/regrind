@@ -7,9 +7,9 @@
 	import VideoCameraSlashIcon from "phosphor-svelte/lib/VideoCameraSlashIcon";
 	import type { Snippet } from "svelte";
 
-	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
-	import { formatCallDuration } from "$lib/model/messaging/video-calls";
-	import { videoCall } from "$lib/video-call/call-state.svelte";
+	import UserAvatar from "#lib/components/profile/UserAvatar.svelte";
+	import { formatCallDuration } from "#lib/model/messaging/video-calls.ts";
+	import { videoCall } from "#lib/video-call/call-state.svelte.ts";
 
 	const name = $derived(videoCall.party?.name ?? "Someone");
 	const active = $derived(videoCall.phase === "active");

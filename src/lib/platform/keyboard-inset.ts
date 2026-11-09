@@ -1,4 +1,4 @@
-import { isIosPlatform } from "$lib/platform/os";
+import { isIosPlatform } from "#lib/platform/os.ts";
 
 /** A keyboard is at least this tall; smaller shrinks are chrome, not an IME. */
 const KEYBOARD_MIN_HEIGHT = 100;

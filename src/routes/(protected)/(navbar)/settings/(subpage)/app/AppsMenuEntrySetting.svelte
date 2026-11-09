@@ -1,12 +1,12 @@
 <script lang="ts">
 	import SquaresFourIcon from "phosphor-svelte/lib/SquaresFourIcon";
 
-	import { showErrorToast } from "$lib/api/error-toast";
-	import SettingsSwitchRow from "$lib/components/settings/SettingsSwitchRow.svelte";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import SettingsSwitchRow from "#lib/components/settings/SettingsSwitchRow.svelte";
 	import {
 		desktopEntryInstalled,
 		setDesktopEntryInstalled,
-	} from "$lib/platform/desktop-entry.svelte";
+	} from "#lib/platform/desktop-entry.svelte.ts";
 
 	let pending = $state<boolean | null>(null);
 	const value = $derived(pending ?? desktopEntryInstalled());

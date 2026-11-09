@@ -3,18 +3,18 @@
 	import { backOut, cubicIn } from "svelte/easing";
 	import type { TransitionConfig } from "svelte/transition";
 
-	import { httpStatusOf } from "$lib/api/api-error";
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { findSentTap, sendTap } from "$lib/api/interest/taps";
+	import { httpStatusOf } from "#lib/api/api-error.ts";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { findSentTap, sendTap } from "#lib/api/interest/taps.ts";
 	import TapBurst, {
 		TAP_BURST_MS,
-	} from "$lib/components/profile/TapBurst.svelte";
-	import TapIcon from "$lib/components/profile/TapIcon.svelte";
-	import Button from "$lib/components/ui/button/button.svelte";
-	import { hapticImpact, playHaptic } from "$lib/haptics";
-	import { TapType, tapTypes } from "$lib/model/interest/taps";
-	import { longPressHandlers } from "$lib/util/long-press";
-	import { reducedMotion } from "$lib/util/reduced-motion";
+	} from "#lib/components/profile/TapBurst.svelte";
+	import TapIcon from "#lib/components/profile/TapIcon.svelte";
+	import Button from "#lib/components/ui/button/button.svelte";
+	import { hapticImpact, playHaptic } from "#lib/haptics.ts";
+	import { TapType, tapTypes } from "#lib/model/interest/taps.ts";
+	import { longPressHandlers } from "#lib/util/long-press.ts";
+	import { reducedMotion } from "#lib/util/reduced-motion.ts";
 
 	let {
 		profileId,

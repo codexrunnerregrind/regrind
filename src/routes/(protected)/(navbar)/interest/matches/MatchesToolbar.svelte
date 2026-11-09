@@ -3,8 +3,8 @@
 		getMatchesCardStyleSnapshot,
 		type MatchesCardStyle,
 		setPreferences,
-	} from "$lib/app-data/preferences.svelte";
-	import { hapticSelection } from "$lib/platform/haptics";
+	} from "#lib/app-data/preferences.svelte.ts";
+	import { hapticSelection } from "#lib/platform/haptics.ts";
 	import { matchesState } from "./matches-state.svelte";
 	import MatchesInfoSheet from "./MatchesInfoSheet.svelte";
 

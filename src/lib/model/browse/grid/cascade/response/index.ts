@@ -1,13 +1,13 @@
 import z from "zod";
 
-import { mediaUrlSchema } from "$lib/model/media";
-import { rightNowStatusSchema } from "$lib/model/right-now";
+import { mediaUrlSchema } from "#lib/model/media.ts";
+import { rightNowStatusSchema } from "#lib/model/right-now.ts";
 import {
 	arrayOfKnownVariants,
 	knownValueOr,
 	serverDefault,
-} from "$lib/model/tolerance";
-import { unixTimestampMsSchema, unmodeledSchema } from "$lib/model/types";
+} from "#lib/model/tolerance.ts";
+import { unixTimestampMsSchema, unmodeledSchema } from "#lib/model/types.ts";
 
 export const cascadeResponseProfileSchema = z.object({
 	profileId: z.int().nonnegative(),

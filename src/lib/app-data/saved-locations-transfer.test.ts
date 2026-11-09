@@ -4,7 +4,7 @@ import {
 	maxFavorites,
 	maxRecents,
 	type SavedLocation,
-} from "$lib/model/saved-location";
+} from "#lib/model/saved-location.ts";
 import {
 	buildSavedPlacesExport,
 	mergeSavedPlaces,

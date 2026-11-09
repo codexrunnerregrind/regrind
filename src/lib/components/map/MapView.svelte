@@ -2,7 +2,7 @@
 	import { untrack } from "svelte";
 	import type { MapOptions } from "maplibre-gl";
 
-	import { isDarkTheme } from "$lib/app-data/theme.svelte";
+	import { isDarkTheme } from "#lib/app-data/theme.svelte.ts";
 	import {
 		basemapStyleUrl,
 		decorateStyle,

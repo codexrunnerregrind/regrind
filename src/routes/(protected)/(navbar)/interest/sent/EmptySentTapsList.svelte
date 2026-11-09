@@ -1,7 +1,7 @@
 <script lang="ts">
 	import PaperPlaneTiltIcon from "phosphor-svelte/lib/PaperPlaneTiltIcon";
 
-	import * as Empty from "$lib/components/ui/empty";
+	import * as Empty from "#lib/components/ui/empty/index.ts";
 </script>
 
 <Empty.Root>

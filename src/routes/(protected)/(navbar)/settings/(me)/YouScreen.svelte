@@ -6,9 +6,9 @@
 	import PaletteIcon from "phosphor-svelte/lib/PaletteIcon";
 	import UserCircleIcon from "phosphor-svelte/lib/UserCircleIcon";
 
-	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
-	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
-	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
+	import SectionHeader from "#lib/components/settings/SectionHeader.svelte";
+	import SettingsGroup from "#lib/components/settings/SettingsGroup.svelte";
+	import SettingsRow from "#lib/components/settings/SettingsRow.svelte";
 	import AppVersion from "./AppVersion.svelte";
 	import ProfileLink from "./ProfileLink.svelte";
 	import SignOutButton from "./SignOutButton.svelte";

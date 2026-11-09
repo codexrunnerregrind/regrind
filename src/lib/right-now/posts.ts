@@ -1,4 +1,4 @@
-import { getRightNowFeedV4 } from "$lib/api/right-now";
+import { getRightNowFeedV4 } from "#lib/api/right-now.ts";
 
 export type FeedPost = {
 	displayName: string | null;

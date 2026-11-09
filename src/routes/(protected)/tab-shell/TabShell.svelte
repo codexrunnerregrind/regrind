@@ -3,17 +3,17 @@
 	import { page } from "$app/state";
 	import { untrack } from "svelte";
 
-	import { STACK_Z } from "$lib/components/navigation/stack/motion";
-	import { navTabs } from "$lib/components/shared/nav-tabs";
-	import NavBar from "$lib/components/shared/NavBar.svelte";
+	import { STACK_Z } from "#lib/components/navigation/stack/motion.ts";
+	import { navTabs } from "#lib/components/shared/nav-tabs.ts";
+	import NavBar from "#lib/components/shared/NavBar.svelte";
 	import {
 		tabShellCovered,
 		tabShellRoot,
-	} from "$lib/components/tab-shell/tab-shell-state.svelte";
-	import { hapticSelection } from "$lib/platform/haptics";
-	import { type PanDirection, panPager } from "$lib/util/pan-pager";
-	import { reducedMotion } from "$lib/util/reduced-motion";
-	import { remeasureScreenChrome } from "$lib/util/screen-chrome.svelte";
+	} from "#lib/components/tab-shell/tab-shell-state.svelte.ts";
+	import { hapticSelection } from "#lib/platform/haptics.ts";
+	import { type PanDirection, panPager } from "#lib/util/pan-pager.ts";
+	import { reducedMotion } from "#lib/util/reduced-motion.ts";
+	import { remeasureScreenChrome } from "#lib/util/screen-chrome.svelte.ts";
 	import BrowseScreen from "../(navbar)/(root)/BrowseScreen.svelte";
 	import { getInterestTab } from "../(navbar)/interest/interest-tab";
 	import InterestScreen from "../(navbar)/interest/InterestScreen.svelte";

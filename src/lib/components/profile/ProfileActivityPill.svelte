@@ -2,8 +2,8 @@
 	import { formatDistanceStrict } from "date-fns";
 	import ChatIcon from "phosphor-svelte/lib/ChatIcon";
 
-	import { profileActivity } from "$lib/interest/profile-activity.svelte";
-	import { getNow } from "$lib/util/now";
+	import { profileActivity } from "#lib/interest/profile-activity.svelte.ts";
+	import { getNow } from "#lib/util/now.ts";
 	import TapIcon from "./TapIcon.svelte";
 
 	let {

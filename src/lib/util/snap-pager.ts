@@ -1,12 +1,12 @@
 import type { Attachment } from "svelte/attachments";
 
-import { isLinuxPlatform, isMacosPlatform } from "$lib/platform/os";
+import { isLinuxPlatform, isMacosPlatform } from "#lib/platform/os.ts";
 import {
 	type ReleaseVelocity,
 	scrollGesture,
 	type ScrollGestureState,
-} from "$lib/platform/scroll-gesture";
-import { reducedMotion as motionReduced } from "$lib/util/reduced-motion";
+} from "#lib/platform/scroll-gesture.ts";
+import { reducedMotion as motionReduced } from "#lib/util/reduced-motion.ts";
 
 const ALIGNED_PX = 1;
 const CLIENT_WIDTH_ROUNDING_PX = 1;

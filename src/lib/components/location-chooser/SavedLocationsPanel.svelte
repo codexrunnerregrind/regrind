@@ -7,7 +7,7 @@
 	import XIcon from "phosphor-svelte/lib/XIcon";
 	import { tick } from "svelte";
 
-	import { showErrorToast } from "$lib/api/error-toast";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
 		getFavoriteLocations,
 		getRecentLocations,
@@ -15,13 +15,13 @@
 		renameSavedLocation,
 		setSavedLocationFavorite,
 		touchSavedLocation,
-	} from "$lib/app-data/saved-locations";
-	import Button from "$lib/components/ui/button/button.svelte";
-	import { Input } from "$lib/components/ui/input";
+	} from "#lib/app-data/saved-locations.ts";
+	import Button from "#lib/components/ui/button/button.svelte";
+	import { Input } from "#lib/components/ui/input/index.ts";
 	import {
 		formatCoordinates,
 		type SavedLocation,
-	} from "$lib/model/saved-location";
+	} from "#lib/model/saved-location.ts";
 
 	let {
 		onPick,

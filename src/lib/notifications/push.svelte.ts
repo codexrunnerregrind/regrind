@@ -1,11 +1,11 @@
 import { goto } from "$app/navigation";
 import z from "zod";
 
-import { fetchRest } from "$lib/api/transport";
-import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
-import { sendNotificationReply } from "$lib/notifications/notification-reply";
-import { isAndroidPlatform } from "$lib/platform/os";
-import { whileOpeningPushDeeplink } from "$lib/push/opening-deeplink";
+import { fetchRest } from "#lib/api/transport.ts";
+import { preferencesSnapshot } from "#lib/app-data/preferences.svelte.ts";
+import { sendNotificationReply } from "#lib/notifications/notification-reply.ts";
+import { isAndroidPlatform } from "#lib/platform/os.ts";
+import { whileOpeningPushDeeplink } from "#lib/push/opening-deeplink.ts";
 
 // Android-only Firebase Cloud Messaging registration. The native side (see
 // org.regrind.push) registers with Grindr's FCM sender and hands us the device

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import SectionFooter from "$lib/components/settings/SectionFooter.svelte";
-	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
+	import SectionFooter from "#lib/components/settings/SectionFooter.svelte";
+	import SettingsGroup from "#lib/components/settings/SettingsGroup.svelte";
 	import AppIconSetting from "./AppIconSetting.svelte";
 </script>
 

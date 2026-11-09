@@ -1,15 +1,15 @@
 <script lang="ts">
 	import ImagesIcon from "phosphor-svelte/lib/ImagesIcon";
 
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { getSingleMessage } from "$lib/api/messaging/messages";
-	import { openImageGalleryLightbox } from "$lib/chat/image-gallery";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { getSingleMessage } from "#lib/api/messaging/messages.ts";
+	import { openImageGalleryLightbox } from "#lib/chat/image-gallery.ts";
 	import {
 		type ExpiringImageMessage,
 		expiringImageMessageSchema,
-	} from "$lib/model/messaging/messages";
-	import { draftFromMessage } from "$lib/model/messaging/messages";
-	import { profileMediaUrl } from "$lib/util/media";
+	} from "#lib/model/messaging/messages.ts";
+	import { draftFromMessage } from "#lib/model/messaging/messages.ts";
+	import { profileMediaUrl } from "#lib/util/media.ts";
 	import { getConversationState } from "../../conversation-state.svelte";
 	import LockedMedia from "./LockedMedia.svelte";
 	import { MessageMediaState } from "./message-media.svelte";

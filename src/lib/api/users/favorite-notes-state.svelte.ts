@@ -1,12 +1,12 @@
 import { SvelteMap } from "svelte/reactivity";
 
-import { registerAccountCache } from "$lib/api/account-caches";
-import { getFavoriteNote, getFavoriteNotes } from "$lib/api/users/favorites";
-import { now } from "$lib/util/clock";
+import { registerAccountCache } from "#lib/api/account-caches.ts";
+import { getFavoriteNote, getFavoriteNotes } from "#lib/api/users/favorites.ts";
+import { now } from "#lib/util/clock.ts";
 import type {
 	FavoriteNote,
 	FavoriteNoteContent,
-} from "$lib/model/users/favorites";
+} from "#lib/model/users/favorites.ts";
 
 /**
  * The notes the user attached to their favorites, keyed by profile id.

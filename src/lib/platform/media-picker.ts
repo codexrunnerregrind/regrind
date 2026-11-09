@@ -3,7 +3,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { readFile } from "@tauri-apps/plugin-fs";
 import { AndroidFs, type AndroidFsUri } from "tauri-plugin-android-fs-api";
 
-import { isAndroidPlatform } from "$lib/platform/os";
+import { isAndroidPlatform } from "#lib/platform/os.ts";
 
 type MediaFilter = { name: string; extensions: string[]; mimeTypes: string[] };
 

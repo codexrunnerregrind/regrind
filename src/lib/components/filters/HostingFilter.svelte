@@ -2,9 +2,9 @@
 	import HouseIcon from "phosphor-svelte/lib/HouseIcon";
 	import type z from "zod";
 
-	import RadioGroup from "$lib/components/ui/radio/RadioGroup.svelte";
-	import RadioItem from "$lib/components/ui/radio/RadioItem.svelte";
-	import type { filterHostingSchema } from "$lib/model/browse/grid/filters";
+	import RadioGroup from "#lib/components/ui/radio/RadioGroup.svelte";
+	import RadioItem from "#lib/components/ui/radio/RadioItem.svelte";
+	import type { filterHostingSchema } from "#lib/model/browse/grid/filters.ts";
 
 	let {
 		value = $bindable(),

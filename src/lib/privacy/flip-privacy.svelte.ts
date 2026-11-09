@@ -1,8 +1,8 @@
 import { invoke } from "@tauri-apps/api/core";
 
-import { showErrorToast } from "$lib/api/error-toast";
-import { preferencesLoaded } from "$lib/app-data/preferences.svelte";
-import { isIosPlatform } from "$lib/platform/os";
+import { showErrorToast } from "#lib/api/error-toast.ts";
+import { preferencesLoaded } from "#lib/app-data/preferences.svelte.ts";
+import { isIosPlatform } from "#lib/platform/os.ts";
 import { privacyFeatureOn, toggleImagePrivacy } from "./image-privacy.svelte";
 
 // Preserve native start/stop ordering across rapid preference changes.

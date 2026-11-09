@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Skeleton } from "$lib/components/ui/skeleton";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.ts";
 </script>
 
 <!-- The loading shape of ProfileActionRow: same padding, gap, avatar size and

@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { Button } from "$lib/components/ui/button";
-	import * as Dialog from "$lib/components/ui/dialog";
-	import { Input } from "$lib/components/ui/input";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import * as Dialog from "#lib/components/ui/dialog/index.ts";
+	import { Input } from "#lib/components/ui/input/index.ts";
 	import {
 		ALBUM_NAME_MAX_BYTES,
 		albumNameByteLength,
-	} from "$lib/model/messaging/albums";
+	} from "#lib/model/messaging/albums.ts";
 
 	let {
 		open = $bindable(),

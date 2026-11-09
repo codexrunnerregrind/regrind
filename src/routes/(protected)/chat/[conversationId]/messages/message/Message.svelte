@@ -4,11 +4,11 @@
 	import { expoOut } from "svelte/easing";
 	import { scale } from "svelte/transition";
 
-	import { hapticImpact } from "$lib/platform/haptics";
-	import { longPressHandlers } from "$lib/util/long-press";
-	import { observeIntersection } from "$lib/util/observe-intersection";
-	import { SwipeToReply } from "$lib/util/swipe-to-reply.svelte";
-	import type { ApiResponseMessage } from "$lib/model/messaging/messages";
+	import { hapticImpact } from "#lib/platform/haptics.ts";
+	import { longPressHandlers } from "#lib/util/long-press.ts";
+	import { observeIntersection } from "#lib/util/observe-intersection.ts";
+	import { SwipeToReply } from "#lib/util/swipe-to-reply.svelte.ts";
+	import type { ApiResponseMessage } from "#lib/model/messaging/messages.ts";
 	import AlbumContentMessage from "./AlbumContentMessage.svelte";
 	import AlbumMessage from "./AlbumMessage.svelte";
 	import AudioMessage from "./AudioMessage.svelte";

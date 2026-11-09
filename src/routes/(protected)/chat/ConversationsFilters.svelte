@@ -5,13 +5,13 @@
 		type ConversationFilterKey,
 		type ConversationFilters,
 		type ConversationFilterSelection,
-	} from "$lib/chat/conversation-filters.svelte";
+	} from "#lib/chat/conversation-filters.svelte.ts";
 	import {
 		ACTIVE_FILTER,
 		ACTIVE_FILTER_PRESSED,
-	} from "$lib/components/filters/active-filter";
-	import { Button, buttonVariants } from "$lib/components/ui/button";
-	import * as ToggleGroup from "$lib/components/ui/toggle-group";
+	} from "#lib/components/filters/active-filter.ts";
+	import { Button, buttonVariants } from "#lib/components/ui/button/index.ts";
+	import * as ToggleGroup from "#lib/components/ui/toggle-group/index.ts";
 	import InboxDistanceFilter from "./InboxDistanceFilter.svelte";
 	import InboxPositionFilter from "./InboxPositionFilter.svelte";
 

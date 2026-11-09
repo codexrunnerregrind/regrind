@@ -3,7 +3,7 @@
 	import { toast } from "svelte-sonner";
 	import z from "zod";
 
-	import { callMethod } from "$lib/api/methods";
+	import { callMethod } from "#lib/api/methods.ts";
 	import {
 		companionDisabled,
 		companionRefused,
@@ -14,11 +14,11 @@
 		refusedCompanionMessage,
 		reportSignInFailure,
 		untrustedCompanionMessage,
-	} from "$lib/api/sign-in";
-	import { Button } from "$lib/components/ui/button";
-	import { Input } from "$lib/components/ui/input";
-	import { Label } from "$lib/components/ui/label";
-	import { Spinner } from "$lib/components/ui/spinner";
+	} from "#lib/api/sign-in.ts";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import { Input } from "#lib/components/ui/input/index.ts";
+	import { Label } from "#lib/components/ui/label/index.ts";
+	import { Spinner } from "#lib/components/ui/spinner/index.ts";
 
 	type OauthProvider = "google" | "facebook";
 

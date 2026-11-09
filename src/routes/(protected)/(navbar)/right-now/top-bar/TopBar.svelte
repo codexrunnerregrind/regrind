@@ -1,5 +1,5 @@
 <script lang="ts">
-	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
+	import ProgressiveBlur from "#lib/components/shared/ProgressiveBlur.svelte";
 	import QuickFilters from "./QuickFilters.svelte";
 
 	let openFilters = $state({

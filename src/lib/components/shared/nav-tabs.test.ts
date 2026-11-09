@@ -2,7 +2,7 @@ import { goto } from "$app/navigation";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("$app/navigation", () => ({ goto: vi.fn() }));
-vi.mock("$lib/platform/haptics", () => ({ hapticSelection: vi.fn() }));
+vi.mock("#lib/platform/haptics.ts", () => ({ hapticSelection: vi.fn() }));
 
 import { navTabs, swipeToNavTab } from "./nav-tabs";
 

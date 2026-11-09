@@ -7,7 +7,7 @@ const { readMock, writeMock, existsMock } = vi.hoisted(() => ({
 	existsMock: vi.fn(),
 }));
 
-vi.mock("$lib/app-data", () => ({
+vi.mock("#lib/app-data/index.ts", () => ({
 	existsAppDataFile: existsMock,
 	readAppDataFile: readMock,
 	removeAppDataFile: () => Promise.resolve(),
@@ -15,8 +15,8 @@ vi.mock("$lib/app-data", () => ({
 }));
 vi.mock("svelte-sonner", () => ({ toast: { error: vi.fn() } }));
 
-import { maxFilterPresets } from "$lib/model/browse/grid/filter-presets";
-import { defaultFilters } from "$lib/model/browse/grid/filters";
+import { maxFilterPresets } from "#lib/model/browse/grid/filter-presets.ts";
+import { defaultFilters } from "#lib/model/browse/grid/filters.ts";
 import {
 	overwriteFilterPreset,
 	removeFilterPreset,

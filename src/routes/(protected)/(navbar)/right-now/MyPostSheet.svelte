@@ -6,25 +6,25 @@
 	import { untrack } from "svelte";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { uploadRightNowMedia } from "$lib/api/right-now";
-	import { PhotoEditQueue } from "$lib/components/media/photo-edit-queue.svelte";
-	import PhotoEditorDrawer from "$lib/components/media/PhotoEditorDrawer.svelte";
-	import { Button } from "$lib/components/ui/button";
-	import * as Drawer from "$lib/components/ui/drawer";
-	import { Spinner } from "$lib/components/ui/spinner";
-	import SwitchField from "$lib/components/ui/switch-field/SwitchField.svelte";
-	import { Textarea } from "$lib/components/ui/textarea";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { uploadRightNowMedia } from "#lib/api/right-now.ts";
+	import { PhotoEditQueue } from "#lib/components/media/photo-edit-queue.svelte.ts";
+	import PhotoEditorDrawer from "#lib/components/media/PhotoEditorDrawer.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import * as Drawer from "#lib/components/ui/drawer/index.ts";
+	import { Spinner } from "#lib/components/ui/spinner/index.ts";
+	import SwitchField from "#lib/components/ui/switch-field/SwitchField.svelte";
+	import { Textarea } from "#lib/components/ui/textarea/index.ts";
 	import {
 		RIGHT_NOW_TEXT_LIMIT,
 		type RightNowPostMedia,
-	} from "$lib/model/right-now/post";
-	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
-	import { pickMedia } from "$lib/platform/media-picker";
-	import { myRightNowPost } from "$lib/right-now/my-post-state.svelte";
-	import { postTimeLeft } from "$lib/right-now/post-expiry";
-	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
-	import { getNow } from "$lib/util/now";
+	} from "#lib/model/right-now/post.ts";
+	import { backGestureEventHandlers } from "#lib/platform/back-gesture-event.svelte.ts";
+	import { pickMedia } from "#lib/platform/media-picker.ts";
+	import { myRightNowPost } from "#lib/right-now/my-post-state.svelte.ts";
+	import { postTimeLeft } from "#lib/right-now/post-expiry.ts";
+	import { rightNowState } from "#lib/right-now/right-now-state.svelte.ts";
+	import { getNow } from "#lib/util/now.ts";
 	import { morphClose, morphOpen } from "./post-morph";
 
 	let {

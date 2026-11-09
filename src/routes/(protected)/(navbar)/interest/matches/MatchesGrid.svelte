@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { untrack } from "svelte";
 
-	import { getMatchesCardStyleSnapshot } from "$lib/app-data/preferences.svelte";
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
-	import ScrollToTopButton from "$lib/components/shared/ScrollToTopButton.svelte";
-	import { Skeleton } from "$lib/components/ui/skeleton";
-	import { getSentTapsState } from "$lib/interest/sent-taps-state.svelte";
-	import { observeIntersection } from "$lib/util/observe-intersection";
-	import { restoreScrollOnce } from "$lib/util/scroll-restore.svelte";
+	import { getMatchesCardStyleSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
+	import DataRefreshControl from "#lib/components/feedback/DataRefreshControl.svelte";
+	import ScrollToTopButton from "#lib/components/shared/ScrollToTopButton.svelte";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.ts";
+	import { getSentTapsState } from "#lib/interest/sent-taps-state.svelte.ts";
+	import { observeIntersection } from "#lib/util/observe-intersection.ts";
+	import { restoreScrollOnce } from "#lib/util/scroll-restore.svelte.ts";
 	import EmptyMatchesGrid from "./EmptyMatchesGrid.svelte";
 	import MatchCard from "./MatchCard.svelte";
 	import { matchesState } from "./matches-state.svelte";

@@ -1,8 +1,8 @@
 import {
 	getPreferences,
 	setPreferences,
-} from "$lib/app-data/preferences.svelte";
-import { forgetSends, recordSends } from "$lib/model/media-sends";
+} from "#lib/app-data/preferences.svelte.ts";
+import { forgetSends, recordSends } from "#lib/model/media-sends.ts";
 
 export async function rememberMediaSends(
 	ids: readonly number[],

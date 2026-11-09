@@ -1,6 +1,6 @@
 import { SvelteMap, SvelteSet } from "svelte/reactivity";
 
-import type { TypingStatus } from "$lib/ws.svelte";
+import type { TypingStatus } from "#lib/ws.svelte.ts";
 
 /**
  * How long a `Typing` notice stands on its own. The server sends `Cleared` or

@@ -5,12 +5,12 @@
 	import {
 		getOrCreateConversationsState,
 		setConversations,
-	} from "$lib/chat/conversations-context.svelte";
-	import NavBar from "$lib/components/shared/NavBar.svelte";
-	import { tabShellRoot } from "$lib/components/tab-shell/tab-shell-state.svelte";
-	import * as Card from "$lib/components/ui/card";
-	import * as Resizable from "$lib/components/ui/resizable";
-	import { below } from "$lib/util/breakpoints.svelte";
+	} from "#lib/chat/conversations-context.svelte.ts";
+	import NavBar from "#lib/components/shared/NavBar.svelte";
+	import { tabShellRoot } from "#lib/components/tab-shell/tab-shell-state.svelte.ts";
+	import * as Card from "#lib/components/ui/card/index.ts";
+	import * as Resizable from "#lib/components/ui/resizable/index.ts";
+	import { below } from "#lib/util/breakpoints.svelte.ts";
 	import ConversationScreen from "./[conversationId]/ConversationScreen.svelte";
 	import {
 		ComposerSheetsState,

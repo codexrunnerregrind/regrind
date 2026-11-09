@@ -1,7 +1,7 @@
 <script lang="ts">
 	import MagnifyingGlassIcon from "phosphor-svelte/lib/MagnifyingGlassIcon";
 
-	import * as Empty from "$lib/components/ui/empty";
+	import * as Empty from "#lib/components/ui/empty/index.ts";
 
 	let { query }: { query: string } = $props();
 </script>

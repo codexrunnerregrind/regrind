@@ -4,8 +4,8 @@
 	import type { IconComponentProps } from "phosphor-svelte";
 	import type { Component } from "svelte";
 
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-	import type { Option } from "$lib/util/options";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.ts";
+	import type { Option } from "#lib/util/options.ts";
 	import { inlineLabelClass, inlineRowClass, valueClass } from "./row";
 
 	let {

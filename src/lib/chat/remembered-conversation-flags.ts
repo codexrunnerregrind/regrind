@@ -1,4 +1,4 @@
-import type { Conversation } from "$lib/model/messaging/conversations";
+import type { Conversation } from "#lib/model/messaging/conversations.ts";
 
 /**
  * The flags the server withholds from a conversation past the free tier's

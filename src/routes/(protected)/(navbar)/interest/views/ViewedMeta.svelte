@@ -1,8 +1,8 @@
 <script lang="ts">
 	import EyeIcon from "phosphor-svelte/lib/EyeIcon";
 
-	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
-	import type { ViewPreview } from "$lib/model/interest/views";
+	import RelativeTimeDynamic from "#lib/components/shared/RelativeTimeDynamic.svelte";
+	import type { ViewPreview } from "#lib/model/interest/views.ts";
 
 	let {
 		lastViewed,

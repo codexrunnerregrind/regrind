@@ -1,14 +1,14 @@
 import {
 	getPreferences,
 	setPreferences,
-} from "$lib/app-data/preferences.svelte";
+} from "#lib/app-data/preferences.svelte.ts";
 import {
 	derivePresetName,
 	FILTER_PRESET_NAME_MAX,
 	type GridFilterPreset,
 	maxFilterPresets,
-} from "$lib/model/browse/grid/filter-presets";
-import type { GridSearchFilters } from "$lib/model/browse/grid/filters";
+} from "#lib/model/browse/grid/filter-presets.ts";
+import type { GridSearchFilters } from "#lib/model/browse/grid/filters.ts";
 
 async function update(
 	mutate: (presets: GridFilterPreset[]) => GridFilterPreset[],

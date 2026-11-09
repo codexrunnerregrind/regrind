@@ -1,8 +1,8 @@
 <script lang="ts">
 	import ArrowLeftIcon from "phosphor-svelte/lib/ArrowLeftIcon";
 
-	import MyAlbumsGrid from "$lib/components/albums/MyAlbumsGrid.svelte";
-	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
+	import MyAlbumsGrid from "#lib/components/albums/MyAlbumsGrid.svelte";
+	import ProgressiveBlur from "#lib/components/shared/ProgressiveBlur.svelte";
 </script>
 
 <ProgressiveBlur

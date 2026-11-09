@@ -2,14 +2,14 @@
 	import { untrack } from "svelte";
 	import type z from "zod";
 
-	import PositionFilterToggle from "$lib/components/filters/position/PositionFilterToggle.svelte";
-	import { Button, buttonVariants } from "$lib/components/ui/button";
-	import * as Drawer from "$lib/components/ui/drawer";
-	import { Switch } from "$lib/components/ui/switch";
-	import { gridState } from "$lib/grid/grid-state.svelte";
-	import { defaultFilters } from "$lib/model/browse/grid/filters";
-	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
-	import type { filterPositionSchema } from "$lib/model/browse/grid/filters";
+	import PositionFilterToggle from "#lib/components/filters/position/PositionFilterToggle.svelte";
+	import { Button, buttonVariants } from "#lib/components/ui/button/index.ts";
+	import * as Drawer from "#lib/components/ui/drawer/index.ts";
+	import { Switch } from "#lib/components/ui/switch/index.ts";
+	import { gridState } from "#lib/grid/grid-state.svelte.ts";
+	import { defaultFilters } from "#lib/model/browse/grid/filters.ts";
+	import { dismissOnBackGesture } from "#lib/platform/back-gesture-event.svelte.ts";
+	import type { filterPositionSchema } from "#lib/model/browse/grid/filters.ts";
 
 	let { open = $bindable() }: { open: boolean } = $props();
 

@@ -3,9 +3,9 @@
 	import XIcon from "phosphor-svelte/lib/XIcon";
 	import { tinykeys } from "tinykeys";
 
-	import { escapeMeansBack } from "$lib/components/navigation/escape-back";
-	import { runBackGestureHandlers } from "$lib/platform/back-gesture-event.svelte";
-	import { canGoBack } from "$lib/util/history";
+	import { escapeMeansBack } from "#lib/components/navigation/escape-back.ts";
+	import { runBackGestureHandlers } from "#lib/platform/back-gesture-event.svelte.ts";
+	import { canGoBack } from "#lib/util/history.ts";
 
 	// Only the pager's current pane listens for Escape.
 	let { active = true }: { active?: boolean } = $props();

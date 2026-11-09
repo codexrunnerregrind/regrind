@@ -3,7 +3,7 @@
 import { cleanup, fireEvent, render } from "@testing-library/svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ApiResponseMessage } from "$lib/model/messaging/messages";
+import type { ApiResponseMessage } from "#lib/model/messaging/messages.ts";
 import Message from "./Message.svelte";
 
 // The bubble reports itself as seen through an observer jsdom does not have.
@@ -17,10 +17,10 @@ vi.stubGlobal(
 );
 
 const getSingleMessage = vi.hoisted(() => vi.fn());
-vi.mock("$lib/api/messaging/messages", () => ({ getSingleMessage }));
+vi.mock("#lib/api/messaging/messages.ts", () => ({ getSingleMessage }));
 
 const showErrorToast = vi.hoisted(() => vi.fn());
-vi.mock("$lib/api/error-toast", () => ({ showErrorToast }));
+vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast }));
 
 // jsdom implements neither, and `bind:paused` only follows the events they
 // would fire, so the element's own `paused` stays true throughout.

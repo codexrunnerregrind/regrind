@@ -29,8 +29,8 @@ vi.mock("./grid", () => ({
 	resolveLazyProfile: resolveLazyProfileMock,
 	setCachedProfile: vi.fn(),
 }));
-vi.mock("$lib/api/users/tags", () => ({ getTags: getTagsMock }));
-vi.mock("$lib/util/reconcile", () => ({
+vi.mock("#lib/api/users/tags.ts", () => ({ getTags: getTagsMock }));
+vi.mock("#lib/util/reconcile.ts", () => ({
 	reconciler: {
 		subscribe: (handler: (cause?: string) => unknown) => {
 			reconcileHandlers.push(handler);
@@ -38,7 +38,7 @@ vi.mock("$lib/util/reconcile", () => ({
 		},
 	},
 }));
-vi.mock("$lib/app-data/preferences.svelte", () => ({
+vi.mock("#lib/app-data/preferences.svelte.ts", () => ({
 	getPreferences: () => Promise.resolve({}),
 	preferencesLoaded: () => storedPreferences.loaded,
 	preferencesSnapshot: () => storedPreferences,
@@ -46,15 +46,15 @@ vi.mock("$lib/app-data/preferences.svelte", () => ({
 	getActiveGeohashSnapshot: () => storedPreferences.geohash,
 	setPreferences: vi.fn(() => Promise.resolve()),
 }));
-vi.mock("$lib/api/error-toast", () => ({ showErrorToast: showErrorToastMock }));
+vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast: showErrorToastMock }));
 
-import { clearAccountCaches } from "$lib/api/account-caches";
+import { clearAccountCaches } from "#lib/api/account-caches.ts";
 import {
 	markProfileUnviewable,
 	markProfileViewable,
-} from "$lib/api/users/profile-viewability";
-import { mergeProfileEditIntoCaches } from "$lib/api/users/profiles";
-import { defaultFilters } from "$lib/model/browse/grid/filters";
+} from "#lib/api/users/profile-viewability.ts";
+import { mergeProfileEditIntoCaches } from "#lib/api/users/profiles.ts";
+import { defaultFilters } from "#lib/model/browse/grid/filters.ts";
 import { gridState } from "./grid-state.svelte";
 import { rendered } from "./grid-test-helpers";
 

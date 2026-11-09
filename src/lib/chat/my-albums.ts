@@ -1,7 +1,7 @@
-import { registerAccountCache } from "$lib/api/account-caches";
-import { getMyAlbums } from "$lib/api/messaging/albums";
-import { now } from "$lib/util/clock";
-import type { MyAlbum } from "$lib/model/messaging/albums";
+import { registerAccountCache } from "#lib/api/account-caches.ts";
+import { getMyAlbums } from "#lib/api/messaging/albums.ts";
+import { now } from "#lib/util/clock.ts";
+import type { MyAlbum } from "#lib/model/messaging/albums.ts";
 
 /**
  * Our own albums, for the chat bubbles that shared them.

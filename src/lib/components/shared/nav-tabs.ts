@@ -5,7 +5,7 @@ import LightningIcon from "phosphor-svelte/lib/LightningIcon";
 import SquaresFourIcon from "phosphor-svelte/lib/SquaresFourIcon";
 import UserIcon from "phosphor-svelte/lib/UserIcon";
 
-import { hapticSelection } from "$lib/platform/haptics";
+import { hapticSelection } from "#lib/platform/haptics.ts";
 
 /**
  * The bottom bar's five tabs, in order.

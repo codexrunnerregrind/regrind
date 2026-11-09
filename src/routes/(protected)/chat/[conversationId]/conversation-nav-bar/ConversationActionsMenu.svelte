@@ -5,14 +5,14 @@
 	import ProhibitIcon from "phosphor-svelte/lib/ProhibitIcon";
 	import { toast } from "svelte-sonner";
 
-	import { blockUser } from "$lib/api/browse/blocks";
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
-	import { openImageGalleryLightbox } from "$lib/chat/image-gallery";
-	import BlockProfileDialog from "$lib/components/profile/BlockProfileDialog.svelte";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-	import { draftFromMessage } from "$lib/model/messaging/messages";
-	import { profileMediaUrl } from "$lib/util/media";
+	import { blockUser } from "#lib/api/browse/blocks.ts";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { preferencesSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import { openImageGalleryLightbox } from "#lib/chat/image-gallery.ts";
+	import BlockProfileDialog from "#lib/components/profile/BlockProfileDialog.svelte";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.ts";
+	import { draftFromMessage } from "#lib/model/messaging/messages.ts";
+	import { profileMediaUrl } from "#lib/util/media.ts";
 	import { getConversationState } from "../conversation-state.svelte";
 	import { collectReceivedPhotos } from "./received-photos";
 	import type { ReceivedPhoto } from "./received-photos";

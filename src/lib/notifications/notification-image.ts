@@ -3,8 +3,8 @@ import { appCacheDir, join } from "@tauri-apps/api/path";
 import { mkdir, writeFile } from "@tauri-apps/plugin-fs";
 import z from "zod";
 
-import { fromBase64 } from "$lib/util/base64";
-import { unproxyMediaUrl } from "$lib/util/media";
+import { fromBase64 } from "#lib/util/base64.ts";
+import { unproxyMediaUrl } from "#lib/util/media.ts";
 
 const downloadedMediaSchema = z.object({
 	contentType: z.string().nullable(),

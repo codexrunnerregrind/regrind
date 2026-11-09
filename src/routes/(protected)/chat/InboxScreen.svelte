@@ -4,7 +4,7 @@
 	import {
 		getOrCreateConversationsState,
 		setConversations,
-	} from "$lib/chat/conversations-context.svelte";
+	} from "#lib/chat/conversations-context.svelte.ts";
 	import ConversationsList from "./ConversationsList.svelte";
 
 	// The tab shell's Inbox pane. It sits outside the chat layout, so it provides

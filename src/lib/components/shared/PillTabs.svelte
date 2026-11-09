@@ -8,8 +8,8 @@
 </script>
 
 <script lang="ts">
-	import { Button } from "$lib/components/ui/button";
-	import { toggleVariants } from "$lib/components/ui/toggle";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import { toggleVariants } from "#lib/components/ui/toggle/index.ts";
 
 	let {
 		tabs,

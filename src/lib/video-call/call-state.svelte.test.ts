@@ -2,7 +2,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { videoCall } from "$lib/video-call/call-state.svelte";
+import { videoCall } from "#lib/video-call/call-state.svelte.ts";
 
 const {
 	startVideoCallMock,
@@ -36,25 +36,25 @@ const {
 	agoraSwitchCameraMock: vi.fn(),
 }));
 
-vi.mock("$lib/api/messaging/video-calls", () => ({
+vi.mock("#lib/api/messaging/video-calls.ts", () => ({
 	startVideoCall: startVideoCallMock,
 	joinVideoCall: joinVideoCallMock,
 	leaveVideoCall: leaveVideoCallMock,
 	renewVideoCall: vi.fn(),
 	getVideoCallInfo: getVideoCallInfoMock,
 }));
-vi.mock("$lib/api/users/profiles", () => ({ getProfile: getProfileMock }));
-vi.mock("$lib/platform/os", () => ({ isMobilePlatform: () => true }));
-vi.mock("$lib/api/error-toast", () => ({ showErrorToast: showErrorToastMock }));
+vi.mock("#lib/api/users/profiles.ts", () => ({ getProfile: getProfileMock }));
+vi.mock("#lib/platform/os.ts", () => ({ isMobilePlatform: () => true }));
+vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast: showErrorToastMock }));
 vi.mock("svelte-sonner", () => ({
 	toast: { error: toastErrorMock, info: toastInfoMock },
 }));
-vi.mock("$lib/ws.svelte", () => ({
+vi.mock("#lib/ws.svelte.ts", () => ({
 	ws: { on: wsOnMock },
 	videocallV1IncomingCallEventSchema: {},
 	videocallV1CallEndedEventSchema: {},
 }));
-vi.mock("$lib/video-call/agora-session", () => ({
+vi.mock("#lib/video-call/agora-session.ts", () => ({
 	AgoraSession: class {
 		constructor(public handlers: Record<string, (arg?: unknown) => void>) {
 			handlersOfLastSession = handlers;

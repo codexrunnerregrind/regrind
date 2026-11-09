@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 
-vi.mock("$lib/platform/haptics", () => ({
+vi.mock("#lib/platform/haptics.ts", () => ({
 	hapticImpact: vi.fn(),
 	hapticNotification: vi.fn(),
 }));

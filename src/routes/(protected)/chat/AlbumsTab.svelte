@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { goto } from "$app/navigation";
 
-	import { sharedAlbums } from "$lib/components/albums/shared-albums-state.svelte";
-	import SharedAlbumsGrid from "$lib/components/albums/SharedAlbumsGrid.svelte";
-	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
-	import { hapticImpact, hapticSelection } from "$lib/platform/haptics";
-	import { restoreScrollOnce } from "$lib/util/scroll-restore.svelte";
+	import { sharedAlbums } from "#lib/components/albums/shared-albums-state.svelte.ts";
+	import SharedAlbumsGrid from "#lib/components/albums/SharedAlbumsGrid.svelte";
+	import DataRefreshControl from "#lib/components/feedback/DataRefreshControl.svelte";
+	import { hapticImpact, hapticSelection } from "#lib/platform/haptics.ts";
+	import { restoreScrollOnce } from "#lib/util/scroll-restore.svelte.ts";
 
 	let { class: className }: { class?: import("svelte/elements").ClassValue } =
 		$props();

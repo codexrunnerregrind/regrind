@@ -1,21 +1,21 @@
-import { accountScoped } from "$lib/api/account-caches";
-import { markBlockedProfilesUnviewable } from "$lib/api/browse/blocks";
-import { markHiddenProfilesUnviewable } from "$lib/api/browse/hides";
-import { showErrorToast } from "$lib/api/error-toast";
-import { getViews } from "$lib/api/interest/views";
+import { accountScoped } from "#lib/api/account-caches.ts";
+import { markBlockedProfilesUnviewable } from "#lib/api/browse/blocks.ts";
+import { markHiddenProfilesUnviewable } from "#lib/api/browse/hides.ts";
+import { showErrorToast } from "#lib/api/error-toast.ts";
+import { getViews } from "#lib/api/interest/views.ts";
 import {
 	getAccountPreferences,
 	setAccountPreferences,
-} from "$lib/api/settings/account";
+} from "#lib/api/settings/account.ts";
 import {
 	isProfileViewable,
 	onProfileViewabilityChange,
-} from "$lib/api/users/profile-viewability";
-import { getProfiles, onProfileEdit } from "$lib/api/users/profiles";
-import { matchViewers, notePhotos } from "$lib/interest/viewer-matches";
-import { ReconcilingListState } from "$lib/util/reconciling-list-state.svelte";
-import { viewedMeV1NewViewReceivedEventSchema, ws } from "$lib/ws.svelte";
-import type { ViewerProfile, ViewPreview } from "$lib/model/interest/views";
+} from "#lib/api/users/profile-viewability.ts";
+import { getProfiles, onProfileEdit } from "#lib/api/users/profiles.ts";
+import { matchViewers, notePhotos } from "#lib/interest/viewer-matches.ts";
+import { ReconcilingListState } from "#lib/util/reconciling-list-state.svelte.ts";
+import { viewedMeV1NewViewReceivedEventSchema, ws } from "#lib/ws.svelte.ts";
+import type { ViewerProfile, ViewPreview } from "#lib/model/interest/views.ts";
 
 const PAGE_SIZE = 24;
 

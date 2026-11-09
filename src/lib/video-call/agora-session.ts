@@ -7,7 +7,7 @@ import AgoraRTC, {
 import {
 	webRtcSupported,
 	WebRtcUnsupportedError,
-} from "$lib/video-call/webrtc-support";
+} from "#lib/video-call/webrtc-support.ts";
 
 /**
  * Agora needs an App ID alongside the per-call token, and the token response

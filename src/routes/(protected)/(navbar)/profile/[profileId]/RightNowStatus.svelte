@@ -1,6 +1,6 @@
 <script lang="ts">
-	import ProfileRightNowIndicator from "$lib/components/profile/ProfileRightNowIndicator.svelte";
-	import type { RightNowStatus } from "$lib/model/right-now";
+	import ProfileRightNowIndicator from "#lib/components/profile/ProfileRightNowIndicator.svelte";
+	import type { RightNowStatus } from "#lib/model/right-now.ts";
 
 	let { rightNow }: { rightNow: RightNowStatus | null | undefined } =
 		$props();

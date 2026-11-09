@@ -1,23 +1,23 @@
 import { goto } from "$app/navigation";
 import { toast } from "svelte-sonner";
 
-import { httpStatusOf } from "$lib/api/api-error";
-import { blockUser } from "$lib/api/browse/blocks";
-import { showErrorToast } from "$lib/api/error-toast";
-import { sendTap } from "$lib/api/interest/taps";
-import { forgetFavoriteNote } from "$lib/api/users/favorite-notes-state.svelte";
-import { addFavoriteUser, removeFavoriteUser } from "$lib/api/users/favorites";
-import { mergeProfileEditIntoCaches } from "$lib/api/users/profiles";
-import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
-import { showBlockFailure } from "$lib/components/report/block-failure";
-import { hapticImpact } from "$lib/haptics";
-import { TapType } from "$lib/model/interest/taps";
+import { httpStatusOf } from "#lib/api/api-error.ts";
+import { blockUser } from "#lib/api/browse/blocks.ts";
+import { showErrorToast } from "#lib/api/error-toast.ts";
+import { sendTap } from "#lib/api/interest/taps.ts";
+import { forgetFavoriteNote } from "#lib/api/users/favorite-notes-state.svelte.ts";
+import { addFavoriteUser, removeFavoriteUser } from "#lib/api/users/favorites.ts";
+import { mergeProfileEditIntoCaches } from "#lib/api/users/profiles.ts";
+import { preferencesSnapshot } from "#lib/app-data/preferences.svelte.ts";
+import { showBlockFailure } from "#lib/components/report/block-failure.ts";
+import { hapticImpact } from "#lib/haptics.ts";
+import { TapType } from "#lib/model/interest/taps.ts";
 import {
 	type LongPressHandlers,
 	longPressHandlers,
-} from "$lib/util/long-press";
-import { reducedMotion } from "$lib/util/reduced-motion";
-import type { RightNowStatus } from "$lib/model/right-now";
+} from "#lib/util/long-press.ts";
+import { reducedMotion } from "#lib/util/reduced-motion.ts";
+import type { RightNowStatus } from "#lib/model/right-now.ts";
 
 export type PeekProfile = {
 	profileId: number;

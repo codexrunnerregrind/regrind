@@ -1,5 +1,5 @@
 <script lang="ts">
-	import MediaImage from "$lib/components/shared/MediaImage.svelte";
+	import MediaImage from "#lib/components/shared/MediaImage.svelte";
 
 	let {
 		src,

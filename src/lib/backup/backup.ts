@@ -5,14 +5,14 @@ import {
 	portablePreferences,
 	readPortablePreferences,
 	setPreferences,
-} from "$lib/app-data/preferences.svelte";
+} from "#lib/app-data/preferences.svelte.ts";
 import {
 	buildSavedPlacesExport,
 	type ExportedPlace,
 	importSavedPlaces,
 	savedPlacesExportSchema,
 	type SavedPlacesImportResult,
-} from "$lib/app-data/saved-locations-transfer";
+} from "#lib/app-data/saved-locations-transfer.ts";
 
 const FILE_KIND = "regrind-backup";
 const FILE_VERSION = 1;

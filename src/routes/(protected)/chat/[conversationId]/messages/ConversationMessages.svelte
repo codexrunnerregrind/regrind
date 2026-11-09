@@ -2,10 +2,10 @@
 	import { tick, untrack } from "svelte";
 	import { SvelteSet } from "svelte/reactivity";
 
-	import { getChatWallpaperSnapshot } from "$lib/app-data/preferences.svelte";
-	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
-	import { Spinner } from "$lib/components/ui/spinner";
-	import { hapticImpact } from "$lib/platform/haptics";
+	import { getChatWallpaperSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import DataRefreshControl from "#lib/components/feedback/DataRefreshControl.svelte";
+	import { Spinner } from "#lib/components/ui/spinner/index.ts";
+	import { hapticImpact } from "#lib/platform/haptics.ts";
 	import { getConversationState } from "../conversation-state.svelte";
 	import ConversationError from "./ConversationError.svelte";
 	import ConversationPaginationSentinel from "./ConversationPaginationSentinel.svelte";

@@ -1,7 +1,7 @@
 import { toast } from "svelte-sonner";
 
-import { registerAccountCache } from "$lib/api/account-caches";
-import type { NewProfileView } from "$lib/interest/view-activity.svelte";
+import { registerAccountCache } from "#lib/api/account-caches.ts";
+import type { NewProfileView } from "#lib/interest/view-activity.svelte.ts";
 import ProfileViewToast from "./ProfileViewToast.svelte";
 
 registerAccountCache({

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import SortAscendingIcon from "phosphor-svelte/lib/SortAscendingIcon";
 
-	import { Button } from "$lib/components/ui/button";
-	import { defaultRightNowFilters } from "$lib/model/browse/grid/filters";
-	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import { defaultRightNowFilters } from "#lib/model/browse/grid/filters.ts";
+	import { rightNowState } from "#lib/right-now/right-now-state.svelte.ts";
 	import AgeQuickFilter from "./AgeQuickFilter.svelte";
 	import HostingQuickFilter from "./HostingQuickFilter.svelte";
 	import PositionQuickFilter from "./PositionQuickFilter.svelte";

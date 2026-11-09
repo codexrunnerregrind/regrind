@@ -1,4 +1,4 @@
-import type { Conversation } from "$lib/model/messaging/conversations";
+import type { Conversation } from "#lib/model/messaging/conversations.ts";
 
 /** Pinned first, then newest activity — the order the inbox is read in. */
 export function sortConversations(entries: Conversation[]): Conversation[] {

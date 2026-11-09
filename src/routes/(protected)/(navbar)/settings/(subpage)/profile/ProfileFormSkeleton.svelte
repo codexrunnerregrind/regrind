@@ -1,7 +1,7 @@
 <script lang="ts">
-	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
-	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
-	import { Skeleton } from "$lib/components/ui/skeleton";
+	import SectionHeader from "#lib/components/settings/SectionHeader.svelte";
+	import SettingsGroup from "#lib/components/settings/SettingsGroup.svelte";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.ts";
 	import { inlineRowClass, stackedRowClass } from "./fields/row";
 	import { maxProfilePhotos } from "./options";
 

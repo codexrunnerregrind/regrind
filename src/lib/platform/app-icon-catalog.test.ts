@@ -8,7 +8,7 @@ import {
 	appIcons,
 	iosAppIconName,
 	parseAppIconId,
-} from "$lib/platform/app-icon-catalog";
+} from "#lib/platform/app-icon-catalog.ts";
 
 const read = (path: string) => readFileSync(path, "utf8");
 

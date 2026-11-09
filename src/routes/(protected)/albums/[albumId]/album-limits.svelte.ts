@@ -1,9 +1,9 @@
-import { getAlbumStorageLimits } from "$lib/api/messaging/albums";
-import { albumMediaCounts } from "$lib/components/album/album";
+import { getAlbumStorageLimits } from "#lib/api/messaging/albums.ts";
+import { albumMediaCounts } from "#lib/components/album/album.ts";
 import type {
 	AlbumContent,
 	AlbumStorageLimits,
-} from "$lib/model/messaging/albums";
+} from "#lib/model/messaging/albums.ts";
 
 /**
  * What an album still has room for.

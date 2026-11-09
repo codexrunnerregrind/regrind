@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tabShellShowing } from "$lib/components/tab-shell/tab-shell-state.svelte";
+	import { tabShellShowing } from "#lib/components/tab-shell/tab-shell-state.svelte.ts";
 	import YouScreen from "./YouScreen.svelte";
 
 	let { data }: import("./$types").PageProps = $props();

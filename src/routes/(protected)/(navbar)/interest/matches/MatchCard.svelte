@@ -2,20 +2,20 @@
 	import {
 		type MatchesCardStyle,
 		preferencesSnapshot,
-	} from "$lib/app-data/preferences.svelte";
-	import DistanceFormatted from "$lib/components/profile/DistanceFormatted.svelte";
-	import { profileGestures } from "$lib/components/profile/peek/peek-state.svelte";
-	import ProfileMiniCard from "$lib/components/profile/ProfileMiniCard.svelte";
-	import TapIcon from "$lib/components/profile/TapIcon.svelte";
-	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
+	} from "#lib/app-data/preferences.svelte.ts";
+	import DistanceFormatted from "#lib/components/profile/DistanceFormatted.svelte";
+	import { profileGestures } from "#lib/components/profile/peek/peek-state.svelte.ts";
+	import ProfileMiniCard from "#lib/components/profile/ProfileMiniCard.svelte";
+	import TapIcon from "#lib/components/profile/TapIcon.svelte";
+	import UserAvatar from "#lib/components/profile/UserAvatar.svelte";
 	import {
 		sexualPositions,
 		sexualPositionSchema,
-	} from "$lib/model/users/profiles";
-	import { getNow } from "$lib/util/now";
-	import { formatHeight, formatWeightGrams } from "$lib/util/units";
-	import type { MatchesMatch } from "$lib/model/interest/matches";
-	import type { SentTapProfile } from "$lib/model/interest/sent-tap";
+	} from "#lib/model/users/profiles.ts";
+	import { getNow } from "#lib/util/now.ts";
+	import { formatHeight, formatWeightGrams } from "#lib/util/units.ts";
+	import type { MatchesMatch } from "#lib/model/interest/matches.ts";
+	import type { SentTapProfile } from "#lib/model/interest/sent-tap.ts";
 	import MatchReasonIcon from "./MatchReasonIcon.svelte";
 
 	let {

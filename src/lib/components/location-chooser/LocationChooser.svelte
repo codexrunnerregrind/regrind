@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { rememberLocation } from "$lib/app-data/saved-locations";
-	import Button from "$lib/components/ui/button/button.svelte";
-	import * as Dialog from "$lib/components/ui/dialog";
-	import * as Drawer from "$lib/components/ui/drawer/index";
-	import Spinner from "$lib/components/ui/spinner/spinner.svelte";
-	import { encodeGeohash } from "$lib/model/geohash";
-	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
-	import { above } from "$lib/util/breakpoints.svelte";
+	import { rememberLocation } from "#lib/app-data/saved-locations.ts";
+	import Button from "#lib/components/ui/button/button.svelte";
+	import * as Dialog from "#lib/components/ui/dialog/index.ts";
+	import * as Drawer from "#lib/components/ui/drawer/index.ts";
+	import Spinner from "#lib/components/ui/spinner/spinner.svelte";
+	import { encodeGeohash } from "#lib/model/geohash.ts";
+	import { dismissOnBackGesture } from "#lib/platform/back-gesture-event.svelte.ts";
+	import { above } from "#lib/util/breakpoints.svelte.ts";
 	import type GeoMapPickerComponent from "./GeoMapPicker.svelte";
 
 	let {

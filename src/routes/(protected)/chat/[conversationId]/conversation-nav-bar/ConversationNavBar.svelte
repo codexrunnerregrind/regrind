@@ -1,8 +1,8 @@
 <script lang="ts">
 	import ArrowLeftIcon from "phosphor-svelte/lib/ArrowLeftIcon";
 
-	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
-	import { Skeleton } from "$lib/components/ui/skeleton";
+	import ProgressiveBlur from "#lib/components/shared/ProgressiveBlur.svelte";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.ts";
 	import { getConversationState } from "../conversation-state.svelte";
 	import ConversationActionsMenu from "./ConversationActionsMenu.svelte";
 	import ConversationNavBarProfile from "./ConversationNavBarProfile.svelte";

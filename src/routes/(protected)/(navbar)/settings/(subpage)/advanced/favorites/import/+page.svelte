@@ -1,7 +1,7 @@
 <script lang="ts" module>
 	import { SvelteSet } from "svelte/reactivity";
 
-	import type { FavoriteTransferEntry } from "$lib/favorites/transfer";
+	import type { FavoriteTransferEntry } from "#lib/favorites/transfer.ts";
 
 	// Held only for a look at a profile and back; see `beforeNavigate` below.
 	const kept: {
@@ -16,18 +16,18 @@
 	import FolderOpenIcon from "phosphor-svelte/lib/FolderOpenIcon";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error-toast";
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import ProfileActionRowSkeleton from "$lib/components/profile/ProfileActionRowSkeleton.svelte";
-	import { Button } from "$lib/components/ui/button";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
+	import ProfileActionRowSkeleton from "#lib/components/profile/ProfileActionRowSkeleton.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
 	import {
 		favoriteHasNote,
 		FavoritesImportError,
 		importFavorites,
 		loadFavoritesToImport,
 		parseFavoritesExport,
-	} from "$lib/favorites/transfer";
-	import { pickTextFile } from "$lib/platform/data-file";
+	} from "#lib/favorites/transfer.ts";
+	import { pickTextFile } from "#lib/platform/data-file.ts";
 	import FavoriteSelectList from "../FavoriteSelectList.svelte";
 
 	let entries = $state<FavoriteTransferEntry[] | null>(kept.entries);

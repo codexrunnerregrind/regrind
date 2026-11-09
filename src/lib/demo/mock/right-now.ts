@@ -3,7 +3,7 @@ import type {
 	RightNowFeedResponse,
 	RightNowPostMediaItem,
 	RightNowV3Post,
-} from "$lib/model/right-now/feed/response/v4";
+} from "#lib/model/right-now/feed/response/v4.ts";
 import { demoMeProfileId, NOW } from "../config";
 import {
 	distanceForId,

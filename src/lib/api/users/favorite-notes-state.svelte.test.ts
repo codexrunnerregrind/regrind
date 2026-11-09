@@ -4,8 +4,8 @@ const { getFavoriteNoteMock } = vi.hoisted(() => ({
 	getFavoriteNoteMock: vi.fn(),
 }));
 
-vi.mock("$lib/api/users/favorites", async (importOriginal) => ({
-	...(await importOriginal<typeof import("$lib/api/users/favorites")>()),
+vi.mock("#lib/api/users/favorites.ts", async (importOriginal) => ({
+	...(await importOriginal<typeof import("#lib/api/users/favorites.ts")>()),
 	getFavoriteNote: getFavoriteNoteMock,
 }));
 
@@ -16,7 +16,7 @@ import {
 	ensureFavoriteNote,
 	favoriteNote,
 	refreshFavoriteNote,
-} from "$lib/api/users/favorite-notes-state.svelte";
+} from "#lib/api/users/favorite-notes-state.svelte.ts";
 
 function listEntry(counterpartyId: number, notes = "", phoneNumber = "") {
 	return { counterpartyId, notes, phoneNumber };

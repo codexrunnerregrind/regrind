@@ -4,10 +4,10 @@
 	import LightningIcon from "phosphor-svelte/lib/LightningIcon";
 	import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
-	import { downloadMedia } from "$lib/chat/lightbox-download";
-	import { registerMediaViewerChrome } from "$lib/chat/media-viewer-chrome";
-	import * as Card from "$lib/components/ui/card";
-	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+	import { downloadMedia } from "#lib/chat/lightbox-download.ts";
+	import { registerMediaViewerChrome } from "#lib/chat/media-viewer-chrome.ts";
+	import * as Card from "#lib/components/ui/card/index.ts";
+	import { backGestureEventHandlers } from "#lib/platform/back-gesture-event.svelte.ts";
 
 	let {
 		text,

@@ -2,12 +2,12 @@
 	import ArrowsDownUpIcon from "phosphor-svelte/lib/ArrowsDownUpIcon";
 	import CheckCircleIcon from "phosphor-svelte/lib/CheckCircleIcon";
 
-	import { showErrorToast } from "$lib/api/error-toast";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
 		getSortMediaByFrequencySnapshot,
 		setPreferences,
-	} from "$lib/app-data/preferences.svelte";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
+	} from "#lib/app-data/preferences.svelte.ts";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.ts";
 
 	const options = [
 		{ value: false, label: "Most recent" },

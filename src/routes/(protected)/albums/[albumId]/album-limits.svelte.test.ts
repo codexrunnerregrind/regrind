@@ -4,9 +4,9 @@ const { getAlbumStorageLimits } = vi.hoisted(() => ({
 	getAlbumStorageLimits: vi.fn(),
 }));
 
-vi.mock("$lib/api/messaging/albums", () => ({ getAlbumStorageLimits }));
+vi.mock("#lib/api/messaging/albums.ts", () => ({ getAlbumStorageLimits }));
 
-import type { AlbumStorageLimits } from "$lib/model/messaging/albums";
+import type { AlbumStorageLimits } from "#lib/model/messaging/albums.ts";
 import { AlbumLimits } from "./album-limits.svelte";
 
 const caps = {

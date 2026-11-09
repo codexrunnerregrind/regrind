@@ -5,9 +5,9 @@
 		type MapLibreMap,
 		type MapLibreModule,
 		pinElement,
-	} from "$lib/components/map/basemap";
-	import MapView from "$lib/components/map/MapView.svelte";
-	import type { LocationMessage } from "$lib/model/messaging/messages";
+	} from "#lib/components/map/basemap.ts";
+	import MapView from "#lib/components/map/MapView.svelte";
+	import type { LocationMessage } from "#lib/model/messaging/messages.ts";
 	import { MessageMediaState } from "./message-media.svelte";
 
 	let { message }: { message: LocationMessage["body"] } = $props();

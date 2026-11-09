@@ -1,6 +1,6 @@
-import { downloadAllMedia } from "$lib/chat/lightbox-download";
-import { hapticImpact } from "$lib/platform/haptics";
-import type { AlbumContentResponse } from "$lib/api/messaging/albums";
+import { downloadAllMedia } from "#lib/chat/lightbox-download.ts";
+import { hapticImpact } from "#lib/platform/haptics.ts";
+import type { AlbumContentResponse } from "#lib/api/messaging/albums.ts";
 
 /**
  * Saves every item in the album to the device, named after `profileId` where

@@ -1,13 +1,13 @@
 import { toast } from "svelte-sonner";
 
-import { showErrorToast } from "$lib/api/error-toast";
+import { showErrorToast } from "#lib/api/error-toast.ts";
 import {
 	AlbumLockedError,
 	type AlbumSharer,
 	openAlbumLightbox,
 	resolveAlbumForViewing,
-} from "$lib/chat/album-viewer";
-import { hapticImpact } from "$lib/platform/haptics";
+} from "#lib/chat/album-viewer.ts";
+import { hapticImpact } from "#lib/platform/haptics.ts";
 
 // Shared "tap an album cover → load its content → open the PhotoSwipe viewer"
 // behavior, used by both the my-albums and shared-with-me grids. Tracks which

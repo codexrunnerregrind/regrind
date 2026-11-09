@@ -1,8 +1,8 @@
 <script lang="ts">
-	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
-	import ScrollToTopButton from "$lib/components/shared/ScrollToTopButton.svelte";
-	import { myRightNowPost } from "$lib/right-now/my-post-state.svelte";
-	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
+	import DataRefreshControl from "#lib/components/feedback/DataRefreshControl.svelte";
+	import ScrollToTopButton from "#lib/components/shared/ScrollToTopButton.svelte";
+	import { myRightNowPost } from "#lib/right-now/my-post-state.svelte.ts";
+	import { rightNowState } from "#lib/right-now/right-now-state.svelte.ts";
 	import MyPostButton from "./MyPostButton.svelte";
 	import RightNowFeed from "./RightNowFeed.svelte";
 	import TopBar from "./top-bar/TopBar.svelte";

@@ -12,8 +12,8 @@ const { onNewView, subscriptions, unlistenMock, viewHandlers } = vi.hoisted(
 	}),
 );
 
-vi.mock("$lib/ws.svelte", async (importOriginal) => ({
-	...(await importOriginal<typeof import("$lib/ws.svelte")>()),
+vi.mock("#lib/ws.svelte.ts", async (importOriginal) => ({
+	...(await importOriginal<typeof import("#lib/ws.svelte.ts")>()),
 	ws: {
 		on(
 			eventType: string,

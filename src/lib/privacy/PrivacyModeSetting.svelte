@@ -1,9 +1,9 @@
 <script lang="ts">
 	import EyeSlashIcon from "phosphor-svelte/lib/EyeSlashIcon";
 
-	import { preferencesLoaded } from "$lib/app-data/preferences.svelte";
-	import SettingsSwitchRow from "$lib/components/settings/SettingsSwitchRow.svelte";
-	import { isIosPlatform } from "$lib/platform/os";
+	import { preferencesLoaded } from "#lib/app-data/preferences.svelte.ts";
+	import SettingsSwitchRow from "#lib/components/settings/SettingsSwitchRow.svelte";
+	import { isIosPlatform } from "#lib/platform/os.ts";
 	import {
 		imagePrivacy,
 		privacyFeatureOn,

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Label } from "$lib/components/ui/label";
-	import { Textarea } from "$lib/components/ui/textarea";
-	import { revealFieldUnderKeyboard } from "$lib/util/scroll";
+	import { Label } from "#lib/components/ui/label/index.ts";
+	import { Textarea } from "#lib/components/ui/textarea/index.ts";
+	import { revealFieldUnderKeyboard } from "#lib/util/scroll.ts";
 	import { stackedLabelClass, stackedRowClass } from "./row";
 
 	let {

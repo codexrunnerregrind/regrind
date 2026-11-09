@@ -2,15 +2,15 @@
 	import PlayIcon from "phosphor-svelte/lib/PlayIcon";
 	import VideoIcon from "phosphor-svelte/lib/VideoIcon";
 
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { getSingleMessage } from "$lib/api/messaging/messages";
-	import { openVideoLightbox } from "$lib/chat/video-viewer";
-	import { VIDEO_MESSAGE_TYPES } from "$lib/model/messaging/message-preview";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { getSingleMessage } from "#lib/api/messaging/messages.ts";
+	import { openVideoLightbox } from "#lib/chat/video-viewer.ts";
+	import { VIDEO_MESSAGE_TYPES } from "#lib/model/messaging/message-preview.ts";
 	import {
 		apiResponseMessageSchema,
 		draftFromMessage,
-	} from "$lib/model/messaging/messages";
-	import { profileMediaUrl } from "$lib/util/media";
+	} from "#lib/model/messaging/messages.ts";
+	import { profileMediaUrl } from "#lib/util/media.ts";
 	import { getConversationState } from "../../conversation-state.svelte";
 	import LockedMedia from "./LockedMedia.svelte";
 	import { MessageMediaState } from "./message-media.svelte";

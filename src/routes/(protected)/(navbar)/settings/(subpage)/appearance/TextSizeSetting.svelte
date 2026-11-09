@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { showErrorToast } from "$lib/api/error-toast";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
 		preferencesLoaded,
 		preferencesSnapshot,
 		setPreferences,
-	} from "$lib/app-data/preferences.svelte";
-	import { Slider } from "$lib/components/ui/slider";
-	import { hapticSelection } from "$lib/platform/haptics";
+	} from "#lib/app-data/preferences.svelte.ts";
+	import { Slider } from "#lib/components/ui/slider/index.ts";
+	import { hapticSelection } from "#lib/platform/haptics.ts";
 
 	// 85% to 130% in 5% steps.
 	const STEPS = Array.from({ length: 10 }, (_, i) => (85 + i * 5) / 100);

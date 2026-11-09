@@ -2,8 +2,8 @@ import { open, save } from "@tauri-apps/plugin-dialog";
 import { readFile, writeFile } from "@tauri-apps/plugin-fs";
 import { AndroidFs } from "tauri-plugin-android-fs-api";
 
-import { demoEnabled } from "$lib/demo";
-import { isAndroidPlatform, isIosPlatform } from "$lib/platform/os";
+import { demoEnabled } from "#lib/demo/index.ts";
+import { isAndroidPlatform, isIosPlatform } from "#lib/platform/os.ts";
 
 /** How a save ended. `cancelled` means the user backed out of a picker. */
 export type SaveFileResult = {

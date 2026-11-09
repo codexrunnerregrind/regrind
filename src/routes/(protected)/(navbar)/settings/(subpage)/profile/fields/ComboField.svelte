@@ -2,8 +2,8 @@
 	import XIcon from "phosphor-svelte/lib/XIcon";
 	import { tick } from "svelte";
 
-	import * as Combobox from "$lib/components/ui/combobox";
-	import type { Option } from "$lib/util/options";
+	import * as Combobox from "#lib/components/ui/combobox/index.ts";
+	import type { Option } from "#lib/util/options.ts";
 	import Field from "./Field.svelte";
 
 	let {

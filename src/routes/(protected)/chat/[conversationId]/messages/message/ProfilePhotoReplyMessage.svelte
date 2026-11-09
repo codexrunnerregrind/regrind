@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { profileMediaUrl } from "$lib/util/media";
-	import type { ProfilePhotoReplyMessage } from "$lib/model/messaging/messages";
+	import { profileMediaUrl } from "#lib/util/media.ts";
+	import type { ProfilePhotoReplyMessage } from "#lib/model/messaging/messages.ts";
 	import { getMessageContext, getMessageMetaContext } from "./context";
 	import MessageQuoteBlock from "./MessageQuoteBlock.svelte";
 

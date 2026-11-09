@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { FilterPosition } from "$lib/model/browse/grid/filters";
-import { SexualPosition } from "$lib/model/users/profiles";
+import { FilterPosition } from "#lib/model/browse/grid/filters.ts";
+import { SexualPosition } from "#lib/model/users/profiles.ts";
 import {
 	ConversationFilters,
 	type ConversationFilterSelection,

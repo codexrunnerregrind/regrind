@@ -5,22 +5,22 @@
 	import VideoIcon from "phosphor-svelte/lib/VideoIcon";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { getAlbumShared } from "$lib/api/messaging/album-shares-state.svelte";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { getAlbumShared } from "#lib/api/messaging/album-shares-state.svelte.ts";
 	import {
 		AlbumLockedError,
 		type AlbumSharer,
 		type LoadedAlbum,
 		openAlbumLightbox,
 		resolveAlbumForViewing,
-	} from "$lib/chat/album-viewer";
-	import { myAlbumCoverUrl } from "$lib/chat/my-albums";
-	import { paywallCoverUrl } from "$lib/chat/paywall-covers";
-	import LockIcon from "$lib/components/shared/LockIcon.svelte";
-	import { profileMediaUrl } from "$lib/util/media";
-	import { getNow } from "$lib/util/now";
-	import { parseSignedUrl } from "$lib/util/signed-url";
-	import type { AlbumMessage } from "$lib/model/messaging/messages";
+	} from "#lib/chat/album-viewer.ts";
+	import { myAlbumCoverUrl } from "#lib/chat/my-albums.ts";
+	import { paywallCoverUrl } from "#lib/chat/paywall-covers.ts";
+	import LockIcon from "#lib/components/shared/LockIcon.svelte";
+	import { profileMediaUrl } from "#lib/util/media.ts";
+	import { getNow } from "#lib/util/now.ts";
+	import { parseSignedUrl } from "#lib/util/signed-url.ts";
+	import type { AlbumMessage } from "#lib/model/messaging/messages.ts";
 	import { getConversationState } from "../../conversation-state.svelte";
 	import { albumExpiry } from "./album-expiry";
 	import { getMessageContext } from "./context";

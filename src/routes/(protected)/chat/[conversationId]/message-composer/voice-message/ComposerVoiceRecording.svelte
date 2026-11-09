@@ -2,8 +2,8 @@
 	import TrashIcon from "phosphor-svelte/lib/TrashIcon";
 	import { fade } from "svelte/transition";
 
-	import { formatMediaDuration } from "$lib/util/format-time";
-	import ComposerButton from "$lib/components/shared/ComposerButton.svelte";
+	import ComposerButton from "#lib/components/shared/ComposerButton.svelte";
+	import { formatMediaDuration } from "#lib/util/format-time.ts";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
 
 	const { voice } = $derived(getMessageComposerContext()());

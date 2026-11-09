@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from "svelte";
 
-	import { Label } from "$lib/components/ui/label";
-	import { revealFieldUnderKeyboard } from "$lib/util/scroll";
+	import { Label } from "#lib/components/ui/label/index.ts";
+	import { revealFieldUnderKeyboard } from "#lib/util/scroll.ts";
 	import { inlineLabelClass, inlineRowClass } from "./row";
 
 	let {

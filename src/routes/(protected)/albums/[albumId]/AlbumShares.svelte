@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { setAlbumShared } from "$lib/api/messaging/album-shares-state.svelte";
-	import { getAlbumShares, unshareAlbum } from "$lib/api/messaging/albums";
-	import { getProfiles } from "$lib/api/users/profiles";
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import ProfileActionRow from "$lib/components/profile/ProfileActionRow.svelte";
-	import ProfileActionRowSkeleton from "$lib/components/profile/ProfileActionRowSkeleton.svelte";
-	import * as AlertDialog from "$lib/components/ui/alert-dialog";
-	import { Button } from "$lib/components/ui/button";
-	import { observeIntersection } from "$lib/util/observe-intersection";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { setAlbumShared } from "#lib/api/messaging/album-shares-state.svelte.ts";
+	import { getAlbumShares, unshareAlbum } from "#lib/api/messaging/albums.ts";
+	import { getProfiles } from "#lib/api/users/profiles.ts";
+	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
+	import ProfileActionRow from "#lib/components/profile/ProfileActionRow.svelte";
+	import ProfileActionRowSkeleton from "#lib/components/profile/ProfileActionRowSkeleton.svelte";
+	import * as AlertDialog from "#lib/components/ui/alert-dialog/index.ts";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import { observeIntersection } from "#lib/util/observe-intersection.ts";
 
 	let {
 		albumId,

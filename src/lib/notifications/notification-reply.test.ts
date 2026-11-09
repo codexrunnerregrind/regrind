@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { peerIdFromConversation } from "$lib/notifications/notification-reply";
+import { peerIdFromConversation } from "#lib/notifications/notification-reply.ts";
 
 describe("peerIdFromConversation", () => {
 	it("returns the id that is not ours", () => {

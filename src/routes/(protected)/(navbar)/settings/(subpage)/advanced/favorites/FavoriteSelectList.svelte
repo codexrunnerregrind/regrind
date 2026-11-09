@@ -2,11 +2,11 @@
 	import CaretRightIcon from "phosphor-svelte/lib/CaretRightIcon";
 	import type { SvelteSet } from "svelte/reactivity";
 
-	import DisplayName from "$lib/components/profile/DisplayName.svelte";
-	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
-	import SettingsSegmented from "$lib/components/settings/SettingsSegmented.svelte";
-	import { Checkbox } from "$lib/components/ui/checkbox";
-	import type { FavoriteTransferEntry } from "$lib/favorites/transfer";
+	import DisplayName from "#lib/components/profile/DisplayName.svelte";
+	import UserAvatar from "#lib/components/profile/UserAvatar.svelte";
+	import SettingsSegmented from "#lib/components/settings/SettingsSegmented.svelte";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.ts";
+	import type { FavoriteTransferEntry } from "#lib/favorites/transfer.ts";
 
 	let {
 		entries,

@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
-	import ProfileMiniCard from "$lib/components/profile/ProfileMiniCard.svelte";
-	import { recentGridTap } from "$lib/interest/profile-activity.svelte";
-	import { formatTimeAgoShort } from "$lib/util/format-time";
-	import { getNow } from "$lib/util/now";
-	import type { RightNowStatus } from "$lib/model/right-now";
+	import { preferencesSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import ProfileMiniCard from "#lib/components/profile/ProfileMiniCard.svelte";
+	import { recentGridTap } from "#lib/interest/profile-activity.svelte.ts";
+	import { formatTimeAgoShort } from "#lib/util/format-time.ts";
+	import { getNow } from "#lib/util/now.ts";
+	import type { RightNowStatus } from "#lib/model/right-now.ts";
 
 	let {
 		id,

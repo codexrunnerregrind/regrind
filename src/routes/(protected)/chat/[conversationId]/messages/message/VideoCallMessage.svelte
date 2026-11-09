@@ -5,8 +5,8 @@
 	import {
 		videoCallOutcome,
 		videoCallStatusLabel,
-	} from "$lib/model/messaging/video-calls";
-	import type { VideoCallMessage } from "$lib/model/messaging/messages";
+	} from "#lib/model/messaging/video-calls.ts";
+	import type { VideoCallMessage } from "#lib/model/messaging/messages.ts";
 	import { messageRef } from "./context";
 
 	let { message }: { message: VideoCallMessage } = $props();

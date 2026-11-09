@@ -4,26 +4,26 @@ import { cleanup, fireEvent, render } from "@testing-library/svelte";
 import { tick } from "svelte";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 
-vi.mock("$lib/haptics", () => ({
+vi.mock("#lib/haptics.ts", () => ({
 	playHaptic: vi.fn(),
 	hapticImpact: vi.fn(),
 	hapticSelection: vi.fn(),
 }));
 vi.mock("$app/navigation", () => ({ goto: vi.fn() }));
-vi.mock("$lib/api/messaging/messages", () => ({
+vi.mock("#lib/api/messaging/messages.ts", () => ({
 	getConversationMessages: vi.fn(() => Promise.resolve({ messages: [] })),
 }));
 const { getProfileMock } = vi.hoisted(() => ({
 	getProfileMock: vi.fn((): Promise<unknown> => new Promise(() => {})),
 }));
-vi.mock("$lib/api/users/profiles", () => ({
+vi.mock("#lib/api/users/profiles.ts", () => ({
 	getProfile: getProfileMock,
 	mergeProfileEditIntoCaches: vi.fn(),
 }));
 const { sendTapMock } = vi.hoisted(() => ({
 	sendTapMock: vi.fn(() => Promise.resolve({ isMutual: false })),
 }));
-vi.mock("$lib/api/interest/taps", () => ({ sendTap: sendTapMock }));
+vi.mock("#lib/api/interest/taps.ts", () => ({ sendTap: sendTapMock }));
 
 import ProfilePeek from "./ProfilePeek.svelte";
 

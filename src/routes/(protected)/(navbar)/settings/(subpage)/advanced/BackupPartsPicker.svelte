@@ -2,10 +2,10 @@
 	import GearIcon from "phosphor-svelte/lib/GearIcon";
 	import MapPinIcon from "phosphor-svelte/lib/MapPinIcon";
 
-	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
-	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
-	import { Checkbox } from "$lib/components/ui/checkbox";
-	import type { BackupParts } from "$lib/backup/backup";
+	import SettingsGroup from "#lib/components/settings/SettingsGroup.svelte";
+	import SettingsRow from "#lib/components/settings/SettingsRow.svelte";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.ts";
+	import type { BackupParts } from "#lib/backup/backup.ts";
 
 	let {
 		parts = $bindable(),

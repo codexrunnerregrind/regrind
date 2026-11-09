@@ -9,10 +9,10 @@
 	import ListBulletsIcon from "phosphor-svelte/lib/ListBulletsIcon";
 	import TrayArrowDownIcon from "phosphor-svelte/lib/TrayArrowDownIcon";
 
-	import PreferenceSwitchSetting from "$lib/components/settings/PreferenceSwitchSetting.svelte";
-	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
-	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
-	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
+	import PreferenceSwitchSetting from "#lib/components/settings/PreferenceSwitchSetting.svelte";
+	import SectionHeader from "#lib/components/settings/SectionHeader.svelte";
+	import SettingsGroup from "#lib/components/settings/SettingsGroup.svelte";
+	import SettingsRow from "#lib/components/settings/SettingsRow.svelte";
 </script>
 
 <SectionHeader>Backup</SectionHeader>

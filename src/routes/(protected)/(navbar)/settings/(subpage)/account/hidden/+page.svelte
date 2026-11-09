@@ -6,8 +6,8 @@
 	import {
 		getHiddenUserIdsNewestFirst,
 		unhideUser,
-	} from "$lib/api/browse/hides";
-	import ProfileList from "$lib/components/profile-list/ProfileList.svelte";
+	} from "#lib/api/browse/hides.ts";
+	import ProfileList from "#lib/components/profile-list/ProfileList.svelte";
 </script>
 
 <svelte:head>

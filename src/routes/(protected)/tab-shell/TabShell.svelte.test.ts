@@ -40,7 +40,7 @@ vi.mock("$app/state", async () => {
 		},
 	};
 });
-vi.mock("$lib/components/shared/NavBar.svelte", () => ({ default: () => {} }));
+vi.mock("#lib/components/shared/NavBar.svelte", () => ({ default: () => {} }));
 vi.mock("../(navbar)/(root)/BrowseScreen.svelte", () => ({
 	default: () => {},
 }));

@@ -1,23 +1,23 @@
 <script lang="ts">
 	import { toast } from "svelte-sonner";
 
-	import { promptCopyError } from "$lib/api/error-copy";
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { tieredFeature } from "$lib/api/error-urn";
+	import { promptCopyError } from "#lib/api/error-copy.ts";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { tieredFeature } from "#lib/api/error-urn.ts";
 	import {
 		forgetAlbumShared,
 		getAlbumShared,
 		setAlbumShared,
-	} from "$lib/api/messaging/album-shares-state.svelte";
-	import { unshareAlbum } from "$lib/api/messaging/albums";
+	} from "#lib/api/messaging/album-shares-state.svelte.ts";
+	import { unshareAlbum } from "#lib/api/messaging/albums.ts";
 	import {
 		deleteMessageForMe,
 		unsendMessage,
-	} from "$lib/api/messaging/messages";
-	import ReportSheet from "$lib/components/report/ReportSheet.svelte";
-	import { withRegionGrant } from "$lib/entitlements/expiring-media-entitlement";
-	import { openExternalLink } from "$lib/platform/link-opener";
-	import type { ApiResponseMessage } from "$lib/model/messaging/messages";
+	} from "#lib/api/messaging/messages.ts";
+	import ReportSheet from "#lib/components/report/ReportSheet.svelte";
+	import { withRegionGrant } from "#lib/entitlements/expiring-media-entitlement.ts";
+	import { openExternalLink } from "#lib/platform/link-opener.ts";
+	import type { ApiResponseMessage } from "#lib/model/messaging/messages.ts";
 	import {
 		getConversationState,
 		type OptimisticMessage,

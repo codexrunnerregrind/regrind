@@ -3,19 +3,19 @@
 	import FolderOpenIcon from "phosphor-svelte/lib/FolderOpenIcon";
 	import PlusIcon from "phosphor-svelte/lib/PlusIcon";
 
-	import { ApiError } from "$lib/api/api-error";
-	import { showErrorToast } from "$lib/api/error-toast";
+	import { ApiError } from "#lib/api/api-error.ts";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
 		createAlbum,
 		getAlbumsSharedByProfile,
 		getMyAlbums,
-	} from "$lib/api/messaging/albums";
-	import { AlbumOpener } from "$lib/components/albums/album-open.svelte";
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import { Button } from "$lib/components/ui/button";
-	import { Skeleton } from "$lib/components/ui/skeleton";
-	import type { AlbumSharer } from "$lib/chat/album-viewer";
-	import type { MyAlbum, SharedAlbum } from "$lib/model/messaging/albums";
+	} from "#lib/api/messaging/albums.ts";
+	import { AlbumOpener } from "#lib/components/albums/album-open.svelte.ts";
+	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.ts";
+	import type { AlbumSharer } from "#lib/chat/album-viewer.ts";
+	import type { MyAlbum, SharedAlbum } from "#lib/model/messaging/albums.ts";
 
 	let {
 		profileId,

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import ImageIcon from "phosphor-svelte/lib/ImageIcon";
 
-	import LockIcon from "$lib/components/shared/LockIcon.svelte";
-	import { longPressHandlers } from "$lib/util/long-press";
+	import LockIcon from "#lib/components/shared/LockIcon.svelte";
+	import { longPressHandlers } from "#lib/util/long-press.ts";
 	import AlbumContextMenu from "./AlbumContextMenu.svelte";
 
 	let {

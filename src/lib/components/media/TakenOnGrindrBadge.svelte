@@ -2,7 +2,7 @@
 	import SealCheckIcon from "phosphor-svelte/lib/SealCheckIcon";
 	import type { ClassValue } from "svelte/elements";
 
-	import { formatTimeRelativeCustom } from "$lib/util/format-time";
+	import { formatTimeRelativeCustom } from "#lib/util/format-time.ts";
 
 	let {
 		createdAt = null,

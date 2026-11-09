@@ -4,7 +4,7 @@ import {
 } from "@tauri-apps/plugin-notification";
 import z from "zod";
 
-import { isAndroidPlatform } from "$lib/platform/os";
+import { isAndroidPlatform } from "#lib/platform/os.ts";
 
 // Whether the OS itself will let a notification through, as opposed to whether
 // the user asked us for one. The two used to be conflated: the in-app switches

@@ -6,8 +6,8 @@ const mocks = vi.hoisted(() => ({
 	save: vi.fn(),
 	error: vi.fn(),
 }));
-vi.mock("$lib/api/error-toast", () => ({ showErrorToast: mocks.error }));
-vi.mock("$lib/app-data/preferences.svelte", () => ({
+vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast: mocks.error }));
+vi.mock("#lib/app-data/preferences.svelte.ts", () => ({
 	preferencesLoaded: () => true,
 	preferencesSnapshot: () => mocks.preferences,
 	setPreferences: mocks.save,

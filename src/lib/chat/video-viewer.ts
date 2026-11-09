@@ -8,7 +8,7 @@ import {
 	applyPhotoSwipeErrorUi,
 	applyPhotoSwipeVideo,
 	applyPhotoSwipeViewportSync,
-} from "$lib/util/photoswipe";
+} from "#lib/util/photoswipe/index.ts";
 import {
 	downloadMedia,
 	registerLightboxDownloadButton,

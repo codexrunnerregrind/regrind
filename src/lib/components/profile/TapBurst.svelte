@@ -5,8 +5,8 @@
 <script lang="ts">
 	import { Portal } from "bits-ui";
 
-	import TapIcon from "$lib/components/profile/TapIcon.svelte";
-	import type { TapType } from "$lib/model/interest/taps";
+	import TapIcon from "#lib/components/profile/TapIcon.svelte";
+	import type { TapType } from "#lib/model/interest/taps.ts";
 
 	let {
 		tapType,

@@ -10,12 +10,12 @@
 		removeAccount,
 		switchAccount,
 		watchAccounts,
-	} from "$lib/api/accounts.svelte";
-	import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
-	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
-	import { Button } from "$lib/components/ui/button";
-	import * as Drawer from "$lib/components/ui/drawer";
-	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+	} from "#lib/api/accounts.svelte.ts";
+	import { preferencesSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import UserAvatar from "#lib/components/profile/UserAvatar.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import * as Drawer from "#lib/components/ui/drawer/index.ts";
+	import { backGestureEventHandlers } from "#lib/platform/back-gesture-event.svelte.ts";
 	import { accountLogin, accountTitle } from "./labels";
 
 	let { open = $bindable() }: { open: boolean } = $props();

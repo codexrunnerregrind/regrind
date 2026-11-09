@@ -1,12 +1,12 @@
 import {
 	paneFrame,
 	stackMotion,
-} from "$lib/components/navigation/stack/motion";
+} from "#lib/components/navigation/stack/motion.ts";
 import {
 	type PaneSnapshot,
 	snapshotPane,
 	trackScrolled,
-} from "$lib/components/navigation/stack/snapshot";
+} from "#lib/components/navigation/stack/snapshot.ts";
 
 // SvelteKit numbers its history entries under this key (HISTORY_INDEX).
 const HISTORY_INDEX = "sveltekit:history";

@@ -1,8 +1,8 @@
 import { toast } from "svelte-sonner";
 
-import { showErrorToast } from "$lib/api/error-toast";
-import { uploadChatAudio } from "$lib/api/messaging/chat-media";
-import { hapticImpact } from "$lib/platform/haptics";
+import { showErrorToast } from "#lib/api/error-toast.ts";
+import { uploadChatAudio } from "#lib/api/messaging/chat-media.ts";
+import { hapticImpact } from "#lib/platform/haptics.ts";
 import {
 	MicrophoneDeniedError,
 	MIN_DURATION_MS,
@@ -10,8 +10,8 @@ import {
 	TooShortError,
 	type VoiceClip,
 	VoiceRecorder,
-} from "$lib/platform/voice-recorder.svelte";
-import type { MessageDraft } from "$lib/model/messaging/messages";
+} from "#lib/platform/voice-recorder.svelte.ts";
+import type { MessageDraft } from "#lib/model/messaging/messages.ts";
 
 /**
  * Dragged this far towards the bin, releasing cancels rather than sends. A

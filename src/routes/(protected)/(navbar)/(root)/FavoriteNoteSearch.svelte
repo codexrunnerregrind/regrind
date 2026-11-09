@@ -2,10 +2,10 @@
 	import MagnifyingGlassIcon from "phosphor-svelte/lib/MagnifyingGlassIcon";
 	import XIcon from "phosphor-svelte/lib/XIcon";
 
-	import { Button } from "$lib/components/ui/button";
-	import { Input } from "$lib/components/ui/input";
-	import { Spinner } from "$lib/components/ui/spinner";
-	import type { FavoriteSearch } from "$lib/favorites/favorite-search.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import { Input } from "#lib/components/ui/input/index.ts";
+	import { Spinner } from "#lib/components/ui/spinner/index.ts";
+	import type { FavoriteSearch } from "#lib/favorites/favorite-search.svelte.ts";
 
 	let { search }: { search: FavoriteSearch } = $props();
 </script>

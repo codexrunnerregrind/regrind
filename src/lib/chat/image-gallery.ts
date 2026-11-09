@@ -3,7 +3,7 @@
 import "photoswipe/style.css";
 import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
-import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+import { backGestureEventHandlers } from "#lib/platform/back-gesture-event.svelte.ts";
 import {
 	downloadAllMedia,
 	downloadMedia,

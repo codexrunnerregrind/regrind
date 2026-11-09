@@ -41,26 +41,26 @@ const {
 	viewHandlers: [] as ((event: unknown) => void)[],
 }));
 
-vi.mock("$lib/api/error-toast", () => ({ showErrorToast: showErrorToastMock }));
-vi.mock("$lib/api/interest/views", () => ({ getViews: getViewsMock }));
-vi.mock("$lib/api/users/profiles", async (importOriginal) => ({
-	...(await importOriginal<typeof import("$lib/api/users/profiles")>()),
+vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast: showErrorToastMock }));
+vi.mock("#lib/api/interest/views.ts", () => ({ getViews: getViewsMock }));
+vi.mock("#lib/api/users/profiles.ts", async (importOriginal) => ({
+	...(await importOriginal<typeof import("#lib/api/users/profiles.ts")>()),
 	getProfiles: getProfilesMock,
 }));
-vi.mock("$lib/interest/viewer-matches", () => ({
+vi.mock("#lib/interest/viewer-matches.ts", () => ({
 	matchViewers: matchViewersMock,
 	notePhotos: vi.fn(),
 	noteView: vi.fn(),
 }));
-vi.mock("$lib/api/settings/account", () => ({
+vi.mock("#lib/api/settings/account.ts", () => ({
 	getAccountPreferences: getAccountPreferencesMock,
 	setAccountPreferences: setAccountPreferencesMock,
 }));
-vi.mock("$lib/api/browse/blocks", async (importOriginal) => ({
-	...(await importOriginal<typeof import("$lib/api/browse/blocks")>()),
+vi.mock("#lib/api/browse/blocks.ts", async (importOriginal) => ({
+	...(await importOriginal<typeof import("#lib/api/browse/blocks.ts")>()),
 	markBlockedProfilesUnviewable: markBlockedProfilesUnviewableMock,
 }));
-vi.mock("$lib/util/reconcile", () => ({
+vi.mock("#lib/util/reconcile.ts", () => ({
 	reconciler: {
 		subscribe(handler: () => void | Promise<void>) {
 			reconcileHandlers.push(handler);
@@ -68,12 +68,12 @@ vi.mock("$lib/util/reconcile", () => ({
 		},
 	},
 }));
-import { clearAccountCaches } from "$lib/api/account-caches";
-import type { ViewerProfile, ViewPreview } from "$lib/model/interest/views";
+import { clearAccountCaches } from "#lib/api/account-caches.ts";
+import type { ViewerProfile, ViewPreview } from "#lib/model/interest/views.ts";
 import { resetViewsCacheForTesting, ViewsState } from "./views-state.svelte";
 
-vi.mock("$lib/ws.svelte", async (importOriginal) => ({
-	...(await importOriginal<typeof import("$lib/ws.svelte")>()),
+vi.mock("#lib/ws.svelte.ts", async (importOriginal) => ({
+	...(await importOriginal<typeof import("#lib/ws.svelte.ts")>()),
 	ws: {
 		on(
 			eventType: string,

@@ -2,8 +2,8 @@
 	import TrashIcon from "phosphor-svelte/lib/TrashIcon";
 	import type { ComponentProps } from "svelte";
 
-	import ContextMenu from "$lib/components/shared/ContextMenu.svelte";
-	import { Button } from "$lib/components/ui/button";
+	import ContextMenu from "#lib/components/shared/ContextMenu.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
 
 	let {
 		removeLabel,

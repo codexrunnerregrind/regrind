@@ -2,8 +2,8 @@
 	import { untrack } from "svelte";
 	import { SvelteMap } from "svelte/reactivity";
 
-	import { hapticSelection } from "$lib/platform/haptics";
-	import { type PanDirection, panPager } from "$lib/util/pan-pager";
+	import { hapticSelection } from "#lib/platform/haptics.ts";
+	import { type PanDirection, panPager } from "#lib/util/pan-pager.ts";
 	import ProfileBottomNavBar from "./bottom-nav/ProfileBottomNavBar.svelte";
 	import type { ProfileState } from "./profile-state.svelte";
 	import ProfileScreen from "./ProfileScreen.svelte";

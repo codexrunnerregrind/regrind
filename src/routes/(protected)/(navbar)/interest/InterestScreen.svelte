@@ -2,11 +2,11 @@
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 
-	import UnderlineTabs from "$lib/components/shared/UnderlineTabs.svelte";
-	import { getSentTapsState } from "$lib/interest/sent-taps-state.svelte";
-	import { getTapsState } from "$lib/interest/taps-state.svelte";
-	import { getViewActivityState } from "$lib/interest/view-activity.svelte";
-	import { hapticSelection } from "$lib/platform/haptics";
+	import UnderlineTabs from "#lib/components/shared/UnderlineTabs.svelte";
+	import { getSentTapsState } from "#lib/interest/sent-taps-state.svelte.ts";
+	import { getTapsState } from "#lib/interest/taps-state.svelte.ts";
+	import { getViewActivityState } from "#lib/interest/view-activity.svelte.ts";
+	import { hapticSelection } from "#lib/platform/haptics.ts";
 	import {
 		getInterestTab,
 		interestTabIndex,

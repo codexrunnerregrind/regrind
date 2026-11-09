@@ -6,14 +6,14 @@ const { inspectMediaFile, toastError, showErrorToast } = vi.hoisted(() => ({
 	showErrorToast: vi.fn(),
 }));
 
-vi.mock("$lib/platform/media-file", async (importOriginal) => ({
-	...(await importOriginal<typeof import("$lib/platform/media-file")>()),
+vi.mock("#lib/platform/media-file.ts", async (importOriginal) => ({
+	...(await importOriginal<typeof import("#lib/platform/media-file.ts")>()),
 	inspectMediaFile,
 }));
 vi.mock("svelte-sonner", () => ({ toast: { error: toastError } }));
-vi.mock("$lib/api/error-toast", () => ({ showErrorToast }));
+vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast }));
 
-import type { PickedMedia } from "$lib/platform/media-picker";
+import type { PickedMedia } from "#lib/platform/media-picker.ts";
 import { inspectPicks } from "./album-picks";
 
 const clip = {

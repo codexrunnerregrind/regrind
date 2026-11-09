@@ -1,7 +1,7 @@
 import { SvelteMap } from "svelte/reactivity";
 
-import { getAlbumShares } from "$lib/api/messaging/albums";
-import { now } from "$lib/util/clock";
+import { getAlbumShares } from "#lib/api/messaging/albums.ts";
+import { now } from "#lib/util/clock.ts";
 
 /**
  * What we know about whether a given album is shared with a given profile.

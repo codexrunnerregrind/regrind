@@ -6,28 +6,28 @@
 	import StarIcon from "phosphor-svelte/lib/StarIcon";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error-toast";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
 		geoApiSupported,
 		LocationPermissionDeniedError,
 		switchToCurrentLocation,
-	} from "$lib/app-data/location";
+	} from "#lib/app-data/location.ts";
 	import {
 		getCurrentGeohashSnapshot,
 		getGeohashSnapshot,
 		getUsingCurrentLocationSnapshot,
 		setPreferences,
-	} from "$lib/app-data/preferences.svelte";
+	} from "#lib/app-data/preferences.svelte.ts";
 	import {
 		getFavoriteLocations,
 		getRecentLocations,
 		touchSavedLocation,
-	} from "$lib/app-data/saved-locations";
-	import LocationChooser from "$lib/components/location-chooser/LocationChooser.svelte";
-	import { Button } from "$lib/components/ui/button";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-	import { decodeGeohash, encodeGeohash } from "$lib/model/geohash";
-	import type { SavedLocation } from "$lib/model/saved-location";
+	} from "#lib/app-data/saved-locations.ts";
+	import LocationChooser from "#lib/components/location-chooser/LocationChooser.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.ts";
+	import { decodeGeohash, encodeGeohash } from "#lib/model/geohash.ts";
+	import type { SavedLocation } from "#lib/model/saved-location.ts";
 
 	let { class: className }: { class?: import("svelte/elements").ClassValue } =
 		$props();

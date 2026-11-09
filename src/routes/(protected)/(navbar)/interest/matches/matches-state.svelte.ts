@@ -1,9 +1,9 @@
 import { untrack } from "svelte";
 
-import { registerAccountCache } from "$lib/api/account-caches";
-import { showErrorToast } from "$lib/api/error-toast";
-import { getMatchesV1 } from "$lib/api/interest/matches";
-import type { MatchesMatch } from "$lib/model/interest/matches";
+import { registerAccountCache } from "#lib/api/account-caches.ts";
+import { showErrorToast } from "#lib/api/error-toast.ts";
+import { getMatchesV1 } from "#lib/api/interest/matches.ts";
+import type { MatchesMatch } from "#lib/model/interest/matches.ts";
 
 const PAGE_SIZE = 30;
 

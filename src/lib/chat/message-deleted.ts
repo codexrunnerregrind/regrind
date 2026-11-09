@@ -1,4 +1,4 @@
-import type { ChatV1MessageDeletedEventPayload } from "$lib/ws.svelte";
+import type { ChatV1MessageDeletedEventPayload } from "#lib/ws.svelte.ts";
 
 type DeletedPayload = ChatV1MessageDeletedEventPayload["payload"];
 

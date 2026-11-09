@@ -19,7 +19,7 @@
 		bubbleColors,
 		bubbleLabel,
 		surface,
-	} from "$lib/app-data/palette";
+	} from "#lib/app-data/palette.ts";
 	import {
 		getAccentColorSnapshot,
 		getAlbumGridColumnsSnapshot,
@@ -34,13 +34,13 @@
 		preferencesLoaded,
 		setPreferences,
 		type ThemeMode,
-	} from "$lib/app-data/preferences.svelte";
-	import SectionFooter from "$lib/components/settings/SectionFooter.svelte";
-	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
-	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
-	import SettingsSegmented from "$lib/components/settings/SettingsSegmented.svelte";
-	import SettingsSwitchRow from "$lib/components/settings/SettingsSwitchRow.svelte";
-	import { hapticSelection } from "$lib/platform/haptics";
+	} from "#lib/app-data/preferences.svelte.ts";
+	import SectionFooter from "#lib/components/settings/SectionFooter.svelte";
+	import SectionHeader from "#lib/components/settings/SectionHeader.svelte";
+	import SettingsGroup from "#lib/components/settings/SettingsGroup.svelte";
+	import SettingsSegmented from "#lib/components/settings/SettingsSegmented.svelte";
+	import SettingsSwitchRow from "#lib/components/settings/SettingsSwitchRow.svelte";
+	import { hapticSelection } from "#lib/platform/haptics.ts";
 	import BackdropBlurSetting from "./BackdropBlurSetting.svelte";
 	import GridColumnsSetting from "./GridColumnsSetting.svelte";
 	import TextSizeSetting from "./TextSizeSetting.svelte";

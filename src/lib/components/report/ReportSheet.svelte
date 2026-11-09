@@ -5,25 +5,25 @@
 	import XIcon from "phosphor-svelte/lib/XIcon";
 	import { untrack } from "svelte";
 
-	import { blockUser } from "$lib/api/browse/blocks";
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { reportProfile } from "$lib/api/safety/reports";
-	import { Button, buttonVariants } from "$lib/components/ui/button";
-	import Link from "$lib/components/ui/link/Link.svelte";
-	import RadioGroup from "$lib/components/ui/radio/RadioGroup.svelte";
-	import RadioItem from "$lib/components/ui/radio/RadioItem.svelte";
-	import * as ResponsiveDialog from "$lib/components/ui/responsive-dialog";
-	import { Spinner } from "$lib/components/ui/spinner";
-	import { Textarea } from "$lib/components/ui/textarea";
-	import * as ToggleGroup from "$lib/components/ui/toggle-group";
+	import { blockUser } from "#lib/api/browse/blocks.ts";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { reportProfile } from "#lib/api/safety/reports.ts";
+	import { Button, buttonVariants } from "#lib/components/ui/button/index.ts";
+	import Link from "#lib/components/ui/link/Link.svelte";
+	import RadioGroup from "#lib/components/ui/radio/RadioGroup.svelte";
+	import RadioItem from "#lib/components/ui/radio/RadioItem.svelte";
+	import * as ResponsiveDialog from "#lib/components/ui/responsive-dialog/index.ts";
+	import { Spinner } from "#lib/components/ui/spinner/index.ts";
+	import { Textarea } from "#lib/components/ui/textarea/index.ts";
+	import * as ToggleGroup from "#lib/components/ui/toggle-group/index.ts";
 	import {
 		type ReportLocation,
 		reportLocationSchema,
 		type ReportReason,
 		reportReasonSchema,
-	} from "$lib/model/safety/reports";
-	import { grindrHelpUrl } from "$lib/util/grindr-help";
-	import type { Profile } from "$lib/model/users/profiles";
+	} from "#lib/model/safety/reports.ts";
+	import { grindrHelpUrl } from "#lib/util/grindr-help.ts";
+	import type { Profile } from "#lib/model/users/profiles.ts";
 	import { showBlockFailure } from "./block-failure";
 	import { buildProfileReport } from "./report-request";
 

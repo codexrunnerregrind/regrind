@@ -4,13 +4,13 @@ import { encode } from "@msgpack/msgpack";
 import { cleanup, render, screen } from "@testing-library/svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("$lib/app-data", () => ({
+vi.mock("#lib/app-data/index.ts", () => ({
 	existsAppDataFile: () => Promise.resolve(false),
 	readAppDataFile: () => Promise.resolve(encode({})),
 	removeAppDataFile: () => Promise.resolve(),
 	writeAppDataFileAtomic: () => Promise.resolve(),
 }));
-vi.mock("$lib/api/error-toast", () => ({ showErrorToast: vi.fn() }));
+vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast: vi.fn() }));
 
 import AdvancedPage from "./+page.svelte";
 

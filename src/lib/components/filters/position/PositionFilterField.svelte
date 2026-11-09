@@ -1,11 +1,11 @@
 <script lang="ts">
 	import type z from "zod";
 
-	import PositionFilterToggle from "$lib/components/filters/position/PositionFilterToggle.svelte";
+	import PositionFilterToggle from "#lib/components/filters/position/PositionFilterToggle.svelte";
 	import {
 		FilterPosition,
 		type filterPositionSchema,
-	} from "$lib/model/browse/grid/filters";
+	} from "#lib/model/browse/grid/filters.ts";
 	import FilterDropdown from "../FilterDropdown.svelte";
 	import { selectionSummary } from "../summary";
 

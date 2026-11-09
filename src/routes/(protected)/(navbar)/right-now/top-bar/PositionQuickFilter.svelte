@@ -1,14 +1,14 @@
 <script lang="ts">
 	import type z from "zod";
 
-	import PositionFilterToggle from "$lib/components/filters/position/PositionFilterToggle.svelte";
-	import { Button, buttonVariants } from "$lib/components/ui/button";
-	import * as Drawer from "$lib/components/ui/drawer";
-	import { Switch } from "$lib/components/ui/switch";
-	import { defaultRightNowFilters } from "$lib/model/browse/grid/filters";
-	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
-	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
-	import type { filterPositionSchema } from "$lib/model/browse/grid/filters";
+	import PositionFilterToggle from "#lib/components/filters/position/PositionFilterToggle.svelte";
+	import { Button, buttonVariants } from "#lib/components/ui/button/index.ts";
+	import * as Drawer from "#lib/components/ui/drawer/index.ts";
+	import { Switch } from "#lib/components/ui/switch/index.ts";
+	import { defaultRightNowFilters } from "#lib/model/browse/grid/filters.ts";
+	import { backGestureEventHandlers } from "#lib/platform/back-gesture-event.svelte.ts";
+	import { rightNowState } from "#lib/right-now/right-now-state.svelte.ts";
+	import type { filterPositionSchema } from "#lib/model/browse/grid/filters.ts";
 
 	let { open = $bindable() }: { open: boolean } = $props();
 

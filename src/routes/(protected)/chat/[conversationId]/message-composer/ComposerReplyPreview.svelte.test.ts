@@ -3,8 +3,8 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { Drafts } from "$lib/chat/drafts.svelte";
-import type { ApiResponseMessage } from "$lib/model/messaging/messages";
+import { Drafts } from "#lib/chat/drafts.svelte.ts";
+import type { ApiResponseMessage } from "#lib/model/messaging/messages.ts";
 import ComposerReplyPreview from "./ComposerReplyPreview.svelte";
 
 const { conversations } = vi.hoisted(() => ({
@@ -12,7 +12,7 @@ const { conversations } = vi.hoisted(() => ({
 }));
 
 vi.mock("$app/navigation", () => ({ onNavigate: vi.fn() }));
-vi.mock("$lib/chat/conversations-context.svelte", () => ({
+vi.mock("#lib/chat/conversations-context.svelte.ts", () => ({
 	getConversations: () => conversations,
 }));
 vi.mock("./send-media/send-media-offer.svelte", () => ({
@@ -39,7 +39,7 @@ vi.mock("../conversation-state.svelte", () => ({
 
 // the module builds a WsState on import, which reaches for a Tauri host that a
 // jsdom run has no business providing
-vi.mock("$lib/ws.svelte", () => ({
+vi.mock("#lib/ws.svelte.ts", () => ({
 	ws: {
 		status: "connected",
 		connect: () => {},

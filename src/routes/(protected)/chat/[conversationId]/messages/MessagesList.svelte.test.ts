@@ -39,13 +39,13 @@ vi.mock("./message/Message.svelte", () => ({
 vi.mock("./message/media-renewal", () => ({
 	setMediaRenewal: setMediaRenewalMock,
 }));
-vi.mock("$lib/api/messaging/messages", () => ({
+vi.mock("#lib/api/messaging/messages.ts", () => ({
 	deleteMessageForMe: deleteMessageForMeMock,
 	unsendMessage: unsendMessageMock,
 }));
-vi.mock("$lib/api/error-toast", () => ({ showErrorToast: showErrorToastMock }));
-vi.mock("$lib/api/error-copy", () => ({ promptCopyError: vi.fn() }));
-vi.mock("$lib/entitlements/expiring-media-entitlement", () => ({
+vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast: showErrorToastMock }));
+vi.mock("#lib/api/error-copy.ts", () => ({ promptCopyError: vi.fn() }));
+vi.mock("#lib/entitlements/expiring-media-entitlement.ts", () => ({
 	withRegionGrant: <T>(run: () => Promise<T>) => run(),
 }));
 

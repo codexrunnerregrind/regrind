@@ -7,17 +7,17 @@
 	import {
 		type AlbumContentResponse,
 		getAlbumMediaPoster,
-	} from "$lib/api/messaging/albums";
+	} from "#lib/api/messaging/albums.ts";
 	import {
 		deleteDrawerMedia,
 		type DrawerMedia,
 		getAllDrawerMedia,
-	} from "$lib/api/messaging/drawer";
-	import { getAlbumGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
-	import { isVideoContent } from "$lib/components/album/album";
-	import PreviousUploadsSheet from "$lib/components/media-sheet/PreviousUploadsSheet.svelte";
-	import { dragReorder } from "$lib/util/drag-reorder";
-	import { proxyMediaUrl } from "$lib/util/media";
+	} from "#lib/api/messaging/drawer.ts";
+	import { getAlbumGridColumnsSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import { isVideoContent } from "#lib/components/album/album.ts";
+	import PreviousUploadsSheet from "#lib/components/media-sheet/PreviousUploadsSheet.svelte";
+	import { dragReorder } from "#lib/util/drag-reorder.ts";
+	import { proxyMediaUrl } from "#lib/util/media.ts";
 
 	let {
 		albumId,

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import DisplayName from "$lib/components/profile/DisplayName.svelte";
-	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
+	import DisplayName from "#lib/components/profile/DisplayName.svelte";
+	import UserAvatar from "#lib/components/profile/UserAvatar.svelte";
 
 	let {
 		profileId,

@@ -1,7 +1,7 @@
-import { accountScoped } from "$lib/api/account-caches";
-import { showProfileViewToast } from "$lib/components/profile-view-toast/profile-view-toast-manager";
-import { notePhotos, noteView } from "$lib/interest/viewer-matches";
-import { viewedMeV1NewViewReceivedEventSchema, ws } from "$lib/ws.svelte";
+import { accountScoped } from "#lib/api/account-caches.ts";
+import { showProfileViewToast } from "#lib/components/profile-view-toast/profile-view-toast-manager.ts";
+import { notePhotos, noteView } from "#lib/interest/viewer-matches.ts";
+import { viewedMeV1NewViewReceivedEventSchema, ws } from "#lib/ws.svelte.ts";
 
 export type NewProfileView = {
 	profileId: number;

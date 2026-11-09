@@ -1,8 +1,8 @@
-import { appLifecycle } from "$lib/api/app-lifecycle.svelte";
-import { signedInProfileId } from "$lib/api/current-session";
-import { awaitEntitlementGrant } from "$lib/entitlements/expiring-media-entitlement";
-import { isMobilePlatform } from "$lib/platform/os";
-import { notificationUndeliveredEventSchema, ws } from "$lib/ws.svelte";
+import { appLifecycle } from "#lib/api/app-lifecycle.svelte.ts";
+import { signedInProfileId } from "#lib/api/current-session.ts";
+import { awaitEntitlementGrant } from "#lib/entitlements/expiring-media-entitlement.ts";
+import { isMobilePlatform } from "#lib/platform/os.ts";
+import { notificationUndeliveredEventSchema, ws } from "#lib/ws.svelte.ts";
 
 const THROTTLE_MS = 2000;
 const DESKTOP_LONG_ABSENCE_MS = 5 * 60 * 1000;

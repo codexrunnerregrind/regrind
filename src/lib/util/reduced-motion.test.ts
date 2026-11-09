@@ -15,7 +15,7 @@ const reducedMotion = vi.hoisted(() => ({ current: false }));
 const setting = vi.hoisted(() => ({ reduceMotion: false }));
 
 vi.mock("svelte/motion", () => ({ prefersReducedMotion: reducedMotion }));
-vi.mock("$lib/app-data/preferences.svelte", () => ({
+vi.mock("#lib/app-data/preferences.svelte.ts", () => ({
 	getReduceMotionSnapshot: () => setting.reduceMotion,
 }));
 

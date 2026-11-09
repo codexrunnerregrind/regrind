@@ -4,14 +4,14 @@
 	import { onMount } from "svelte";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { getAlbumGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import * as AlertDialog from "$lib/components/ui/alert-dialog";
-	import * as Empty from "$lib/components/ui/empty";
-	import { Skeleton } from "$lib/components/ui/skeleton";
-	import { observeIntersection } from "$lib/util/observe-intersection";
-	import type { PressieSharedAlbum } from "$lib/model/messaging/albums";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { getAlbumGridColumnsSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
+	import * as AlertDialog from "#lib/components/ui/alert-dialog/index.ts";
+	import * as Empty from "#lib/components/ui/empty/index.ts";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.ts";
+	import { observeIntersection } from "#lib/util/observe-intersection.ts";
+	import type { PressieSharedAlbum } from "#lib/model/messaging/albums.ts";
 	import { AlbumOpener } from "./album-open.svelte";
 	import AlbumTile from "./AlbumTile.svelte";
 	import { sharedAlbums } from "./shared-albums-state.svelte";

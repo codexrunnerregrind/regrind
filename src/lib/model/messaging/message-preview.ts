@@ -1,8 +1,8 @@
-import { videoCallStatusLabel } from "$lib/model/messaging/video-calls";
+import { videoCallStatusLabel } from "#lib/model/messaging/video-calls.ts";
 import type {
 	ApiResponseMessage,
 	QuotedMessage,
-} from "$lib/model/messaging/messages";
+} from "#lib/model/messaging/messages.ts";
 
 // The three shapes a chat video arrives in. They differ only in how long the
 // media stays viewable, so everything downstream treats them alike.

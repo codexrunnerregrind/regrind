@@ -16,24 +16,24 @@ const { saveTextFileMock, createBackupMock, toastMock } = vi.hoisted(() => ({
 	},
 }));
 
-vi.mock("$lib/app-data", () => ({
+vi.mock("#lib/app-data/index.ts", () => ({
 	existsAppDataFile: () => Promise.resolve(false),
 	readAppDataFile: () => Promise.resolve(encode({})),
 	removeAppDataFile: () => Promise.resolve(),
 	writeAppDataFileAtomic: () => Promise.resolve(),
 }));
-vi.mock("$lib/api/error-toast", () => ({ showErrorToast: vi.fn() }));
+vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast: vi.fn() }));
 vi.mock("svelte-sonner", () => ({ toast: toastMock }));
-vi.mock("$lib/platform/data-file", () => ({
+vi.mock("#lib/platform/data-file.ts", () => ({
 	saveTextFile: saveTextFileMock,
 	pickTextFile: vi.fn(),
 }));
-vi.mock("$lib/backup/backup", async (importOriginal) => ({
-	...(await importOriginal<typeof import("$lib/backup/backup")>()),
+vi.mock("#lib/backup/backup.ts", async (importOriginal) => ({
+	...(await importOriginal<typeof import("#lib/backup/backup.ts")>()),
 	createBackup: createBackupMock,
 }));
 
-import { setPreferences } from "$lib/app-data/preferences.svelte";
+import { setPreferences } from "#lib/app-data/preferences.svelte.ts";
 import BackupPage from "./+page.svelte";
 
 describe("Create backup page", () => {

@@ -2,13 +2,13 @@
 	import PlusIcon from "phosphor-svelte/lib/PlusIcon";
 	import XIcon from "phosphor-svelte/lib/XIcon";
 
-	import { savedPhrases } from "$lib/chat/saved-phrases.svelte";
-	import { Button } from "$lib/components/ui/button";
-	import * as Dialog from "$lib/components/ui/dialog";
-	import { Input } from "$lib/components/ui/input";
-	import { SAVED_PHRASE_MAX_LENGTH } from "$lib/model/messaging/phrases";
-	import { hapticImpact } from "$lib/platform/haptics";
-	import { longPressHandlers } from "$lib/util/long-press";
+	import { savedPhrases } from "#lib/chat/saved-phrases.svelte.ts";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import * as Dialog from "#lib/components/ui/dialog/index.ts";
+	import { Input } from "#lib/components/ui/input/index.ts";
+	import { SAVED_PHRASE_MAX_LENGTH } from "#lib/model/messaging/phrases.ts";
+	import { hapticImpact } from "#lib/platform/haptics.ts";
+	import { longPressHandlers } from "#lib/util/long-press.ts";
 	import { keepKeyboard } from "./keep-keyboard";
 	import { getMessageComposerContext } from "./message-composer-context.svelte";
 

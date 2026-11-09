@@ -10,12 +10,12 @@ vi.mock("@tauri-apps/api/core", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@tauri-apps/api/core")>()),
 	invoke: invokeMock,
 }));
-vi.mock("$lib/api/transport", async (importOriginal) => ({
-	...(await importOriginal<typeof import("$lib/api/transport")>()),
+vi.mock("#lib/api/transport.ts", async (importOriginal) => ({
+	...(await importOriginal<typeof import("#lib/api/transport.ts")>()),
 	fetchRest: fetchRestMock,
 }));
 
-import { ApiError } from "$lib/api/api-error";
+import { ApiError } from "#lib/api/api-error.ts";
 import {
 	addDrawerMediaToAlbum,
 	createAlbum,
@@ -34,9 +34,9 @@ import {
 	unshareAlbum,
 	uploadAlbumContent,
 	uploadAlbumPhotoBytes,
-} from "$lib/api/messaging/albums";
-import { toBase64 } from "$lib/util/base64";
-import type { PickedMedia } from "$lib/platform/media-picker";
+} from "#lib/api/messaging/albums.ts";
+import { toBase64 } from "#lib/util/base64.ts";
+import type { PickedMedia } from "#lib/platform/media-picker.ts";
 
 function albumContent(contentId = 1) {
 	return {

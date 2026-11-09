@@ -4,15 +4,15 @@
 	import TrashIcon from "phosphor-svelte/lib/TrashIcon";
 	import { fade } from "svelte/transition";
 
-	import { measurePeaks } from "$lib/chat/audio-peaks";
+	import { measurePeaks } from "#lib/chat/audio-peaks.ts";
 	import {
 		formatSpeed,
 		nextSpeed,
 		type PlaybackSpeed,
-	} from "$lib/chat/audio-speed";
-	import AudioWaveform from "$lib/components/audio/AudioWaveform.svelte";
-	import { formatMediaDuration } from "$lib/util/format-time";
-	import ComposerButton from "$lib/components/shared/ComposerButton.svelte";
+	} from "#lib/chat/audio-speed.ts";
+	import AudioWaveform from "#lib/components/audio/AudioWaveform.svelte";
+	import ComposerButton from "#lib/components/shared/ComposerButton.svelte";
+	import { formatMediaDuration } from "#lib/util/format-time.ts";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
 
 	const { voice } = $derived(getMessageComposerContext()());

@@ -1,6 +1,6 @@
 import z from "zod";
 
-import type { VideoCallMessage } from "$lib/model/messaging/messages";
+import type { VideoCallMessage } from "#lib/model/messaging/messages.ts";
 
 /**
  * Why a call is not starting. Both `POST /v1/video-call` and the

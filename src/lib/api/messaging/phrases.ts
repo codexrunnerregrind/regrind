@@ -1,11 +1,11 @@
 import z from "zod";
 
-import { fetchRest } from "$lib/api/transport";
+import { fetchRest } from "#lib/api/transport.ts";
 import {
 	type SavedPhrase,
 	savedPhraseSchema,
 	savedPhrasesResponseSchema,
-} from "$lib/model/messaging/phrases";
+} from "#lib/model/messaging/phrases.ts";
 
 export async function getSavedPhrases(): Promise<SavedPhrase[]> {
 	const { phrases } = await fetchRest("/v1/chat/phrases").then((res) =>

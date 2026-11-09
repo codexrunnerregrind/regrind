@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { Component } from "svelte";
 
-	import { Input } from "$lib/components/ui/input";
+	import { Input } from "#lib/components/ui/input/index.ts";
 	import InlineField from "./InlineField.svelte";
 	import { bareInputClass } from "./row";
 

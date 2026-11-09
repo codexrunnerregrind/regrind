@@ -1,8 +1,8 @@
 <script lang="ts">
 	import MicrophoneIcon from "phosphor-svelte/lib/MicrophoneIcon";
 
+	import PrimaryComposerButton from "#lib/components/shared/PrimaryComposerButton.svelte";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
-	import PrimaryComposerButton from "$lib/components/shared/PrimaryComposerButton.svelte";
 
 	const { disabled, voice } = $derived(getMessageComposerContext()());
 

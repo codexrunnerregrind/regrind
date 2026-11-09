@@ -7,7 +7,7 @@
 		hivStatusLabels,
 		type Profile,
 		vaccines as vaccineLabels,
-	} from "$lib/model/users/profiles";
+	} from "#lib/model/users/profiles.ts";
 	import HivStatusIcon from "./fields/HivStatusIcon.svelte";
 	import LastTested from "./fields/LastTested.svelte";
 	import LookupField from "./fields/LookupField.svelte";

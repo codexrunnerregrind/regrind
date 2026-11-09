@@ -2,9 +2,9 @@ import {
 	ensureFavoriteNotes,
 	favoriteNote,
 	favoriteNotes,
-} from "$lib/api/users/favorite-notes-state.svelte";
-import { getProfiles } from "$lib/api/users/profiles";
-import type { RightNowStatus } from "$lib/model/right-now";
+} from "#lib/api/users/favorite-notes-state.svelte.ts";
+import { getProfiles } from "#lib/api/users/profiles.ts";
+import type { RightNowStatus } from "#lib/model/right-now.ts";
 
 /**
  * Whether a favorite matches what was typed. Notes are the point of the search

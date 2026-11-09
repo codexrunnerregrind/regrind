@@ -19,7 +19,7 @@ vi.mock("$app/state", async () => {
 	const { SvelteURL } = await import("svelte/reactivity");
 	return { page: { url: new SvelteURL("https://app.test/") } };
 });
-vi.mock("$lib/platform/haptics", () => ({ hapticSelection: vi.fn() }));
+vi.mock("#lib/platform/haptics.ts", () => ({ hapticSelection: vi.fn() }));
 vi.mock("./views/ViewsGrid.svelte", () => ({ default: () => {} }));
 vi.mock("./taps/TapsReceivedList.svelte", () => ({ default: () => {} }));
 vi.mock("./matches/MatchesGrid.svelte", () => ({ default: () => {} }));

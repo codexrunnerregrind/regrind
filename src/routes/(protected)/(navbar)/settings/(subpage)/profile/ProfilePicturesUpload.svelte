@@ -3,29 +3,29 @@
 	import SpinnerGapIcon from "phosphor-svelte/lib/SpinnerGapIcon";
 	import { toast } from "svelte-sonner";
 
-	import { httpStatusOf } from "$lib/api/api-error";
-	import { showErrorToast } from "$lib/api/error-toast";
+	import { httpStatusOf } from "#lib/api/api-error.ts";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
 		deleteProfilePhotos,
 		getProfileUploadedPhotos,
 		uploadProfilePhoto,
-	} from "$lib/api/users/profiles";
-	import PreviousUploadsSheet from "$lib/components/media-sheet/PreviousUploadsSheet.svelte";
-	import { PhotoEditQueue } from "$lib/components/media/photo-edit-queue.svelte";
-	import PhotoEditorDrawer from "$lib/components/media/PhotoEditorDrawer.svelte";
-	import { demoEnabled } from "$lib/demo";
-	import { PROFILE_PHOTO_AWAITING_REVIEW } from "$lib/model/users/profiles";
-	import { discardStagedMedia } from "$lib/platform/media-file";
+	} from "#lib/api/users/profiles.ts";
+	import PreviousUploadsSheet from "#lib/components/media-sheet/PreviousUploadsSheet.svelte";
+	import { PhotoEditQueue } from "#lib/components/media/photo-edit-queue.svelte.ts";
+	import PhotoEditorDrawer from "#lib/components/media/PhotoEditorDrawer.svelte";
+	import { demoEnabled } from "#lib/demo/index.ts";
+	import { PROFILE_PHOTO_AWAITING_REVIEW } from "#lib/model/users/profiles.ts";
+	import { discardStagedMedia } from "#lib/platform/media-file.ts";
 	import {
 		receiveMedia,
 		screenMedia,
-	} from "$lib/platform/media-intake.svelte";
+	} from "#lib/platform/media-intake.svelte.ts";
 	import {
 		type PickedMedia,
 		pickMultipleMedia,
-	} from "$lib/platform/media-picker";
-	import { dragReorder } from "$lib/util/drag-reorder";
-	import { profileMediaUrl } from "$lib/util/media";
+	} from "#lib/platform/media-picker.ts";
+	import { dragReorder } from "#lib/util/drag-reorder.ts";
+	import { profileMediaUrl } from "#lib/util/media.ts";
 	import { maxProfilePhotos as MAX_PHOTOS } from "./options";
 	import ProfilePictureSlot from "./ProfilePictureSlot.svelte";
 

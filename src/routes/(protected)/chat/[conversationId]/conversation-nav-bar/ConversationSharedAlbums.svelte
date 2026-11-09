@@ -2,17 +2,17 @@
 	import ImagesIcon from "phosphor-svelte/lib/ImagesIcon";
 	import LockKeyIcon from "phosphor-svelte/lib/LockKeyIcon";
 
-	import { getSharedAlbumsFeed } from "$lib/api/messaging/albums";
-	import { getAlbumGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
-	import { AlbumOpener } from "$lib/components/albums/album-open.svelte";
-	import AlbumTile from "$lib/components/albums/AlbumTile.svelte";
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import * as Empty from "$lib/components/ui/empty";
-	import * as Sheet from "$lib/components/ui/sheet";
-	import { Skeleton } from "$lib/components/ui/skeleton";
-	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
-	import { hapticSelection } from "$lib/platform/haptics";
-	import type { PressieSharedAlbum } from "$lib/model/messaging/albums";
+	import { getSharedAlbumsFeed } from "#lib/api/messaging/albums.ts";
+	import { getAlbumGridColumnsSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import { AlbumOpener } from "#lib/components/albums/album-open.svelte.ts";
+	import AlbumTile from "#lib/components/albums/AlbumTile.svelte";
+	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
+	import * as Empty from "#lib/components/ui/empty/index.ts";
+	import * as Sheet from "#lib/components/ui/sheet/index.ts";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.ts";
+	import { backGestureEventHandlers } from "#lib/platform/back-gesture-event.svelte.ts";
+	import { hapticSelection } from "#lib/platform/haptics.ts";
+	import type { PressieSharedAlbum } from "#lib/model/messaging/albums.ts";
 
 	let { profileId, name }: { profileId: number; name?: string | null } =
 		$props();

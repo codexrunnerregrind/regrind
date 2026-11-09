@@ -2,14 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { fetchRestMock } = vi.hoisted(() => ({ fetchRestMock: vi.fn() }));
 
-vi.mock("$lib/api/transport", () => ({ fetchRest: fetchRestMock }));
-vi.mock("$lib/platform/os", () => ({ isAndroidPlatform: () => true }));
+vi.mock("#lib/api/transport.ts", () => ({ fetchRest: fetchRestMock }));
+vi.mock("#lib/platform/os.ts", () => ({ isAndroidPlatform: () => true }));
 vi.mock("$app/navigation", () => ({ goto: vi.fn() }));
-vi.mock("$lib/app-data/preferences.svelte", () => ({
+vi.mock("#lib/app-data/preferences.svelte.ts", () => ({
 	preferencesSnapshot: () => ({ notifyMessages: true, notifyTaps: true }),
 }));
 
-import { push } from "$lib/notifications/push.svelte";
+import { push } from "#lib/notifications/push.svelte.ts";
 
 const TOKEN = "instance-id:APA91bExample";
 const DAY_MS = 24 * 60 * 60 * 1000;

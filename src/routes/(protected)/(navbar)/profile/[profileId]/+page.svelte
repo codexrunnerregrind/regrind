@@ -7,7 +7,7 @@
 		armProfileDeck,
 		claimProfileDeck,
 		type ProfileDeck,
-	} from "$lib/profile/profile-deck";
+	} from "#lib/profile/profile-deck.ts";
 	import ProfilePager from "./ProfilePager.svelte";
 
 	let { data }: import("./$types").PageProps = $props();

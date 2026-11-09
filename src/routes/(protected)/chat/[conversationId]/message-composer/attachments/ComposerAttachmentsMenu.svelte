@@ -6,13 +6,13 @@
 	import NavigationArrowIcon from "phosphor-svelte/lib/NavigationArrowIcon";
 	import TimerIcon from "phosphor-svelte/lib/TimerIcon";
 
-	import { Badge } from "$lib/components/ui/badge";
-	import { Button } from "$lib/components/ui/button";
-	import * as Drawer from "$lib/components/ui/drawer";
-	import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
-	import * as Tabs from "$lib/components/ui/tabs";
-	import { Toggle } from "$lib/components/ui/toggle";
-	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
+	import { Badge } from "#lib/components/ui/badge/index.ts";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import * as Drawer from "#lib/components/ui/drawer/index.ts";
+	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.ts";
+	import * as Tabs from "#lib/components/ui/tabs/index.ts";
+	import { Toggle } from "#lib/components/ui/toggle/index.ts";
+	import { dismissOnBackGesture } from "#lib/platform/back-gesture-event.svelte.ts";
 	import ComposerAlbumsTab from "./ComposerAlbumsTab.svelte";
 	import ComposerLocationTab from "./ComposerLocationTab.svelte";
 	import ComposerMediaSort from "./ComposerMediaSort.svelte";

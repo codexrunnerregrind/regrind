@@ -7,7 +7,7 @@ import {
 	existsAppDataFile,
 	readAppDataFile,
 	writeAppDataFileAtomic,
-} from "$lib/app-data";
+} from "#lib/app-data/index.ts";
 import {
 	clearAccountPreferences,
 	preferencesSnapshot,

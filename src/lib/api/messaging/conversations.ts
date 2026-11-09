@@ -1,11 +1,11 @@
 import z from "zod";
 
-import { fetchRest } from "$lib/api/transport";
-import { notePhotos } from "$lib/interest/viewer-matches";
+import { fetchRest } from "#lib/api/transport.ts";
+import { notePhotos } from "#lib/interest/viewer-matches.ts";
 import {
 	type Conversation,
 	conversationEntriesSchema,
-} from "$lib/model/messaging/conversations";
+} from "#lib/model/messaging/conversations.ts";
 
 const conversationsSchema = z.object({
 	entries: conversationEntriesSchema,

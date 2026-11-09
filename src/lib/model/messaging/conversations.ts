@@ -1,15 +1,15 @@
 import z from "zod";
 
-import { mediaHashPublicSchema } from "$lib/model/media";
-import { rightNowStatusSchema } from "$lib/model/right-now";
+import { mediaHashPublicSchema } from "#lib/model/media.ts";
+import { rightNowStatusSchema } from "#lib/model/right-now.ts";
 import {
 	arrayOfKnownVariants,
 	knownValueOr,
 	knownValueOrNull,
 	serverDefault,
-} from "$lib/model/tolerance";
-import { unixTimestampMsSchema, unmodeledSchema } from "$lib/model/types";
-import { sexualPositionSchema } from "$lib/model/users/profiles";
+} from "#lib/model/tolerance.ts";
+import { unixTimestampMsSchema, unmodeledSchema } from "#lib/model/types.ts";
+import { sexualPositionSchema } from "#lib/model/users/profiles.ts";
 
 // Everything the server sends for a conversation whether or not the account can
 // act on it — enough to draw a row, and nothing that acting on one would need.

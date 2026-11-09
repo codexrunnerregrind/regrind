@@ -1,10 +1,10 @@
-import { fetchRest } from "$lib/api/transport";
+import { fetchRest } from "#lib/api/transport.ts";
 import {
 	type FavoriteNoteContent,
 	favoriteNoteContentSchema,
 	favoriteNotesResponseSchema,
-} from "$lib/model/users/favorites";
-import type { Profile } from "$lib/model/users/profiles";
+} from "#lib/model/users/favorites.ts";
+import type { Profile } from "#lib/model/users/profiles.ts";
 
 // Lists every favorited profile (online or offline, regardless of location),
 // each with the note attached to it. Only the target profile id comes back, so

@@ -1,11 +1,11 @@
 import { SvelteSet } from "svelte/reactivity";
 
-import { showErrorToast } from "$lib/api/error-toast";
+import { showErrorToast } from "#lib/api/error-toast.ts";
 import {
 	preferencesLoaded,
 	preferencesSnapshot,
 	setPreferences,
-} from "$lib/app-data/preferences.svelte";
+} from "#lib/app-data/preferences.svelte.ts";
 
 // A failed disk write must never uncover media that was just hidden.
 export const imagePrivacy = $state<{ override: true | null; pending: boolean }>(

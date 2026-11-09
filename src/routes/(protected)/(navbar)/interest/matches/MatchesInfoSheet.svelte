@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Button } from "$lib/components/ui/button";
-	import * as Drawer from "$lib/components/ui/drawer";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import * as Drawer from "#lib/components/ui/drawer/index.ts";
 	import MatchReasonIcon from "./MatchReasonIcon.svelte";
 
 	let { open = $bindable(false) }: { open?: boolean } = $props();

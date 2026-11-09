@@ -2,28 +2,28 @@
 
 import { page } from "$app/state";
 
-import { showErrorToast } from "$lib/api/error-toast";
+import { showErrorToast } from "#lib/api/error-toast.ts";
 import {
 	deleteConversationForMe,
 	getConversations,
 	setConversationMuted,
 	setConversationPinned,
-} from "$lib/api/messaging/conversations";
-import { onProfileEdit } from "$lib/api/users/profiles";
-import { ConversationReadRequests } from "$lib/chat/conversation-read-requests";
-import { InboxViewedMarker } from "$lib/chat/inbox-last-viewed.svelte";
-import { onInboxResync } from "$lib/chat/inbox-resync";
+} from "#lib/api/messaging/conversations.ts";
+import { onProfileEdit } from "#lib/api/users/profiles.ts";
+import { ConversationReadRequests } from "#lib/chat/conversation-read-requests.ts";
+import { InboxViewedMarker } from "#lib/chat/inbox-last-viewed.svelte.ts";
+import { onInboxResync } from "#lib/chat/inbox-resync.ts";
 import {
 	type ConversationFlagField,
 	mergeConversation,
-} from "$lib/chat/merge-conversation";
-import { applyOptimisticBatch } from "$lib/chat/optimistic-batch";
-import { previewFromMessage } from "$lib/model/messaging/message-preview";
-import { below } from "$lib/util/breakpoints.svelte";
-import { reconciler } from "$lib/util/reconcile";
-import { SentinelPaging } from "$lib/util/sentinel-paging.svelte";
-import type { Conversation } from "$lib/model/messaging/conversations";
-import type { ApiResponseMessage } from "$lib/model/messaging/messages";
+} from "#lib/chat/merge-conversation.ts";
+import { applyOptimisticBatch } from "#lib/chat/optimistic-batch.ts";
+import { previewFromMessage } from "#lib/model/messaging/message-preview.ts";
+import { below } from "#lib/util/breakpoints.svelte.ts";
+import { reconciler } from "#lib/util/reconcile.ts";
+import { SentinelPaging } from "#lib/util/sentinel-paging.svelte.ts";
+import type { Conversation } from "#lib/model/messaging/conversations.ts";
+import type { ApiResponseMessage } from "#lib/model/messaging/messages.ts";
 import type { CachedConversation } from "./cached-conversation";
 import { CoalescedRefresh } from "./coalesced-refresh";
 import {

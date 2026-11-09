@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { version } from "$app/environment";
 
-	import { toggleDemoMode } from "$lib/demo/config";
+	import { toggleDemoMode } from "#lib/demo/config.ts";
 
 	// Hidden developer gesture: seven taps on the version string flip demo mode.
 	// Same shape as the usual "tap the build number" easter egg — the count

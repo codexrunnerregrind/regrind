@@ -4,7 +4,7 @@ vi.mock("svelte-sonner", () => ({
 	toast: { error: vi.fn(), success: vi.fn() },
 }));
 
-import { clearAccountCaches } from "$lib/api/account-caches";
+import { clearAccountCaches } from "#lib/api/account-caches.ts";
 
 /**
  * A module-level cache that is never registered survives the switch that was
@@ -14,8 +14,8 @@ import { clearAccountCaches } from "$lib/api/account-caches";
  */
 describe("module-level caches are dropped when the account changes", () => {
 	it("forgets the albums we own", async () => {
-		const albums = await import("$lib/chat/my-albums");
-		const api = await import("$lib/api/messaging/albums");
+		const albums = await import("#lib/chat/my-albums.ts");
+		const api = await import("#lib/api/messaging/albums.ts");
 		vi.spyOn(api, "getMyAlbums").mockResolvedValue([]);
 
 		// Populate, then prove the populated state is what a switch clears.
@@ -31,7 +31,7 @@ describe("module-level caches are dropped when the account changes", () => {
 	});
 
 	it("forgets the taps we received", async () => {
-		const taps = await import("$lib/interest/taps-state.svelte");
+		const taps = await import("#lib/interest/taps-state.svelte.ts");
 		const state = taps.getTapsState(1);
 		// `loadCache` is what seeds a freshly built state from the module cache,
 		// which is the path a switched-to account would come down.

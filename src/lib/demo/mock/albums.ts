@@ -1,4 +1,4 @@
-import type { AlbumStorageLimits } from "$lib/model/messaging/albums";
+import type { AlbumStorageLimits } from "#lib/model/messaging/albums.ts";
 import { DAY, demoMeProfileId, NOW } from "../config";
 import { demoMediaUrl, unsplash } from "./avatars";
 import { demoConversationSeeds, localDateTime } from "./conversation-seeds";

@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { untrack } from "svelte";
 
-	import { getUnitsSnapshot } from "$lib/app-data/preferences.svelte";
+	import { getUnitsSnapshot } from "#lib/app-data/preferences.svelte.ts";
 	import {
 		closestMaxDistanceStep,
 		DEFAULT_MAX_DISTANCE_STEP,
 		maxDistanceLabel,
 		maxDistanceMetres,
-	} from "$lib/components/filters/distance/distance-steps";
-	import DistanceFilterSlider from "$lib/components/filters/distance/DistanceFilterSlider.svelte";
-	import { buttonVariants } from "$lib/components/ui/button";
-	import * as Drawer from "$lib/components/ui/drawer";
-	import { Switch } from "$lib/components/ui/switch";
-	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
+	} from "#lib/components/filters/distance/distance-steps.ts";
+	import DistanceFilterSlider from "#lib/components/filters/distance/DistanceFilterSlider.svelte";
+	import { buttonVariants } from "#lib/components/ui/button/index.ts";
+	import * as Drawer from "#lib/components/ui/drawer/index.ts";
+	import { Switch } from "#lib/components/ui/switch/index.ts";
+	import { dismissOnBackGesture } from "#lib/platform/back-gesture-event.svelte.ts";
 
 	let {
 		open = $bindable(),

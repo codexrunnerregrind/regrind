@@ -1,5 +1,5 @@
 <script lang="ts" module>
-	import type { MyAlbum } from "$lib/model/messaging/albums";
+	import type { MyAlbum } from "#lib/model/messaging/albums.ts";
 
 	// The last list seen per account, so coming back to the grid (from editing
 	// an album, say) shows it at once instead of flashing skeletons while it
@@ -14,17 +14,17 @@
 	import PlusIcon from "phosphor-svelte/lib/PlusIcon";
 	import { toast } from "svelte-sonner";
 
-	import { ApiError } from "$lib/api/api-error";
-	import { showErrorToast } from "$lib/api/error-toast";
+	import { ApiError } from "#lib/api/api-error.ts";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
 		createAlbum,
 		deleteAlbum,
 		getMyAlbums,
-	} from "$lib/api/messaging/albums";
-	import { getAlbumGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import * as AlertDialog from "$lib/components/ui/alert-dialog";
-	import { Skeleton } from "$lib/components/ui/skeleton";
+	} from "#lib/api/messaging/albums.ts";
+	import { getAlbumGridColumnsSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
+	import * as AlertDialog from "#lib/components/ui/alert-dialog/index.ts";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.ts";
 	import AlbumTile from "./AlbumTile.svelte";
 
 	const owner: number | undefined = page.data.ourProfileId;

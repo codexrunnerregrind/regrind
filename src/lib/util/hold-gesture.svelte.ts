@@ -1,4 +1,4 @@
-import { hapticImpact } from "$lib/platform/haptics";
+import { hapticImpact } from "#lib/platform/haptics.ts";
 
 const HOLD_MS = 500;
 

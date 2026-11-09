@@ -6,10 +6,10 @@ const api = vi.hoisted(() => ({
 	deleteSavedPhrase: vi.fn(),
 	trackSavedPhraseUsage: vi.fn(),
 }));
-vi.mock("$lib/api/messaging/phrases", () => api);
+vi.mock("#lib/api/messaging/phrases.ts", () => api);
 
 const showErrorToast = vi.hoisted(() => vi.fn());
-vi.mock("$lib/api/error-toast", () => ({ showErrorToast }));
+vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast }));
 
 import { SavedPhrasesState } from "./saved-phrases.svelte";
 

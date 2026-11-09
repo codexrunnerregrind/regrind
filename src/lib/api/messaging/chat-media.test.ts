@@ -10,14 +10,14 @@ vi.mock("@tauri-apps/api/core", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@tauri-apps/api/core")>()),
 	invoke: invokeMock,
 }));
-vi.mock("$lib/api/transport", async (importOriginal) => ({
-	...(await importOriginal<typeof import("$lib/api/transport")>()),
+vi.mock("#lib/api/transport.ts", async (importOriginal) => ({
+	...(await importOriginal<typeof import("#lib/api/transport.ts")>()),
 	fetchRest: fetchRestMock,
 }));
 
-import { ApiError } from "$lib/api/api-error";
-import { addMediaToDrawer } from "$lib/api/messaging/chat-media";
-import { toBase64 } from "$lib/util/base64";
+import { ApiError } from "#lib/api/api-error.ts";
+import { addMediaToDrawer } from "#lib/api/messaging/chat-media.ts";
+import { toBase64 } from "#lib/util/base64.ts";
 
 const photo = { bytes: new Uint8Array([1, 2, 3]), contentType: "image/png" };
 

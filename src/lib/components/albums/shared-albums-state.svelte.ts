@@ -1,9 +1,9 @@
 import {
 	getSharedAlbumsFeed,
 	removeAlbumShare,
-} from "$lib/api/messaging/albums";
-import { now } from "$lib/util/clock";
-import type { PressieSharedAlbum } from "$lib/model/messaging/albums";
+} from "#lib/api/messaging/albums.ts";
+import { now } from "#lib/util/clock.ts";
+import type { PressieSharedAlbum } from "#lib/model/messaging/albums.ts";
 
 /**
  * The "shared with me" feed, cached outside the component tree.

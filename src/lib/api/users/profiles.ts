@@ -1,32 +1,32 @@
 import { invoke } from "@tauri-apps/api/core";
 import z from "zod";
 
-import { ApiError } from "$lib/api/api-error";
-import { getBlockedUsers } from "$lib/api/browse/blocks";
-import { getHiddenUsers } from "$lib/api/browse/hides";
-import { FetchCache } from "$lib/api/cache";
-import { fetchRest } from "$lib/api/transport";
+import { ApiError } from "#lib/api/api-error.ts";
+import { getBlockedUsers } from "#lib/api/browse/blocks.ts";
+import { getHiddenUsers } from "#lib/api/browse/hides.ts";
+import { FetchCache } from "#lib/api/cache.ts";
+import { fetchRest } from "#lib/api/transport.ts";
 import {
 	ProfileModerationError,
 	readBannedTerms,
-} from "$lib/api/users/profile-moderation";
+} from "#lib/api/users/profile-moderation.ts";
 import {
 	markProfileUnviewable,
 	onProfileViewabilityChange,
-} from "$lib/api/users/profile-viewability";
-import { demoEnabled, demoUploadProfileImage } from "$lib/demo";
-import { notePhotos } from "$lib/interest/viewer-matches";
-import { mediaHashPublicSchema } from "$lib/model/media";
-import { rightNowAttributionStatusSchema } from "$lib/model/right-now";
-import { arrayOfParsableEntries } from "$lib/model/tolerance";
+} from "#lib/api/users/profile-viewability.ts";
+import { demoEnabled, demoUploadProfileImage } from "#lib/demo/index.ts";
+import { notePhotos } from "#lib/interest/viewer-matches.ts";
+import { mediaHashPublicSchema } from "#lib/model/media.ts";
+import { rightNowAttributionStatusSchema } from "#lib/model/right-now.ts";
+import { arrayOfParsableEntries } from "#lib/model/tolerance.ts";
 import {
 	type Profile,
 	PROFILE_PHOTO_AWAITING_REVIEW,
 	profileRightNowSchema,
 	profileSchema,
 	profileShortSchema,
-} from "$lib/model/users/profiles";
-import { toBase64 } from "$lib/util/base64";
+} from "#lib/model/users/profiles.ts";
+import { toBase64 } from "#lib/util/base64.ts";
 
 function isProbablyUnavailable(profile: Profile) {
 	const nullFields = [

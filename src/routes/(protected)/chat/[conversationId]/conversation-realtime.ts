@@ -6,9 +6,9 @@ import {
 	chatV1MessageSentEventSchema,
 	chatV1RefreshDynamicEventSchema,
 	ws,
-} from "$lib/ws.svelte";
-import type { ApiResponseMessage } from "$lib/model/messaging/messages";
-import type { ChatV1MessageDeletedEventPayload } from "$lib/ws.svelte";
+} from "#lib/ws.svelte.ts";
+import type { ApiResponseMessage } from "#lib/model/messaging/messages.ts";
+import type { ChatV1MessageDeletedEventPayload } from "#lib/ws.svelte.ts";
 
 /**
  * What an open conversation does with each realtime event. Split out from the

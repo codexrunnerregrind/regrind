@@ -7,8 +7,8 @@ import {
 	clearAlbumShareState,
 	forgetAlbumShared,
 	setAlbumShared,
-} from "$lib/api/messaging/album-shares-state.svelte";
-import type { AlbumMessage as AlbumMessageType } from "$lib/model/messaging/messages";
+} from "#lib/api/messaging/album-shares-state.svelte.ts";
+import type { AlbumMessage as AlbumMessageType } from "#lib/model/messaging/messages.ts";
 import AlbumMessage from "./AlbumMessage.svelte";
 
 const OUR_ID = 1;
@@ -37,7 +37,7 @@ vi.mock("../../conversation-state.svelte", () => ({
 	}),
 }));
 
-vi.mock("$lib/chat/album-viewer", () => ({
+vi.mock("#lib/chat/album-viewer.ts", () => ({
 	AlbumLockedError: class extends Error {},
 	openAlbumLightbox: vi.fn(),
 	resolveAlbumForViewing: vi.fn(),
@@ -45,10 +45,10 @@ vi.mock("$lib/chat/album-viewer", () => ({
 
 // A locked bubble asks for a cover it can still show; neither answer matters
 // here, and a pending promise keeps the fetch out of the assertions.
-vi.mock("$lib/chat/my-albums", () => ({
+vi.mock("#lib/chat/my-albums.ts", () => ({
 	myAlbumCoverUrl: () => new Promise(() => {}),
 }));
-vi.mock("$lib/chat/paywall-covers", () => ({
+vi.mock("#lib/chat/paywall-covers.ts", () => ({
 	paywallCoverUrl: () => new Promise(() => {}),
 }));
 

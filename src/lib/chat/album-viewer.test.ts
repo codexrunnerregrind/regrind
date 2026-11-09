@@ -7,7 +7,7 @@ const { getAlbumContentMock, getAlbumsPaywallContentMock, getMyAlbumsMock } =
 		getMyAlbumsMock: vi.fn(),
 	}));
 
-vi.mock("$lib/api/messaging/albums", () => ({
+vi.mock("#lib/api/messaging/albums.ts", () => ({
 	getAlbumContent: getAlbumContentMock,
 	getAlbumsPaywallContent: getAlbumsPaywallContentMock,
 	getMyAlbums: getMyAlbumsMock,

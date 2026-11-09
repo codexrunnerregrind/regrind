@@ -3,15 +3,15 @@
 	import StarIcon from "phosphor-svelte/lib/StarIcon";
 	import type { Snippet } from "svelte";
 
-	import DistanceFormatted from "$lib/components/profile/DistanceFormatted.svelte";
-	import { profileGestures } from "$lib/components/profile/peek/peek-state.svelte";
-	import ProfileRightNowIndicator from "$lib/components/profile/ProfileRightNowIndicator.svelte";
-	import ProfileStatusIndicator from "$lib/components/profile/ProfileStatusIndicator.svelte";
-	import TapIcon from "$lib/components/profile/TapIcon.svelte";
-	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
-	import { getNow } from "$lib/util/now";
-	import type { GridTap } from "$lib/interest/profile-activity.svelte";
-	import type { RightNowStatus } from "$lib/model/right-now";
+	import DistanceFormatted from "#lib/components/profile/DistanceFormatted.svelte";
+	import { profileGestures } from "#lib/components/profile/peek/peek-state.svelte.ts";
+	import ProfileRightNowIndicator from "#lib/components/profile/ProfileRightNowIndicator.svelte";
+	import ProfileStatusIndicator from "#lib/components/profile/ProfileStatusIndicator.svelte";
+	import TapIcon from "#lib/components/profile/TapIcon.svelte";
+	import UserAvatar from "#lib/components/profile/UserAvatar.svelte";
+	import { getNow } from "#lib/util/now.ts";
+	import type { GridTap } from "#lib/interest/profile-activity.svelte.ts";
+	import type { RightNowStatus } from "#lib/model/right-now.ts";
 
 	let {
 		mediaHash = null,

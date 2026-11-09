@@ -20,8 +20,8 @@ import {
 	rangeBoundTexts,
 	tagCatalog,
 	usernameMatches,
-} from "$lib/model/browse/grid/filters";
-import { formatWeightKg } from "$lib/util/units";
+} from "#lib/model/browse/grid/filters.ts";
+import { formatWeightKg } from "#lib/util/units.ts";
 
 describe("grid search filter schemas", () => {
 	it("accepts the default filter state", () => {

@@ -2,8 +2,8 @@
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 
-	import PagerTrack from "$lib/components/shared/PagerTrack.svelte";
-	import { hapticSelection } from "$lib/platform/haptics";
+	import PagerTrack from "#lib/components/shared/PagerTrack.svelte";
+	import { hapticSelection } from "#lib/platform/haptics.ts";
 	import {
 		getInterestTab,
 		interestTabIndex,

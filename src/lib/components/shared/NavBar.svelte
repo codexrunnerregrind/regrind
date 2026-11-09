@@ -2,16 +2,16 @@
 	import { page } from "$app/state";
 	import { untrack } from "svelte";
 
-	import { getProfile, onProfileEdit } from "$lib/api/users/profiles";
-	import { getOrCreateConversationsState } from "$lib/chat/conversations-context.svelte";
-	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
-	import { navTabs } from "$lib/components/shared/nav-tabs";
-	import { getTapsState } from "$lib/interest/taps-state.svelte";
-	import { getViewActivityState } from "$lib/interest/view-activity.svelte";
-	import { hapticSelection } from "$lib/platform/haptics";
-	import { isFloatingNav } from "$lib/platform/nav-style.svelte";
-	import { bottomChrome } from "$lib/util/screen-chrome.svelte";
-	import { scrollActiveViewToTop } from "$lib/util/scroll";
+	import { getProfile, onProfileEdit } from "#lib/api/users/profiles.ts";
+	import { getOrCreateConversationsState } from "#lib/chat/conversations-context.svelte.ts";
+	import UserAvatar from "#lib/components/profile/UserAvatar.svelte";
+	import { navTabs } from "#lib/components/shared/nav-tabs.ts";
+	import { getTapsState } from "#lib/interest/taps-state.svelte.ts";
+	import { getViewActivityState } from "#lib/interest/view-activity.svelte.ts";
+	import { hapticSelection } from "#lib/platform/haptics.ts";
+	import { isFloatingNav } from "#lib/platform/nav-style.svelte.ts";
+	import { bottomChrome } from "#lib/util/screen-chrome.svelte.ts";
+	import { scrollActiveViewToTop } from "#lib/util/scroll.ts";
 
 	let { ourProfileId }: { ourProfileId: number } = $props();
 

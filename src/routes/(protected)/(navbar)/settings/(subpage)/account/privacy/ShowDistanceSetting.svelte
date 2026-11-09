@@ -2,11 +2,11 @@
 	import MapPinIcon from "phosphor-svelte/lib/MapPinIcon";
 	import { onMount } from "svelte";
 
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { getProfile, patchOwnProfile } from "$lib/api/users/profiles";
-	import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
-	import SettingsSwitchRow from "$lib/components/settings/SettingsSwitchRow.svelte";
-	import { formatDistance } from "$lib/util/units";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { getProfile, patchOwnProfile } from "#lib/api/users/profiles.ts";
+	import { preferencesSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import SettingsSwitchRow from "#lib/components/settings/SettingsSwitchRow.svelte";
+	import { formatDistance } from "#lib/util/units.ts";
 
 	let { ourProfileId }: { ourProfileId: number } = $props();
 

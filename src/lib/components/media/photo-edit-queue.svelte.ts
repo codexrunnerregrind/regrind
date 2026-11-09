@@ -1,4 +1,4 @@
-import { type PickedMedia, readMediaBytes } from "$lib/platform/media-picker";
+import { type PickedMedia, readMediaBytes } from "#lib/platform/media-picker.ts";
 
 export type EditedPhoto = {
 	bytes: Uint8Array<ArrayBuffer>;

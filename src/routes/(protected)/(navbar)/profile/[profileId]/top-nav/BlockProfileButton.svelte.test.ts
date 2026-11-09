@@ -9,12 +9,12 @@ const { blockUserMock, showBlockFailureMock, preferences } = vi.hoisted(() => ({
 	preferences: { confirmBlock: true },
 }));
 
-vi.mock("$lib/api/browse/blocks", () => ({ blockUser: blockUserMock }));
-vi.mock("$lib/api/error-toast", () => ({ showErrorToast: vi.fn() }));
-vi.mock("$lib/app-data/preferences.svelte", () => ({
+vi.mock("#lib/api/browse/blocks.ts", () => ({ blockUser: blockUserMock }));
+vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast: vi.fn() }));
+vi.mock("#lib/app-data/preferences.svelte.ts", () => ({
 	preferencesSnapshot: () => preferences,
 }));
-vi.mock("$lib/components/report/block-failure", () => ({
+vi.mock("#lib/components/report/block-failure.ts", () => ({
 	showBlockFailure: showBlockFailureMock,
 }));
 

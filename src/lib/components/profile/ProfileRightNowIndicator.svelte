@@ -2,7 +2,7 @@
 	import DropIcon from "phosphor-svelte/lib/DropIcon";
 	import HouseIcon from "phosphor-svelte/lib/HouseIcon";
 
-	import type { RightNowStatus } from "$lib/model/right-now";
+	import type { RightNowStatus } from "#lib/model/right-now.ts";
 
 	let {
 		rightNow,

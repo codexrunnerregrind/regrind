@@ -1,9 +1,9 @@
 import { untrack } from "svelte";
 import type z from "zod";
 
-import { registerAccountCache } from "$lib/api/account-caches";
-import { showErrorToast } from "$lib/api/error-toast";
-import type { rightNowV4QuerySchema } from "$lib/model/right-now/feed/query/v4";
+import { registerAccountCache } from "#lib/api/account-caches.ts";
+import { showErrorToast } from "#lib/api/error-toast.ts";
+import type { rightNowV4QuerySchema } from "#lib/model/right-now/feed/query/v4.ts";
 import { type FeedPost, getPosts } from "./posts";
 import { RightNowSearchFiltersState } from "./right-now-filters-state.svelte";
 

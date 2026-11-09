@@ -1,13 +1,13 @@
 import { goto } from "$app/navigation";
 
-import { clearAccountCaches } from "$lib/api/account-caches";
-import { accountsState, removeAccount } from "$lib/api/accounts.svelte";
-import { signedInProfileId } from "$lib/api/current-session";
-import { callMethod } from "$lib/api/methods";
-import { clearAccountPreferences } from "$lib/app-data/preferences.svelte";
-import { inboxLastViewed } from "$lib/chat/inbox-last-viewed.svelte";
-import { tapsLastViewed } from "$lib/interest/taps-last-viewed";
-import { clearViewerMatches } from "$lib/interest/viewer-matches";
+import { clearAccountCaches } from "#lib/api/account-caches.ts";
+import { accountsState, removeAccount } from "#lib/api/accounts.svelte.ts";
+import { signedInProfileId } from "#lib/api/current-session.ts";
+import { callMethod } from "#lib/api/methods.ts";
+import { clearAccountPreferences } from "#lib/app-data/preferences.svelte.ts";
+import { inboxLastViewed } from "#lib/chat/inbox-last-viewed.svelte.ts";
+import { tapsLastViewed } from "#lib/interest/taps-last-viewed.ts";
+import { clearViewerMatches } from "#lib/interest/viewer-matches.ts";
 
 /**
  * Signs the account in use out and forgets it.

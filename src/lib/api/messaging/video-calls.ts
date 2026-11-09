@@ -1,12 +1,12 @@
 import type z from "zod";
 
-import { fetchRest } from "$lib/api/transport";
+import { fetchRest } from "#lib/api/transport.ts";
 import {
 	videoCallInfoSchema,
 	videoCallJoinSchema,
 	videoCallRenewSchema,
 	videoCallStartSchema,
-} from "$lib/model/messaging/video-calls";
+} from "#lib/model/messaging/video-calls.ts";
 
 type RestResponse = Awaited<ReturnType<typeof fetchRest>>;
 

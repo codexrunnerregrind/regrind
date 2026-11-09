@@ -5,14 +5,14 @@ const { getSharedAlbumsFeedMock, removeAlbumShareMock } = vi.hoisted(() => ({
 	removeAlbumShareMock: vi.fn(),
 }));
 
-vi.mock("$lib/api/messaging/albums", async (importOriginal) => ({
-	...(await importOriginal<typeof import("$lib/api/messaging/albums")>()),
+vi.mock("#lib/api/messaging/albums.ts", async (importOriginal) => ({
+	...(await importOriginal<typeof import("#lib/api/messaging/albums.ts")>()),
 	getSharedAlbumsFeed: getSharedAlbumsFeedMock,
 	removeAlbumShare: removeAlbumShareMock,
 }));
 
-import { SharedAlbumsState } from "$lib/components/albums/shared-albums-state.svelte";
-import { resetNowForTesting, setNowForTesting } from "$lib/util/clock";
+import { SharedAlbumsState } from "#lib/components/albums/shared-albums-state.svelte.ts";
+import { resetNowForTesting, setNowForTesting } from "#lib/util/clock.ts";
 
 function feed(albumIds: number[], hasUnseenContent = false) {
 	return {

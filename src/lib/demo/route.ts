@@ -4,13 +4,13 @@ import {
 	albumNameRequestSchema,
 	albumShareRequestSchema,
 	albumUnshareRequestSchema,
-} from "$lib/model/messaging/albums";
+} from "#lib/model/messaging/albums.ts";
 import {
 	profileReportRequestSchema,
 	profileReportRequestV2Schema,
 	rightNowPostReportRequestSchema,
-} from "$lib/model/safety/reports";
-import { accountPreferencesUpdateSchema } from "$lib/model/settings/account";
+} from "#lib/model/safety/reports.ts";
+import { accountPreferencesUpdateSchema } from "#lib/model/settings/account.ts";
 import { demoMeProfileId } from "./config";
 import {
 	demoAddToAlbum,

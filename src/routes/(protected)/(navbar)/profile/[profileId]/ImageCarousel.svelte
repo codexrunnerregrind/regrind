@@ -4,25 +4,25 @@
 	import { format } from "date-fns";
 	import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
-	import { sendTap } from "$lib/api/interest/taps";
-	import { sendMessage } from "$lib/api/messaging/messages";
+	import { sendTap } from "#lib/api/interest/taps.ts";
+	import { sendMessage } from "#lib/api/messaging/messages.ts";
 	import {
 		downloadAllMedia,
 		downloadMedia,
-	} from "$lib/chat/lightbox-download";
+	} from "#lib/chat/lightbox-download.ts";
 	import {
 		type MediaViewerActions,
 		registerMediaViewerChrome,
-	} from "$lib/chat/media-viewer-chrome";
-	import UserSilhouette from "$lib/components/profile/UserSilhouette.svelte";
-	import { TapType } from "$lib/model/interest/taps";
-	import { profileMediaUrl } from "$lib/util/media";
+	} from "#lib/chat/media-viewer-chrome.ts";
+	import UserSilhouette from "#lib/components/profile/UserSilhouette.svelte";
+	import { TapType } from "#lib/model/interest/taps.ts";
+	import { profileMediaUrl } from "#lib/util/media.ts";
 	import {
 		applyPhotoSwipeBackGesture,
 		applyPhotoSwipeErrorUi,
 		applyPhotoSwipeThumbDimensions,
 		applyPhotoSwipeViewportSync,
-	} from "$lib/util/photoswipe";
+	} from "#lib/util/photoswipe/index.ts";
 	import { devicePixelHeight } from "./device-pixel-height";
 	import ImageCarouselItem from "./ImageCarouselItem.svelte";
 

@@ -1,6 +1,6 @@
 import { createContext } from "svelte";
 
-import type { MessageDraft } from "$lib/model/messaging/messages";
+import type { MessageDraft } from "#lib/model/messaging/messages.ts";
 import type { VoiceMessageComposer } from "./voice-message/voice-message-composer.svelte";
 
 export type MessageComposerContext = () => {

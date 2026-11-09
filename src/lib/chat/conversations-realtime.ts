@@ -7,9 +7,9 @@ import {
 	chatV1RefreshDynamicEventSchema,
 	chatV1TypingStatusEventSchema,
 	ws,
-} from "$lib/ws.svelte";
-import type { ApiResponseMessage } from "$lib/model/messaging/messages";
-import type { TypingStatus } from "$lib/ws.svelte";
+} from "#lib/ws.svelte.ts";
+import type { ApiResponseMessage } from "#lib/model/messaging/messages.ts";
+import type { TypingStatus } from "#lib/ws.svelte.ts";
 import { deletedConversationIds } from "./message-deleted";
 
 /**

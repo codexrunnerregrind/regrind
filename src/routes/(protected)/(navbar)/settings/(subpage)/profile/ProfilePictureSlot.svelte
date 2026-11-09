@@ -1,10 +1,10 @@
 <script lang="ts">
 	import TrashIcon from "phosphor-svelte/lib/TrashIcon";
 
-	import TakenOnGrindrBadge from "$lib/components/media/TakenOnGrindrBadge.svelte";
-	import MediaImage from "$lib/components/shared/MediaImage.svelte";
-	import { Button } from "$lib/components/ui/button";
-	import { profileMediaUrl } from "$lib/util/media";
+	import TakenOnGrindrBadge from "#lib/components/media/TakenOnGrindrBadge.svelte";
+	import MediaImage from "#lib/components/shared/MediaImage.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import { profileMediaUrl } from "#lib/util/media.ts";
 
 	let {
 		mediaHash,

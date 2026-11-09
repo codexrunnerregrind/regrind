@@ -1,8 +1,8 @@
 <script lang="ts">
 	import PlusIcon from "phosphor-svelte/lib/PlusIcon";
 
-	import { accountsState } from "$lib/api/accounts.svelte";
-	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
+	import { accountsState } from "#lib/api/accounts.svelte.ts";
+	import UserAvatar from "#lib/components/profile/UserAvatar.svelte";
 
 	let { onopen }: { onopen: () => void } = $props();
 

@@ -1,27 +1,27 @@
 import { untrack } from "svelte";
 import type z from "zod";
 
-import { registerAccountCache } from "$lib/api/account-caches";
-import { showErrorToast } from "$lib/api/error-toast";
+import { registerAccountCache } from "#lib/api/account-caches.ts";
+import { showErrorToast } from "#lib/api/error-toast.ts";
 import {
 	genderFilterFlag,
 	refreshFeatureFlags,
-} from "$lib/api/feature-flags-state.svelte";
+} from "#lib/api/feature-flags-state.svelte.ts";
 import {
 	isProfileViewable,
 	onProfileViewabilityChange,
-} from "$lib/api/users/profile-viewability";
-import { onProfileEdit } from "$lib/api/users/profiles";
-import { getActiveGeohashSnapshot } from "$lib/app-data/preferences.svelte";
-import { showsOnReturn, staysOnline } from "$lib/presence/presence-gate";
+} from "#lib/api/users/profile-viewability.ts";
+import { onProfileEdit } from "#lib/api/users/profiles.ts";
+import { getActiveGeohashSnapshot } from "#lib/app-data/preferences.svelte.ts";
+import { showsOnReturn, staysOnline } from "#lib/presence/presence-gate.ts";
 import {
 	pushDeeplinkAhead,
 	untilPushDeeplinkOpened,
-} from "$lib/push/opening-deeplink";
-import { Generation } from "$lib/util/generation";
-import { reconciler } from "$lib/util/reconcile";
-import { SentinelPaging } from "$lib/util/sentinel-paging.svelte";
-import type { cascadeV4QuerySchema } from "$lib/model/browse/grid/cascade/query/v4";
+} from "#lib/push/opening-deeplink.ts";
+import { Generation } from "#lib/util/generation.ts";
+import { reconciler } from "#lib/util/reconcile.ts";
+import { SentinelPaging } from "#lib/util/sentinel-paging.svelte.ts";
+import type { cascadeV4QuerySchema } from "#lib/model/browse/grid/cascade/query/v4.ts";
 import {
 	getCachedProfile,
 	getGrid,

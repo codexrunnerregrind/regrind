@@ -7,32 +7,32 @@
 	import { expoOut } from "svelte/easing";
 	import { fly } from "svelte/transition";
 
-	import { showErrorToast } from "$lib/api/error-toast";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
 		isTagKeyOfferedNow,
 		isTribeOfferedNow,
-	} from "$lib/api/feature-flags-state.svelte";
-	import { ProfileModerationError } from "$lib/api/users/profile-moderation";
+	} from "#lib/api/feature-flags-state.svelte.ts";
+	import { ProfileModerationError } from "#lib/api/users/profile-moderation.ts";
 	import {
 		type ProfileUpdate,
 		setProfilePhotos,
 		updateOwnProfile,
-	} from "$lib/api/users/profiles";
-	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
-	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
-	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
-	import { Button } from "$lib/components/ui/button";
-	import { WheelPicker } from "$lib/components/ui/carousel";
-	import { Spinner } from "$lib/components/ui/spinner";
+	} from "#lib/api/users/profiles.ts";
+	import SectionHeader from "#lib/components/settings/SectionHeader.svelte";
+	import SettingsGroup from "#lib/components/settings/SettingsGroup.svelte";
+	import ProgressiveBlur from "#lib/components/shared/ProgressiveBlur.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import { WheelPicker } from "#lib/components/ui/carousel/index.ts";
+	import { Spinner } from "#lib/components/ui/spinner/index.ts";
 	import {
 		type Profile,
 		PROFILE_PHOTO_AWAITING_REVIEW,
-	} from "$lib/model/users/profiles";
-	import { deepEqual } from "$lib/util/deep-equal";
-	import { bottomChrome } from "$lib/util/screen-chrome.svelte";
-	import type { Gender } from "$lib/model/users/genders";
-	import type { Pronoun } from "$lib/model/users/pronouns";
-	import type { ProfileTagsResponse } from "$lib/model/users/tags";
+	} from "#lib/model/users/profiles.ts";
+	import { deepEqual } from "#lib/util/deep-equal.ts";
+	import { bottomChrome } from "#lib/util/screen-chrome.svelte.ts";
+	import type { Gender } from "#lib/model/users/genders.ts";
+	import type { Pronoun } from "#lib/model/users/pronouns.ts";
+	import type { ProfileTagsResponse } from "#lib/model/users/tags.ts";
 	import ComboField from "./fields/ComboField.svelte";
 	import DateField from "./fields/DateField.svelte";
 	import Field from "./fields/Field.svelte";

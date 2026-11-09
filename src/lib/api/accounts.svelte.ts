@@ -2,20 +2,20 @@ import { isTauri } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { goto, invalidateAll } from "$app/navigation";
 
-import { clearAccountCaches } from "$lib/api/account-caches";
+import { clearAccountCaches } from "#lib/api/account-caches.ts";
 import {
 	type AccountSummary,
 	accountSummarySchema,
 	callMethod,
-} from "$lib/api/methods";
-import { getProfile } from "$lib/api/users/profiles";
+} from "#lib/api/methods.ts";
+import { getProfile } from "#lib/api/users/profiles.ts";
 import {
 	clearAccountPreferences,
 	usePreferencesForAccount,
-} from "$lib/app-data/preferences.svelte";
-import { inboxLastViewed } from "$lib/chat/inbox-last-viewed.svelte";
-import { tapsLastViewed } from "$lib/interest/taps-last-viewed";
-import { clearViewerMatches } from "$lib/interest/viewer-matches";
+} from "#lib/app-data/preferences.svelte.ts";
+import { inboxLastViewed } from "#lib/chat/inbox-last-viewed.svelte.ts";
+import { tapsLastViewed } from "#lib/interest/taps-last-viewed.ts";
+import { clearViewerMatches } from "#lib/interest/viewer-matches.ts";
 
 export type { AccountSummary };
 

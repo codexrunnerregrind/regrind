@@ -2,9 +2,8 @@
 	import CheckIcon from "phosphor-svelte/lib/CheckIcon";
 	import { onMount } from "svelte";
 
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { Button } from "$lib/components/ui/button";
-	import { getAppIcon, setAppIcon } from "$lib/platform/app-icon";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { Button } from "#lib/components/ui/button/index.ts";
 	import {
 		type AppIconColor,
 		appIconColors,
@@ -12,8 +11,9 @@
 		appIconId,
 		appIcons,
 		parseAppIconId,
-	} from "$lib/platform/app-icon-catalog";
-	import { hapticSelection } from "$lib/platform/haptics";
+	} from "#lib/platform/app-icon-catalog.ts";
+	import { getAppIcon, setAppIcon } from "#lib/platform/app-icon.ts";
+	import { hapticSelection } from "#lib/platform/haptics.ts";
 
 	const previews = import.meta.glob<string>(
 		"/src/lib/assets/app-icons/*.svg",

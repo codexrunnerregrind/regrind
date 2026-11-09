@@ -4,7 +4,7 @@ import {
 	filterHostingSchema,
 	filterPositionSchema,
 	filterRightNowSortSchema,
-} from "$lib/model/browse/grid/filters";
+} from "#lib/model/browse/grid/filters.ts";
 
 export const rightNowV4QuerySchema = z.object({
 	sort: filterRightNowSortSchema,

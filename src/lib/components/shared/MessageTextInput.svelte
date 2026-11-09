@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { Snippet } from "svelte";
 
-	import { Textarea } from "$lib/components/ui/textarea";
-	import { isMobilePlatform } from "$lib/platform/os";
+	import { Textarea } from "#lib/components/ui/textarea/index.ts";
+	import { isMobilePlatform } from "#lib/platform/os.ts";
 
 	let {
 		value = $bindable(),

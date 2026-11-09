@@ -2,19 +2,19 @@
 	import {
 		fetchCurrentGeohash,
 		geoApiSupported,
-	} from "$lib/app-data/location";
+	} from "#lib/app-data/location.ts";
 	import {
 		getActiveGeohashSnapshot,
 		getCurrentGeohashSnapshot,
 		getUsingCurrentLocationSnapshot,
 		hydratePreferences,
 		setPreferences,
-	} from "$lib/app-data/preferences.svelte";
-	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
-	import ScrollToTopButton from "$lib/components/shared/ScrollToTopButton.svelte";
-	import { FavoriteSearch } from "$lib/favorites/favorite-search.svelte";
-	import { gridState } from "$lib/grid/grid-state.svelte";
-	import { restoreScrollOnce } from "$lib/util/scroll-restore.svelte";
+	} from "#lib/app-data/preferences.svelte.ts";
+	import DataRefreshControl from "#lib/components/feedback/DataRefreshControl.svelte";
+	import ScrollToTopButton from "#lib/components/shared/ScrollToTopButton.svelte";
+	import { FavoriteSearch } from "#lib/favorites/favorite-search.svelte.ts";
+	import { gridState } from "#lib/grid/grid-state.svelte.ts";
+	import { restoreScrollOnce } from "#lib/util/scroll-restore.svelte.ts";
 	import Grid from "./Grid.svelte";
 	import LocationChooser from "./LocationEmpty.svelte";
 	import TopBar from "./top-bar/TopBar.svelte";

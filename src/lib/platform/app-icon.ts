@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 
-import { isMobilePlatform } from "$lib/platform/os";
-import type { AppIconId } from "$lib/platform/app-icon-catalog";
+import { isMobilePlatform } from "#lib/platform/os.ts";
+import type { AppIconId } from "#lib/platform/app-icon-catalog.ts";
 
 export function appIconAvailable(): boolean {
 	return isMobilePlatform();

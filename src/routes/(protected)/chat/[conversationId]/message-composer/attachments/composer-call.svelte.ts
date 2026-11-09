@@ -1,4 +1,4 @@
-import { videoCall } from "$lib/video-call/call-state.svelte";
+import { videoCall } from "#lib/video-call/call-state.svelte.ts";
 import { getConversationState } from "../../conversation-state.svelte";
 
 /**

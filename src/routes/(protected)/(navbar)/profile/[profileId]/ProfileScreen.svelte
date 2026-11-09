@@ -14,12 +14,12 @@
 		HiddenProfileError,
 		onProfileEdit,
 		ProfileUnavailableError,
-	} from "$lib/api/users/profiles";
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
-	import NotFound from "$lib/components/feedback/NotFound.svelte";
-	import ProfileActivityPill from "$lib/components/profile/ProfileActivityPill.svelte";
-	import { Skeleton } from "$lib/components/ui/skeleton";
+	} from "#lib/api/users/profiles.ts";
+	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
+	import DataRefreshControl from "#lib/components/feedback/DataRefreshControl.svelte";
+	import NotFound from "#lib/components/feedback/NotFound.svelte";
+	import ProfileActivityPill from "#lib/components/profile/ProfileActivityPill.svelte";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.ts";
 	import {
 		acceptNSFWPics,
 		ethnicities,
@@ -27,9 +27,9 @@
 		meetAt as meetAtLabels,
 		relationshipStatuses,
 		tribes,
-	} from "$lib/model/users/profiles";
-	import { longPressHandlers } from "$lib/util/long-press";
-	import { profileMediaUrl } from "$lib/util/media";
+	} from "#lib/model/users/profiles.ts";
+	import { longPressHandlers } from "#lib/util/long-press.ts";
+	import { profileMediaUrl } from "#lib/util/media.ts";
 	import AboutMe from "./AboutMe.svelte";
 	import BlockedProfile from "./BlockedProfile.svelte";
 	import Distance from "./Distance.svelte";

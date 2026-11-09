@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { favoriteNote } from "$lib/api/users/favorite-notes-state.svelte";
-	import ProfileMiniCard from "$lib/components/profile/ProfileMiniCard.svelte";
-	import type { ViewerProfile } from "$lib/model/interest/views";
+	import { favoriteNote } from "#lib/api/users/favorite-notes-state.svelte.ts";
+	import ProfileMiniCard from "#lib/components/profile/ProfileMiniCard.svelte";
+	import type { ViewerProfile } from "#lib/model/interest/views.ts";
 	import ViewedMeta from "./ViewedMeta.svelte";
 
 	let { view }: { view: ViewerProfile } = $props();

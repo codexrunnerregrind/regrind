@@ -9,19 +9,19 @@ const { reportSheetMock, blockUserMock, hideUserMock } = vi.hoisted(() => ({
 	hideUserMock: vi.fn<() => Promise<void>>(),
 }));
 
-vi.mock("$lib/components/report/ReportSheet.svelte", () => ({
+vi.mock("#lib/components/report/ReportSheet.svelte", () => ({
 	default: reportSheetMock,
 }));
-vi.mock("$lib/api/browse/blocks", () => ({
+vi.mock("#lib/api/browse/blocks.ts", () => ({
 	blockUser: blockUserMock,
 	unblockUser: vi.fn(),
 }));
-vi.mock("$lib/api/browse/hides", () => ({ hideUser: hideUserMock }));
-vi.mock("$lib/api/error-toast", () => ({ showErrorToast: vi.fn() }));
-vi.mock("$lib/app-data/preferences.svelte", () => ({
+vi.mock("#lib/api/browse/hides.ts", () => ({ hideUser: hideUserMock }));
+vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast: vi.fn() }));
+vi.mock("#lib/app-data/preferences.svelte.ts", () => ({
 	preferencesSnapshot: () => ({ showAccountCreated: false }),
 }));
-vi.mock("$lib/components/report/block-failure", () => ({
+vi.mock("#lib/components/report/block-failure.ts", () => ({
 	showBlockFailure: vi.fn(),
 }));
 

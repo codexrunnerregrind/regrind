@@ -1,21 +1,21 @@
-import { registerAccountCache } from "$lib/api/account-caches";
+import { registerAccountCache } from "#lib/api/account-caches.ts";
 import {
 	createRightNowPost,
 	getActiveRightNowPost,
 	getEntitlements,
 	updateRightNowPost,
-} from "$lib/api/right-now";
-import { getAccountPreferences } from "$lib/api/settings/account";
-import { getActiveGeohashSnapshot } from "$lib/app-data/preferences.svelte";
-import { decodeGeohash } from "$lib/model/geohash";
-import { postExpired } from "$lib/right-now/post-expiry";
-import { getNow } from "$lib/util/now";
-import type { RightNowShareLocation } from "$lib/model/right-now";
+} from "#lib/api/right-now.ts";
+import { getAccountPreferences } from "#lib/api/settings/account.ts";
+import { getActiveGeohashSnapshot } from "#lib/app-data/preferences.svelte.ts";
+import { decodeGeohash } from "#lib/model/geohash.ts";
+import { postExpired } from "#lib/right-now/post-expiry.ts";
+import { getNow } from "#lib/util/now.ts";
+import type { RightNowShareLocation } from "#lib/model/right-now.ts";
 import type {
 	RightNowOwnPost,
 	RightNowPostMedia,
-} from "$lib/model/right-now/post";
-import type { AccountPreferences } from "$lib/model/settings/account";
+} from "#lib/model/right-now/post.ts";
+import type { AccountPreferences } from "#lib/model/settings/account.ts";
 
 export type RightNowPostDraft = {
 	text: string;

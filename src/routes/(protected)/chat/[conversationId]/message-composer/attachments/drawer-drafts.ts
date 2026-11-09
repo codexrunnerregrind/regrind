@@ -1,9 +1,9 @@
-import type { DrawerMedia } from "$lib/api/messaging/drawer";
-import type { MessageDraft } from "$lib/model/messaging/messages";
+import type { DrawerMedia } from "#lib/api/messaging/drawer.ts";
+import type { MessageDraft } from "#lib/model/messaging/messages.ts";
 import type {
 	MediaFileInspection,
 	MediaPreview,
-} from "$lib/platform/media-file";
+} from "#lib/platform/media-file.ts";
 
 export function isVideo(item: DrawerMedia): boolean {
 	return item.contentType.startsWith("video/");

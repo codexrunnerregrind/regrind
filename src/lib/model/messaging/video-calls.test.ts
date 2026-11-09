@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { videoCallMessageSchema } from "$lib/model/messaging/messages";
+import { videoCallMessageSchema } from "#lib/model/messaging/messages.ts";
 import {
 	formatCallDuration,
 	isVideoCallSuccess,
@@ -10,7 +10,7 @@ import {
 	videoCallResultMessage,
 	videoCallStartSchema,
 	videoCallStatusLabel,
-} from "$lib/model/messaging/video-calls";
+} from "#lib/model/messaging/video-calls.ts";
 
 function callMessage(body: unknown) {
 	const parsed = videoCallMessageSchema.parse({ type: "VideoCall", body });

@@ -10,9 +10,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import z from "zod";
 
-import { demoEnabled } from "$lib/demo";
-import { fromBase64 } from "$lib/util/base64";
-import { unproxyMediaUrl } from "$lib/util/media";
+import { demoEnabled } from "#lib/demo/index.ts";
+import { fromBase64 } from "#lib/util/base64.ts";
+import { unproxyMediaUrl } from "#lib/util/media.ts";
 
 export const BAR_COUNT = 32;
 

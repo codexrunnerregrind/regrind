@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { page } from "$app/state";
 
-	import { swipeToNavTab } from "$lib/components/shared/nav-tabs";
-	import NavBar from "$lib/components/shared/NavBar.svelte";
-	import { tabShellShowing } from "$lib/components/tab-shell/tab-shell-state.svelte";
-	import { swipeTabs } from "$lib/util/swipe-tabs";
+	import { swipeToNavTab } from "#lib/components/shared/nav-tabs.ts";
+	import NavBar from "#lib/components/shared/NavBar.svelte";
+	import { tabShellShowing } from "#lib/components/tab-shell/tab-shell-state.svelte.ts";
+	import { swipeTabs } from "#lib/util/swipe-tabs.ts";
 
 	let { data, children }: import("./$types").LayoutProps = $props();
 </script>

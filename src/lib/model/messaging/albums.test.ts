@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	ALBUM_NAME_MAX_BYTES,
 	albumNameByteLength,
-} from "$lib/model/messaging/albums";
+} from "#lib/model/messaging/albums.ts";
 
 describe("albumNameByteLength", () => {
 	it("counts ASCII as one byte each", () => {

@@ -1,13 +1,13 @@
 <script lang="ts">
 	import ImagesIcon from "phosphor-svelte/lib/ImagesIcon";
 
-	import { myAlbumCoverUrl } from "$lib/chat/my-albums";
-	import { paywallCoverUrl } from "$lib/chat/paywall-covers";
-	import { getNow } from "$lib/util/now";
+	import { myAlbumCoverUrl } from "#lib/chat/my-albums.ts";
+	import { paywallCoverUrl } from "#lib/chat/paywall-covers.ts";
+	import { getNow } from "#lib/util/now.ts";
 	import type {
 		AlbumContentReactionMessage,
 		AlbumContentReplyMessage,
-	} from "$lib/model/messaging/messages";
+	} from "#lib/model/messaging/messages.ts";
 	import { getConversationState } from "../../conversation-state.svelte";
 	import { AlbumBubbleOpener } from "./album-bubble-open.svelte";
 	import LockedMedia from "./LockedMedia.svelte";

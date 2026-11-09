@@ -5,8 +5,8 @@
 	import {
 		addAccountInProgress,
 		cancelAddAccount,
-	} from "$lib/api/accounts.svelte";
-	import { Button } from "$lib/components/ui/button";
+	} from "#lib/api/accounts.svelte.ts";
+	import { Button } from "#lib/components/ui/button/index.ts";
 
 	// Only shown when this sign-in was started from the account switcher: with no
 	// other account signed in there is nothing to go back to, and offering it

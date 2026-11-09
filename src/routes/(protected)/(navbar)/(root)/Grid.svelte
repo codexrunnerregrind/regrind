@@ -4,25 +4,25 @@
 	import {
 		ensureFavoriteNotes,
 		favoriteNote,
-	} from "$lib/api/users/favorite-notes-state.svelte";
+	} from "#lib/api/users/favorite-notes-state.svelte.ts";
 	import {
 		getProfileGridColumnsSnapshot,
 		preferencesSnapshot,
-	} from "$lib/app-data/preferences.svelte";
-	import { getOrCreateConversationsState } from "$lib/chat/conversations-context.svelte";
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import PagingSentinel from "$lib/components/shared/PagingSentinel.svelte";
-	import { gridState } from "$lib/grid/grid-state.svelte";
-	import { ensureSentTapsLoaded } from "$lib/grid/grid-taps";
-	import { usernameMatches } from "$lib/model/browse/grid/filters";
-	import { armProfileDeck } from "$lib/profile/profile-deck";
-	import { getNow } from "$lib/util/now";
+	} from "#lib/app-data/preferences.svelte.ts";
+	import { getOrCreateConversationsState } from "#lib/chat/conversations-context.svelte.ts";
+	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
+	import PagingSentinel from "#lib/components/shared/PagingSentinel.svelte";
+	import { gridState } from "#lib/grid/grid-state.svelte.ts";
+	import { ensureSentTapsLoaded } from "#lib/grid/grid-taps.ts";
+	import { usernameMatches } from "#lib/model/browse/grid/filters.ts";
+	import { armProfileDeck } from "#lib/profile/profile-deck.ts";
+	import { getNow } from "#lib/util/now.ts";
 	import {
 		readGridMetrics,
 		virtualGrid,
-	} from "$lib/util/virtual-grid.svelte";
-	import type { FavoriteSearch } from "$lib/favorites/favorite-search.svelte";
-	import type { GridProfile } from "$lib/grid/grid";
+	} from "#lib/util/virtual-grid.svelte.ts";
+	import type { FavoriteSearch } from "#lib/favorites/favorite-search.svelte.ts";
+	import type { GridProfile } from "#lib/grid/grid.ts";
 	import EmptyGrid from "./EmptyGrid.svelte";
 	import ForYouRow from "./ForYouRow.svelte";
 	import GridCellSkeleton from "./GridCellSkeleton.svelte";

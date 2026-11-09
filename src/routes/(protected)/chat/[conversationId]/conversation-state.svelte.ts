@@ -3,29 +3,29 @@
 import { createContext } from "svelte";
 import { toast } from "svelte-sonner";
 
-import { showErrorToast } from "$lib/api/error-toast";
-import { errorUrn } from "$lib/api/error-urn";
-import { markConversationAsRead } from "$lib/api/messaging/conversations";
+import { showErrorToast } from "#lib/api/error-toast.ts";
+import { errorUrn } from "#lib/api/error-urn.ts";
+import { markConversationAsRead } from "#lib/api/messaging/conversations.ts";
 import {
 	ConversationUnavailableError,
 	reactToMessage,
 	sendMessage,
-} from "$lib/api/messaging/messages";
-import { getPreferences } from "$lib/app-data/preferences.svelte";
+} from "#lib/api/messaging/messages.ts";
+import { getPreferences } from "#lib/app-data/preferences.svelte.ts";
 import {
 	deletedConversationIds,
 	deletedMessageIds,
-} from "$lib/chat/message-deleted";
-import { withRegionGrant } from "$lib/entitlements/expiring-media-entitlement";
-import { previewFromMessage } from "$lib/model/messaging/message-preview";
-import { reconciler } from "$lib/util/reconcile";
-import { stopListening } from "$lib/ws.svelte";
-import type { ConversationsState } from "$lib/chat/conversations-state.svelte";
+} from "#lib/chat/message-deleted.ts";
+import { withRegionGrant } from "#lib/entitlements/expiring-media-entitlement.ts";
+import { previewFromMessage } from "#lib/model/messaging/message-preview.ts";
+import { reconciler } from "#lib/util/reconcile.ts";
+import { stopListening } from "#lib/ws.svelte.ts";
+import type { ConversationsState } from "#lib/chat/conversations-state.svelte.ts";
 import type {
 	ApiResponseMessage,
 	MessageDraft,
-} from "$lib/model/messaging/messages";
-import type { ChatV1MessageDeletedEventPayload } from "$lib/ws.svelte";
+} from "#lib/model/messaging/messages.ts";
+import type { ChatV1MessageDeletedEventPayload } from "#lib/ws.svelte.ts";
 import { subscribeConversationRealtime } from "./conversation-realtime";
 import { DynamicMessagesRefresh } from "./dynamic-refresh";
 import {

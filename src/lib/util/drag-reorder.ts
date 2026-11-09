@@ -1,4 +1,4 @@
-import { hapticImpact, hapticSelection } from "$lib/platform/haptics";
+import { hapticImpact, hapticSelection } from "#lib/platform/haptics.ts";
 
 /**
  * Long-press-and-drag reordering for a grid of tiles.

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tabShellShowing } from "$lib/components/tab-shell/tab-shell-state.svelte";
+	import { tabShellShowing } from "#lib/components/tab-shell/tab-shell-state.svelte.ts";
 	import InterestScreen from "./InterestScreen.svelte";
 
 	let { data }: import("./$types").LayoutProps = $props();

@@ -1,14 +1,14 @@
-import { runBackGestureHandlers } from "$lib/platform/back-gesture-event.svelte";
+import { runBackGestureHandlers } from "#lib/platform/back-gesture-event.svelte.ts";
 import {
 	showSwipeBackGhost,
 	type SwipeBackGhost,
-} from "$lib/platform/swipe-back-ghost";
+} from "#lib/platform/swipe-back-ghost.ts";
 import {
 	backGestureOverlayOpen,
 	beginEdgeSwipeBack,
 	type EdgeSwipe,
-} from "$lib/platform/system-back-gesture";
-import { canGoBack } from "$lib/util/history";
+} from "#lib/platform/system-back-gesture.ts";
+import { canGoBack } from "#lib/util/history.ts";
 
 /**
  * Interactive left-edge "swipe to go back" gesture.

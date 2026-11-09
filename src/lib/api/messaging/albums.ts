@@ -1,13 +1,13 @@
 import { invoke } from "@tauri-apps/api/core";
 import z from "zod";
 
-import { cachedFetch } from "$lib/api/cache";
-import { fetchRest, uploadFileRest } from "$lib/api/transport";
+import { cachedFetch } from "#lib/api/cache.ts";
+import { fetchRest, uploadFileRest } from "#lib/api/transport.ts";
 import {
 	demoEnabled,
 	demoUploadAlbumContent,
 	demoUploadAlbumFile,
-} from "$lib/demo";
+} from "#lib/demo/index.ts";
 import {
 	type AlbumContentOrderRequest,
 	albumContentProcessingResponseSchema,
@@ -28,13 +28,13 @@ import {
 	pressieAlbumsFeedResponseSchema,
 	pressieAlbumsPaywallResponseSchema,
 	sharedAlbumSchema,
-} from "$lib/model/messaging/albums";
+} from "#lib/model/messaging/albums.ts";
 import {
 	mediaFileDescriptor,
 	type MediaFileInspection,
-} from "$lib/platform/media-file";
-import { toBase64 } from "$lib/util/base64";
-import type { PickedMedia } from "$lib/platform/media-picker";
+} from "#lib/platform/media-file.ts";
+import { toBase64 } from "#lib/util/base64.ts";
+import type { PickedMedia } from "#lib/platform/media-picker.ts";
 
 const albumResponseSchema = z.object({
 	...albumMinSchema.shape,

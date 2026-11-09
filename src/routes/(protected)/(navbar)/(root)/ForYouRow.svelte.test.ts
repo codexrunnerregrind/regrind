@@ -10,12 +10,12 @@ const { setPreferencesMock, toastMock } = vi.hoisted(() => ({
 
 vi.mock("svelte-sonner", () => ({ toast: toastMock }));
 
-vi.mock("$lib/app-data/preferences.svelte", () => ({
+vi.mock("#lib/app-data/preferences.svelte.ts", () => ({
 	setPreferences: setPreferencesMock,
 	preferencesSnapshot: () => ({}),
 }));
 
-import { rendered } from "$lib/grid/grid-test-helpers";
+import { rendered } from "#lib/grid/grid-test-helpers.ts";
 import ForYouRow from "./ForYouRow.svelte";
 
 const HOUR = 60 * 60 * 1000;

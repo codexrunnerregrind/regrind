@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { estimateAccountCreation } from "$lib/model/users/account-age";
+	import { estimateAccountCreation } from "#lib/model/users/account-age.ts";
 
 	let { profileId }: { profileId: number } = $props();
 

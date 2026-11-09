@@ -18,19 +18,19 @@ const {
 	getNowMock: vi.fn(),
 }));
 
-vi.mock("$lib/api/right-now", () => ({
+vi.mock("#lib/api/right-now.ts", () => ({
 	getEntitlements: getEntitlementsMock,
 	getActiveRightNowPost: getActiveRightNowPostMock,
 	createRightNowPost: createRightNowPostMock,
 	updateRightNowPost: updateRightNowPostMock,
 }));
-vi.mock("$lib/util/now", () => ({ getNow: getNowMock }));
-vi.mock("$lib/api/settings/account", () => ({
+vi.mock("#lib/util/now.ts", () => ({ getNow: getNowMock }));
+vi.mock("#lib/api/settings/account.ts", () => ({
 	getAccountPreferences: getAccountPreferencesMock,
 }));
-vi.mock("$lib/app-data/preferences.svelte", async (importOriginal) => ({
+vi.mock("#lib/app-data/preferences.svelte.ts", async (importOriginal) => ({
 	...(await importOriginal<
-		typeof import("$lib/app-data/preferences.svelte")
+		typeof import("#lib/app-data/preferences.svelte.ts")
 	>()),
 	getActiveGeohashSnapshot: activeGeohashMock,
 }));

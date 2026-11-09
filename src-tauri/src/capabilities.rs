@@ -53,7 +53,7 @@ mod tests {
 		})
 	}
 
-	/// `preferences.{profileId}.data`, as written by `$lib/app-data`.
+	/// `preferences.{profileId}.data`, as written by `#lib/app-data`.
 	fn account_file(profile_id: u64) -> String {
 		format!("$APPLOCALDATA/preferences.{profile_id}.data")
 	}

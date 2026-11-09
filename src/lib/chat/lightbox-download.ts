@@ -1,13 +1,13 @@
 import { toast } from "svelte-sonner";
 import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
-import { showErrorToast } from "$lib/api/error-toast";
+import { showErrorToast } from "#lib/api/error-toast.ts";
 import {
 	type MediaToSave,
 	saveAllMediaToDevice,
 	saveMediaToDevice,
 	type SaveResult,
-} from "$lib/platform/save-media";
+} from "#lib/platform/save-media.ts";
 
 // A download-to-tray glyph. Explicit white fill (CSS var() isn't resolved inside
 // SVG presentation attributes) so it matches the built-in close/zoom buttons

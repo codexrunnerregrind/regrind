@@ -4,11 +4,11 @@
 	import EyeSlashIcon from "phosphor-svelte/lib/EyeSlashIcon";
 	import { innerHeight, innerWidth } from "svelte/reactivity/window";
 
-	import { showErrorToast } from "$lib/api/error-toast";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
 		preferencesSnapshot,
 		setPreferences,
-	} from "$lib/app-data/preferences.svelte";
+	} from "#lib/app-data/preferences.svelte.ts";
 	import {
 		imagePrivacy,
 		imagesHidden,

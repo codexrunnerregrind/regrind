@@ -1,12 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("$lib/platform/os", () => ({ isAndroidPlatform: () => true }));
+vi.mock("#lib/platform/os.ts", () => ({ isAndroidPlatform: () => true }));
 vi.mock("@tauri-apps/plugin-notification", () => ({
 	isPermissionGranted: () => Promise.resolve(false),
 	requestPermission: () => Promise.resolve("denied"),
 }));
 
-import { notificationAccess } from "$lib/notifications/permission.svelte";
+import { notificationAccess } from "#lib/notifications/permission.svelte.ts";
 
 type BridgeState = {
 	appEnabled: boolean;

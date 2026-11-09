@@ -1,6 +1,6 @@
 import z from "zod";
 
-import { rightNowShareLocationSchema } from "$lib/model/right-now";
+import { rightNowShareLocationSchema } from "#lib/model/right-now.ts";
 
 /** The longest text the API accepts on a post. */
 export const RIGHT_NOW_TEXT_LIMIT = 140;

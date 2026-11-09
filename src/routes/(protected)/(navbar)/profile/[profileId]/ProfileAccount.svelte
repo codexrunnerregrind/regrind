@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { hideUser } from "$lib/api/browse/hides";
-	import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
-	import ReportSheet from "$lib/components/report/ReportSheet.svelte";
+	import { hideUser } from "#lib/api/browse/hides.ts";
+	import { preferencesSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import ReportSheet from "#lib/components/report/ReportSheet.svelte";
 	import AccountCreated from "./fields/AccountCreated.svelte";
 	import { blockProfile, copyProfileId } from "./profile-actions";
 	import {

@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
-	import BlockProfileDialog from "$lib/components/profile/BlockProfileDialog.svelte";
-	import { Button } from "$lib/components/ui/button";
+	import { preferencesSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import BlockProfileDialog from "#lib/components/profile/BlockProfileDialog.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
 	import { blockProfile } from "../profile-actions";
 	import type { PendingViewabilityChange } from "../profile-state.svelte";
 	import BlockUserIcon from "./BlockUserIcon.svelte";

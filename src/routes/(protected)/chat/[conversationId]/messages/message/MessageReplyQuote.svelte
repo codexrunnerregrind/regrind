@@ -6,9 +6,9 @@
 		previewFromMessage,
 		quoteLabel,
 		replyThumbnailUrl,
-	} from "$lib/model/messaging/message-preview";
-	import { type QuotedMessage } from "$lib/model/messaging/messages";
-	import { scrollToMessage } from "$lib/util/scroll";
+	} from "#lib/model/messaging/message-preview.ts";
+	import { type QuotedMessage } from "#lib/model/messaging/messages.ts";
+	import { scrollToMessage } from "#lib/util/scroll.ts";
 	import { getConversationState } from "../../conversation-state.svelte";
 	import { getMessageMetaContext } from "./context";
 	import MessageQuoteBlock from "./MessageQuoteBlock.svelte";

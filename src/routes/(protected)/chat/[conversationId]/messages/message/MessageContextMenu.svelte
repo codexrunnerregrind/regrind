@@ -10,9 +10,9 @@
 	import { toast } from "svelte-sonner";
 	import type { ComponentProps } from "svelte";
 
-	import fireEmoji from "$lib/assets/emojis/fire/32px.png";
-	import ContextMenu from "$lib/components/shared/ContextMenu.svelte";
-	import { Button } from "$lib/components/ui/button";
+	import fireEmoji from "#lib/assets/emojis/fire/32px.png";
+	import ContextMenu from "#lib/components/shared/ContextMenu.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
 
 	let {
 		textContent,

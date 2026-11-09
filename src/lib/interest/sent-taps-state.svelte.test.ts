@@ -8,12 +8,12 @@ const { getSentTapsMock, getProfilesMock, reconcileHandlers } = vi.hoisted(
 	}),
 );
 
-vi.mock("$lib/api/interest/taps", () => ({ getSentTaps: getSentTapsMock }));
-vi.mock("$lib/api/users/profiles", async (importOriginal) => ({
-	...(await importOriginal<typeof import("$lib/api/users/profiles")>()),
+vi.mock("#lib/api/interest/taps.ts", () => ({ getSentTaps: getSentTapsMock }));
+vi.mock("#lib/api/users/profiles.ts", async (importOriginal) => ({
+	...(await importOriginal<typeof import("#lib/api/users/profiles.ts")>()),
 	getProfiles: getProfilesMock,
 }));
-vi.mock("$lib/util/reconcile", () => ({
+vi.mock("#lib/util/reconcile.ts", () => ({
 	reconciler: {
 		subscribe(handler: () => void | Promise<void>) {
 			reconcileHandlers.push(handler);
@@ -22,7 +22,7 @@ vi.mock("$lib/util/reconcile", () => ({
 	},
 }));
 
-import { clearAccountCaches } from "$lib/api/account-caches";
+import { clearAccountCaches } from "#lib/api/account-caches.ts";
 import {
 	resetSentTapsCacheForTesting,
 	SentTapsState,

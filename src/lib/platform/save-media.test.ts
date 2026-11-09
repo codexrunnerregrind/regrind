@@ -32,7 +32,7 @@ vi.mock("@tauri-apps/plugin-dialog", () => ({
 vi.mock("@tauri-apps/plugin-fs", () => ({ writeFile: writeFileMock }));
 vi.mock("@tauri-apps/plugin-os", () => ({ platform: platformMock }));
 vi.mock("tauri-plugin-android-fs-api", () => ({ AndroidFs: androidFsMock }));
-vi.mock("$lib/demo", () => ({ demoEnabled: false }));
+vi.mock("#lib/demo/index.ts", () => ({ demoEnabled: false }));
 
 import { saveAllMediaToDevice } from "./save-media";
 

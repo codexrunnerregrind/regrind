@@ -6,12 +6,12 @@
 	import {
 		STACK_Z,
 		stackMotion,
-	} from "$lib/components/navigation/stack/motion";
-	import { trackScrolled } from "$lib/components/navigation/stack/snapshot";
-	import { paneSurface } from "$lib/components/navigation/stack/surface";
-	import { attachSystemBackGesture } from "$lib/platform/system-back-gesture";
-	import { earlierPathnames } from "$lib/util/history";
-	import { reducedMotion } from "$lib/util/reduced-motion";
+	} from "#lib/components/navigation/stack/motion.ts";
+	import { trackScrolled } from "#lib/components/navigation/stack/snapshot.ts";
+	import { paneSurface } from "#lib/components/navigation/stack/surface.ts";
+	import { attachSystemBackGesture } from "#lib/platform/system-back-gesture.ts";
+	import { earlierPathnames } from "#lib/util/history.ts";
+	import { reducedMotion } from "#lib/util/reduced-motion.ts";
 	import { pushedFromChain } from "./hierarchy";
 	import { PageStackState } from "./page-stack-state.svelte";
 

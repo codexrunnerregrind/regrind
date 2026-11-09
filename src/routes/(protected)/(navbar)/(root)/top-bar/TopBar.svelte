@@ -1,8 +1,8 @@
 <script lang="ts">
-	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
-	import { gridState } from "$lib/grid/grid-state.svelte";
-	import { topChrome } from "$lib/util/screen-chrome.svelte";
-	import type { FavoriteSearch } from "$lib/favorites/favorite-search.svelte";
+	import ProgressiveBlur from "#lib/components/shared/ProgressiveBlur.svelte";
+	import { gridState } from "#lib/grid/grid-state.svelte.ts";
+	import { topChrome } from "#lib/util/screen-chrome.svelte.ts";
+	import type { FavoriteSearch } from "#lib/favorites/favorite-search.svelte.ts";
 	import FavoriteNoteSearch from "../FavoriteNoteSearch.svelte";
 	import GridFilters from "../GridFilters.svelte";
 	import LocationChange from "../LocationChange.svelte";

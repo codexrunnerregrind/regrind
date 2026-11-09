@@ -6,12 +6,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const preferences = vi.hoisted(() => ({ units: "metric" }));
 
-vi.mock("$lib/app-data/preferences.svelte", () => ({
+vi.mock("#lib/app-data/preferences.svelte.ts", () => ({
 	preferencesSnapshot: () => preferences,
 	getReduceMotionSnapshot: () => false,
 }));
 
-import { formatWeightKg, kgToPounds } from "$lib/util/units";
+import { formatWeightKg, kgToPounds } from "#lib/util/units.ts";
 import WeightFilter from "./WeightFilter.svelte";
 
 const TRACK_WIDTH = 1000;

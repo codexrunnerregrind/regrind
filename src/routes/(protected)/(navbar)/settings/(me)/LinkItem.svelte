@@ -1,7 +1,7 @@
 <script lang="ts">
-	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
-	import { Button } from "$lib/components/ui/button";
-	import * as Dialog from "$lib/components/ui/dialog";
+	import SettingsRow from "#lib/components/settings/SettingsRow.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import * as Dialog from "#lib/components/ui/dialog/index.ts";
 
 	let {
 		label,

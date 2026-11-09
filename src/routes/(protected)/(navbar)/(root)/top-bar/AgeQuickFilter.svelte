@@ -1,16 +1,16 @@
 <script lang="ts">
 	import { untrack } from "svelte";
 
-	import AgeFilterSlider from "$lib/components/filters/age/AgeFilterSlider.svelte";
-	import { Button, buttonVariants } from "$lib/components/ui/button";
-	import * as Drawer from "$lib/components/ui/drawer";
-	import { Switch } from "$lib/components/ui/switch";
-	import { gridState } from "$lib/grid/grid-state.svelte";
+	import AgeFilterSlider from "#lib/components/filters/age/AgeFilterSlider.svelte";
+	import { Button, buttonVariants } from "#lib/components/ui/button/index.ts";
+	import * as Drawer from "#lib/components/ui/drawer/index.ts";
+	import { Switch } from "#lib/components/ui/switch/index.ts";
+	import { gridState } from "#lib/grid/grid-state.svelte.ts";
 	import {
 		ageRangeLabel,
 		defaultFilters,
-	} from "$lib/model/browse/grid/filters";
-	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
+	} from "#lib/model/browse/grid/filters.ts";
+	import { dismissOnBackGesture } from "#lib/platform/back-gesture-event.svelte.ts";
 
 	let { open = $bindable() }: { open: boolean } = $props();
 

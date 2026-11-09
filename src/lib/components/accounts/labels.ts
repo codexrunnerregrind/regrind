@@ -1,4 +1,4 @@
-import type { AccountSummary } from "$lib/api/accounts.svelte";
+import type { AccountSummary } from "#lib/api/accounts.svelte.ts";
 
 /**
  * What to call an account.

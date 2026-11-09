@@ -8,25 +8,25 @@
 	import PushPinIcon from "phosphor-svelte/lib/PushPinIcon";
 	import { onDestroy, tick, untrack } from "svelte";
 
-	import { getConversations } from "$lib/chat/conversations-context.svelte";
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
-	import ListRowSkeleton from "$lib/components/feedback/ListRowSkeleton.svelte";
-	import PagerTrack from "$lib/components/shared/PagerTrack.svelte";
-	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
-	import ScrollToTopButton from "$lib/components/shared/ScrollToTopButton.svelte";
-	import UnderlineTabs from "$lib/components/shared/UnderlineTabs.svelte";
-	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
-	import { hapticImpact, hapticSelection } from "$lib/platform/haptics";
-	import { below } from "$lib/util/breakpoints.svelte";
-	import { leaveDeletedPages } from "$lib/util/deleted-pages";
-	import { restoreScrollOnce } from "$lib/util/scroll-restore.svelte";
-	import { SelectionSet } from "$lib/util/selection.svelte";
+	import { getConversations } from "#lib/chat/conversations-context.svelte.ts";
+	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
+	import DataRefreshControl from "#lib/components/feedback/DataRefreshControl.svelte";
+	import ListRowSkeleton from "#lib/components/feedback/ListRowSkeleton.svelte";
+	import PagerTrack from "#lib/components/shared/PagerTrack.svelte";
+	import ProgressiveBlur from "#lib/components/shared/ProgressiveBlur.svelte";
+	import ScrollToTopButton from "#lib/components/shared/ScrollToTopButton.svelte";
+	import UnderlineTabs from "#lib/components/shared/UnderlineTabs.svelte";
+	import { dismissOnBackGesture } from "#lib/platform/back-gesture-event.svelte.ts";
+	import { hapticImpact, hapticSelection } from "#lib/platform/haptics.ts";
+	import { below } from "#lib/util/breakpoints.svelte.ts";
+	import { leaveDeletedPages } from "#lib/util/deleted-pages.ts";
+	import { restoreScrollOnce } from "#lib/util/scroll-restore.svelte.ts";
+	import { SelectionSet } from "#lib/util/selection.svelte.ts";
 	import type {
 		ConversationsState,
 		InboxTab,
-	} from "$lib/chat/conversations-state.svelte";
-	import type { Conversation as ConversationEntry } from "$lib/model/messaging/conversations";
+	} from "#lib/chat/conversations-state.svelte.ts";
+	import type { Conversation as ConversationEntry } from "#lib/model/messaging/conversations.ts";
 	import AlbumsTab from "./AlbumsTab.svelte";
 	import ConversationsFilters from "./ConversationsFilters.svelte";
 	import ConversationsPagingTail from "./ConversationsPagingTail.svelte";

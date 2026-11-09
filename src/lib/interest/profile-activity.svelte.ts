@@ -1,7 +1,7 @@
 import { SvelteMap } from "svelte/reactivity";
 
-import { registerAccountCache } from "$lib/api/account-caches";
-import { TapType } from "$lib/model/interest/taps";
+import { registerAccountCache } from "#lib/api/account-caches.ts";
+import { TapType } from "#lib/model/interest/taps.ts";
 
 /**
  * How long a tap or a chat keeps announcing itself on the other person's

@@ -1,5 +1,5 @@
-import { getAlbumsPaywallContent } from "$lib/api/messaging/albums";
-import { now } from "$lib/util/clock";
+import { getAlbumsPaywallContent } from "#lib/api/messaging/albums.ts";
+import { now } from "#lib/util/clock.ts";
 
 /**
  * Blurred cover previews for albums we are not entitled to open.

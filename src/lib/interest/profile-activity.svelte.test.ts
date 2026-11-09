@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { clearAccountCaches } from "$lib/api/account-caches";
-import { TapType } from "$lib/model/interest/taps";
+import { clearAccountCaches } from "#lib/api/account-caches.ts";
+import { TapType } from "#lib/model/interest/taps.ts";
 import {
 	isRecentActivity,
 	profileActivity,

@@ -4,21 +4,21 @@
 	import { toast } from "svelte-sonner";
 	import { SvelteSet } from "svelte/reactivity";
 
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { getSavedLocationsSnapshot } from "$lib/app-data/preferences.svelte";
-	import { placeImportStatus } from "$lib/app-data/saved-locations-transfer";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { getSavedLocationsSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import { placeImportStatus } from "#lib/app-data/saved-locations-transfer.ts";
 	import {
 		type Backup,
 		BackupReadError,
 		backupSettingsCount,
 		parseBackup,
 		restoreBackup,
-	} from "$lib/backup/backup";
-	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
-	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
-	import { Button } from "$lib/components/ui/button";
-	import { Checkbox } from "$lib/components/ui/checkbox";
-	import { pickTextFile } from "$lib/platform/data-file";
+	} from "#lib/backup/backup.ts";
+	import SettingsGroup from "#lib/components/settings/SettingsGroup.svelte";
+	import SettingsRow from "#lib/components/settings/SettingsRow.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import { Checkbox } from "#lib/components/ui/checkbox/index.ts";
+	import { pickTextFile } from "#lib/platform/data-file.ts";
 	import PlacesPart from "./PlacesPart.svelte";
 
 	let backup = $state<Backup | null>(null);

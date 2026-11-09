@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { toast } from "svelte-sonner";
 
-	import { blockUser } from "$lib/api/browse/blocks";
-	import { showErrorToast } from "$lib/api/error-toast";
-	import * as AlertDialog from "$lib/components/ui/alert-dialog";
+	import { blockUser } from "#lib/api/browse/blocks.ts";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import * as AlertDialog from "#lib/components/ui/alert-dialog/index.ts";
 
 	let {
 		open = $bindable(false),

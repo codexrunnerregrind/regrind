@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Switch } from "$lib/components/ui/switch";
+	import { Switch } from "#lib/components/ui/switch/index.ts";
 	import { inlineLabelClass, inlineRowClass } from "./row";
 
 	let { label, checked = $bindable() }: { label: string; checked: boolean } =

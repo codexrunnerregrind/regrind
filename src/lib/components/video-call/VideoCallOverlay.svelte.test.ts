@@ -28,7 +28,7 @@ const videoCall = $state({
 	accept: vi.fn(),
 });
 
-vi.mock("$lib/video-call/call-state.svelte", () => ({ videoCall }));
+vi.mock("#lib/video-call/call-state.svelte.ts", () => ({ videoCall }));
 
 const VideoCallOverlay = (await import("./VideoCallOverlay.svelte")).default;
 

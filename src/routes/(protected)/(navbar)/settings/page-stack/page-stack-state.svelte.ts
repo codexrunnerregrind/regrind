@@ -1,16 +1,16 @@
 import { tick } from "svelte";
 import type { OnNavigate } from "@sveltejs/kit";
 
-import { StackSettle } from "$lib/components/navigation/stack/settle";
+import { StackSettle } from "#lib/components/navigation/stack/settle.ts";
 import {
 	type PaneSnapshot,
 	snapshotPane,
-} from "$lib/components/navigation/stack/snapshot";
-import { Generation } from "$lib/util/generation";
-import { canGoBack } from "$lib/util/history";
-import { isWithin } from "$lib/util/pathname";
-import type { StackMotion } from "$lib/components/navigation/stack/motion";
-import type { StackSurface } from "$lib/components/navigation/stack/surface";
+} from "#lib/components/navigation/stack/snapshot.ts";
+import { Generation } from "#lib/util/generation.ts";
+import { canGoBack } from "#lib/util/history.ts";
+import { isWithin } from "#lib/util/pathname.ts";
+import type { StackMotion } from "#lib/components/navigation/stack/motion.ts";
+import type { StackSurface } from "#lib/components/navigation/stack/surface.ts";
 import { ancestorsOf, stackRelation, type StackRelation } from "./hierarchy";
 
 type LiveRole = "front" | "back";

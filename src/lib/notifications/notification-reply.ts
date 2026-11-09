@@ -1,4 +1,4 @@
-import { sendMessage } from "$lib/api/messaging/messages";
+import { sendMessage } from "#lib/api/messaging/messages.ts";
 
 // Conversation ids are the two profile ids joined by a colon.
 export function peerIdFromConversation(

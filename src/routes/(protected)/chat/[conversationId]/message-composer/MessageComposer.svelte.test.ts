@@ -6,13 +6,13 @@ import { cleanup, fireEvent, render } from "@testing-library/svelte";
 import { flushSync, tick } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { Drafts } from "$lib/chat/drafts.svelte";
-import { draftFromMessage } from "$lib/model/messaging/messages";
+import { Drafts } from "#lib/chat/drafts.svelte.ts";
+import { draftFromMessage } from "#lib/model/messaging/messages.ts";
 import {
 	backGestureEventHandlers,
 	runBackGestureHandlers,
-} from "$lib/platform/back-gesture-event.svelte";
-import { MAX_DURATION_MS } from "$lib/platform/voice-recorder.svelte";
+} from "#lib/platform/back-gesture-event.svelte.ts";
+import { MAX_DURATION_MS } from "#lib/platform/voice-recorder.svelte.ts";
 import { ComposerSheetsState } from "./composer-sheets-state.svelte";
 
 const { conversations, composerSheets, conversationState } = vi.hoisted(() => ({
@@ -22,7 +22,7 @@ const { conversations, composerSheets, conversationState } = vi.hoisted(() => ({
 }));
 
 vi.mock("$app/navigation", () => ({ onNavigate: vi.fn() }));
-vi.mock("$lib/chat/conversations-context.svelte", () => ({
+vi.mock("#lib/chat/conversations-context.svelte.ts", () => ({
 	getConversations: () => conversations,
 }));
 vi.mock("./send-media/send-media-offer.svelte", () => ({
@@ -48,7 +48,7 @@ vi.mock("../conversation-state.svelte", () => ({
 
 // The saved-phrase bar loads the account's phrases as soon as the composer
 // mounts; a jsdom run has no backend to answer that.
-vi.mock("$lib/api/messaging/phrases", () => ({
+vi.mock("#lib/api/messaging/phrases.ts", () => ({
 	getSavedPhrases: () =>
 		Promise.resolve([{ id: "1", text: "Hey there", type: "user" }]),
 	createSavedPhrase: () => Promise.resolve(null),
@@ -57,9 +57,9 @@ vi.mock("$lib/api/messaging/phrases", () => ({
 }));
 
 const uploadChatAudio = vi.hoisted(() => vi.fn());
-vi.mock("$lib/api/messaging/chat-media", () => ({ uploadChatAudio }));
+vi.mock("#lib/api/messaging/chat-media.ts", () => ({ uploadChatAudio }));
 
-vi.mock("$lib/ws.svelte", () => ({
+vi.mock("#lib/ws.svelte.ts", () => ({
 	ws: {
 		status: "connected",
 		connect: () => {},

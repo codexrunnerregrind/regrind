@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { getProfile } from "$lib/api/users/profiles";
-	import AccountsSheet from "$lib/components/accounts/AccountsSheet.svelte";
-	import AccountsTrigger from "$lib/components/accounts/AccountsTrigger.svelte";
-	import BrokenUserAvatar from "$lib/components/profile/BrokenUserAvatar.svelte";
-	import DisplayName from "$lib/components/profile/DisplayName.svelte";
-	import UserAvatar from "$lib/components/profile/UserAvatar.svelte";
-	import { Skeleton } from "$lib/components/ui/skeleton";
+	import { getProfile } from "#lib/api/users/profiles.ts";
+	import AccountsSheet from "#lib/components/accounts/AccountsSheet.svelte";
+	import AccountsTrigger from "#lib/components/accounts/AccountsTrigger.svelte";
+	import BrokenUserAvatar from "#lib/components/profile/BrokenUserAvatar.svelte";
+	import DisplayName from "#lib/components/profile/DisplayName.svelte";
+	import UserAvatar from "#lib/components/profile/UserAvatar.svelte";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.ts";
 
 	let { id }: { id: number } = $props();
 

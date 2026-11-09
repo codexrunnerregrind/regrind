@@ -16,16 +16,16 @@ const {
 	showErrorToastMock: vi.fn(),
 }));
 
-vi.mock("$lib/api/error-toast", () => ({ showErrorToast: showErrorToastMock }));
+vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast: showErrorToastMock }));
 vi.mock("svelte-sonner", () => ({ toast: { success: vi.fn() } }));
-vi.mock("$lib/api/interest/views", () => ({
+vi.mock("#lib/api/interest/views.ts", () => ({
 	recordProfileView: recordProfileViewMock,
 }));
-vi.mock("$lib/app-data/preferences.svelte", () => ({
+vi.mock("#lib/app-data/preferences.svelte.ts", () => ({
 	getPreferences: getPreferencesMock,
 }));
-vi.mock("$lib/api/users/profiles", async (importOriginal) => ({
-	...(await importOriginal<typeof import("$lib/api/users/profiles")>()),
+vi.mock("#lib/api/users/profiles.ts", async (importOriginal) => ({
+	...(await importOriginal<typeof import("#lib/api/users/profiles.ts")>()),
 	getProfile: getProfileMock,
 	refreshProfile: refreshProfileMock,
 	mergeProfileEditIntoCaches: mergeProfileEditIntoCachesMock,
@@ -34,9 +34,9 @@ vi.mock("$lib/api/users/profiles", async (importOriginal) => ({
 import {
 	BlockedProfileError,
 	ProfileUnavailableError,
-} from "$lib/api/users/profiles";
-import { TapType } from "$lib/model/interest/taps";
-import type { Profile } from "$lib/model/users/profiles";
+} from "#lib/api/users/profiles.ts";
+import { TapType } from "#lib/model/interest/taps.ts";
+import type { Profile } from "#lib/model/users/profiles.ts";
 import { ProfileState } from "./profile-state.svelte";
 
 const PROFILE_ID = 100001;

@@ -4,8 +4,8 @@
 	import { expoOut } from "svelte/easing";
 	import type { TransitionConfig } from "svelte/transition";
 
-	import { instantWhenReducedMotion } from "$lib/util/reduced-motion";
-	import { cn } from "$lib/util/utils";
+	import { instantWhenReducedMotion } from "#lib/util/reduced-motion.ts";
+	import { cn } from "#lib/util/utils.ts";
 
 	let {
 		checked = $bindable(),

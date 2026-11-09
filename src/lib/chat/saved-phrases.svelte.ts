@@ -1,12 +1,12 @@
-import { registerAccountCache } from "$lib/api/account-caches";
-import { showErrorToast } from "$lib/api/error-toast";
+import { registerAccountCache } from "#lib/api/account-caches.ts";
+import { showErrorToast } from "#lib/api/error-toast.ts";
 import {
 	createSavedPhrase,
 	deleteSavedPhrase,
 	getSavedPhrases,
 	trackSavedPhraseUsage,
-} from "$lib/api/messaging/phrases";
-import type { SavedPhrase } from "$lib/model/messaging/phrases";
+} from "#lib/api/messaging/phrases.ts";
+import type { SavedPhrase } from "#lib/model/messaging/phrases.ts";
 
 /**
  * The account's saved phrases, shared by every conversation's composer.

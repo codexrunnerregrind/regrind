@@ -4,7 +4,7 @@ import { cleanup, getAllByRole, render } from "@testing-library/svelte";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const { playHapticMock } = vi.hoisted(() => ({ playHapticMock: vi.fn() }));
-vi.mock("$lib/haptics", () => ({
+vi.mock("#lib/haptics.ts", () => ({
 	playHaptic: playHapticMock,
 	hapticImpact: vi.fn(),
 }));
@@ -12,13 +12,13 @@ vi.mock("$lib/haptics", () => ({
 const { sendTapMock } = vi.hoisted(() => ({
 	sendTapMock: vi.fn(() => Promise.resolve({ isMutual: false })),
 }));
-vi.mock("$lib/api/interest/taps", () => ({
+vi.mock("#lib/api/interest/taps.ts", () => ({
 	sendTap: sendTapMock,
 	findSentTap: vi.fn(),
 }));
 
-import { TapType } from "$lib/model/interest/taps";
-import { contextMenuEvent, rightClick } from "$lib/test/context-menu";
+import { TapType } from "#lib/model/interest/taps.ts";
+import { contextMenuEvent, rightClick } from "#lib/test/context-menu.ts";
 import TapProfileButton from "./TapProfileButton.svelte";
 
 function renderButton() {

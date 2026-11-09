@@ -1,15 +1,15 @@
 import z from "zod";
 
-import { clearFavoriteNotes } from "$lib/api/users/favorite-notes-state.svelte";
+import { clearFavoriteNotes } from "#lib/api/users/favorite-notes-state.svelte.ts";
 import {
 	addFavoriteUser,
 	getFavoriteNotes,
 	setFavoriteNote,
-} from "$lib/api/users/favorites";
-import { getProfiles } from "$lib/api/users/profiles";
-import { getActiveGeohashSnapshot } from "$lib/app-data/preferences.svelte";
-import { getGrid } from "$lib/grid/grid";
-import { favoriteNoteIsEmpty } from "$lib/model/users/favorites";
+} from "#lib/api/users/favorites.ts";
+import { getProfiles } from "#lib/api/users/profiles.ts";
+import { getActiveGeohashSnapshot } from "#lib/app-data/preferences.svelte.ts";
+import { getGrid } from "#lib/grid/grid.ts";
+import { favoriteNoteIsEmpty } from "#lib/model/users/favorites.ts";
 
 /** Marks the file as ours, so an unrelated JSON is rejected with a reason. */
 const FILE_KIND = "regrind-favorites";

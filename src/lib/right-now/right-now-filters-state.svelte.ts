@@ -1,14 +1,14 @@
-import { showErrorToast } from "$lib/api/error-toast";
+import { showErrorToast } from "#lib/api/error-toast.ts";
 import {
 	getPreferences,
 	preferencesAccount,
 	setPreferences,
-} from "$lib/app-data/preferences.svelte";
+} from "#lib/app-data/preferences.svelte.ts";
 import {
 	defaultRightNowFilters,
 	type RightNowFilters,
-} from "$lib/model/browse/grid/filters";
-import { deepEqual } from "$lib/util/deep-equal";
+} from "#lib/model/browse/grid/filters.ts";
+import { deepEqual } from "#lib/util/deep-equal.ts";
 
 export class RightNowSearchFiltersState {
 	value: RightNowFilters | null = $state(null);

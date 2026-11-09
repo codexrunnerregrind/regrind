@@ -6,10 +6,10 @@ import { platform } from "@tauri-apps/plugin-os";
 import { AndroidFs } from "tauri-plugin-android-fs-api";
 import z from "zod";
 
-import { demoEnabled } from "$lib/demo";
-import { restampMediaToNow } from "$lib/platform/media-timestamp";
-import { fromBase64 } from "$lib/util/base64";
-import { unproxyMediaUrl } from "$lib/util/media";
+import { demoEnabled } from "#lib/demo/index.ts";
+import { restampMediaToNow } from "#lib/platform/media-timestamp.ts";
+import { fromBase64 } from "#lib/util/base64.ts";
+import { unproxyMediaUrl } from "#lib/util/media.ts";
 
 const downloadedMediaSchema = z.object({
 	contentType: z.string().nullable(),

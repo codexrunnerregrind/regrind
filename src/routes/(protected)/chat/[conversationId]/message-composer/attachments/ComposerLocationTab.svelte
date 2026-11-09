@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 
-	import { getGeohashSnapshot } from "$lib/app-data/preferences.svelte";
-	import GeoMapPicker from "$lib/components/location-chooser/GeoMapPicker.svelte";
-	import { decodeGeohash } from "$lib/model/geohash";
-	import { draftFromMessage } from "$lib/model/messaging/messages";
-	import { hapticImpact } from "$lib/platform/haptics";
+	import { getGeohashSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import GeoMapPicker from "#lib/components/location-chooser/GeoMapPicker.svelte";
+	import { decodeGeohash } from "#lib/model/geohash.ts";
+	import { draftFromMessage } from "#lib/model/messaging/messages.ts";
+	import { hapticImpact } from "#lib/platform/haptics.ts";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
 
 	let {

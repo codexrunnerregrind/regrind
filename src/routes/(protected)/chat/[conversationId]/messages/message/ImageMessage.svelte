@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { openImageGalleryLightbox } from "$lib/chat/image-gallery";
-	import TakenOnGrindrBadge from "$lib/components/media/TakenOnGrindrBadge.svelte";
-	import MediaImage from "$lib/components/shared/MediaImage.svelte";
-	import { draftFromMessage } from "$lib/model/messaging/messages";
-	import { profileMediaUrl, proxyMediaUrl } from "$lib/util/media";
-	import { stableSignedUrl } from "$lib/util/signed-url";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { openImageGalleryLightbox } from "#lib/chat/image-gallery.ts";
+	import TakenOnGrindrBadge from "#lib/components/media/TakenOnGrindrBadge.svelte";
+	import MediaImage from "#lib/components/shared/MediaImage.svelte";
+	import { draftFromMessage } from "#lib/model/messaging/messages.ts";
+	import { profileMediaUrl, proxyMediaUrl } from "#lib/util/media.ts";
+	import { stableSignedUrl } from "#lib/util/signed-url.ts";
 	import type {
 		MediaViewerActions,
 		MediaViewerHeader,
-	} from "$lib/chat/media-viewer-chrome";
-	import type { ImageMessage } from "$lib/model/messaging/messages";
+	} from "#lib/chat/media-viewer-chrome.ts";
+	import type { ImageMessage } from "#lib/model/messaging/messages.ts";
 	import { getConversationState } from "../../conversation-state.svelte";
 	import { mediaRenewal } from "./media-renewal";
 	import { MessageMediaState } from "./message-media.svelte";

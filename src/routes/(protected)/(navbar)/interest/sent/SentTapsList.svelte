@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { untrack } from "svelte";
 
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import DataRefreshControl from "$lib/components/feedback/DataRefreshControl.svelte";
-	import ListRowSkeleton from "$lib/components/feedback/ListRowSkeleton.svelte";
-	import ScrollToTopButton from "$lib/components/shared/ScrollToTopButton.svelte";
-	import { getSentTapsState } from "$lib/interest/sent-taps-state.svelte";
-	import { armProfileDeck } from "$lib/profile/profile-deck";
-	import { observeIntersection } from "$lib/util/observe-intersection";
-	import { restoreScrollOnce } from "$lib/util/scroll-restore.svelte";
+	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
+	import DataRefreshControl from "#lib/components/feedback/DataRefreshControl.svelte";
+	import ListRowSkeleton from "#lib/components/feedback/ListRowSkeleton.svelte";
+	import ScrollToTopButton from "#lib/components/shared/ScrollToTopButton.svelte";
+	import { getSentTapsState } from "#lib/interest/sent-taps-state.svelte.ts";
+	import { armProfileDeck } from "#lib/profile/profile-deck.ts";
+	import { observeIntersection } from "#lib/util/observe-intersection.ts";
+	import { restoreScrollOnce } from "#lib/util/scroll-restore.svelte.ts";
 	import EmptySentTapsList from "./EmptySentTapsList.svelte";
 	import TapSentProfile from "./TapSentProfile.svelte";
 

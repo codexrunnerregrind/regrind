@@ -3,14 +3,14 @@ import z from "zod";
 import {
 	getPreferences,
 	setPreferences,
-} from "$lib/app-data/preferences.svelte";
+} from "#lib/app-data/preferences.svelte.ts";
 import {
 	maxFavorites,
 	maxRecents,
 	type SavedLocation,
 	savedLocationSchema,
 	spotKey,
-} from "$lib/model/saved-location";
+} from "#lib/model/saved-location.ts";
 
 const FILE_KIND = "regrind-saved-places";
 const FILE_VERSION = 1;

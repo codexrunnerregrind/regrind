@@ -3,8 +3,8 @@
 </script>
 
 <script lang="ts">
-	import { getBlockedUsers, unblockUser } from "$lib/api/browse/blocks";
-	import ProfileList from "$lib/components/profile-list/ProfileList.svelte";
+	import { getBlockedUsers, unblockUser } from "#lib/api/browse/blocks.ts";
+	import ProfileList from "#lib/components/profile-list/ProfileList.svelte";
 </script>
 
 <svelte:head>

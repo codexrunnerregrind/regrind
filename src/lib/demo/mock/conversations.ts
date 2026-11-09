@@ -1,10 +1,10 @@
-import { previewFromMessage } from "$lib/model/messaging/message-preview";
+import { previewFromMessage } from "#lib/model/messaging/message-preview.ts";
 import {
 	type ApiResponseMessage,
 	outboundMessageSchema,
-} from "$lib/model/messaging/messages";
-import type { AlbumExpirationType } from "$lib/model/messaging/albums";
-import type { Conversation } from "$lib/model/messaging/conversations";
+} from "#lib/model/messaging/messages.ts";
+import type { AlbumExpirationType } from "#lib/model/messaging/albums.ts";
+import type { Conversation } from "#lib/model/messaging/conversations.ts";
 import {
 	DAY,
 	demoMeProfileId,

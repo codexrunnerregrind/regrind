@@ -1,11 +1,11 @@
 import type z from "zod";
 
-import { fetchRest } from "$lib/api/transport";
+import { fetchRest } from "#lib/api/transport.ts";
 import {
 	matchesV1QuerySchema,
 	matchesV1ResponseSchema,
-} from "$lib/model/interest/matches";
-import { urlSearchParamsCodec } from "$lib/util/url-search-params";
+} from "#lib/model/interest/matches.ts";
+import { urlSearchParamsCodec } from "#lib/util/url-search-params.ts";
 
 export async function getMatchesV1(
 	query: z.infer<typeof matchesV1QuerySchema>,

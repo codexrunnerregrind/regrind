@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tabShellShowing } from "$lib/components/tab-shell/tab-shell-state.svelte";
+	import { tabShellShowing } from "#lib/components/tab-shell/tab-shell-state.svelte.ts";
 	import PageStack from "./page-stack/PageStack.svelte";
 
 	let { children }: import("./$types").LayoutProps = $props();

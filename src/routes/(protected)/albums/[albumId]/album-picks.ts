@@ -1,12 +1,12 @@
 import { toast } from "svelte-sonner";
 
-import { showErrorToast } from "$lib/api/error-toast";
+import { showErrorToast } from "#lib/api/error-toast.ts";
 import {
 	inspectMediaFile,
 	type MediaFileInspection,
 	mediaFileKindOf,
-} from "$lib/platform/media-file";
-import type { PickedMedia } from "$lib/platform/media-picker";
+} from "#lib/platform/media-file.ts";
+import type { PickedMedia } from "#lib/platform/media-picker.ts";
 
 export type Uploadable = {
 	media: PickedMedia;

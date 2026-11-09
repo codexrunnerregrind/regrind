@@ -9,7 +9,7 @@ const profiles = vi.hoisted(() => ({
 	deleteProfilePhotos: vi.fn(),
 }));
 
-vi.mock("$lib/api/users/profiles", () => profiles);
+vi.mock("#lib/api/users/profiles.ts", () => profiles);
 
 import ProfilePicturesUpload from "./ProfilePicturesUpload.svelte";
 

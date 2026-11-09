@@ -2,29 +2,29 @@
 	import { untrack } from "svelte";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error-toast";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
 		EMPTY_FAVORITE_NOTE,
 		favoriteNote,
 		refreshFavoriteNote,
-	} from "$lib/api/users/favorite-notes-state.svelte";
+	} from "#lib/api/users/favorite-notes-state.svelte.ts";
 	import {
 		deleteFavoriteNote,
 		setFavoriteNote,
-	} from "$lib/api/users/favorites";
-	import { Button, buttonVariants } from "$lib/components/ui/button";
-	import * as Drawer from "$lib/components/ui/drawer";
-	import { Input } from "$lib/components/ui/input";
-	import { Label } from "$lib/components/ui/label";
-	import { Spinner } from "$lib/components/ui/spinner";
-	import { Textarea } from "$lib/components/ui/textarea";
+	} from "#lib/api/users/favorites.ts";
+	import { Button, buttonVariants } from "#lib/components/ui/button/index.ts";
+	import * as Drawer from "#lib/components/ui/drawer/index.ts";
+	import { Input } from "#lib/components/ui/input/index.ts";
+	import { Label } from "#lib/components/ui/label/index.ts";
+	import { Spinner } from "#lib/components/ui/spinner/index.ts";
+	import { Textarea } from "#lib/components/ui/textarea/index.ts";
 	import {
 		FAVORITE_NOTE_MAX_LENGTH,
 		FAVORITE_NOTE_PHONE_MAX_LENGTH,
 		type FavoriteNoteContent,
 		favoriteNoteIsEmpty,
-	} from "$lib/model/users/favorites";
-	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
+	} from "#lib/model/users/favorites.ts";
+	import { backGestureEventHandlers } from "#lib/platform/back-gesture-event.svelte.ts";
 
 	let {
 		profileId,

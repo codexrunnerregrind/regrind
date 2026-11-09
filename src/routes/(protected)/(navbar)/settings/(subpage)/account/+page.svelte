@@ -7,10 +7,10 @@
 	import TrashIcon from "phosphor-svelte/lib/TrashIcon";
 	import { toast } from "svelte-sonner";
 
-	import ToastUnimplemented from "$lib/components/feedback/ToastUnimplemented.svelte";
-	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
-	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
-	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
+	import ToastUnimplemented from "#lib/components/feedback/ToastUnimplemented.svelte";
+	import SectionHeader from "#lib/components/settings/SectionHeader.svelte";
+	import SettingsGroup from "#lib/components/settings/SettingsGroup.svelte";
+	import SettingsRow from "#lib/components/settings/SettingsRow.svelte";
 
 	function unimplemented() {
 		toast(ToastUnimplemented, {

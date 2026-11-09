@@ -16,15 +16,15 @@ const { pickTextFileMock, toastMock } = vi.hoisted(() => ({
 	},
 }));
 
-vi.mock("$lib/app-data", () => ({
+vi.mock("#lib/app-data/index.ts", () => ({
 	existsAppDataFile: () => Promise.resolve(false),
 	readAppDataFile: () => Promise.resolve(encode({})),
 	removeAppDataFile: () => Promise.resolve(),
 	writeAppDataFileAtomic: () => Promise.resolve(),
 }));
-vi.mock("$lib/api/error-toast", () => ({ showErrorToast: vi.fn() }));
+vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast: vi.fn() }));
 vi.mock("svelte-sonner", () => ({ toast: toastMock }));
-vi.mock("$lib/platform/data-file", () => ({
+vi.mock("#lib/platform/data-file.ts", () => ({
 	saveTextFile: vi.fn(),
 	pickTextFile: pickTextFileMock,
 }));
@@ -32,7 +32,7 @@ vi.mock("$lib/platform/data-file", () => ({
 import {
 	getPreferences,
 	setPreferences,
-} from "$lib/app-data/preferences.svelte";
+} from "#lib/app-data/preferences.svelte.ts";
 import RestorePage from "./+page.svelte";
 
 const madrid = {

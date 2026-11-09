@@ -1,13 +1,13 @@
 import z from "zod";
 
-import { fetchRest } from "$lib/api/transport";
-import { awaitEntitlementGrant } from "$lib/entitlements/expiring-media-entitlement";
-import { recordSentTaps } from "$lib/interest/profile-activity.svelte";
-import { notePhotos } from "$lib/interest/viewer-matches";
-import { type SentTap, sentTapSchema } from "$lib/model/interest/sent-tap";
-import { tapProfileSchema } from "$lib/model/interest/tap-profile";
-import { type TapType } from "$lib/model/interest/taps";
-import type { Profile } from "$lib/model/users/profiles";
+import { fetchRest } from "#lib/api/transport.ts";
+import { awaitEntitlementGrant } from "#lib/entitlements/expiring-media-entitlement.ts";
+import { recordSentTaps } from "#lib/interest/profile-activity.svelte.ts";
+import { notePhotos } from "#lib/interest/viewer-matches.ts";
+import { type SentTap, sentTapSchema } from "#lib/model/interest/sent-tap.ts";
+import { tapProfileSchema } from "#lib/model/interest/tap-profile.ts";
+import { type TapType } from "#lib/model/interest/taps.ts";
+import type { Profile } from "#lib/model/users/profiles.ts";
 
 const getReceivedTapsResponseSchema = z.object({
 	profiles: z.array(tapProfileSchema),

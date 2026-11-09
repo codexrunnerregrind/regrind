@@ -1,9 +1,9 @@
 <script lang="ts">
 	import DropIcon from "phosphor-svelte/lib/DropIcon";
 
-	import { Button } from "$lib/components/ui/button";
-	import * as Empty from "$lib/components/ui/empty";
-	import { rightNowState } from "$lib/right-now/right-now-state.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import * as Empty from "#lib/components/ui/empty/index.ts";
+	import { rightNowState } from "#lib/right-now/right-now-state.svelte.ts";
 </script>
 
 <Empty.Root>

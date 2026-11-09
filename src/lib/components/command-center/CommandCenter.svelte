@@ -5,10 +5,10 @@
 	import { onMount } from "svelte";
 	import { tinykeys } from "tinykeys";
 
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { Button } from "$lib/components/ui/button";
-	import * as Dialog from "$lib/components/ui/dialog";
-	import * as InputGroup from "$lib/components/ui/input-group";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import * as Dialog from "#lib/components/ui/dialog/index.ts";
+	import * as InputGroup from "#lib/components/ui/input-group/index.ts";
 	import {
 		commandCenterClose,
 		commandCenterState,

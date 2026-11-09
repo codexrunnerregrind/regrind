@@ -3,13 +3,13 @@ import { invoke } from "@tauri-apps/api/core";
 import {
 	preferencesLoaded,
 	preferencesSnapshot,
-} from "$lib/app-data/preferences.svelte";
+} from "#lib/app-data/preferences.svelte.ts";
 import {
 	isAndroidPlatform,
 	isIosPlatform,
 	isMacosPlatform,
 	isMobilePlatform,
-} from "$lib/platform/os";
+} from "#lib/platform/os.ts";
 
 // Gesture kinds go through the native `play_haptic` command on Android and
 // macOS; iOS has no such command and maps them onto tauri-plugin-haptics, which

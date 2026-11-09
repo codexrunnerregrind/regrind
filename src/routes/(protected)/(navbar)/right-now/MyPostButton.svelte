@@ -5,10 +5,10 @@
 	import { onMount } from "svelte";
 	import { toast } from "svelte-sonner";
 
-	import { Button } from "$lib/components/ui/button";
-	import { myRightNowPost } from "$lib/right-now/my-post-state.svelte";
-	import { postTimeLeft } from "$lib/right-now/post-expiry";
-	import { getNow } from "$lib/util/now";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import { myRightNowPost } from "#lib/right-now/my-post-state.svelte.ts";
+	import { postTimeLeft } from "#lib/right-now/post-expiry.ts";
+	import { getNow } from "#lib/util/now.ts";
 	import MyPostSheet from "./MyPostSheet.svelte";
 
 	let open = $state(false);

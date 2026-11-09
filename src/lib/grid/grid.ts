@@ -1,17 +1,17 @@
 import type z from "zod";
 
-import { registerAccountCache } from "$lib/api/account-caches";
-import { getCascadeV4 } from "$lib/api/browse/grid";
-import { updateLocation } from "$lib/api/browse/location";
-import { TtlCache } from "$lib/api/cache";
-import { isProfileViewable } from "$lib/api/users/profile-viewability";
-import { clearProfileCaches, getProfiles } from "$lib/api/users/profiles";
-import { awaitEntitlementGrant } from "$lib/entitlements/expiring-media-entitlement";
-import { notePhotos } from "$lib/interest/viewer-matches";
-import { coarsenGeohash } from "$lib/model/geohash";
-import { now } from "$lib/util/clock";
-import type { cascadeV4ResponseFullProfileV1Schema } from "$lib/model/browse/grid/cascade/response/v4";
-import type { RightNowStatus } from "$lib/model/right-now";
+import { registerAccountCache } from "#lib/api/account-caches.ts";
+import { getCascadeV4 } from "#lib/api/browse/grid.ts";
+import { updateLocation } from "#lib/api/browse/location.ts";
+import { TtlCache } from "#lib/api/cache.ts";
+import { isProfileViewable } from "#lib/api/users/profile-viewability.ts";
+import { clearProfileCaches, getProfiles } from "#lib/api/users/profiles.ts";
+import { awaitEntitlementGrant } from "#lib/entitlements/expiring-media-entitlement.ts";
+import { notePhotos } from "#lib/interest/viewer-matches.ts";
+import { coarsenGeohash } from "#lib/model/geohash.ts";
+import { now } from "#lib/util/clock.ts";
+import type { cascadeV4ResponseFullProfileV1Schema } from "#lib/model/browse/grid/cascade/response/v4.ts";
+import type { RightNowStatus } from "#lib/model/right-now.ts";
 
 type CascadeProfileData = z.infer<
 	typeof cascadeV4ResponseFullProfileV1Schema

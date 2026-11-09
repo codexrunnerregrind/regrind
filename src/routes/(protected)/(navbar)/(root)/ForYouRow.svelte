@@ -4,11 +4,11 @@
 	import { untrack } from "svelte";
 	import { toast } from "svelte-sonner";
 
-	import { setPreferences } from "$lib/app-data/preferences.svelte";
-	import ProfileMiniCard from "$lib/components/profile/ProfileMiniCard.svelte";
-	import { armProfileDeck } from "$lib/profile/profile-deck";
-	import { getNow } from "$lib/util/now";
-	import type { RenderedGridProfile } from "$lib/grid/grid";
+	import { setPreferences } from "#lib/app-data/preferences.svelte.ts";
+	import ProfileMiniCard from "#lib/components/profile/ProfileMiniCard.svelte";
+	import { armProfileDeck } from "#lib/profile/profile-deck.ts";
+	import { getNow } from "#lib/util/now.ts";
+	import type { RenderedGridProfile } from "#lib/grid/grid.ts";
 
 	const HOUR_MS = 60 * 60 * 1000;
 

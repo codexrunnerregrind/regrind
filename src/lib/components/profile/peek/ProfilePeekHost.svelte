@@ -1,10 +1,10 @@
 <script lang="ts">
-	import BlockProfileDialog from "$lib/components/profile/BlockProfileDialog.svelte";
+	import BlockProfileDialog from "#lib/components/profile/BlockProfileDialog.svelte";
 	import TapBurst, {
 		TAP_BURST_MS,
-	} from "$lib/components/profile/TapBurst.svelte";
-	import { hasSentTap } from "$lib/interest/profile-activity.svelte";
-	import { TapType } from "$lib/model/interest/taps";
+	} from "#lib/components/profile/TapBurst.svelte";
+	import { hasSentTap } from "#lib/interest/profile-activity.svelte.ts";
+	import { TapType } from "#lib/model/interest/taps.ts";
 	import { profilePeek } from "./peek-state.svelte";
 	import ProfilePeek from "./ProfilePeek.svelte";
 

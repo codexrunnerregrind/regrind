@@ -2,8 +2,8 @@
 	import {
 		type QuotedMessage,
 		type TextMessage,
-	} from "$lib/model/messaging/messages";
-	import { fitToLines } from "$lib/util/fit-to-lines";
+	} from "#lib/model/messaging/messages.ts";
+	import { fitToLines } from "#lib/util/fit-to-lines.ts";
 	import { getMessageContext, getMessageMetaContext } from "./context";
 	import MessageReplyQuote from "./MessageReplyQuote.svelte";
 

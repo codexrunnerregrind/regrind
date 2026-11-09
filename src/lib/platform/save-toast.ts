@@ -1,7 +1,7 @@
 import { toast } from "svelte-sonner";
 
-import { showErrorToast } from "$lib/api/error-toast";
-import type { SaveFileResult } from "$lib/platform/data-file";
+import { showErrorToast } from "#lib/api/error-toast.ts";
+import type { SaveFileResult } from "#lib/platform/data-file.ts";
 
 /**
  * Settles a "Saving…" toast. iOS may need a fresh tap before the share sheet

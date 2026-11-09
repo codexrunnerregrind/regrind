@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { Conversation } from "$lib/model/messaging/conversations";
+import type { Conversation } from "#lib/model/messaging/conversations.ts";
 import { conversation } from "./conversations-test-helpers";
 import { RememberedConversationFlags } from "./remembered-conversation-flags";
 

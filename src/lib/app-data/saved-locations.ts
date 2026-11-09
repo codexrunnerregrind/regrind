@@ -2,7 +2,7 @@ import {
 	getPreferences,
 	getSavedLocationsSnapshot,
 	setPreferences,
-} from "$lib/app-data/preferences.svelte";
+} from "#lib/app-data/preferences.svelte.ts";
 import {
 	deriveLocationName,
 	maxFavorites,
@@ -10,7 +10,7 @@ import {
 	type SavedLocation,
 	sortSavedLocations,
 	spotKey,
-} from "$lib/model/saved-location";
+} from "#lib/model/saved-location.ts";
 
 export function getFavoriteLocations(): SavedLocation[] {
 	return sortSavedLocations(

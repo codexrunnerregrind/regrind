@@ -1,8 +1,8 @@
-import { FilterPosition } from "$lib/model/browse/grid/filters";
-import { getNow } from "$lib/util/now";
-import type { InboxFilterRequest } from "$lib/api/messaging/conversations";
-import type { FilterPositionId } from "$lib/model/browse/grid/filters";
-import type { Conversation } from "$lib/model/messaging/conversations";
+import { FilterPosition } from "#lib/model/browse/grid/filters.ts";
+import { getNow } from "#lib/util/now.ts";
+import type { InboxFilterRequest } from "#lib/api/messaging/conversations.ts";
+import type { FilterPositionId } from "#lib/model/browse/grid/filters.ts";
+import type { Conversation } from "#lib/model/messaging/conversations.ts";
 
 export const CONVERSATION_FILTER_KEYS = [
 	"favorites",

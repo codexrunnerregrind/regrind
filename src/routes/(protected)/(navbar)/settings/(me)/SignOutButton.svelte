@@ -1,11 +1,11 @@
 <script lang="ts">
 	import SignOutIcon from "phosphor-svelte/lib/SignOutIcon";
 
-	import { signOut } from "$lib/api/sign-out";
-	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
-	import * as AlertDialog from "$lib/components/ui/alert-dialog";
-	import { Spinner } from "$lib/components/ui/spinner";
-	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
+	import { signOut } from "#lib/api/sign-out.ts";
+	import SettingsRow from "#lib/components/settings/SettingsRow.svelte";
+	import * as AlertDialog from "#lib/components/ui/alert-dialog/index.ts";
+	import { Spinner } from "#lib/components/ui/spinner/index.ts";
+	import { dismissOnBackGesture } from "#lib/platform/back-gesture-event.svelte.ts";
 
 	let alertOpen = $state(false);
 	let signingOut = $state(false);

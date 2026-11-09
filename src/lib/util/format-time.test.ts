@@ -4,7 +4,7 @@ import {
 	formatMediaDuration,
 	formatTimeAgoShort,
 	formatTimeRelativeCustom,
-} from "$lib/util/format-time";
+} from "#lib/util/format-time.ts";
 
 afterEach(() => {
 	vi.useRealTimers();

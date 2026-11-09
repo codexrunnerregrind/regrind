@@ -11,17 +11,17 @@ const { fetchRestMock } = vi.hoisted(() => ({
 		>(),
 }));
 
-vi.mock("$lib/api/transport", async (importOriginal) => ({
-	...(await importOriginal<typeof import("$lib/api/transport")>()),
+vi.mock("#lib/api/transport.ts", async (importOriginal) => ({
+	...(await importOriginal<typeof import("#lib/api/transport.ts")>()),
 	fetchRest: fetchRestMock,
 }));
 
-import { clearAccountCaches } from "$lib/api/account-caches";
-import { ProfileModerationError } from "$lib/api/users/profile-moderation";
+import { clearAccountCaches } from "#lib/api/account-caches.ts";
+import { ProfileModerationError } from "#lib/api/users/profile-moderation.ts";
 import {
 	isProfileViewable,
 	markProfileUnviewable,
-} from "$lib/api/users/profile-viewability";
+} from "#lib/api/users/profile-viewability.ts";
 import {
 	applyProfileEdit,
 	BlockedProfileError,
@@ -38,9 +38,9 @@ import {
 	type ProfileUpdate,
 	setProfilePhotos,
 	updateOwnProfile,
-} from "$lib/api/users/profiles";
-import { resetNowForTesting, setNowForTesting } from "$lib/util/clock";
-import type { Profile } from "$lib/model/users/profiles";
+} from "#lib/api/users/profiles.ts";
+import { resetNowForTesting, setNowForTesting } from "#lib/util/clock.ts";
+import type { Profile } from "#lib/model/users/profiles.ts";
 
 const PROFILE_ID = 123;
 

@@ -1,12 +1,12 @@
-import { accountScoped, registerAccountCache } from "$lib/api/account-caches";
-import { getSentTaps } from "$lib/api/interest/taps";
+import { accountScoped, registerAccountCache } from "#lib/api/account-caches.ts";
+import { getSentTaps } from "#lib/api/interest/taps.ts";
 import {
 	isProfileViewable,
 	onProfileViewabilityChange,
-} from "$lib/api/users/profile-viewability";
-import { getProfiles, onProfileEdit } from "$lib/api/users/profiles";
-import { ReconcilingListState } from "$lib/util/reconciling-list-state.svelte";
-import type { SentTapProfile } from "$lib/model/interest/sent-tap";
+} from "#lib/api/users/profile-viewability.ts";
+import { getProfiles, onProfileEdit } from "#lib/api/users/profiles.ts";
+import { ReconcilingListState } from "#lib/util/reconciling-list-state.svelte.ts";
+import type { SentTapProfile } from "#lib/model/interest/sent-tap.ts";
 
 const PAGE_SIZE = 20;
 

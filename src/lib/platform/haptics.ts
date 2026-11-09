@@ -1,1 +1,1 @@
-export * from "$lib/haptics";
+export * from "#lib/haptics.ts";

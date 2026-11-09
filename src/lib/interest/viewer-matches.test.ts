@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { resetNowForTesting, setNowForTesting } from "$lib/util/clock";
+import { resetNowForTesting, setNowForTesting } from "#lib/util/clock.ts";
 import {
 	matchViewers,
 	rememberPhotos,
@@ -13,7 +13,7 @@ const { files, prefs } = vi.hoisted(() => ({
 	prefs: { account: 1 },
 }));
 
-vi.mock("$lib/app-data", () => ({
+vi.mock("#lib/app-data/index.ts", () => ({
 	existsAppDataFile: (path: string) => Promise.resolve(files.has(path)),
 	readAppDataFile: (path: string) => Promise.resolve(files.get(path)),
 	removeAppDataFile: (path: string) => Promise.resolve(files.delete(path)),
@@ -25,7 +25,7 @@ vi.mock("$lib/app-data", () => ({
 		content: Uint8Array;
 	}) => Promise.resolve(void files.set(path, content)),
 }));
-vi.mock("$lib/app-data/preferences.svelte", () => ({
+vi.mock("#lib/app-data/preferences.svelte.ts", () => ({
 	preferencesAccount: () => prefs.account,
 }));
 

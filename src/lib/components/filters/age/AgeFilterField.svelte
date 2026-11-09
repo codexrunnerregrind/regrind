@@ -3,7 +3,7 @@
 		AGE_MAX,
 		AGE_MIN,
 		ageRangeLabel,
-	} from "$lib/model/browse/grid/filters";
+	} from "#lib/model/browse/grid/filters.ts";
 	import FilterSection from "../FilterSection.svelte";
 	import AgeFilterSlider from "./AgeFilterSlider.svelte";
 

@@ -7,17 +7,17 @@ const { updateLocationMock, callMethodMock, getActiveGeohashSnapshotMock } =
 		getActiveGeohashSnapshotMock: vi.fn(),
 	}));
 
-vi.mock("$lib/api/browse/location", () => ({
+vi.mock("#lib/api/browse/location.ts", () => ({
 	updateLocation: updateLocationMock,
 }));
-vi.mock("$lib/api/methods", () => ({ callMethod: callMethodMock }));
-vi.mock("$lib/app-data/preferences.svelte", () => ({
+vi.mock("#lib/api/methods.ts", () => ({ callMethod: callMethodMock }));
+vi.mock("#lib/app-data/preferences.svelte.ts", () => ({
 	getActiveGeohashSnapshot: getActiveGeohashSnapshotMock,
 }));
 
-import { clearAccountCaches } from "$lib/api/account-caches";
-import { ApiError } from "$lib/api/api-error";
-import { decodeGeohash } from "$lib/model/geohash";
+import { clearAccountCaches } from "#lib/api/account-caches.ts";
+import { ApiError } from "#lib/api/api-error.ts";
+import { decodeGeohash } from "#lib/model/geohash.ts";
 import {
 	awaitEntitlementGrant,
 	isRegionGatedError,

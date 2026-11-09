@@ -1,4 +1,4 @@
-import { reducedMotion } from "$lib/util/reduced-motion";
+import { reducedMotion } from "#lib/util/reduced-motion.ts";
 
 // A shared-element morph between the Post pill and the sheet it opens. The sheet
 // itself does the moving: it is clipped down to the pill's rect and the clip

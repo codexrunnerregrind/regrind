@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
+	import Skeleton from "#lib/components/ui/skeleton/skeleton.svelte";
 </script>
 
 <!-- Padding, gap and the inset divider mirror ProfileItem/RightNowPost so loading

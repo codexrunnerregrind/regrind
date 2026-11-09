@@ -8,7 +8,7 @@
 	import UsersIcon from "phosphor-svelte/lib/UsersIcon";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error-toast";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
 		type AlbumContentResponse,
 		deleteAlbum,
@@ -16,26 +16,26 @@
 		getAlbumContent,
 		renameAlbum,
 		reorderAlbumContent,
-	} from "$lib/api/messaging/albums";
-	import { getAlbumGridColumnsSnapshot } from "$lib/app-data/preferences.svelte";
+	} from "#lib/api/messaging/albums.ts";
+	import { getAlbumGridColumnsSnapshot } from "#lib/app-data/preferences.svelte.ts";
 	import {
 		AlbumLockedError,
 		openAlbumLightbox,
 		resolveAlbumForViewing,
-	} from "$lib/chat/album-viewer";
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import PhotoEditorDrawer from "$lib/components/media/PhotoEditorDrawer.svelte";
-	import ProgressiveBlur from "$lib/components/shared/ProgressiveBlur.svelte";
-	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
-	import { Button } from "$lib/components/ui/button";
-	import { Skeleton } from "$lib/components/ui/skeleton";
+	} from "#lib/chat/album-viewer.ts";
+	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
+	import PhotoEditorDrawer from "#lib/components/media/PhotoEditorDrawer.svelte";
+	import ProgressiveBlur from "#lib/components/shared/ProgressiveBlur.svelte";
+	import RelativeTimeDynamic from "#lib/components/shared/RelativeTimeDynamic.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import { Skeleton } from "#lib/components/ui/skeleton/index.ts";
 	import {
 		ALBUM_NAME_MAX_BYTES,
 		albumNameByteLength,
-	} from "$lib/model/messaging/albums";
-	import { hapticImpact } from "$lib/platform/haptics";
-	import { leaveDeletedPages } from "$lib/util/deleted-pages";
-	import { earlierPathnames } from "$lib/util/history";
+	} from "#lib/model/messaging/albums.ts";
+	import { hapticImpact } from "#lib/platform/haptics.ts";
+	import { leaveDeletedPages } from "#lib/util/deleted-pages.ts";
+	import { earlierPathnames } from "#lib/util/history.ts";
 	import { AlbumMediaAdder } from "./album-add-media.svelte";
 	import { AlbumLimits } from "./album-limits.svelte";
 	import { AlbumProcessingPoll } from "./album-processing.svelte";

@@ -9,23 +9,23 @@
 	import { untrack } from "svelte";
 	import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
-	import { sendTap } from "$lib/api/interest/taps";
-	import { sendMessage } from "$lib/api/messaging/messages";
-	import { getUnitsSnapshot } from "$lib/app-data/preferences.svelte";
-	import { downloadMedia } from "$lib/chat/lightbox-download";
+	import { sendTap } from "#lib/api/interest/taps.ts";
+	import { sendMessage } from "#lib/api/messaging/messages.ts";
+	import { getUnitsSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import { downloadMedia } from "#lib/chat/lightbox-download.ts";
 	import {
 		type MediaViewerActions,
 		registerMediaViewerChrome,
-	} from "$lib/chat/media-viewer-chrome";
-	import DistanceFormatted from "$lib/components/profile/DistanceFormatted.svelte";
-	import { profileGestures } from "$lib/components/profile/peek/peek-state.svelte";
-	import RelativeTimeDynamic from "$lib/components/shared/RelativeTimeDynamic.svelte";
-	import Button from "$lib/components/ui/button/button.svelte";
-	import { TapType } from "$lib/model/interest/taps";
-	import { backGestureEventHandlers } from "$lib/platform/back-gesture-event.svelte";
-	import { profileMediaUrl } from "$lib/util/media";
-	import { formatDistance } from "$lib/util/units";
-	import type { FeedPostMedia } from "$lib/right-now/posts";
+	} from "#lib/chat/media-viewer-chrome.ts";
+	import DistanceFormatted from "#lib/components/profile/DistanceFormatted.svelte";
+	import { profileGestures } from "#lib/components/profile/peek/peek-state.svelte.ts";
+	import RelativeTimeDynamic from "#lib/components/shared/RelativeTimeDynamic.svelte";
+	import Button from "#lib/components/ui/button/button.svelte";
+	import { TapType } from "#lib/model/interest/taps.ts";
+	import { backGestureEventHandlers } from "#lib/platform/back-gesture-event.svelte.ts";
+	import { profileMediaUrl } from "#lib/util/media.ts";
+	import { formatDistance } from "#lib/util/units.ts";
+	import type { FeedPostMedia } from "#lib/right-now/posts.ts";
 	import RightNowAvatar from "./RightNowAvatar.svelte";
 
 	let {

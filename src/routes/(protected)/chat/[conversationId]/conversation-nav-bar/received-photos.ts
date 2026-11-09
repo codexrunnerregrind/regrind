@@ -1,4 +1,4 @@
-import type { ApiResponseMessage } from "$lib/model/messaging/messages";
+import type { ApiResponseMessage } from "#lib/model/messaging/messages.ts";
 import { getConversation } from "../messages";
 
 export type ReceivedPhoto = {

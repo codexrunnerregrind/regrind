@@ -1,6 +1,6 @@
 import z from "zod";
 
-import { sexualPositionSchema } from "$lib/model/users/profiles";
+import { sexualPositionSchema } from "#lib/model/users/profiles.ts";
 
 export const matchesV1QuerySchema = z.object({
 	limit: z.int().nonnegative().optional(),

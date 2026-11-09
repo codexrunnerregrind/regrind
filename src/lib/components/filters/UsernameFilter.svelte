@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Input } from "$lib/components/ui/input";
-	import { nearestScrollableAncestor } from "$lib/util/scroll";
+	import { Input } from "#lib/components/ui/input/index.ts";
+	import { nearestScrollableAncestor } from "#lib/util/scroll.ts";
 	import FilterDropdown from "./FilterDropdown.svelte";
 
 	let {

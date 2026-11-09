@@ -8,19 +8,19 @@ import {
 import { goto } from "$app/navigation";
 import z from "zod";
 
-import { getPreferences } from "$lib/app-data/preferences.svelte";
-import { peekConversationsState } from "$lib/chat/conversations-context.svelte";
-import { cacheNotificationImage } from "$lib/notifications/notification-image";
-import { sendNotificationReply } from "$lib/notifications/notification-reply";
-import { isAndroidPlatform, isIosPlatform } from "$lib/platform/os";
-import { whileOpeningPushDeeplink } from "$lib/push/opening-deeplink";
-import { profileMediaUrl } from "$lib/util/media";
+import { getPreferences } from "#lib/app-data/preferences.svelte.ts";
+import { peekConversationsState } from "#lib/chat/conversations-context.svelte.ts";
+import { cacheNotificationImage } from "#lib/notifications/notification-image.ts";
+import { sendNotificationReply } from "#lib/notifications/notification-reply.ts";
+import { isAndroidPlatform, isIosPlatform } from "#lib/platform/os.ts";
+import { whileOpeningPushDeeplink } from "#lib/push/opening-deeplink.ts";
+import { profileMediaUrl } from "#lib/util/media.ts";
 import {
 	chatV1MessageSentEventSchema,
 	tapV1TapSentEventSchema,
 	ws,
-} from "$lib/ws.svelte";
-import type { ApiResponseMessage } from "$lib/model/messaging/messages";
+} from "#lib/ws.svelte.ts";
+import type { ApiResponseMessage } from "#lib/model/messaging/messages.ts";
 
 type PermissionState = "unknown" | "granted" | "denied" | "default";
 

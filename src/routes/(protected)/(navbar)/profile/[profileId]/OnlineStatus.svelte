@@ -2,7 +2,7 @@
 	import { formatDistanceStrict } from "date-fns";
 	import AirplaneTiltIcon from "phosphor-svelte/lib/AirplaneTiltIcon";
 
-	import { getNow } from "$lib/util/now";
+	import { getNow } from "#lib/util/now.ts";
 
 	let {
 		onlineUntil,

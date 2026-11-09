@@ -1,6 +1,6 @@
 import { Tween } from "svelte/motion";
 
-import { reducedMotion } from "$lib/util/reduced-motion";
+import { reducedMotion } from "#lib/util/reduced-motion.ts";
 import type { PullPosition } from "./scroll-chain";
 
 const CONTENT_SELECTOR = ":scope > [data-refresh-content]";

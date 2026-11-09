@@ -28,7 +28,7 @@ import {
 	pickMedia,
 	pickMultipleMedia,
 	readMediaBytes,
-} from "$lib/platform/media-picker";
+} from "#lib/platform/media-picker.ts";
 
 const photoUri = {
 	uri: "content://photo/1",

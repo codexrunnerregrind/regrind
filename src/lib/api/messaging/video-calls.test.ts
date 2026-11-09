@@ -2,17 +2,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { fetchRestMock } = vi.hoisted(() => ({ fetchRestMock: vi.fn() }));
 
-vi.mock("$lib/api/transport", async (importOriginal) => ({
-	...(await importOriginal<typeof import("$lib/api/transport")>()),
+vi.mock("#lib/api/transport.ts", async (importOriginal) => ({
+	...(await importOriginal<typeof import("#lib/api/transport.ts")>()),
 	fetchRest: fetchRestMock,
 }));
 
-import { ApiError } from "$lib/api/api-error";
+import { ApiError } from "#lib/api/api-error.ts";
 import {
 	getVideoCallInfo,
 	joinVideoCall,
 	startVideoCall,
-} from "$lib/api/messaging/video-calls";
+} from "#lib/api/messaging/video-calls.ts";
 
 /** A stand-in for what `fetchRest` hands back, in the shape callers use. */
 function response({ status, body }: { status: number; body: unknown }) {

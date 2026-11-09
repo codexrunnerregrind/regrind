@@ -3,8 +3,8 @@ import { invoke } from "@tauri-apps/api/core";
 import {
 	preferencesLoaded,
 	preferencesSnapshot,
-} from "$lib/app-data/preferences.svelte";
-import { isMobilePlatform } from "$lib/platform/os";
+} from "#lib/app-data/preferences.svelte.ts";
+import { isMobilePlatform } from "#lib/platform/os.ts";
 
 export function keepScreenOnAvailable(): boolean {
 	return isMobilePlatform();

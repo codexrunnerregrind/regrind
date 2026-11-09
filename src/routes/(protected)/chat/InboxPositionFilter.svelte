@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { untrack } from "svelte";
 
-	import PositionFilterToggle from "$lib/components/filters/position/PositionFilterToggle.svelte";
-	import { Button, buttonVariants } from "$lib/components/ui/button";
-	import * as Drawer from "$lib/components/ui/drawer";
-	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
-	import type { FilterPositionId } from "$lib/model/browse/grid/filters";
+	import PositionFilterToggle from "#lib/components/filters/position/PositionFilterToggle.svelte";
+	import { Button, buttonVariants } from "#lib/components/ui/button/index.ts";
+	import * as Drawer from "#lib/components/ui/drawer/index.ts";
+	import { dismissOnBackGesture } from "#lib/platform/back-gesture-event.svelte.ts";
+	import type { FilterPositionId } from "#lib/model/browse/grid/filters.ts";
 
 	let {
 		open = $bindable(),

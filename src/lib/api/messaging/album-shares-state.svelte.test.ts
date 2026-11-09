@@ -4,8 +4,8 @@ const { getAlbumSharesMock } = vi.hoisted(() => ({
 	getAlbumSharesMock: vi.fn(),
 }));
 
-vi.mock("$lib/api/messaging/albums", async (importOriginal) => ({
-	...(await importOriginal<typeof import("$lib/api/messaging/albums")>()),
+vi.mock("#lib/api/messaging/albums.ts", async (importOriginal) => ({
+	...(await importOriginal<typeof import("#lib/api/messaging/albums.ts")>()),
 	getAlbumShares: getAlbumSharesMock,
 }));
 
@@ -15,8 +15,8 @@ import {
 	forgetAlbumShared,
 	getAlbumShared,
 	setAlbumShared,
-} from "$lib/api/messaging/album-shares-state.svelte";
-import { resetNowForTesting, setNowForTesting } from "$lib/util/clock";
+} from "#lib/api/messaging/album-shares-state.svelte.ts";
+import { resetNowForTesting, setNowForTesting } from "#lib/util/clock.ts";
 
 const ALBUMS = [{ albumId: 1 }, { albumId: 2 }];
 

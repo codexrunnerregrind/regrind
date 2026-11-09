@@ -3,10 +3,10 @@
 	import SealCheckIcon from "phosphor-svelte/lib/SealCheckIcon";
 	import XIcon from "phosphor-svelte/lib/XIcon";
 
-	import PhotoEditor from "$lib/components/media/PhotoEditor.svelte";
-	import { Button } from "$lib/components/ui/button";
-	import { Spinner } from "$lib/components/ui/spinner";
-	import SwitchField from "$lib/components/ui/switch-field/SwitchField.svelte";
+	import PhotoEditor from "#lib/components/media/PhotoEditor.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import { Spinner } from "#lib/components/ui/spinner/index.ts";
+	import SwitchField from "#lib/components/ui/switch-field/SwitchField.svelte";
 
 	let {
 		url,

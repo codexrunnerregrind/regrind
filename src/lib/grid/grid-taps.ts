@@ -2,9 +2,9 @@ import {
 	accountEpoch,
 	isAccountEpochCurrent,
 	registerAccountCache,
-} from "$lib/api/account-caches";
-import { getSentTaps } from "$lib/api/interest/taps";
-import { recordSentTaps } from "$lib/interest/profile-activity.svelte";
+} from "#lib/api/account-caches.ts";
+import { getSentTaps } from "#lib/api/interest/taps.ts";
+import { recordSentTaps } from "#lib/interest/profile-activity.svelte.ts";
 
 let loading: Promise<void> | null = null;
 

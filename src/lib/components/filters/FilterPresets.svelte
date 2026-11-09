@@ -1,26 +1,26 @@
 <script lang="ts">
 	import PlusIcon from "phosphor-svelte/lib/PlusIcon";
 
-	import { showErrorToast } from "$lib/api/error-toast";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
 		overwriteFilterPreset,
 		removeFilterPreset,
 		renameFilterPreset,
 		saveFilterPreset,
-	} from "$lib/app-data/grid-filter-presets";
-	import { getGridFilterPresetsSnapshot } from "$lib/app-data/preferences.svelte";
-	import { ACTIVE_FILTER } from "$lib/components/filters/active-filter";
-	import { Button } from "$lib/components/ui/button";
-	import * as Dialog from "$lib/components/ui/dialog";
-	import { Input } from "$lib/components/ui/input";
+	} from "#lib/app-data/grid-filter-presets.ts";
+	import { getGridFilterPresetsSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import { ACTIVE_FILTER } from "#lib/components/filters/active-filter.ts";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import * as Dialog from "#lib/components/ui/dialog/index.ts";
+	import { Input } from "#lib/components/ui/input/index.ts";
 	import {
 		FILTER_PRESET_NAME_MAX,
 		type GridFilterPreset,
 		maxFilterPresets,
-	} from "$lib/model/browse/grid/filter-presets";
-	import { deepEqual } from "$lib/util/deep-equal";
-	import { longPressHandlers } from "$lib/util/long-press";
-	import type { GridSearchFilters } from "$lib/model/browse/grid/filters";
+	} from "#lib/model/browse/grid/filter-presets.ts";
+	import { deepEqual } from "#lib/util/deep-equal.ts";
+	import { longPressHandlers } from "#lib/util/long-press.ts";
+	import type { GridSearchFilters } from "#lib/model/browse/grid/filters.ts";
 
 	let {
 		filters,

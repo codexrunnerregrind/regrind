@@ -9,18 +9,18 @@ const { addDrawerMediaToAlbum, toast, showErrorToast, clearMyAlbumsCache } =
 	}));
 
 vi.mock("svelte-sonner", () => ({ toast }));
-vi.mock("$lib/api/error-toast", () => ({ showErrorToast }));
-vi.mock("$lib/chat/my-albums", () => ({ clearMyAlbumsCache }));
-vi.mock("$lib/api/messaging/albums", () => ({
+vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast }));
+vi.mock("#lib/chat/my-albums.ts", () => ({ clearMyAlbumsCache }));
+vi.mock("#lib/api/messaging/albums.ts", () => ({
 	addDrawerMediaToAlbum,
 	getAlbumStorageLimits: vi.fn(),
 	uploadAlbumContent: vi.fn(),
 	uploadAlbumPhotoBytes: vi.fn(),
 }));
-vi.mock("$lib/platform/media-picker", () => ({ pickMultipleMedia: vi.fn() }));
+vi.mock("#lib/platform/media-picker.ts", () => ({ pickMultipleMedia: vi.fn() }));
 vi.mock("./album-picks", () => ({ inspectPicks: vi.fn() }));
 
-import { ApiError } from "$lib/api/api-error";
+import { ApiError } from "#lib/api/api-error.ts";
 import { AlbumMediaAdder } from "./album-add-media.svelte";
 
 function adder(busy = false) {

@@ -2,13 +2,13 @@
 	import ArrowBendUpLeftIcon from "phosphor-svelte/lib/ArrowBendUpLeftIcon";
 	import XIcon from "phosphor-svelte/lib/XIcon";
 
-	import MediaImage from "$lib/components/shared/MediaImage.svelte";
+	import MediaImage from "#lib/components/shared/MediaImage.svelte";
 	import {
 		previewFromMessage,
 		quoteLabel,
 		replyThumbnailUrl,
-	} from "$lib/model/messaging/message-preview";
-	import { type ApiResponseMessage } from "$lib/model/messaging/messages";
+	} from "#lib/model/messaging/message-preview.ts";
+	import { type ApiResponseMessage } from "#lib/model/messaging/messages.ts";
 	import { getConversationState } from "../conversation-state.svelte";
 
 	let {

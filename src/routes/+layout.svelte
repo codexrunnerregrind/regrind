@@ -3,58 +3,58 @@
 	import "@fontsource-variable/ibm-plex-sans/wght-italic.css";
 
 	import "../layout.css";
-	import "$lib/privacy/discreet-images.css";
+	import "#lib/privacy/discreet-images.css";
 	import { afterNavigate, beforeNavigate } from "$app/navigation";
 	import IconContext from "phosphor-svelte/lib/IconContext";
 	import { onMount } from "svelte";
 	import { toast, Toaster } from "svelte-sonner";
 
-	import { startGoogleHandoffWatch } from "$lib/api/google-handoff";
+	import { startGoogleHandoffWatch } from "#lib/api/google-handoff.ts";
 	import {
 		hydratePreferences,
 		preferencesLoaded,
 		preferencesSnapshot,
-	} from "$lib/app-data/preferences.svelte";
-	import { initTheme } from "$lib/app-data/theme.svelte";
-	import { abortBackdropBlurTrialGesture } from "$lib/blur/calibration/trial.svelte";
-	import { hydrateBackdropCompositing } from "$lib/blur/compositing.svelte";
-	import { applyBackdropBlurQuality } from "$lib/blur/quality.svelte";
-	import { swipeableTabIndex } from "$lib/components/shared/nav-tabs";
-	import { tabShellShowing } from "$lib/components/tab-shell/tab-shell-state.svelte";
-	import { takeDemoAnnouncement } from "$lib/demo/config";
+	} from "#lib/app-data/preferences.svelte.ts";
+	import { initTheme } from "#lib/app-data/theme.svelte.ts";
+	import { abortBackdropBlurTrialGesture } from "#lib/blur/calibration/trial.svelte.ts";
+	import { hydrateBackdropCompositing } from "#lib/blur/compositing.svelte.ts";
+	import { applyBackdropBlurQuality } from "#lib/blur/quality.svelte.ts";
+	import { swipeableTabIndex } from "#lib/components/shared/nav-tabs.ts";
+	import { tabShellShowing } from "#lib/components/tab-shell/tab-shell-state.svelte.ts";
+	import { takeDemoAnnouncement } from "#lib/demo/config.ts";
 	import {
 		applyAndroidInsets,
 		applyBackGestureHandler,
 		registerAndroidBackButtonListener,
-	} from "$lib/platform/android-native-bridge";
-	import { blockNativeMenu } from "$lib/platform/block-native-menu";
-	import { blockZoom } from "$lib/platform/block-zoom";
-	import { trackHoverPointer } from "$lib/platform/hover-pointer";
-	import { keepLinksInApp } from "$lib/platform/in-app-links";
-	import { applyKeepScreenOn } from "$lib/platform/keep-screen-on";
-	import { applyKeyboardInset } from "$lib/platform/keyboard-inset";
-	import { isAndroidPlatform, isMobilePlatform } from "$lib/platform/os";
-	import { installScrollGestureBridge } from "$lib/platform/scroll-gesture";
+	} from "#lib/platform/android-native-bridge.ts";
+	import { blockNativeMenu } from "#lib/platform/block-native-menu.ts";
+	import { blockZoom } from "#lib/platform/block-zoom.ts";
+	import { trackHoverPointer } from "#lib/platform/hover-pointer.ts";
+	import { keepLinksInApp } from "#lib/platform/in-app-links.ts";
+	import { applyKeepScreenOn } from "#lib/platform/keep-screen-on.ts";
+	import { applyKeyboardInset } from "#lib/platform/keyboard-inset.ts";
+	import { isAndroidPlatform, isMobilePlatform } from "#lib/platform/os.ts";
+	import { installScrollGestureBridge } from "#lib/platform/scroll-gesture.ts";
 	import {
 		applySwipeBackGesture,
 		settleSwipeBack,
-	} from "$lib/platform/swipe-back-gesture";
+	} from "#lib/platform/swipe-back-gesture.ts";
 	import {
 		rememberScreen,
 		trackScreenScroll,
-	} from "$lib/platform/swipe-back-ghost";
-	import { imagesHidden } from "$lib/privacy/image-privacy.svelte";
-	import { startAddonUpdateWatch } from "$lib/updates/addon.svelte";
-	import { updatesSelfManaged } from "$lib/updates/capability.svelte";
-	import { startUpdateWatch } from "$lib/updates/updates-manager";
-	import { reducedMotion } from "$lib/util/reduced-motion";
+	} from "#lib/platform/swipe-back-ghost.ts";
+	import { imagesHidden } from "#lib/privacy/image-privacy.svelte.ts";
+	import { startAddonUpdateWatch } from "#lib/updates/addon.svelte.ts";
+	import { updatesSelfManaged } from "#lib/updates/capability.svelte.ts";
+	import { startUpdateWatch } from "#lib/updates/updates-manager.ts";
+	import { reducedMotion } from "#lib/util/reduced-motion.ts";
 	import {
 		bottomBlurBarClearance,
 		bottomChromeClearance,
 		screenChromeCovered,
 		topBlurBarClearance,
 		topChromeClearance,
-	} from "$lib/util/screen-chrome.svelte";
+	} from "#lib/util/screen-chrome.svelte.ts";
 
 	// Apply before paint, including body-level media viewer and dialog portals.
 	$effect.pre(() => {
@@ -124,12 +124,12 @@
 
 	import { env } from "$env/dynamic/public";
 
-	import faviconPng from "$lib/assets/favicon.png";
-	import AccountStatusAlert from "$lib/components/feedback/AccountStatusAlert.svelte";
-	import CopyErrorConfirmAlert from "$lib/components/feedback/CopyErrorConfirmAlert.svelte";
-	import GoogleHandoffConfirmAlert from "$lib/components/feedback/GoogleHandoffConfirmAlert.svelte";
-	import RequestBlockedAlert from "$lib/components/feedback/RequestBlockedAlert.svelte";
-	import SessionErrorAlert from "$lib/components/feedback/SessionErrorAlert.svelte";
+	import faviconPng from "#lib/assets/favicon.png";
+	import AccountStatusAlert from "#lib/components/feedback/AccountStatusAlert.svelte";
+	import CopyErrorConfirmAlert from "#lib/components/feedback/CopyErrorConfirmAlert.svelte";
+	import GoogleHandoffConfirmAlert from "#lib/components/feedback/GoogleHandoffConfirmAlert.svelte";
+	import RequestBlockedAlert from "#lib/components/feedback/RequestBlockedAlert.svelte";
+	import SessionErrorAlert from "#lib/components/feedback/SessionErrorAlert.svelte";
 	import faviconSvg from "../../contrib/logo/regrind.svg";
 
 	let { children }: { children?: import("svelte").Snippet } = $props();

@@ -1,4 +1,4 @@
-import { reducedMotion } from "$lib/util/reduced-motion";
+import { reducedMotion } from "#lib/util/reduced-motion.ts";
 
 export const SPRING = "cubic-bezier(0.34, 1.32, 0.64, 1)";
 

@@ -3,18 +3,18 @@
 	import RulerIcon from "phosphor-svelte/lib/RulerIcon";
 	import type { Component } from "svelte";
 
-	import { getProfile } from "$lib/api/users/profiles";
-	import { preferencesSnapshot } from "$lib/app-data/preferences.svelte";
-	import { sexualPositionIcons } from "$lib/components/profile/sexual-position-icons";
+	import { getProfile } from "#lib/api/users/profiles.ts";
+	import { preferencesSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import { sexualPositionIcons } from "#lib/components/profile/sexual-position-icons.ts";
 	import {
 		bodyTypes,
 		type Profile,
 		sexualPositions,
 		sexualPositionSchema,
-	} from "$lib/model/users/profiles";
-	import { labelFromMap } from "$lib/util/options";
-	import { reducedMotion } from "$lib/util/reduced-motion";
-	import { formatHeight, formatWeightGrams } from "$lib/util/units";
+	} from "#lib/model/users/profiles.ts";
+	import { labelFromMap } from "#lib/util/options.ts";
+	import { reducedMotion } from "#lib/util/reduced-motion.ts";
+	import { formatHeight, formatWeightGrams } from "#lib/util/units.ts";
 
 	let {
 		profileId,

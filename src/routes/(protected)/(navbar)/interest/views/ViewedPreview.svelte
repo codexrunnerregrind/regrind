@@ -1,9 +1,9 @@
 <script lang="ts">
 	import HeartIcon from "phosphor-svelte/lib/HeartIcon";
 
-	import ProfileMiniCard from "$lib/components/profile/ProfileMiniCard.svelte";
-	import LockIcon from "$lib/components/shared/LockIcon.svelte";
-	import type { ViewPreview } from "$lib/model/interest/views";
+	import ProfileMiniCard from "#lib/components/profile/ProfileMiniCard.svelte";
+	import LockIcon from "#lib/components/shared/LockIcon.svelte";
+	import type { ViewPreview } from "#lib/model/interest/views.ts";
 	import ViewedMeta from "./ViewedMeta.svelte";
 
 	let { preview }: { preview: ViewPreview } = $props();

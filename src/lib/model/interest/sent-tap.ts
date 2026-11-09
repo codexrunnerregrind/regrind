@@ -1,11 +1,11 @@
 import z from "zod";
 
-import { tapTypeOrNoneSchema } from "$lib/model/interest/taps";
-import { unixTimestampMsSchema } from "$lib/model/types";
+import { tapTypeOrNoneSchema } from "#lib/model/interest/taps.ts";
+import { unixTimestampMsSchema } from "#lib/model/types.ts";
 import {
 	profileMaskedMinSchema,
 	profileMinSchema,
-} from "$lib/model/users/profiles";
+} from "#lib/model/users/profiles.ts";
 
 /**
  * One tap we sent, as the API lists it: ids and timestamps only. Who the

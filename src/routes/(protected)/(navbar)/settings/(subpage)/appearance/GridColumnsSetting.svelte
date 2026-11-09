@@ -1,14 +1,14 @@
 <script lang="ts">
 	import type { SunIcon } from "phosphor-svelte";
 
-	import { showErrorToast } from "$lib/api/error-toast";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
 		type GridColumns,
 		setPreferences,
-	} from "$lib/app-data/preferences.svelte";
-	import IconTile from "$lib/components/settings/IconTile.svelte";
-	import SettingsSegmented from "$lib/components/settings/SettingsSegmented.svelte";
-	import { hapticSelection } from "$lib/platform/haptics";
+	} from "#lib/app-data/preferences.svelte.ts";
+	import IconTile from "#lib/components/settings/IconTile.svelte";
+	import SettingsSegmented from "#lib/components/settings/SettingsSegmented.svelte";
+	import { hapticSelection } from "#lib/platform/haptics.ts";
 
 	let {
 		title,

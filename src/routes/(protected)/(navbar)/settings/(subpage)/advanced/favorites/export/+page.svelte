@@ -1,7 +1,7 @@
 <script lang="ts" module>
 	import { SvelteSet } from "svelte/reactivity";
 
-	import type { FavoriteTransferEntry } from "$lib/favorites/transfer";
+	import type { FavoriteTransferEntry } from "#lib/favorites/transfer.ts";
 
 	// Held only for a look at a profile and back; see `beforeNavigate` below.
 	const kept: {
@@ -15,19 +15,19 @@
 	import { beforeNavigate } from "$app/navigation";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error-toast";
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
-	import ProfileActionRowSkeleton from "$lib/components/profile/ProfileActionRowSkeleton.svelte";
-	import { Button } from "$lib/components/ui/button";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
+	import ProfileActionRowSkeleton from "#lib/components/profile/ProfileActionRowSkeleton.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
 	import {
 		buildFavoritesExport,
 		favoriteHasNote,
 		favoritesExportFilename,
 		loadFavoritesToExport,
 		serializeFavoritesExport,
-	} from "$lib/favorites/transfer";
-	import { saveTextFile } from "$lib/platform/data-file";
-	import { reportSaved } from "$lib/platform/save-toast";
+	} from "#lib/favorites/transfer.ts";
+	import { saveTextFile } from "#lib/platform/data-file.ts";
+	import { reportSaved } from "#lib/platform/save-toast.ts";
 	import FavoriteSelectList from "../FavoriteSelectList.svelte";
 
 	let entries = $state<FavoriteTransferEntry[] | null>(kept.entries);

@@ -14,8 +14,8 @@
 	import type { Snippet } from "svelte";
 	import type { HTMLAttributes } from "svelte/elements";
 
-	import { type PanDirection, panPager } from "$lib/util/pan-pager";
-	import { reducedMotion } from "$lib/util/reduced-motion";
+	import { type PanDirection, panPager } from "#lib/util/pan-pager.ts";
+	import { reducedMotion } from "#lib/util/reduced-motion.ts";
 
 	/**
 	 * Sub-tabs side by side on one track that the finger drags and a transform

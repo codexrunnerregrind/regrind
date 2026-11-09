@@ -1,7 +1,7 @@
 import { createAttachmentKey } from "svelte/attachments";
 import { Spring } from "svelte/motion";
 
-import { hapticImpact } from "$lib/platform/haptics";
+import { hapticImpact } from "#lib/platform/haptics.ts";
 
 const TRIGGER_DISTANCE_PX = 44;
 const MAX_DRAG_PX = 76;

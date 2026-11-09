@@ -1,7 +1,7 @@
 import { encode } from "@msgpack/msgpack";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("$lib/app-data", () => ({
+vi.mock("#lib/app-data/index.ts", () => ({
 	existsAppDataFile: () => Promise.resolve(false),
 	readAppDataFile: () => Promise.resolve(encode({})),
 	removeAppDataFile: () => Promise.resolve(),
@@ -13,7 +13,7 @@ import {
 	getPreferences,
 	readPortablePreferences,
 	setPreferences,
-} from "$lib/app-data/preferences.svelte";
+} from "#lib/app-data/preferences.svelte.ts";
 import {
 	BackupReadError,
 	backupSettingsCount,

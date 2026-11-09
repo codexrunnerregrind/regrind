@@ -4,16 +4,16 @@
 	import NavigationArrowIcon from "phosphor-svelte/lib/NavigationArrowIcon";
 	import { toast } from "svelte-sonner";
 
-	import { showErrorToast } from "$lib/api/error-toast";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
 		geoApiSupported as geoApiSupportedFn,
 		LocationPermissionDeniedError,
 		switchToCurrentLocation,
-	} from "$lib/app-data/location";
-	import { setPreferences } from "$lib/app-data/preferences.svelte";
-	import LocationChooser from "$lib/components/location-chooser/LocationChooser.svelte";
-	import { Button } from "$lib/components/ui/button";
-	import * as Empty from "$lib/components/ui/empty";
+	} from "#lib/app-data/location.ts";
+	import { setPreferences } from "#lib/app-data/preferences.svelte.ts";
+	import LocationChooser from "#lib/components/location-chooser/LocationChooser.svelte";
+	import { Button } from "#lib/components/ui/button/index.ts";
+	import * as Empty from "#lib/components/ui/empty/index.ts";
 
 	let geoMapPickerOpen = $state(false);
 

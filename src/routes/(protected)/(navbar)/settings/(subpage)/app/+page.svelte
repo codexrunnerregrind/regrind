@@ -13,22 +13,22 @@
 	import VibrateIcon from "phosphor-svelte/lib/VibrateIcon";
 	import { toast } from "svelte-sonner";
 
-	import ToastUnimplemented from "$lib/components/feedback/ToastUnimplemented.svelte";
-	import PreferenceSwitchSetting from "$lib/components/settings/PreferenceSwitchSetting.svelte";
-	import SectionHeader from "$lib/components/settings/SectionHeader.svelte";
-	import SettingsGroup from "$lib/components/settings/SettingsGroup.svelte";
-	import SettingsRow from "$lib/components/settings/SettingsRow.svelte";
-	import { appIconAvailable } from "$lib/platform/app-icon";
-	import { desktopEntryAvailable } from "$lib/platform/desktop-entry.svelte";
-	import { hapticsAvailable } from "$lib/platform/haptics";
-	import { keepScreenOnAvailable } from "$lib/platform/keep-screen-on";
-	import { privacyFeatureOn } from "$lib/privacy/image-privacy.svelte";
-	import PrivacyModeSetting from "$lib/privacy/PrivacyModeSetting.svelte";
-	import { addonInstallerAvailable } from "$lib/updates/addon.svelte";
+	import ToastUnimplemented from "#lib/components/feedback/ToastUnimplemented.svelte";
+	import PreferenceSwitchSetting from "#lib/components/settings/PreferenceSwitchSetting.svelte";
+	import SectionHeader from "#lib/components/settings/SectionHeader.svelte";
+	import SettingsGroup from "#lib/components/settings/SettingsGroup.svelte";
+	import SettingsRow from "#lib/components/settings/SettingsRow.svelte";
+	import { appIconAvailable } from "#lib/platform/app-icon.ts";
+	import { desktopEntryAvailable } from "#lib/platform/desktop-entry.svelte.ts";
+	import { hapticsAvailable } from "#lib/platform/haptics.ts";
+	import { keepScreenOnAvailable } from "#lib/platform/keep-screen-on.ts";
+	import { privacyFeatureOn } from "#lib/privacy/image-privacy.svelte.ts";
+	import PrivacyModeSetting from "#lib/privacy/PrivacyModeSetting.svelte";
+	import { addonInstallerAvailable } from "#lib/updates/addon.svelte.ts";
 	import {
 		updatesSelfManaged,
 		updatesUnsupportedReason,
-	} from "$lib/updates/capability.svelte";
+	} from "#lib/updates/capability.svelte.ts";
 	import AppsMenuEntrySetting from "./AppsMenuEntrySetting.svelte";
 	import AutomaticUpdatesSetting from "./AutomaticUpdatesSetting.svelte";
 	import NotificationSettings from "./NotificationSettings.svelte";

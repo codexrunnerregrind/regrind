@@ -11,22 +11,22 @@
 	import XIcon from "phosphor-svelte/lib/XIcon";
 	import type PhotoSwipe from "photoswipe";
 
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { getProfile } from "$lib/api/users/profiles";
-	import { getUnitsSnapshot } from "$lib/app-data/preferences.svelte";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { getProfile } from "#lib/api/users/profiles.ts";
+	import { getUnitsSnapshot } from "#lib/app-data/preferences.svelte.ts";
 	import {
 		chromeHasBar,
 		type MediaViewerActions,
 		type MediaViewerHeader,
 		type MediaViewerStamp,
-	} from "$lib/chat/media-viewer-chrome";
-	import { hapticImpact, hapticNotification } from "$lib/platform/haptics";
-	import { trackKeyboardOverlap } from "$lib/platform/keyboard-inset";
-	import ViewerRevealButton from "$lib/privacy/ViewerRevealButton.svelte";
-	import { formatTimeRelativeCustom } from "$lib/util/format-time";
-	import { HoldGesture } from "$lib/util/hold-gesture.svelte";
-	import { profileMediaUrl } from "$lib/util/media";
-	import { formatDistance } from "$lib/util/units";
+	} from "#lib/chat/media-viewer-chrome.ts";
+	import { hapticImpact, hapticNotification } from "#lib/platform/haptics.ts";
+	import { trackKeyboardOverlap } from "#lib/platform/keyboard-inset.ts";
+	import ViewerRevealButton from "#lib/privacy/ViewerRevealButton.svelte";
+	import { formatTimeRelativeCustom } from "#lib/util/format-time.ts";
+	import { HoldGesture } from "#lib/util/hold-gesture.svelte.ts";
+	import { profileMediaUrl } from "#lib/util/media.ts";
+	import { formatDistance } from "#lib/util/units.ts";
 
 	let {
 		pswp,

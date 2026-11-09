@@ -11,24 +11,24 @@
 	import { toast } from "svelte-sonner";
 	import type { MapMouseEvent } from "maplibre-gl";
 
-	import { getPlaces } from "$lib/api/browse/location";
-	import { showErrorToast } from "$lib/api/error-toast";
-	import { getSavedLocationsSnapshot } from "$lib/app-data/preferences.svelte";
-	import { rememberLocation } from "$lib/app-data/saved-locations";
-	import ApiErrorDisplay from "$lib/components/feedback/ApiErrorDisplay.svelte";
+	import { getPlaces } from "#lib/api/browse/location.ts";
+	import { showErrorToast } from "#lib/api/error-toast.ts";
+	import { getSavedLocationsSnapshot } from "#lib/app-data/preferences.svelte.ts";
+	import { rememberLocation } from "#lib/app-data/saved-locations.ts";
+	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
 	import {
 		type MapLibreMap,
 		type MapLibreModule,
 		pinElement,
-	} from "$lib/components/map/basemap";
-	import MapView from "$lib/components/map/MapView.svelte";
-	import Button from "$lib/components/ui/button/button.svelte";
-	import * as InputGroup from "$lib/components/ui/input-group";
-	import Spinner from "$lib/components/ui/spinner/spinner.svelte";
-	import { spotKey } from "$lib/model/saved-location";
-	import { dismissOnBackGesture } from "$lib/platform/back-gesture-event.svelte";
-	import { openExternalLink } from "$lib/platform/link-opener";
-	import { isMobilePlatform } from "$lib/platform/os";
+	} from "#lib/components/map/basemap.ts";
+	import MapView from "#lib/components/map/MapView.svelte";
+	import Button from "#lib/components/ui/button/button.svelte";
+	import * as InputGroup from "#lib/components/ui/input-group/index.ts";
+	import Spinner from "#lib/components/ui/spinner/spinner.svelte";
+	import { spotKey } from "#lib/model/saved-location.ts";
+	import { dismissOnBackGesture } from "#lib/platform/back-gesture-event.svelte.ts";
+	import { openExternalLink } from "#lib/platform/link-opener.ts";
+	import { isMobilePlatform } from "#lib/platform/os.ts";
 	import SavedLocationsPanel from "./SavedLocationsPanel.svelte";
 
 	let {

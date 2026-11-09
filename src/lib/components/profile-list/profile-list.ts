@@ -1,4 +1,4 @@
-import type { getProfiles } from "$lib/api/users/profiles";
+import type { getProfiles } from "#lib/api/users/profiles.ts";
 
 type ResolvedProfile = Awaited<ReturnType<typeof getProfiles>>[number];
 
