@@ -53,7 +53,7 @@ void regrind_set_flip_privacy(void *view, BOOL enabled) {
             if (!armed) return;
             armed = NO;
             NSUInteger expected = generation;
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 600 * NSEC_PER_MSEC),
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 300 * NSEC_PER_MSEC),
                 dispatch_get_main_queue(), ^{
                     if (generation != expected ||
                         UIDevice.currentDevice.orientation != UIDeviceOrientationFaceDown ||

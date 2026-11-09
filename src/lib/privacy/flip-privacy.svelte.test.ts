@@ -5,13 +5,17 @@ const mocks = vi.hoisted(() => ({
 	invoke: vi.fn().mockResolvedValue(undefined),
 	toggle: vi.fn(),
 	loaded: true,
+	ios: true,
 }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: mocks.invoke }));
 vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast: vi.fn() }));
-vi.mock("#lib/app-data/preferences.svelte.ts", () => ({
+vi.mock("#lib/app-data/preferences.svelte", () => ({
 	preferencesLoaded: () => mocks.loaded,
 }));
-vi.mock("#lib/platform/os.ts", () => ({ isIosPlatform: () => true }));
+vi.mock("#lib/platform/os.ts", () => ({
+	isIosPlatform: () => mocks.ios,
+	isAndroidPlatform: () => !mocks.ios,
+}));
 vi.mock("./image-privacy.svelte", () => ({
 	privacyFeatureOn: () => true,
 	toggleImagePrivacy: mocks.toggle,
@@ -24,6 +28,7 @@ describe("iPhone flip privacy bridge", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mocks.loaded = true;
+		mocks.ios = true;
 		Object.defineProperty(document, "visibilityState", {
 			configurable: true,
 			value: "visible",
@@ -71,5 +76,21 @@ describe("iPhone flip privacy bridge", () => {
 		});
 		window.dispatchEvent(new Event("regrind-flip-privacy"));
 		expect(mocks.toggle).not.toHaveBeenCalled();
+	});
+	it("drives the Android sensor bridge", async () => {
+		mocks.ios = false;
+		const setEnabled = vi.fn();
+		window.__RegrindFlip = { available: () => true, setEnabled };
+		stop = listenForPrivacyFlips();
+		await vi.waitFor(() => expect(setEnabled).toHaveBeenCalledWith(true));
+		window.dispatchEvent(new Event("regrind-flip-privacy"));
+		expect(mocks.toggle).toHaveBeenCalledTimes(1);
+		stop?.();
+		stop = undefined;
+		await vi.waitFor(() =>
+			expect(setEnabled).toHaveBeenLastCalledWith(false),
+		);
+		expect(mocks.invoke).not.toHaveBeenCalled();
+		delete window.__RegrindFlip;
 	});
 });

@@ -30,6 +30,10 @@ declare global {
 			refreshToken?(): void;
 			replyResult?(key: string, text: string, sent: boolean): void;
 		};
+		__RegrindFlip?: {
+			available(): boolean;
+			setEnabled(enabled: boolean): void;
+		};
 		/** Native hands a chat notification's inline reply to this. */
 		__regrindNotificationReply?: (reply: unknown) => void;
 		__REGRIND_FCM_TOKEN?: string;

@@ -1,23 +1,27 @@
 import { invoke } from "@tauri-apps/api/core";
 
 import { showErrorToast } from "#lib/api/error-toast.ts";
-import { preferencesLoaded } from "#lib/app-data/preferences.svelte.ts";
-import { isIosPlatform } from "#lib/platform/os.ts";
+import { preferencesLoaded } from "#lib/app-data/preferences.svelte";
+import { isAndroidPlatform, isIosPlatform } from "#lib/platform/os.ts";
 import { privacyFeatureOn, toggleImagePrivacy } from "./image-privacy.svelte";
 
 // Preserve native start/stop ordering across rapid preference changes.
 let nativeQueue: Promise<unknown> = Promise.resolve();
 function setNativeEnabled(enabled: boolean): Promise<unknown> {
-	const next = nativeQueue.then(() =>
-		invoke("set_flip_privacy", { enabled }),
-	);
+	const next = nativeQueue.then(async () => {
+		if (isIosPlatform()) return invoke("set_flip_privacy", { enabled });
+		const bridge = window.__RegrindFlip;
+		if (!bridge?.available()) throw new Error("No motion sensor");
+		bridge.setEnabled(enabled);
+	});
 	nativeQueue = next.catch(() => undefined);
 	return next;
 }
 
 /** Reactive effect: the flip shortcut controls the same mode as the settings switch. */
 export function listenForPrivacyFlips(): (() => void) | undefined {
-	if (!isIosPlatform() || !preferencesLoaded() || !privacyFeatureOn()) return;
+	if (!(isIosPlatform() || isAndroidPlatform())) return;
+	if (!preferencesLoaded() || !privacyFeatureOn()) return;
 	let active = true;
 	const flip = () => {
 		if (active && document.visibilityState === "visible")

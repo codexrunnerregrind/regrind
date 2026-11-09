@@ -48,6 +48,14 @@ class MainActivity : TauriActivity() {
 	private val mainHandler = Handler(Looper.getMainLooper())
 	private var pendingPushRoute: String? = null
 	private val hoverRepair = WebViewHoverRepair(context = this, webView = { webViewRef })
+	private val flipPrivacy by lazy {
+		FlipPrivacy(this) {
+			webViewRef?.evaluateJavascript(
+				"if(document.visibilityState==='visible')window.dispatchEvent(new Event('regrind-flip-privacy'))",
+				null,
+			)
+		}
+	}
 
 	override val handleBackNavigation = false
 
@@ -144,6 +152,14 @@ class MainActivity : TauriActivity() {
 		@JavascriptInterface fun refreshToken() {
 			PushFirebase.initialize(this@MainActivity)
 			fetchFcmToken()
+		}
+	}
+
+	inner class FlipInterface {
+		@JavascriptInterface fun available() = flipPrivacy.available
+
+		@JavascriptInterface fun setEnabled(enabled: Boolean) {
+			runOnUiThread { flipPrivacy.setEnabled(enabled) }
 		}
 	}
 
@@ -258,6 +274,7 @@ class MainActivity : TauriActivity() {
 		webView.addJavascriptInterface(InsetsInterface(), "__AndroidInsets")
 		webView.addJavascriptInterface(BackInterface(), "__AndroidBack")
 		webView.addJavascriptInterface(PushInterface(), "__RegrindPush")
+		webView.addJavascriptInterface(FlipInterface(), "__RegrindFlip")
 		// After Tauri's AppPlugin adds its back callback: only the last one added gets the gesture progress.
 		backProgressCallback.remove()
 		onBackPressedDispatcher.addCallback(this, backProgressCallback)
@@ -273,6 +290,7 @@ class MainActivity : TauriActivity() {
 	override fun onResume() {
 		super.onResume()
 		PushHub.inForeground = true
+		flipPrivacy.setResumed(true)
 		latestFcmToken?.let { dispatchFcmToken(it) }
 		tokenUnavailable?.let { dispatchFcmTokenUnavailable(it) }
 		dispatchNotificationPermission()
@@ -280,6 +298,7 @@ class MainActivity : TauriActivity() {
 
 	override fun onPause() {
 		PushHub.inForeground = false
+		flipPrivacy.setResumed(false)
 		PushHub.clearActiveRoute()
 		super.onPause()
 	}

@@ -1,9 +1,9 @@
 <script lang="ts">
 	import EyeSlashIcon from "phosphor-svelte/lib/EyeSlashIcon";
 
-	import { preferencesLoaded } from "#lib/app-data/preferences.svelte.ts";
+	import { preferencesLoaded } from "#lib/app-data/preferences.svelte";
 	import SettingsSwitchRow from "#lib/components/settings/SettingsSwitchRow.svelte";
-	import { isIosPlatform } from "#lib/platform/os.ts";
+	import { isAndroidPlatform, isIosPlatform } from "#lib/platform/os.ts";
 	import {
 		imagePrivacy,
 		privacyFeatureOn,
@@ -13,7 +13,9 @@
 	const description = $derived(
 		isIosPlatform()
 			? "Hides images. Hold your iPhone face down briefly, or use the floating button, to show or hide them."
-			: "Hides images. Use the floating button to show or hide them.",
+			: isAndroidPlatform()
+				? "Hides images. Hold your phone face down briefly, or use the floating button, to show or hide them."
+				: "Hides images. Use the floating button to show or hide them.",
 	);
 </script>
 
