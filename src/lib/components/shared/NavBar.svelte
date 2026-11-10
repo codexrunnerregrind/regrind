@@ -4,18 +4,24 @@
 
 	import { getProfile, onProfileEdit } from "#lib/api/users/profiles.ts";
 	import { getOrCreateConversationsState } from "#lib/chat/conversations-context.svelte.ts";
+	import AccountsSheet from "#lib/components/accounts/AccountsSheet.svelte";
 	import UserAvatar from "#lib/components/profile/UserAvatar.svelte";
 	import { navTabs } from "#lib/components/shared/nav-tabs.ts";
 	import { getTapsState } from "#lib/interest/taps-state.svelte.ts";
 	import { getViewActivityState } from "#lib/interest/view-activity.svelte.ts";
 	import { hapticSelection } from "#lib/platform/haptics.ts";
 	import { isFloatingNav } from "#lib/platform/nav-style.svelte.ts";
+	import { longPressHandlers } from "#lib/util/long-press.ts";
 	import { bottomChrome } from "#lib/util/screen-chrome.svelte.ts";
 	import { scrollActiveViewToTop } from "#lib/util/scroll.ts";
 
 	let { ourProfileId }: { ourProfileId: number } = $props();
 
 	const glass = $derived(isFloatingNav());
+
+	// Holding the profile tab opens the account switcher, as on other social apps.
+	let accountsOpen = $state(false);
+	const holdToSwitch = longPressHandlers(() => (accountsOpen = true));
 
 	function onTabClick(event: MouseEvent, currentTab: boolean) {
 		if (currentTab) {
@@ -126,6 +132,7 @@
 			<a
 				href={tab.href}
 				data-active={active}
+				{...tab.href === "/settings" ? holdToSwitch : {}}
 				onclick={(e) => onTabClick(e, active)}
 				class="tab"
 			>
@@ -179,6 +186,8 @@
 		{/each}
 	</div>
 </nav>
+
+<AccountsSheet bind:open={accountsOpen} />
 
 <style lang="postcss">
 	@reference "$layout";
