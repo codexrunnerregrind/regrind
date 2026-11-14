@@ -28,6 +28,7 @@
 	<Textarea
 		{...props}
 		{placeholder}
+		spellcheck={false}
 		class={[
 			"h-fit! max-h-31.5 min-h-10 flex-1 rounded-md border-0 bg-muted py-2.5 leading-5 placeholder-shown:truncate",
 			padding,
