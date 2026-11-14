@@ -375,10 +375,12 @@
 					: "Open profile"}
 				class="relative w-full shrink-0 overflow-hidden bg-media-placeholder outline-none"
 				style:height="{photoHeight}px"
-				onclick={() =>
-					void close(() =>
-						openProfileFrom(anchor, profile.profileId),
-					)}
+				onclick={() => {
+					// Read now: the host unmounts us (props throw) before `after` runs.
+					const { profileId } = profile;
+					const from = anchor;
+					void close(() => openProfileFrom(from, profileId));
+				}}
 			>
 				<UserAvatar
 					mediaHash={profile.mediaHash}
