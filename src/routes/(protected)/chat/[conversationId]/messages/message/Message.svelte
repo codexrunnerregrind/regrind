@@ -1,3 +1,8 @@
+<script lang="ts" module>
+	// Outlives any one row: the second tap of a double-tap may land on another.
+	let pendingDrop: ReturnType<typeof setTimeout> | undefined;
+</script>
+
 <script lang="ts">
 	import ArrowBendUpLeftIcon from "phosphor-svelte/lib/ArrowBendUpLeftIcon";
 	import { untrack } from "svelte";
@@ -9,6 +14,7 @@
 	import { observeIntersection } from "#lib/util/observe-intersection.ts";
 	import { SwipeToReply } from "#lib/util/swipe-to-reply.svelte.ts";
 	import type { ApiResponseMessage } from "#lib/model/messaging/messages.ts";
+	import { dropKeyboard } from "../../message-composer/keep-keyboard.ts";
 	import AlbumContentMessage from "./AlbumContentMessage.svelte";
 	import AlbumMessage from "./AlbumMessage.svelte";
 	import AudioMessage from "./AudioMessage.svelte";
@@ -192,6 +198,22 @@
 			OPENS_ON_TAP.includes(message.type),
 	);
 
+	// The row is focusable, so a tap on it would pull focus off the composer and
+	// close the keyboard, shifting the list under the second tap of a
+	// double-tap. Both events: WebKit only honours the mousedown.
+	function keepComposerFocus(event: Event) {
+		clearTimeout(pendingDrop);
+		const active = document.activeElement;
+		if (
+			!(active instanceof HTMLTextAreaElement) &&
+			!(active instanceof HTMLInputElement)
+		)
+			return;
+		const target = event.target as HTMLElement | null;
+		if (!target?.closest("a, button, input, textarea"))
+			event.preventDefault();
+	}
+
 	// iOS WebKit fires neither `contextmenu` (handled by the long-press synthesis)
 	// nor `dblclick` on touch, so the double-tap-to-react is synthesized here too.
 	const longPress = longPressHandlers(onContextMenu, reactOnDoubleTap, {
@@ -324,6 +346,21 @@
 			aria-label="Message"
 			data-message-id={message.messageId}
 			{...longPress}
+			onpointerdown={(event) => {
+				keepComposerFocus(event);
+				longPress.onpointerdown?.(event);
+			}}
+			onmousedown={keepComposerFocus}
+			onclick={(event) => {
+				// A lone tap still dismisses the keyboard, once no second tap can
+				// turn it into a double-tap.
+				if (
+					event.target instanceof Element &&
+					event.target.closest("a, button")
+				)
+					return;
+				pendingDrop = setTimeout(dropKeyboard, 300);
+			}}
 			ondblclick={(event) => {
 				// Mouse double-click; touch double-tap is synthesized in longPress.
 				if (!isOut && onReact) event.preventDefault();
