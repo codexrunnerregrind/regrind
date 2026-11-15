@@ -50,19 +50,20 @@
 			</AlertDialog.Description>
 		</AlertDialog.Header>
 		<AlertDialog.Footer>
-			<fieldset disabled={signingOut} class="contents">
-				<AlertDialog.Cancel size="lg">Cancel</AlertDialog.Cancel>
-				<AlertDialog.Action
-					onclick={() => void confirmSignOut()}
-					size="lg"
-					aria-busy={signingOut}
-				>
-					{#if signingOut}
-						<Spinner aria-hidden="true" />
-					{/if}
-					Continue
-				</AlertDialog.Action>
-			</fieldset>
+			<AlertDialog.Cancel size="lg" disabled={signingOut}>
+				Cancel
+			</AlertDialog.Cancel>
+			<AlertDialog.Action
+				onclick={() => void confirmSignOut()}
+				size="lg"
+				disabled={signingOut}
+				aria-busy={signingOut}
+			>
+				{#if signingOut}
+					<Spinner aria-hidden="true" />
+				{/if}
+				Continue
+			</AlertDialog.Action>
 		</AlertDialog.Footer>
 	</AlertDialog.Content>
 </AlertDialog.Root>
