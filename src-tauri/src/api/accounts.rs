@@ -187,6 +187,7 @@ pub async fn commit_signed_in(
 	let credentials = session.as_ref().map(|s| &s.credentials);
 	let label = credentials
 		.map(|c| c.email.clone())
+		.filter(|email| !email.is_empty())
 		.unwrap_or_else(|| profile_id.to_string());
 	let google = credentials
 		.is_some_and(|c| matches!(c.kind, grindr::SessionKind::Google));

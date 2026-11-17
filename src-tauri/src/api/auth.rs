@@ -143,6 +143,7 @@ pub async fn sign_in_with_google_handoff(
 		return Ok(None);
 	};
 	let result = state.client()?.sign_in_with_google(&token).await?;
+	commit_signed_in(&app, &result.profile_id).await?;
 	Ok(Some(SignInResult::from(result)))
 }
 
@@ -159,6 +160,7 @@ pub async fn sign_in_with_facebook(
 	let access_token =
 		super::facebook_oauth::fetch_facebook_access_token(&app).await?;
 	let result = state.client()?.sign_in_with_facebook(&access_token).await?;
+	commit_signed_in(&app, &result.profile_id).await?;
 	Ok(SignInResult::from(result))
 }
 
