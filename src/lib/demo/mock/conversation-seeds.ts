@@ -186,6 +186,18 @@ export const demoConversationSeeds: DemoConversation[] = [
 			{ fromMe: false, text: "🐻 lorem ipsum", reactions: 2 },
 		],
 	},
+	{
+		withId: 100333,
+		unread: 0,
+		pinned: false,
+		favorite: false,
+		muted: false,
+		lastActivityAgo: 45,
+		messages: Array.from({ length: 80 }, (_, i) => ({
+			fromMe: i % 3 === 0,
+			text: `Backlog message ${i + 1}`,
+		})),
+	},
 ];
 
 export function localDateTime(timestamp: number): string {
