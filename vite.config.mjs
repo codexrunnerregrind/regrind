@@ -70,7 +70,17 @@ export default defineConfig(async ({ command }) => ({
 		tailwindcss(),
 	],
 	resolve: {
-		alias: { $layout: path.join(root, "src/layout.css") },
+		alias: [
+			{ find: "$layout", replacement: path.join(root, "src/layout.css") },
+			// The package's `exports` hides the classic build MapLibre needs.
+			{
+				find: /^\$rtltext(?=\?|$)/,
+				replacement: path.join(
+					root,
+					"node_modules/@mapbox/mapbox-gl-rtl-text/dist/mapbox-gl-rtl-text.js",
+				),
+			},
+		],
 		...(process.env.VITEST ? { conditions: ["browser"] } : {}),
 	},
 

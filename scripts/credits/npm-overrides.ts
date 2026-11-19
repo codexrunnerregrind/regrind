@@ -35,7 +35,7 @@ export const npmOverrides: Record<string, NpmOverride> = {
 	"agora-rtc-sdk-ng": {
 		spdx: "MIT",
 		textFiles: ["agora-rtc-sdk-license.txt"],
-		versions: ["4.24.8"],
+		versions: ["4.24.8", "4.24.9"],
 		source: 'package.json declares MIT and the tarball ships no license file, so the MIT text is reproduced under the copyright line the bundle itself carries ("Copyright AgoraInc.")',
 	},
 	"embla-carousel": embla,

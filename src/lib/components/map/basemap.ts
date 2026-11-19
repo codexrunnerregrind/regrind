@@ -28,13 +28,18 @@ let libraryPromise: Promise<MapLibreModule> | undefined;
  */
 export function loadMapLibre(): Promise<MapLibreModule> {
 	libraryPromise ??= (async () => {
-		const [module, workerUrl] = await Promise.all([
+		const [module, workerUrl, rtlUrl] = await Promise.all([
 			import("maplibre-gl/dist/maplibre-gl-csp.js"),
 			import("maplibre-gl/dist/maplibre-gl-csp-worker.js?url"),
+			import("$rtltext?url"),
 			import("maplibre-gl/dist/maplibre-gl.css"),
 		]);
 		const library = module as MapLibreModule;
 		library.setWorkerUrl(workerUrl.default);
+		// Shapes and reorders Arabic/Hebrew labels; fetched only once one shows.
+		if (library.getRTLTextPluginStatus() === "unavailable") {
+			void library.setRTLTextPlugin(rtlUrl.default, true).catch(() => {});
+		}
 		return library;
 	})();
 	return libraryPromise;
