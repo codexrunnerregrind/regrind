@@ -1,4 +1,5 @@
 <script lang="ts">
+	import MatureContentCover from "#lib/components/mature-content/MatureContentCover.svelte";
 	import MediaImage from "#lib/components/shared/MediaImage.svelte";
 
 	let {
@@ -6,8 +7,14 @@
 		thumb,
 		createdAt,
 		label,
-	}: { src: string; thumb: string; createdAt: number | null; label: string } =
-		$props();
+		covered = false,
+	}: {
+		src: string;
+		thumb: string;
+		createdAt: number | null;
+		label: string;
+		covered?: boolean;
+	} = $props();
 
 	let width: number | null = $state(null);
 	let height: number | null = $state(null);
@@ -15,13 +22,15 @@
 	const failed = $derived(failedSrc === thumb);
 </script>
 
-<a
+<svelte:element
+	this={covered ? "div" : "a"}
 	class="item relative block aspect-auto h-full max-h-[inherit] w-full shrink-0"
 	data-cropped="true"
 	data-pswp-width={width}
 	data-pswp-height={height}
 	data-created-at={createdAt}
-	href={failed ? undefined : src}
+	href={covered || failed ? undefined : src}
+	role={covered ? "group" : undefined}
 	aria-disabled={failed ? "true" : undefined}
 	aria-label={label}
 >
@@ -37,7 +46,10 @@
 			height = image.naturalHeight;
 		}}
 	/>
-</a>
+	{#if covered}
+		<MatureContentCover />
+	{/if}
+</svelte:element>
 
 <style lang="postcss">
 	@reference "$layout";

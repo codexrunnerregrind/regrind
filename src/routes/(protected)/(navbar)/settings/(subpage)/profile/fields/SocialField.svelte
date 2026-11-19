@@ -2,6 +2,7 @@
 	import type { Component } from "svelte";
 
 	import { Input } from "#lib/components/ui/input/index.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import InlineField from "./InlineField.svelte";
 	import { bareInputClass } from "./row";
 
@@ -33,7 +34,7 @@
 					(value = newValue.trim() === "" ? null : newValue.trim())
 			}
 			maxlength={maxLength}
-			placeholder="username"
+			placeholder={t("settings.profile.socialPlaceholder")}
 			autocapitalize="off"
 			autocomplete="off"
 			spellcheck={false}

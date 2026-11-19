@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 	import ArrowBendUpLeftIcon from "phosphor-svelte/lib/ArrowBendUpLeftIcon";
 	import ArrowUUpLeftIcon from "phosphor-svelte/lib/ArrowUUpLeftIcon";
 	import CopyIcon from "phosphor-svelte/lib/CopyIcon";
@@ -7,12 +6,14 @@
 	import FolderSimpleMinusIcon from "phosphor-svelte/lib/FolderSimpleMinusIcon";
 	import TrashIcon from "phosphor-svelte/lib/TrashIcon";
 	import WarningCircleIcon from "phosphor-svelte/lib/WarningCircleIcon";
-	import { toast } from "svelte-sonner";
 	import type { ComponentProps } from "svelte";
 
+	import { copyToClipboard } from "#lib/api/error-copy.ts";
 	import fireEmoji from "#lib/assets/emojis/fire/32px.png";
 	import ContextMenu from "#lib/components/shared/ContextMenu.svelte";
 	import { Button } from "#lib/components/ui/button/index.ts";
+	import { t } from "#lib/i18n/index.ts";
+	import Rich from "#lib/i18n/Rich.svelte";
 
 	let {
 		textContent,
@@ -48,20 +49,22 @@
 					"mb-2 block w-45 text-center text-foreground/50 text-shadow-sm can-hover:hidden",
 				]}
 			>
-				Double tap to <img
-					src={fireEmoji}
-					data-ui-glyph
-					alt="react with fire"
-					width="16"
-					height="16"
-					class="inline align-middle"
-					draggable="false"
-				/>
+				<Rich key="chat.message.contextMenu.doubleTapToReact">
+					{#snippet fireIcon(text)}<img
+							src={fireEmoji}
+							data-ui-glyph
+							alt={text}
+							width="16"
+							height="16"
+							class="inline align-middle"
+							draggable="false"
+						/>{/snippet}
+				</Rich>
 			</span>
 			<Button
 				variant="ghost"
 				size="icon-lg"
-				aria-label="React with fire"
+				aria-label={t("chat.message.contextMenu.a11y.reactWithFire")}
 				class={[
 					"mb-2 hidden self-start rounded-full bg-black/80 can-hover:inline-flex",
 				]}
@@ -92,22 +95,22 @@
 					props.onClose();
 				}}
 			>
-				<ArrowBendUpLeftIcon /> Reply
+				<ArrowBendUpLeftIcon />
+				{t("chat.message.contextMenu.reply")}
 			</Button>
 		{/if}
 		{#if textContent !== undefined}
 			<Button
 				variant="ghost"
 				onclick={() => {
-					writeText(textContent)
-						.then(() => {
-							toast.success("Message copied to clipboard");
-							props.onClose();
-						})
-						.catch((error) => console.error(error));
+					void copyToClipboard({
+						text: textContent,
+						copiedMessage: t("chat.message.contextMenu.copied"),
+					}).then(() => props.onClose());
 				}}
 			>
-				<CopyIcon /> Copy message
+				<CopyIcon />
+				{t("chat.message.contextMenu.copy")}
 			</Button>
 		{/if}
 		{#if onCopyError}
@@ -118,7 +121,8 @@
 					props.onClose();
 				}}
 			>
-				<WarningCircleIcon /> Copy error
+				<WarningCircleIcon />
+				{t("common.actions.copyError")}
 			</Button>
 		{/if}
 		{#if onDelete}
@@ -130,7 +134,7 @@
 				}}
 			>
 				<TrashIcon />
-				Delete for me
+				{t("chat.message.contextMenu.deleteForMe")}
 			</Button>
 		{/if}
 		{#if onUnsend}
@@ -142,7 +146,7 @@
 				}}
 			>
 				<ArrowUUpLeftIcon />
-				Unsend message
+				{t("chat.message.contextMenu.unsend")}
 			</Button>
 		{/if}
 		{#if onUnshareAlbum}
@@ -165,7 +169,8 @@
 					onReport();
 				}}
 			>
-				<FlagIcon /> Report
+				<FlagIcon />
+				{t("chat.message.contextMenu.report")}
 			</Button>
 		{/if}
 	</div>

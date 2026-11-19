@@ -1,8 +1,11 @@
 use std::path::{Path, PathBuf};
 
+use crate::app_language::native_strings_before_launch;
+use crate::native_strings::NativeText;
+
 const SHARED: &str = "/Applications";
 
-pub fn enforce() {
+pub fn enforce_home() {
 	if cfg!(debug_assertions) {
 		return;
 	}
@@ -16,13 +19,17 @@ pub fn enforce() {
 		return;
 	}
 
+	let strings = native_strings_before_launch();
 	rfd::MessageDialog::new()
 		.set_level(rfd::MessageLevel::Error)
-		.set_title("Move ReGrind to Applications")
-		.set_description(format!(
-			"ReGrind updates itself in place, so it has to run from {SHARED}."
+		.set_title(strings.text(NativeText::LocationTitle))
+		.set_description(
+			strings
+				.fill(NativeText::LocationDescription, &[("folder", SHARED)]),
+		)
+		.set_buttons(rfd::MessageButtons::OkCustom(
+			strings.text(NativeText::LocationQuit).to_owned(),
 		))
-		.set_buttons(rfd::MessageButtons::OkCustom("Quit".to_owned()))
 		.show();
 	std::process::exit(1);
 }

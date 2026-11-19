@@ -2,14 +2,19 @@
 	import CaretUpDownIcon from "phosphor-svelte/lib/CaretUpDownIcon";
 
 	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.ts";
-	import { type Option, selectionKeepingUnlisted } from "#lib/util/options.ts";
+	import { formatList } from "#lib/i18n/format.ts";
+	import { t } from "#lib/i18n/index.ts";
+	import {
+		type Option,
+		selectionKeepingUnlisted,
+	} from "#lib/util/options.ts";
 	import { inlineLabelClass, inlineRowClass, valueClass } from "./row";
 
 	let {
 		label,
 		values = $bindable(),
 		options,
-		placeholder = "Not set",
+		placeholder,
 	}: {
 		label: string;
 		values: T[];
@@ -45,8 +50,8 @@
 						]}
 					>
 						{selectedLabels.length
-							? selectedLabels.join(", ")
-							: placeholder}
+							? formatList(selectedLabels)
+							: (placeholder ?? t("settings.profile.notSet"))}
 					</span>
 					<CaretUpDownIcon
 						class="size-4 shrink-0 text-muted-foreground/70"

@@ -14,6 +14,7 @@
 	import PagingSentinel from "#lib/components/shared/PagingSentinel.svelte";
 	import { gridState } from "#lib/grid/grid-state.svelte.ts";
 	import { ensureSentTapsLoaded } from "#lib/grid/grid-taps.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import { usernameMatches } from "#lib/model/browse/grid/filters.ts";
 	import { armProfileDeck } from "#lib/profile/profile-deck.ts";
 	import { getNow } from "#lib/util/now.ts";
@@ -101,6 +102,9 @@
 			: 0,
 	);
 	const restProfiles = $derived(gridProfiles.slice(leadCount));
+	const cascadeEmpty = $derived(
+		!search.active && !gridState.loading && gridProfiles.length === 0,
+	);
 
 	// Opening a profile hands it the rest of the cascade, so the profile screen
 	// can swipe between them in the order they are shown here. Armed per tap
@@ -191,102 +195,105 @@
 <!-- The sentinel and the status line sit outside the grid: only cells may be
      direct children of .photo-grid, whose corner rules select on position. -->
 <div class="relative flex flex-1 flex-col">
-	{#if leadCount > 0}
-		<div
-			data-slot="grid-cells"
-			class="photo-grid flex-none"
-			data-grid-columns={getProfileGridColumnsSnapshot()}
-		>
-			{#each gridProfiles.slice(0, leadCount) as item (item.id)}
-				{@render cell(item)}
-			{/each}
+	{#if cascadeEmpty && gridState.error}
+		<div class="flex flex-1 p-4">
+			<ApiErrorDisplay
+				error={gridState.error}
+				onRetry={() => gridState.retry()}
+				class="m-auto"
+			/>
 		</div>
-		<ForYouRow
-			profiles={topPicks}
-			refreshAt={gridState.topPicksRefreshAt}
-			scrollX={gridState.forYouScrollX}
-			onScrollX={(x) => (gridState.forYouScrollX = x)}
-		/>
-	{/if}
-	<!-- Only the cascade is virtualized: search shows a short, fully-rendered
-	     list of matches, so the windowing offsets would only push it off-screen. -->
-	<div
-		bind:this={gridElement}
-		data-slot="grid-cells"
-		class="photo-grid"
-		data-grid-columns={getProfileGridColumnsSnapshot()}
-		style:padding-top={search.active ? undefined : `${view.paddingTopPx}px`}
-		style:padding-bottom={search.active
-			? undefined
-			: `${view.paddingBottomPx}px`}
-		data-rows-above={(!search.active && view.hasRowsAbove) || undefined}
-		data-rows-below={(!search.active && view.hasRowsBelow) || undefined}
-	>
-		{#if search.active}
-			<!-- Search replaces the cascade: matches come from every favorite, not
-			     only the ones this paged grid happens to have loaded. -->
-			{#if search.loading && search.results.length === 0}
-				{#each Array.from({ length: 6 })}
+	{:else if cascadeEmpty && !gridState.paging.running}
+		<EmptyGrid />
+	{:else}
+		{#if leadCount > 0}
+			<div
+				data-slot="grid-cells"
+				class="photo-grid flex-none"
+				data-grid-columns={getProfileGridColumnsSnapshot()}
+			>
+				{#each gridProfiles.slice(0, leadCount) as item (item.id)}
+					{@render cell(item)}
+				{/each}
+			</div>
+			<ForYouRow
+				profiles={topPicks}
+				refreshAt={gridState.topPicksRefreshAt}
+				scrollX={gridState.forYouScrollX}
+				onScrollX={(x) => (gridState.forYouScrollX = x)}
+			/>
+		{/if}
+		<!-- Only the cascade is virtualized: search shows a short, fully-rendered
+		     list of matches, so the windowing offsets would only push it off-screen. -->
+		<div
+			bind:this={gridElement}
+			data-slot="grid-cells"
+			class="photo-grid"
+			data-grid-columns={getProfileGridColumnsSnapshot()}
+			style:padding-top={search.active
+				? undefined
+				: `${view.paddingTopPx}px`}
+			style:padding-bottom={search.active
+				? undefined
+				: `${view.paddingBottomPx}px`}
+			data-rows-above={(!search.active && view.hasRowsAbove) || undefined}
+			data-rows-below={(!search.active && view.hasRowsBelow) || undefined}
+		>
+			{#if search.active}
+				<!-- Search replaces the cascade: matches come from every favorite, not
+				     only the ones this paged grid happens to have loaded. -->
+				{#if search.loading && search.results.length === 0}
+					{#each Array.from({ length: 6 })}
+						<GridCellSkeleton />
+					{/each}
+				{:else if search.error}
+					<div class="col-span-full flex p-4">
+						<ApiErrorDisplay
+							error={search.error}
+							onRetry={() => search.search(search.query)}
+							class="m-auto"
+						/>
+					</div>
+				{:else}
+					{#each search.results as result (result.profileId)}
+						<GridProfileMiniCard
+							id={result.profileId}
+							displayName={result.displayName}
+							distance={result.distance}
+							onlineUntil={result.onlineUntil}
+							isFavorite={true}
+							rightNow={result.rightNow}
+							note={result.note}
+							onclick={() => armSearchResults(result.profileId)}
+							medias={result.profileImageMediaHash === null
+								? []
+								: [{ mediaHash: result.profileImageMediaHash }]}
+						/>
+					{:else}
+						<div class="col-span-full">
+							<NoNoteMatches query={search.query} />
+						</div>
+					{/each}
+				{/if}
+			{:else if gridState.loading && gridProfiles.length === 0}
+				{#each Array.from({ length: PAGE_SKELETONS })}
 					<GridCellSkeleton />
 				{/each}
-			{:else if search.error}
-				<div class="col-span-full flex p-4">
-					<ApiErrorDisplay
-						error={search.error}
-						onRetry={() => search.search(search.query)}
-						class="m-auto"
-					/>
-				</div>
 			{:else}
-				{#each search.results as result (result.profileId)}
-					<GridProfileMiniCard
-						id={result.profileId}
-						displayName={result.displayName}
-						distance={result.distance}
-						onlineUntil={result.onlineUntil}
-						isFavorite={true}
-						rightNow={result.rightNow}
-						note={result.note}
-						onclick={() => armSearchResults(result.profileId)}
-						medias={result.profileImageMediaHash === null
-							? []
-							: [{ mediaHash: result.profileImageMediaHash }]}
-					/>
-				{:else}
-					<div class="col-span-full">
-						<NoNoteMatches query={search.query} />
-					</div>
+				{#each visibleProfiles as item (item.id)}
+					{@render cell(item)}
+				{/each}
+				{#each Array.from({ length: visibleSkeletons })}
+					<GridCellSkeleton />
 				{/each}
 			{/if}
-		{:else if gridState.loading && gridProfiles.length === 0}
-			{#each Array.from({ length: PAGE_SKELETONS })}
-				<GridCellSkeleton />
-			{/each}
-		{:else if gridState.error && gridProfiles.length === 0}
-			<div class="col-span-full flex p-4">
-				<ApiErrorDisplay
-					error={gridState.error}
-					onRetry={() => gridState.retry()}
-					class="m-auto"
-				/>
-			</div>
-		{:else}
-			{#if gridProfiles.length === 0}
-				<EmptyGrid />
-			{/if}
-			{#each visibleProfiles as item (item.id)}
-				{@render cell(item)}
-			{/each}
-			{#each Array.from({ length: visibleSkeletons })}
-				<GridCellSkeleton />
-			{/each}
-		{/if}
-	</div>
+		</div>
+	{/if}
 	<div role="status" class="sr-only">
 		{gridState.paging.running
-			? "Loading more profiles"
+			? t("browse.grid.a11y.loadingMore")
 			: gridState.paging.failure
-				? "Failed to load more profiles"
+				? t("browse.grid.errors.loadMoreFailed")
 				: ""}
 	</div>
 	{#if !search.active && gridState.nextPage !== 0 && gridState.nextPage !== null}

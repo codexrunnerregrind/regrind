@@ -12,6 +12,7 @@
 	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.ts";
 	import * as Tabs from "#lib/components/ui/tabs/index.ts";
 	import { Toggle } from "#lib/components/ui/toggle/index.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import { dismissOnBackGesture } from "#lib/platform/back-gesture-event.svelte.ts";
 	import ComposerAlbumsTab from "./ComposerAlbumsTab.svelte";
 	import ComposerLocationTab from "./ComposerLocationTab.svelte";
@@ -19,6 +20,7 @@
 	import ComposerMediaTab from "./ComposerMediaTab.svelte";
 
 	const FULLSIZE_TABS: Tab[] = ["media", "albums"];
+	const EXPIRING_PHOTO_SECONDS = 10;
 
 	let {
 		open = $bindable(),
@@ -304,7 +306,10 @@
 					     toggle stands down for the dropdown a video brings. -->
 					{#if selectedTab === "media" && expiry === null}
 						<Toggle
-							aria-label="Set photo as expiring after 10 seconds"
+							aria-label={t(
+								"chat.composer.attachments.expiring.a11y.toggle",
+								{ count: EXPIRING_PHOTO_SECONDS },
+							)}
 							size="lg"
 							class={[
 								"pointer-events-auto",
@@ -324,7 +329,7 @@
 							{#if expiring}
 								10s
 							{:else}
-								Off
+								{t("chat.composer.attachments.expiring.off")}
 							{/if}
 						</Toggle>
 					{/if}
@@ -335,7 +340,8 @@
 					>
 						{expiring && selectedTab === "media" && expiry === null
 							? "Send Expiring"
-							: (tabs[selectedTab]?.actionLabel?.() ?? "Send")}
+							: (tabs[selectedTab]?.actionLabel?.() ??
+								t("chat.composer.attachments.actions.send"))}
 						{#if selectedTab === "media"}
 							<Badge
 								variant="secondary"
@@ -386,13 +392,13 @@
 	>
 		{#if tab === "media"}
 			<ImageIcon weight="fill" class="size-5" />
-			Media
+			{t("chat.composer.attachments.tabs.media")}
 		{:else if tab === "albums"}
 			<FolderOpenIcon weight="fill" class="size-5" />
-			Albums
+			{t("chat.composer.attachments.tabs.albums")}
 		{:else if tab === "location"}
 			<NavigationArrowIcon weight="fill" class="size-5" />
-			Location
+			{t("chat.composer.attachments.tabs.location")}
 		{/if}
 	</Tabs.Trigger>
 {/snippet}

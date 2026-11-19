@@ -40,11 +40,12 @@
 		android:enableOnBackInvokedCallback="true"
 		android:icon="@mipmap/ic_launcher"
 		android:label="@string/app_name"
+		android:localeConfig="@xml/locales_config"
 		android:name=".ReGrindApplication"
 		android:theme="@style/Theme.regrind"
 		android:usesCleartextTraffic="${usesCleartextTraffic}">
 		<activity
-			android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
+			android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|smallestScreenSize|screenLayout|uiMode"
 			android:launchMode="singleTask"
 			android:label="@string/main_activity_title"
 			android:name=".MainActivity"
@@ -757,7 +758,7 @@
 		<!-- /gen-app-icons -->
 
 		<activity
-			android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"
+			android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|layoutDirection|smallestScreenSize|screenLayout|uiMode"
 			android:label="@string/main_activity_title"
 			android:name=".FacebookOauthActivity"
 			android:exported="false"

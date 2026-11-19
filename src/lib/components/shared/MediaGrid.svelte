@@ -3,6 +3,7 @@
 
 	import ApiErrorDisplay from "#lib/components/feedback/ApiErrorDisplay.svelte";
 	import MediaImage from "#lib/components/shared/MediaImage.svelte";
+	import { t } from "#lib/i18n/index.ts";
 	import type { SelectionSet } from "#lib/util/selection.svelte.ts";
 
 	let {
@@ -32,7 +33,7 @@
 	} = $props();
 </script>
 
-<div class="@container/photo-grid flex flex-col rounded-grid">
+<div class="@container/photo-grid flex flex-1 flex-col rounded-grid">
 	{#if error !== null}
 		<div class="flex flex-1">
 			<ApiErrorDisplay {error} {onRetry} class="m-auto" />
@@ -60,7 +61,7 @@
 	{#if selected}
 		<div role="status" class="sr-only">
 			{selected.size === selected.max
-				? `Maximum ${selected.max} selected`
+				? t("media.grid.a11y.maxSelected", { count: selected.max })
 				: ""}
 		</div>
 	{/if}

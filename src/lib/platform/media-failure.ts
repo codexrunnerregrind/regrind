@@ -1,4 +1,4 @@
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
 import z from "zod";
 
 const mediaFailureSchema = z.object({
@@ -23,12 +23,7 @@ export type MediaFailure = z.infer<typeof mediaFailureSchema>;
 
 export type MediaRemedy = "retry" | "renew" | "none";
 
-export function explainsMediaFailures(): boolean {
-	return isTauri();
-}
-
 export async function mediaFailure(src: string): Promise<MediaFailure | null> {
-	if (!explainsMediaFailures()) return null;
 	try {
 		return mediaFailureSchema
 			.nullable()
@@ -62,4 +57,17 @@ export function describeMediaFailure(failure: MediaFailure | null): string {
 				: `${failure.kind} (${failure.phase})`;
 	const expired = failure.signatureExpired ? ", signature expired" : "";
 	return `${what} from ${failure.host}${expired}`;
+}
+
+export function describeMediaError({
+	error,
+	elapsedSeconds,
+}: {
+	error: Pick<MediaError, "code" | "message"> | null;
+	elapsedSeconds: number;
+}): string {
+	const after = `after ${elapsedSeconds.toFixed(1)}s`;
+	if (error === null) return `unknown media error ${after}`;
+	const message = error.message === "" ? "" : `: ${error.message}`;
+	return `MediaError ${error.code} ${after}${message}`;
 }

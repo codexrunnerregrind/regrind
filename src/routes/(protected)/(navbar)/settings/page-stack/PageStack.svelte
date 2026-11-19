@@ -9,7 +9,8 @@
 	} from "#lib/components/navigation/stack/motion.ts";
 	import { trackScrolled } from "#lib/components/navigation/stack/snapshot.ts";
 	import { paneSurface } from "#lib/components/navigation/stack/surface.ts";
-	import { attachSystemBackGesture } from "#lib/platform/system-back-gesture.ts";
+	import { followLocale } from "#lib/i18n/index.ts";
+	import { attachSystemBackGesture } from "#lib/platform/system-back-gesture.svelte.ts";
 	import { earlierPathnames } from "#lib/util/history.ts";
 	import { reducedMotion } from "#lib/util/reduced-motion.ts";
 	import { pushedFromChain } from "./hierarchy";
@@ -80,6 +81,8 @@
 
 	onNavigate((navigation) => stack.navigate(navigation));
 
+	$effect(() => followLocale(() => stack.forgetSnapshots()));
+
 	$effect(() => attachSystemBackGesture(stack));
 </script>
 
@@ -89,13 +92,14 @@
 		{@attach trackScrolled}
 		data-slot="page-stack-pane"
 		class={[
-			"fixed inset-0 bg-background pt-(--safe-area-top) pb-(--content-pb)",
+			"fixed inset-0 bg-background pt-(--safe-area-top) px-safe pb-(--content-pb)",
 			{
 				"shadow-(--stack-edge)": motion.edge,
 				"pointer-events-none invisible": rootElsewhere,
 			},
 		]}
 		style:z-index={liveZ}
+		inert={stack.committing}
 	>
 		{@render children?.()}
 	</div>

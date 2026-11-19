@@ -1,7 +1,7 @@
 <script lang="ts">
 	import EyeSlashIcon from "phosphor-svelte/lib/EyeSlashIcon";
 
-	import { preferencesLoaded } from "#lib/app-data/preferences.svelte";
+	import { preferencesLoaded } from "#lib/app-data/preferences.svelte.ts";
 	import SettingsSwitchRow from "#lib/components/settings/SettingsSwitchRow.svelte";
 	import { isAndroidPlatform, isIosPlatform } from "#lib/platform/os.ts";
 	import {

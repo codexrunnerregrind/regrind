@@ -41,6 +41,7 @@ describe.each<BooleanPreference>([
 	"revealMessageRead",
 	"revealProfileViews",
 	"confirmBlock",
+	"showMatureContent",
 ])("PreferenceSwitchSetting for %s", (preference) => {
 	async function storedPreference(value: boolean) {
 		await setPreferences({ [preference]: value });
@@ -91,7 +92,9 @@ describe.each<BooleanPreference>([
 
 		await fireEvent.click(toggle());
 		await vi.waitFor(() =>
-			expect(showErrorToastMock).toHaveBeenCalledOnce(),
+			expect(showErrorToastMock).toHaveBeenCalledExactlyOnceWith(
+				expect.objectContaining({ label: "Couldn’t save setting" }),
+			),
 		);
 
 		expect(toggle().getAttribute("aria-checked")).toBe("true");

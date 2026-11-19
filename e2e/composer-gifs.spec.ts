@@ -48,7 +48,7 @@ const FIRST_PAGING_AUTO_RETRY_MS = 2_000;
 const GIPHY_RATE_LIMITED = 429;
 const GIPHY_LINK =
 	"https://giphy.com/gifs/portlandia-season-2-episode-xT0xeChUR33EsYNNRK";
-const GIF_SEARCH_INPUT = 'input[aria-label="Search GIFs or paste GIPHY link"]';
+const GIF_SEARCH_INPUT = 'input[aria-label="Search GIFs or paste GIPHY link…"]';
 const GIF_PAGING_SENTINEL = '[data-slot="gif-paging-sentinel"]';
 const STICKER_ERROR = '[data-slot="sticker-error"]';
 
@@ -66,7 +66,7 @@ function trendingLabels(count: number): string[] {
 }
 
 function consentSwitch(page: Page) {
-	return page.getByRole("switch", { name: /^GIF search via GIPHY/ });
+	return page.getByRole("switch", { name: /^Enable GIPHY/ });
 }
 
 function agreeButton(page: Page) {
@@ -124,12 +124,12 @@ test.describe("GIPHY consent", () => {
 	}) => {
 		const requests = await recordDemoRequests(page);
 		const realGiphy = await refuseRealGiphy(page);
-		await openStickers(page, { giphyConsent: false });
+		await openStickers(page, { platform: "macos", giphyConsent: false });
 
 		const note = page.locator(GIPHY_CONSENT_NOTE);
 		await expect(note).toBeVisible();
 		await expect(
-			note.getByRole("link", { name: "Privacy Policy" }),
+			note.getByRole("link", { name: "Privacy policy" }),
 		).toHaveAttribute(
 			"href",
 			"https://support.giphy.com/hc/en-us/articles/360032872931-GIPHY-Privacy-Policy",
@@ -165,7 +165,7 @@ test.describe("GIPHY consent", () => {
 		page,
 	}) => {
 		test.setTimeout(FIRST_ROUTE_COMPILE_MS);
-		await openStickers(page, { giphyConsent: false });
+		await openStickers(page, { platform: "macos", giphyConsent: false });
 		await agreeButton(page).click();
 		await expect(gifTiles(page).first()).toBeVisible();
 		await expect
@@ -178,21 +178,13 @@ test.describe("GIPHY consent", () => {
 		await expect(page.locator(GIPHY_CONSENT_NOTE)).toHaveCount(0);
 
 		await page.goto("/settings/app");
+		await page
+			.getByRole("link", { name: "Privacy", exact: true })
+			.click({ timeout: FIRST_ROUTE_COMPILE_MS });
+		await expect(page).toHaveURL(/\/settings\/app\/privacy$/);
 		await consentSwitch(page).waitFor({ timeout: FIRST_ROUTE_COMPILE_MS });
 		await expect(consentSwitch(page)).toBeChecked();
 		await expect(consentSwitch(page)).toBeEnabled();
-		const section = await consentSwitch(page).evaluate((control) =>
-			[...document.querySelectorAll("h2")]
-				.filter(
-					(heading) =>
-						(heading.compareDocumentPosition(control) &
-							Node.DOCUMENT_POSITION_FOLLOWING) !==
-						0,
-				)
-				.at(-1)
-				?.textContent?.trim(),
-		);
-		expect(section).toBe("Privacy");
 
 		await consentSwitch(page).click();
 		await expect(consentSwitch(page)).not.toBeChecked();
@@ -211,7 +203,7 @@ test.describe("GIF search", () => {
 	test("typing a new search drops the GIF picked from the old results", async ({
 		page,
 	}) => {
-		await openStickers(page);
+		await openStickers(page, { platform: "macos" });
 		await gifTiles(page).first().click();
 		await expect(stickerSendButton(page)).toBeVisible();
 
@@ -225,7 +217,7 @@ test.describe("GIF search", () => {
 		page,
 	}) => {
 		const requests = await recordDemoRequests(page);
-		await openStickers(page);
+		await openStickers(page, { platform: "macos" });
 		const timeline = await watchSearchTimeline(page);
 
 		await gifSearchBox(page).pressSequentially("party", { delay: 30 });
@@ -278,7 +270,7 @@ test.describe("GIF search", () => {
 		page,
 	}) => {
 		const requests = await recordDemoRequests(page);
-		await openStickers(page);
+		await openStickers(page, { platform: "macos" });
 		const timeline = await watchSearchTimeline(page);
 
 		await gifSearchBox(page).fill("wink");
@@ -307,10 +299,10 @@ test.describe("GIF search", () => {
 		page,
 	}) => {
 		const requests = await recordDemoRequests(page);
-		await openStickers(page);
+		await openStickers(page, { platform: "macos" });
 
 		await gifSearchBox(page).fill(DEMO_GIPHY_EMPTY_QUERY);
-		await expect(gifPanel(page).getByText("No GIFs found")).toBeVisible();
+		await expect(gifPanel(page).getByText("No GIFs Found")).toBeVisible();
 		await expect(gifTiles(page)).toHaveCount(0);
 
 		await page.getByRole("button", { name: "Clear search" }).click();
@@ -320,7 +312,7 @@ test.describe("GIF search", () => {
 			page.getByRole("button", { name: "Clear search" }),
 		).toHaveCount(0);
 		await expect(gifTiles(page)).toHaveCount(GIPHY_PAGE_SIZE);
-		await expect(gifPanel(page).getByText("No GIFs found")).toHaveCount(0);
+		await expect(gifPanel(page).getByText("No GIFs Found")).toHaveCount(0);
 		expect(await tileLabels(gifTiles(page))).toEqual(
 			trendingLabels(GIPHY_PAGE_SIZE),
 		);
@@ -340,7 +332,7 @@ test.describe("GIF search", () => {
 		page,
 	}) => {
 		const requests = await recordDemoRequests(page);
-		await openStickers(page);
+		await openStickers(page, { platform: "macos" });
 
 		await gifSearchBox(page).fill(GIPHY_LINK);
 
@@ -359,7 +351,7 @@ test.describe("GIF search", () => {
 		page,
 	}) => {
 		await page.emulateMedia({ reducedMotion: "reduce" });
-		await openStickers(page);
+		await openStickers(page, { platform: "macos" });
 		const first = gifTiles(page).first();
 		await expect(first.locator('[data-slot="gif-badge"]')).toBeVisible();
 
@@ -379,13 +371,13 @@ test.describe("GIF search", () => {
 	});
 
 	test("a link to a GIF GIPHY doesn't know says so", async ({ page }) => {
-		await openStickers(page);
+		await openStickers(page, { platform: "macos" });
 
 		await gifSearchBox(page).fill(
 			`https://giphy.com/gifs/${DEMO_GIPHY_MISSING_ID}`,
 		);
 
-		await expect(gifPanel(page).getByText("No GIFs found")).toBeVisible();
+		await expect(gifPanel(page).getByText("No GIFs Found")).toBeVisible();
 		await expect(gifTiles(page)).toHaveCount(0);
 	});
 
@@ -393,7 +385,7 @@ test.describe("GIF search", () => {
 		page,
 	}) => {
 		await page.setViewportSize({ width: 390, height: 844 });
-		await openStickers(page);
+		await openStickers(page, { platform: "macos" });
 		await page.waitForTimeout(600);
 		const touch = await TrustedTouch.attach(page);
 		const before = await box(page);
@@ -416,7 +408,7 @@ test.describe("GIF search", () => {
 	});
 
 	test("focusing the search box expands the sheet", async ({ page }) => {
-		await openStickers(page);
+		await openStickers(page, { platform: "macos" });
 		const { full, short } = await snapTops(page);
 		expect(Math.abs((await box(page)).top - short)).toBeLessThan(8);
 
@@ -432,7 +424,7 @@ test.describe("GIF feed scrolling", () => {
 		page,
 	}) => {
 		const requests = await recordDemoRequests(page);
-		await openStickers(page, { stretchPanel: false });
+		await openStickers(page, { platform: "macos", stretchPanel: false });
 		await expect(gifTiles(page)).toHaveCount(GIPHY_PAGE_SIZE);
 		await expect(page.locator(GIF_PAGING_SENTINEL)).toHaveCount(1);
 		await expandSheet(page);
@@ -468,7 +460,7 @@ test.describe("GIF feed scrolling", () => {
 	test("the search bar stays stuck to the top of the sheet", async ({
 		page,
 	}) => {
-		await openStickers(page, { stretchPanel: false });
+		await openStickers(page, { platform: "macos", stretchPanel: false });
 		await expandToFull(page);
 		const { full } = await snapTops(page);
 		const bar = page.locator(GIF_SEARCH_BAR);
@@ -510,17 +502,18 @@ test.describe("GIF failures", () => {
 			status: 503,
 		});
 		await openComposerSheet(page, {
+			platform: "macos",
 			trigger: "GIFs and stickers",
 			preferences: { giphyConsent: true },
 		});
 
 		const failure = gifPanel(page).locator(STICKER_ERROR);
 		await expect(
-			failure.getByText("Couldn't load GIFs", { exact: true }),
+			failure.getByText("Couldn’t load GIFs", { exact: true }),
 		).toBeVisible();
 		await expect(gifTiles(page)).toHaveCount(0);
 
-		await failure.getByRole("button", { name: "Retry" }).click();
+		await failure.getByRole("button", { name: "Try again" }).click();
 		await expect(gifTiles(page)).toHaveCount(GIPHY_PAGE_SIZE);
 		await expect(failure).toHaveCount(0);
 	});
@@ -533,15 +526,15 @@ test.describe("GIF failures", () => {
 			times: 1,
 			status: GIPHY_RATE_LIMITED,
 		});
-		await openStickers(page, { stretchPanel: false });
+		await openStickers(page, { platform: "macos", stretchPanel: false });
 		await expect(gifTiles(page)).toHaveCount(GIPHY_PAGE_SIZE);
 		await expandSheet(page);
 		await scrollSheetTo(page, { top: "end" });
 
 		const failure = gifPanel(page).locator(STICKER_ERROR);
-		const retry = failure.getByRole("button", { name: "Retry" });
+		const retry = failure.getByRole("button", { name: "Try again" });
 		await expect(
-			failure.getByText("Couldn't load more GIFs", { exact: true }),
+			failure.getByText("Couldn’t load more GIFs", { exact: true }),
 		).toBeVisible();
 		await expect(retry).toBeVisible();
 		await page.waitForTimeout(FIRST_PAGING_AUTO_RETRY_MS + 500);
@@ -564,7 +557,7 @@ test.describe("GIF failures", () => {
 });
 
 test("the GIF tab credits GIPHY with its official mark", async ({ page }) => {
-	await openStickers(page);
+	await openStickers(page, { platform: "macos" });
 
 	const mark = page.getByRole("img", { name: "Powered by GIPHY" });
 	await expect(mark).toBeVisible();
@@ -624,7 +617,7 @@ test.describe("GIF tab spacing", () => {
 			page,
 		}) => {
 			await page.setViewportSize({ width, height: 800 });
-			await openStickers(page);
+			await openStickers(page, { platform: "macos" });
 			await expect(gifTiles(page).first()).toBeVisible();
 
 			expect(await creditGap(page)).toBeGreaterThanOrEqual(8);
@@ -635,7 +628,7 @@ test.describe("GIF tab spacing", () => {
 			page,
 		}) => {
 			await page.setViewportSize({ width, height: 800 });
-			await openStickers(page);
+			await openStickers(page, { platform: "macos" });
 			await expect(gifTiles(page).first()).toBeVisible();
 
 			expect(await firstRowGap(page)).toBeGreaterThanOrEqual(8);

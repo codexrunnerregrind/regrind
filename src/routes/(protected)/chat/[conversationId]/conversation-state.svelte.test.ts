@@ -62,6 +62,7 @@ import { ApiError } from "#lib/api/api-error.ts";
 import { ConversationUnavailableError } from "#lib/api/messaging/messages.ts";
 import { Drafts } from "#lib/chat/drafts.svelte.ts";
 import { TypingTracker } from "#lib/chat/typing.svelte.ts";
+import { runningOn } from "#lib/test/platform.ts";
 import type {
 	Message,
 	MessageDraft,
@@ -72,6 +73,10 @@ import { ConversationState } from "./conversation-state.svelte";
 const CONVERSATION_ID = "1:2";
 const OUR_ID = 1;
 const PEER_ID = 2;
+
+beforeEach(() => {
+	runningOn("windows");
+});
 
 const message = (messageId: string, timestamp: number) => ({
 	messageId,
@@ -537,7 +542,7 @@ describe("ConversationState error classification", () => {
 		expect(state.error).toBeNull();
 		expect(state.messages).toHaveLength(1);
 		expect(showErrorToastMock).toHaveBeenCalledWith(
-			expect.objectContaining({ label: "Failed to refresh messages" }),
+			expect.objectContaining({ label: "Couldn’t refresh messages" }),
 		);
 	});
 
@@ -556,6 +561,26 @@ describe("ConversationState error classification", () => {
 		expect(showErrorToastMock).not.toHaveBeenCalled();
 	});
 
+	it("remembers that its latest refresh failed until the next one lands", async () => {
+		getConversationMock.mockResolvedValue(loaded);
+		const state = create();
+		await flush();
+		expect(state.refreshFailed).toBe(false);
+
+		getConversationMock.mockRejectedValueOnce(blocked());
+		await state.refresh();
+		expect(state.refreshFailed).toBe(true);
+
+		getConversationMock.mockRejectedValueOnce(
+			new ConversationUnavailableError(CONVERSATION_ID),
+		);
+		await state.refresh();
+		expect(state.refreshFailed).toBe(true);
+
+		await state.refresh();
+		expect(state.refreshFailed).toBe(false);
+	});
+
 	it("keeps the loaded messages when pagination is blocked", async () => {
 		getConversationMock.mockResolvedValue(loaded);
 		const state = create();
@@ -567,7 +592,7 @@ describe("ConversationState error classification", () => {
 		expect(state.error).toBeNull();
 		expect(state.messages).toHaveLength(1);
 		expect(showErrorToastMock).toHaveBeenCalledWith(
-			expect.objectContaining({ label: "Failed to load more messages" }),
+			expect.objectContaining({ label: "Couldn’t load more messages" }),
 		);
 	});
 

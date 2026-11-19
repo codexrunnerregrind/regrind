@@ -12,7 +12,8 @@
 	import TapIcon from "#lib/components/profile/TapIcon.svelte";
 	import Button from "#lib/components/ui/button/button.svelte";
 	import { hapticImpact, playHaptic } from "#lib/haptics.ts";
-	import { TapType, tapTypes } from "#lib/model/interest/taps.ts";
+	import { type MessageKey, t } from "#lib/i18n/index.ts";
+	import { TapType } from "#lib/model/interest/taps.ts";
 	import { longPressHandlers } from "#lib/util/long-press.ts";
 	import { reducedMotion } from "#lib/util/reduced-motion.ts";
 
@@ -50,7 +51,10 @@
 				}
 			}
 			console.error(error);
-			showErrorToast({ label: "Failed to send tap", error });
+			showErrorToast({
+				label: t("profile.tap.errors.sendFailed"),
+				error,
+			});
 			onTap(null);
 		} finally {
 			sending = false;
@@ -88,6 +92,18 @@
 		css: (t: number) =>
 			`scale: ${0.3 + 0.7 * t}; rotate: ${(1 - t) * -25}deg;`,
 	});
+
+	const sendKeys = {
+		[TapType.Friendly]: "profile.tap.a11y.send.friendly",
+		[TapType.Hot]: "profile.tap.a11y.send.hot",
+		[TapType.Looking]: "profile.tap.a11y.send.looking",
+	} as const satisfies Record<TapType, MessageKey>;
+
+	const sentKeys = {
+		[TapType.Friendly]: "profile.tap.a11y.sent.friendly",
+		[TapType.Hot]: "profile.tap.a11y.sent.hot",
+		[TapType.Looking]: "profile.tap.a11y.sent.looking",
+	} as const satisfies Record<TapType, MessageKey>;
 
 	const sent = $derived(tapType !== null);
 
@@ -198,8 +214,8 @@
 		size="icon"
 		variant="secondary"
 		aria-label={tapType === null
-			? `Send a ${tapTypes[defaultTapType]} tap`
-			: `${tapTypes[tapType]} tap sent`}
+			? t(sendKeys[defaultTapType])
+			: t(sentKeys[tapType])}
 		aria-haspopup="menu"
 		aria-expanded={open}
 		{...longPressHandlers(openMenu)}
@@ -232,7 +248,7 @@
 				<button
 					type="button"
 					role="menuitem"
-					aria-label="Send a {tapTypes[option.tapType]} tap"
+					aria-label={t(sendKeys[option.tapType])}
 					data-selected={selected === option.tapType || undefined}
 					class="absolute top-0 left-0 flex size-14 items-center justify-center rounded-full bg-secondary shadow-lg transition-[background-color,scale] duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring data-selected:scale-115 data-selected:bg-muted-foreground/40"
 					style:translate="calc(-50% + {option.x}px) calc(-50% + {option.y}px)"

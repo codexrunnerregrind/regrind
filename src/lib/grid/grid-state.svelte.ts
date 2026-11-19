@@ -13,6 +13,7 @@ import {
 } from "#lib/api/users/profile-viewability.ts";
 import { onProfileEdit } from "#lib/api/users/profiles.ts";
 import { getActiveGeohashSnapshot } from "#lib/app-data/preferences.svelte.ts";
+import { t } from "#lib/i18n/index.ts";
 import { showsOnReturn, staysOnline } from "#lib/presence/presence-gate.ts";
 import {
 	pushDeeplinkAhead,
@@ -50,6 +51,7 @@ class GridState {
 	});
 	loading = $state(false);
 	refreshing = $state(false);
+	refreshFailed = $state(false);
 	error: Error | null = $state(null);
 	/** Whether the grid is the screen on show — the presence heartbeat asks. */
 	viewActive = false;
@@ -199,6 +201,7 @@ class GridState {
 		if (!geohash || this.refreshing) return;
 		this.#geohash = geohash;
 		this.refreshing = true;
+		this.refreshFailed = false;
 		try {
 			await this.#fetchProfiles(geohash, {
 				silent: true,
@@ -231,6 +234,7 @@ class GridState {
 		this.#stale = false;
 		this.loading = false;
 		this.refreshing = false;
+		this.refreshFailed = false;
 		this.scrollY = 0;
 		this.#geohash = null;
 		this.filters.reset();
@@ -287,7 +291,10 @@ class GridState {
 			}
 		} catch (error) {
 			console.error(id, error);
-			showErrorToast({ label: "Failed to load profile", error });
+			showErrorToast({
+				label: t("browse.grid.errors.loadProfileFailed"),
+				error,
+			});
 		} finally {
 			this.#resolvingIds.delete(id);
 		}
@@ -345,10 +352,11 @@ class GridState {
 			if (this.#generation.isStale(generation)) return;
 			console.error(err);
 			this.loading = false;
+			if (this.refreshing) this.refreshFailed = true;
 			if (opts?.automatic) return;
 			if (opts?.silent) {
 				showErrorToast({
-					label: "Failed to refresh profiles",
+					label: t("browse.grid.errors.refreshFailed"),
 					error: err,
 					onRetry: () =>
 						void this.refresh({

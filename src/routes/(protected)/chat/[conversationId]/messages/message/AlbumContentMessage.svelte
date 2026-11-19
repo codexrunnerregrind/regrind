@@ -228,7 +228,9 @@
 							openAlbum();
 						}}
 			/>
-			<span class="wrap-anywhere whitespace-pre-wrap">{replyText}</span>
+			<span class="wrap-anywhere whitespace-pre-wrap" translate="no"
+				>{replyText}</span
+			>
 			{@render media.adornments?.()}
 		</div>
 	</div>

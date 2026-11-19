@@ -9,12 +9,13 @@
 		ACTIVE_FILTER,
 		ACTIVE_FILTER_PRESSED,
 	} from "#lib/components/filters/active-filter.ts";
+	import AgeQuickFilter from "#lib/components/filters/age/AgeQuickFilter.svelte";
 	import { Button, buttonVariants } from "#lib/components/ui/button/index.ts";
 	import * as ToggleGroup from "#lib/components/ui/toggle-group/index.ts";
 	import { gridState } from "#lib/grid/grid-state.svelte.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import { defaultFilters } from "#lib/model/browse/grid/filters.ts";
 	import { deepEqual } from "#lib/util/deep-equal.ts";
-	import AgeQuickFilter from "./AgeQuickFilter.svelte";
 	import PositionQuickFilter from "./PositionQuickFilter.svelte";
 	import { sentFilterKeysWithoutQuickFilter } from "./quick-filters";
 
@@ -47,8 +48,8 @@
 <Button
 	variant="secondary"
 	aria-label={activePreset
-		? `All filters: ${activePreset.name}`
-		: "All filters"}
+		? `${t("browse.quickFilters.a11y.allFilters")}: ${activePreset.name}`
+		: t("browse.quickFilters.a11y.allFilters")}
 	onclick={() => (openFilters.all = true)}
 	class={{ [ACTIVE_FILTER]: sheetOnlyFiltersOn || activePreset }}
 >
@@ -59,7 +60,7 @@
 </Button>
 <Button
 	variant="secondary"
-	aria-label="Favorites"
+	aria-label={t("common.filters.favorites")}
 	aria-pressed={isFavorite}
 	onclick={() => gridState.filters.set({ isFavorite: !isFavorite })}
 	class={{ [ACTIVE_FILTER]: isFavorite }}
@@ -72,14 +73,14 @@
 	onclick={() => (openFilters.age = true)}
 	class={{ [ACTIVE_FILTER]: ageEnabled }}
 >
-	Age
+	{t("common.filters.age.label")}
 </Button>
 <Button
 	variant="secondary"
 	onclick={() => (openFilters.position = true)}
 	class={{ [ACTIVE_FILTER]: positionEnabled }}
 >
-	Position
+	{t("common.filters.position.label")}
 </Button>
 <ToggleGroup.Root
 	type="multiple"
@@ -104,7 +105,7 @@
 			ACTIVE_FILTER_PRESSED,
 		]}
 	>
-		Online
+		{t("common.filters.online")}
 	</ToggleGroup.Item>
 	<ToggleGroup.Item
 		value="isRightNow"
@@ -113,7 +114,7 @@
 			ACTIVE_FILTER_PRESSED,
 		]}
 	>
-		Right now
+		{t("common.filters.rightNow")}
 	</ToggleGroup.Item>
 	<ToggleGroup.Item
 		value="isFresh"
@@ -122,9 +123,9 @@
 			ACTIVE_FILTER_PRESSED,
 		]}
 	>
-		Fresh
+		{t("common.filters.fresh")}
 	</ToggleGroup.Item>
 </ToggleGroup.Root>
 
-<AgeQuickFilter bind:open={openFilters.age} />
+<AgeQuickFilter bind:open={openFilters.age} filters={gridState.filters} />
 <PositionQuickFilter bind:open={openFilters.position} />

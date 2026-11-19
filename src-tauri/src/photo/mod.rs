@@ -4,13 +4,12 @@ pub(crate) mod source;
 
 use tauri::{AppHandle, Runtime};
 
-use crate::error::AppError;
+use crate::error::{AppError, MediaError};
 
 pub use encode::Thumbnail;
 use source::Format;
 
 pub const JPEG: &str = "image/jpeg";
-const DAMAGED: &str = "Unreadable or damaged photo";
 
 #[cfg(target_os = "android")]
 pub use heif::plugin;
@@ -79,15 +78,17 @@ async fn decode<R: Runtime>(
 }
 
 fn damaged() -> AppError {
-	AppError::Media(DAMAGED.to_owned())
+	MediaError::PhotoDamaged.into()
 }
 
 pub(crate) async fn off_thread<T: Send + 'static>(
 	work: impl FnOnce() -> T + Send + 'static,
 ) -> Result<T, AppError> {
-	tokio::task::spawn_blocking(work)
-		.await
-		.map_err(|error| AppError::Media(error.to_string()))
+	tokio::task::spawn_blocking(work).await.map_err(|error| {
+		AppError::Media(MediaError::Io {
+			detail: error.to_string(),
+		})
+	})
 }
 
 #[cfg(test)]
@@ -184,11 +185,32 @@ mod tests {
 		)
 		.await;
 
-		assert!(matches!(refused, Err(AppError::Media(_))));
+		assert!(matches!(
+			refused,
+			Err(AppError::Media(MediaError::PhotoDamaged))
+		));
 	}
 
+	#[cfg(target_os = "macos")]
 	#[tokio::test]
-	async fn heic_is_refused_with_a_message_worth_showing_off_android() {
+	async fn heic_leaves_as_an_upright_jpeg_on_macos() {
+		let app = app();
+
+		let photo = normalize(
+			app.handle(),
+			include_bytes!("heif/fixtures/rotated.heic").to_vec(),
+			"image/heic".to_owned(),
+		)
+		.await
+		.expect("normalize");
+
+		assert_eq!(photo.content_type, JPEG);
+		assert_eq!(dimensions(&photo.bytes), (48, 96));
+	}
+
+	#[cfg(any(target_os = "linux", target_os = "windows"))]
+	#[tokio::test]
+	async fn heic_is_refused_as_unsupported_on_linux_and_windows() {
 		let app = app();
 		let mut heic = vec![0, 0, 0, 0x18];
 		heic.extend_from_slice(b"ftypheic");
@@ -197,11 +219,10 @@ mod tests {
 			normalize(app.handle(), heic, "image/heic".to_owned()).await;
 
 		match refused {
-			Err(AppError::Media(message)) => {
-				assert!(!message.is_empty());
-				assert!(!message.contains("Unreadable"), "{message}");
+			Err(AppError::Media(MediaError::HeicUnsupported)) => {}
+			Err(other) => {
+				panic!("expected HEIC to be unsupported, got {other}")
 			}
-			Err(other) => panic!("expected a media error, got {other}"),
 			Ok(photo) => {
 				panic!("expected a refusal, got {} bytes", photo.bytes.len())
 			}

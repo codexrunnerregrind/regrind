@@ -1,4 +1,4 @@
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { goto } from "$app/navigation";
 import { toast } from "svelte-sonner";
@@ -7,18 +7,21 @@ import { signedInProfileId } from "#lib/api/current-session.ts";
 import {
 	confirmAccountSwitch,
 	googleHandoffState,
+	googleSignInMode,
 } from "#lib/api/google-handoff-state.svelte.ts";
 import { signInResultSchema } from "#lib/api/methods.ts";
 import { finishSignIn, reportSignInFailure } from "#lib/api/sign-in.ts";
 import { clearAccountState } from "#lib/api/sign-out.ts";
-import { isAndroidPlatform } from "#lib/platform/os.ts";
+import { t } from "#lib/i18n/index.ts";
 import { delay } from "#lib/util/delay.ts";
 
 const HANDOFF_EVENT = "google-oauth:handoff";
 const READY_ATTEMPTS = 25;
 const READY_POLL_MS = 200;
 
-const available = () => !__DEMO__ && isTauri() && isAndroidPlatform();
+function reportExpired(): void {
+	toast.error(t("auth.googleHandoff.errors.expired"));
+}
 
 async function pending(): Promise<boolean> {
 	try {
@@ -70,6 +73,11 @@ async function consume(): Promise<void> {
 			await discard();
 			return;
 		}
+		if (!(await pending())) {
+			googleHandoffState.phase = "idle";
+			reportExpired();
+			return;
+		}
 		replacingAccount = true;
 	} else {
 		googleHandoffState.phase = "signingIn";
@@ -79,14 +87,19 @@ async function consume(): Promise<void> {
 	try {
 		const result = await exchange();
 		if (!result) {
-			toast.error("That Google sign-in expired. Try again.");
+			reportExpired();
 			return;
 		}
 		if (replacingAccount) await clearAccountState();
 		await finishSignIn(result);
 		if (result.restriction) await goto("/auth/sign-in");
 	} catch (error) {
-		reportSignInFailure({ error, label: "Sign in with Google" });
+		reportSignInFailure({
+			error,
+			label: t("auth.signIn.errors.providerFailed", {
+				provider: "Google",
+			}),
+		});
 		if (!replacingAccount) await goto("/auth/sign-in/google");
 	} finally {
 		googleHandoffState.phase = "idle";
@@ -101,7 +114,9 @@ export function consumeGoogleHandoff(): Promise<void> {
 }
 
 export async function startGoogleHandoffWatch(): Promise<() => void> {
-	if (!available()) return () => {};
+	if ((__DEMO__ && !__SCREENSHOTS__) || googleSignInMode() !== "companion") {
+		return () => {};
+	}
 
 	const unlisten = await listen(HANDOFF_EVENT, () => {
 		void consumeGoogleHandoff();

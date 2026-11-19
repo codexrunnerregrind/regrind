@@ -46,6 +46,7 @@ vi.mock("#lib/ws.svelte.ts", async (importOriginal) => ({
 }));
 
 import { mergeProfileEditIntoCaches } from "#lib/api/users/profiles.ts";
+import { runningOn } from "#lib/test/platform.ts";
 import { ConversationsState } from "./conversations-state.svelte";
 import {
 	conversation,
@@ -144,6 +145,7 @@ beforeEach(() => {
 	localStorage.clear();
 	reconcileHandlers.length = 0;
 	conversationDeleteHandlers.length = 0;
+	runningOn("android");
 });
 
 describe("inbox favorites filter", () => {

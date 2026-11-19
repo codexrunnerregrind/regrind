@@ -4,6 +4,8 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Drafts } from "#lib/chat/drafts.svelte.ts";
+import { runningOn } from "#lib/test/platform.ts";
+import { untranslatableTexts } from "#lib/test/untranslatable.ts";
 import type { ApiResponseMessage } from "#lib/model/messaging/messages.ts";
 import ComposerReplyPreview from "./ComposerReplyPreview.svelte";
 
@@ -74,10 +76,10 @@ function classesOf(element: Element): string[] {
 	return (element.getAttribute("class") ?? "").split(/\s+/).filter(Boolean);
 }
 
-function renderPreview() {
+function renderPreview(replyTo: ApiResponseMessage = message) {
 	const onCancel = vi.fn();
 	const { container } = render(ComposerReplyPreview, {
-		props: { message, onCancel },
+		props: { message: replyTo, onCancel },
 	});
 	return {
 		onCancel,
@@ -85,6 +87,10 @@ function renderPreview() {
 		close: screen.getByRole("button", { name: "Cancel reply" }),
 	};
 }
+
+beforeEach(() => {
+	runningOn("windows");
+});
 
 describe("ComposerReplyPreview", () => {
 	beforeEach(() => {
@@ -97,6 +103,22 @@ describe("ComposerReplyPreview", () => {
 		renderPreview();
 
 		expect(screen.getByText("the quoted text")).toBeTruthy();
+	});
+
+	it("keeps quoted words out of page translation but not a type label", () => {
+		const { pill: quotedText } = renderPreview();
+
+		expect(untranslatableTexts(quotedText)).toEqual(["the quoted text"]);
+		cleanup();
+
+		const { pill: quotedUnsent } = renderPreview({
+			...message,
+			type: "Unsent",
+			body: {},
+		} as unknown as ApiResponseMessage);
+
+		expect(quotedUnsent.textContent).toContain("Unsent message");
+		expect(untranslatableTexts(quotedUnsent)).toEqual([]);
 	});
 
 	it("cancels the reply when the close control is clicked", async () => {

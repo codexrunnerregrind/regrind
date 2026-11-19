@@ -16,6 +16,7 @@
 	} from "#lib/api/messaging/messages.ts";
 	import ReportSheet from "#lib/components/report/ReportSheet.svelte";
 	import { withRegionGrant } from "#lib/entitlements/expiring-media-entitlement.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import { openExternalLink } from "#lib/platform/link-opener.ts";
 	import type { ApiResponseMessage } from "#lib/model/messaging/messages.ts";
 	import {
@@ -90,7 +91,10 @@
 			});
 		} catch (error) {
 			console.error(error);
-			showErrorToast({ label: "Failed to delete message", error });
+			showErrorToast({
+				label: t("chat.messages.errors.deleteFailed"),
+				error,
+			});
 			revert();
 		}
 	}
@@ -109,7 +113,10 @@
 			});
 			return;
 		}
-		showErrorToast({ label: "Failed to unsend message", error });
+		showErrorToast({
+			label: t("chat.messages.errors.unsendFailed"),
+			error,
+		});
 	}
 </script>
 
@@ -161,7 +168,7 @@
 					} catch (error) {
 						console.error(error);
 						showErrorToast({
-							label: "Failed to react to message",
+							label: t("chat.messages.errors.reactFailed"),
 							error,
 						});
 					}
@@ -232,8 +239,6 @@
 {#if reportProfileId !== null}
 	<ReportSheet
 		bind:open={reportOpen}
-		profileId={reportProfileId}
-		subject="message"
-		locations={["CHAT_MESSAGE"]}
+		target={{ kind: "message", profileId: reportProfileId }}
 	/>
 {/if}

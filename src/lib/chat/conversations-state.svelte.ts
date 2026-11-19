@@ -18,6 +18,7 @@ import {
 	mergeConversation,
 } from "#lib/chat/merge-conversation.ts";
 import { applyOptimisticBatch } from "#lib/chat/optimistic-batch.ts";
+import { t } from "#lib/i18n/index.ts";
 import { previewFromMessage } from "#lib/model/messaging/message-preview.ts";
 import { below } from "#lib/util/breakpoints.svelte.ts";
 import { reconciler } from "#lib/util/reconcile.ts";
@@ -75,6 +76,7 @@ class ConversationsState {
 	#rememberedFlags = new RememberedConversationFlags();
 	nextPage = $state<number | null>(null);
 	refreshing = $state(false);
+	refreshFailed = $state(false);
 	loading = $state(true);
 	error: Error | null = $state(null);
 	scrollY = 0;
@@ -280,6 +282,7 @@ class ConversationsState {
 			return;
 		}
 		this.refreshing = true;
+		this.refreshFailed = false;
 		let reconciled = false;
 		try {
 			await this.#initialLoad.catch(() => {});
@@ -370,12 +373,13 @@ class ConversationsState {
 			console.error(error);
 			if (automatic) return;
 			showErrorToast({
-				label: "Failed to refresh conversations",
+				label: t("chat.conversations.errors.refreshFailed"),
 				error,
 				onRetry: () => void this.refresh(),
 			});
 		} finally {
 			this.refreshing = false;
+			this.refreshFailed = !reconciled;
 			if (reconciled || this.paging.failure === null) this.paging.rearm();
 			this.#runRequestedRefresh();
 		}
@@ -499,7 +503,7 @@ class ConversationsState {
 	async ensureLoaded(conversationId: string): Promise<boolean> {
 		if (this.#destroyed) return false;
 		if (this.#find(conversationId)) return true;
-		const errorLabel = "Failed to sync conversation into sidebar";
+		const errorLabel = t("chat.conversations.errors.syncFailed");
 		return this.#fetches.track(this.#syncLatest({ errorLabel }));
 	}
 
@@ -592,8 +596,8 @@ class ConversationsState {
 			request: (conversationId) =>
 				setConversationPinned({ conversationId, pinned }),
 			errorLabel: pinned
-				? "Failed to pin conversation"
-				: "Failed to unpin conversation",
+				? "chat.conversations.errors.pinFailed"
+				: "chat.conversations.errors.unpinFailed",
 		});
 	}
 
@@ -611,8 +615,8 @@ class ConversationsState {
 			request: (conversationId) =>
 				setConversationMuted({ conversationId, muted }),
 			errorLabel: muted
-				? "Failed to mute conversation"
-				: "Failed to unmute conversation",
+				? "chat.conversations.errors.muteFailed"
+				: "chat.conversations.errors.unmuteFailed",
 		});
 	}
 
@@ -645,7 +649,7 @@ class ConversationsState {
 					this.drafts.forget(conversationId);
 				},
 				rollback: ({ revert }) => revert(),
-				errorLabel: "Failed to delete conversation",
+				errorLabel: "chat.conversations.errors.deleteFailed",
 			});
 			if (rolledBack) this.#sortEntries();
 		} finally {

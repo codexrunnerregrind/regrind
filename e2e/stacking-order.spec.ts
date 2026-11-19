@@ -10,7 +10,10 @@ import {
 import { DRAWER } from "./support/drawer";
 import { showRestingToast } from "./support/toast";
 
-test.use({ baseURL: DEV_SERVER_URL });
+const ROOM_FOR_THE_MENU_BELOW = { width: 420, height: 900 };
+const TOO_SHORT_FOR_THE_MENU = { width: 420, height: 300 };
+
+test.use({ baseURL: DEV_SERVER_URL, viewport: ROOM_FOR_THE_MENU_BELOW });
 
 const DEMO_PROFILE = "/profile/100001";
 const SHARED_ALBUM = `/settings/albums/${SHARED_ALBUM_ID}`;
@@ -93,7 +96,7 @@ function stackLevels(layers: Locator): Promise<number[]> {
 }
 
 test.beforeEach(async ({ page }) => {
-	await installTauriShim(page);
+	await installTauriShim(page, { platform: "macos" });
 });
 
 for (const { trigger, url, edge } of MENUS_REACHING_A_TOAST) {
@@ -119,8 +122,7 @@ for (const { trigger, url, edge } of MENUS_REACHING_A_TOAST) {
 test("the safe-area strips stay in front of an open menu and of toasts on both edges", async ({
 	page,
 }) => {
-	// Short enough that the header menu runs into the bottom strip.
-	await page.setViewportSize({ width: 390, height: 300 });
+	await page.setViewportSize(TOO_SHORT_FOR_THE_MENU);
 	await page.goto(DEMO_CONVERSATION);
 	const menu = await openMenu({ page, trigger: "Conversation menu" });
 	await showRestingToast({ page, edge: "top", label: "Top probe" });
@@ -163,7 +165,7 @@ test("a toast over the report sheet stays in front and takes a tap", async ({
 		TOAST,
 	);
 
-	await toast.getByRole("button", { name: "Copy details" }).tap();
+	await toast.getByRole("button", { name: "Copy error details" }).tap();
 
 	await expect(
 		page.getByRole("alertdialog", { name: "Copy error details?" }),

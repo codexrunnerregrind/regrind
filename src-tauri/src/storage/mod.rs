@@ -7,6 +7,11 @@ mod entries;
 ))]
 mod file_store;
 mod keyring;
+#[cfg(any(
+	target_os = "linux",
+	all(target_os = "macos", not(feature = "keychain"))
+))]
+mod private_file;
 
 pub use entries::{
 	adopt_legacy_account, forget_account, now_unix, AccountIndex,
@@ -167,31 +172,46 @@ fn round_trips() -> bool {
 		all(target_os = "macos", not(feature = "keychain"))
 	)
 ))]
+pub(crate) mod test_support {
+	use std::path::Path;
+	use std::sync::Mutex;
+
+	use super::init_file_store;
+	use crate::scratch_dir::ScratchDir;
+
+	static DEFAULT_STORE: Mutex<()> = Mutex::new(());
+
+	pub(crate) fn lock() -> std::sync::MutexGuard<'static, ()> {
+		DEFAULT_STORE.lock().unwrap_or_else(|e| e.into_inner())
+	}
+
+	pub(crate) fn with_file_store(test: impl FnOnce(&Path)) {
+		let _guard = lock();
+		let base = ScratchDir::new();
+		init_file_store(base.to_path_buf());
+		test(&base);
+	}
+}
+
+#[cfg(all(
+	test,
+	any(
+		target_os = "linux",
+		all(target_os = "macos", not(feature = "keychain"))
+	)
+))]
 mod tests {
 	use std::path::Path;
 	use std::sync::{Barrier, Mutex};
 	use std::time::Duration;
 
+	use super::test_support::{lock, with_file_store};
 	use super::*;
-
-	static DEFAULT_STORE: Mutex<()> = Mutex::new(());
 
 	const ME: ProfileId = 42;
 	const THEM: ProfileId = 77;
 	const PERSISTED_ENTRIES: [&str; 3] =
 		["device-info", "device-signing-key", "session"];
-
-	fn lock() -> std::sync::MutexGuard<'static, ()> {
-		DEFAULT_STORE.lock().unwrap_or_else(|e| e.into_inner())
-	}
-
-	fn with_file_store(test: impl FnOnce(&Path)) {
-		let _guard = lock();
-		let base = file_store::scratch_dir();
-		init_file_store(base.clone());
-		test(&base);
-		std::fs::remove_dir_all(&base).ok();
-	}
 
 	fn entry(user: &str) -> keyring_core::Entry {
 		keyring_core::Entry::new("open-grind", user).unwrap()
@@ -384,7 +404,8 @@ mod tests {
 	fn a_keyring_that_refuses_writes_falls_back_to_the_file_store() {
 		with_file_store(|base| {
 			let backend = probe_keyring(|| install_mock_keyring(true));
-			AuthStorage::set_credentials(ME, &credentials("auth-token")).unwrap();
+			AuthStorage::set_credentials(ME, &credentials("auth-token"))
+				.unwrap();
 
 			assert_eq!(backend, StorageBackend::File);
 			assert!(session_file_exists(base));
@@ -395,7 +416,8 @@ mod tests {
 	fn a_working_keyring_takes_over_from_the_file_store() {
 		with_file_store(|base| {
 			let backend = probe_keyring(|| install_mock_keyring(false));
-			AuthStorage::set_credentials(ME, &credentials("auth-token")).unwrap();
+			AuthStorage::set_credentials(ME, &credentials("auth-token"))
+				.unwrap();
 
 			assert_eq!(backend, StorageBackend::Keyring);
 			assert!(!session_file_exists(base));
@@ -406,7 +428,8 @@ mod tests {
 	fn a_missing_keyring_keeps_the_file_store() {
 		with_file_store(|base| {
 			let backend = probe_keyring(|| Err("no secret service".to_owned()));
-			AuthStorage::set_credentials(ME, &credentials("auth-token")).unwrap();
+			AuthStorage::set_credentials(ME, &credentials("auth-token"))
+				.unwrap();
 
 			assert_eq!(backend, StorageBackend::File);
 			assert!(session_file_exists(base));

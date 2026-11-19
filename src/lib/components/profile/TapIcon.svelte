@@ -6,7 +6,8 @@
 	import cookieEmoji from "#lib/assets/emojis/cookie/72px.png";
 	import demonEmoji from "#lib/assets/emojis/demon/72px.png";
 	import fireEmoji from "#lib/assets/emojis/fire/72px.png";
-	import { TapType, tapTypes } from "#lib/model/interest/taps.ts";
+	import { type MessageKey, t } from "#lib/i18n/index.ts";
+	import { TapType } from "#lib/model/interest/taps.ts";
 	// The default size has to be beatable: `class={["size-6", className]}` leaves
 	// the winner to stylesheet order, which is why a caller asking for a smaller
 	// emoji got a `size-6` one anyway.
@@ -45,6 +46,12 @@
 		[TapType.Looking]: demonEmoji,
 	};
 
+	const altKeys = {
+		[TapType.Friendly]: "profile.tap.a11y.icon.friendly",
+		[TapType.Hot]: "profile.tap.a11y.icon.hot",
+		[TapType.Looking]: "profile.tap.a11y.icon.looking",
+	} as const satisfies Record<TapType, MessageKey>;
+
 	const Icon = $derived(icons[tapType]);
 </script>
 
@@ -52,7 +59,7 @@
 	<img
 		src={emojis[tapType]}
 		data-ui-glyph
-		alt={`${tapTypes[tapType]} tap`}
+		alt={t(altKeys[tapType])}
 		width="24"
 		height="24"
 		class={cn("size-6 shrink-0", className)}
@@ -61,7 +68,7 @@
 {:else}
 	<Icon
 		role="img"
-		aria-label={`${tapTypes[tapType]} tap`}
+		aria-label={t(altKeys[tapType])}
 		class={cn("size-6 shrink-0", className)}
 	/>
 {/if}

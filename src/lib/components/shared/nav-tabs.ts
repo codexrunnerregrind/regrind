@@ -5,6 +5,7 @@ import LightningIcon from "phosphor-svelte/lib/LightningIcon";
 import SquaresFourIcon from "phosphor-svelte/lib/SquaresFourIcon";
 import UserIcon from "phosphor-svelte/lib/UserIcon";
 
+import { t } from "#lib/i18n/index.ts";
 import { hapticSelection } from "#lib/platform/haptics.ts";
 
 /**
@@ -22,14 +23,18 @@ import { hapticSelection } from "#lib/platform/haptics.ts";
 export const navTabs = [
 	{
 		href: "/",
-		label: "Browse",
+		get label() {
+			return t("shell.navBar.tabs.browse");
+		},
 		icon: SquaresFourIcon,
 		match: (id: string) => id === "/(protected)/(navbar)/(root)",
 		swipeRoot: (id: string) => id === "/(protected)/(navbar)/(root)",
 	},
 	{
 		href: "/right-now",
-		label: "Right Now",
+		get label() {
+			return t("shell.navBar.tabs.rightNow");
+		},
 		icon: LightningIcon,
 		match: (id: string) => id === "/(protected)/(navbar)/right-now",
 		swipeRoot: (id: string) => id === "/(protected)/(navbar)/right-now",
@@ -39,7 +44,9 @@ export const navTabs = [
 		// The flame the rest of the app taps with (TapIcon, the profile
 		// composer, the media viewer). A star meant nothing here — the tab is
 		// where taps and views are read, so it wears the tap's own glyph.
-		label: "Interest",
+		get label() {
+			return t("common.sections.interest");
+		},
 		icon: FireIcon,
 		match: (id: string) => id.startsWith("/(protected)/(navbar)/interest"),
 		swipeRoot: (id: string) =>
@@ -50,7 +57,9 @@ export const navTabs = [
 	},
 	{
 		href: "/chat",
-		label: "Inbox",
+		get label() {
+			return t("shell.navBar.tabs.inbox");
+		},
 		icon: ChatCircleIcon,
 		match: (id: string) => id.startsWith("/(protected)/chat"),
 		// Not a conversation: in there a horizontal swipe belongs to the

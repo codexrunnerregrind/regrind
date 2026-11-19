@@ -11,6 +11,7 @@ import {
 	vi,
 } from "vitest";
 
+import { resetPlatform, runningOn } from "#lib/test/platform.ts";
 import {
 	toastsFake,
 	updateApiFake,
@@ -72,11 +73,13 @@ beforeEach(() => {
 	vi.clearAllMocks();
 	fake.reset();
 	platform.isAndroidPlatform.mockReturnValue(true);
+	runningOn("android");
 	updateSettings.getUpdateSettings.mockResolvedValue({ autoCheck: false });
 });
 
 afterEach(() => {
 	testing.cleanup();
+	resetPlatform();
 });
 
 describe("the Updates section of the app settings on Android", () => {

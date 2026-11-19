@@ -9,6 +9,8 @@
 	import { expoOut } from "svelte/easing";
 	import { scale } from "svelte/transition";
 
+	import { formatClockTime } from "#lib/i18n/format.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import { hapticImpact } from "#lib/platform/haptics.ts";
 	import { longPressHandlers } from "#lib/util/long-press.ts";
 	import { observeIntersection } from "#lib/util/observe-intersection.ts";
@@ -26,7 +28,6 @@
 	import LocationMessage from "./LocationMessage.svelte";
 	import MessageContextMenu from "./MessageContextMenu.svelte";
 	import MessageDateGroup from "./MessageDateGroup.svelte";
-	import MessageTime from "./MessageTime.svelte";
 	import MessageWrapper from "./MessageWrapper.svelte";
 	import ProfilePhotoReplyMessage from "./ProfilePhotoReplyMessage.svelte";
 	import Reaction from "./Reaction.svelte";
@@ -82,13 +83,13 @@
 
 	const firstInStack = $derived(indexInStack === 0);
 	const lastInStack = $derived(indexInStack === stackLength - 1);
+	const time = $derived(formatClockTime(message.timestamp));
 
 	setMessageContext(() => ({
 		firstInStack,
 		lastInStack,
 		indexInStack,
 		isOut,
-		timestamp: message.timestamp,
 	}));
 
 	let contextMenuOpen = $state(false);
@@ -156,6 +157,8 @@
 			(prop) => `${prop}: ${computed.getPropertyValue(prop)}`,
 		).join("; ");
 		contextMenuOpen = true;
+		// A slide after the menu opens must not also reply.
+		swipe?.cancel();
 	}
 
 	// iOS WebKit never fires `contextmenu` on a touch long-press, so the native
@@ -389,18 +392,17 @@
 			]}
 		>
 			{#if status === "pending"}
-				Sending...
+				{t("chat.message.status.sending")}
 			{:else if status === "error"}
-				<span class="text-destructive"> Failed to send </span>
+				<span class="text-destructive">
+					{t("chat.message.status.notSent")}
+				</span>
+			{:else if isRead === null}
+				{time}
+			{:else if isRead}
+				{t("chat.message.status.readAt", { time })}
 			{:else}
-				{#if isRead !== null}
-					{#if isRead}
-						Read
-					{:else}
-						Sent
-					{/if}
-				{/if}
-				<MessageTime />
+				{t("chat.message.status.sentAt", { time })}
 			{/if}
 		</span>
 	{/if}

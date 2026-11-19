@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from "#lib/i18n/index.ts";
 	import { getMessageContext, getMessageMetaContext } from "./context";
 
 	const { lastInStack, isOut } = $derived(getMessageContext()());
@@ -21,6 +22,6 @@
 	]}
 	bind:this={el}
 >
-	<span class="whitespace-pre-wrap">Message unsent</span>
+	<span class="whitespace-pre-wrap">{t("chat.message.unsent")}</span>
 	{@render adornments?.()}
 </div>

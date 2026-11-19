@@ -9,7 +9,7 @@ const LOW_BAR_GAP_PX = 12;
 test.describe.configure({ timeout: 240_000 });
 
 async function openWithBlurReady(page: Page, route: string) {
-	await installTauriShim(page);
+	await installTauriShim(page, { platform: "macos" });
 	await page.goto(route);
 	await expect(page.locator("html")).toHaveAttribute(
 		"data-backdrop-blur",
@@ -142,7 +142,7 @@ test("low lifts the profile chat bar off the navbar by the bar gap", async ({
 }) => {
 	await openWithBlurReady(page, "/profile/100001");
 	await expectLowLiftsOffNavbar(
-		page.getByRole("navigation", { name: "Chat and tap" }),
+		page.getByRole("navigation", { name: "Chat and Tap" }),
 	);
 });
 

@@ -8,6 +8,7 @@
 	<!-- `text-wrap: pretty` keeps a lone word off the last line of a bio. -->
 	<Card.Content
 		class="text-pretty wrap-break-word whitespace-pre-wrap select-text"
+		translate="no"
 	>
 		{@render children?.()}
 	</Card.Content>

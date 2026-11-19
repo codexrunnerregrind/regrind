@@ -27,6 +27,7 @@ import {
 	searchGifs,
 } from "#lib/api/messaging/gifs.ts";
 import { toBase64 } from "#lib/util/base64.ts";
+import { proxyMediaUrl } from "#lib/util/media.ts";
 
 const KEY = "zf7gBZ531pHaTJN3ne0jDdAepsNreB2X";
 const media =
@@ -141,9 +142,12 @@ describe("getTrendingGifs", () => {
 			gifs: [
 				{
 					id: "xT0xeChUR33EsYNNRK",
-					tileUrl: `${media}/200w_d.webp`,
-					stillTileUrl: `${media}/200_s.gif`,
-					alt: "Season 2 No GIF by Portlandia",
+					tileUrl: proxyMediaUrl(`${media}/200w_d.webp`),
+					stillTileUrl: proxyMediaUrl(`${media}/200_s.gif`),
+					alt: {
+						kind: "title",
+						title: "Season 2 No GIF by Portlandia",
+					},
 					body: {
 						id: "xT0xeChUR33EsYNNRK",
 						urlPath: `${media}/200.gif`,
@@ -166,19 +170,27 @@ describe("getTrendingGifs", () => {
 
 		const { gifs } = await getTrendingGifs({ offset: 0 });
 
-		expect(gifs[0]?.tileUrl).toBe(`${media}/200w_d.gif`);
+		expect(gifs[0]?.tileUrl).toBe(proxyMediaUrl(`${media}/200w_d.gif`));
 	});
 
 	it.each([
-		["the title", { title: "Wave GIF", altText: "A wave" }, "Wave GIF"],
-		["the alt text", { title: "", altText: "A wave" }, "A wave"],
-		["a generic label", { title: "", altText: "" }, "GIF"],
+		[
+			"the title",
+			{ title: "Wave GIF", altText: "A wave" },
+			{ kind: "title", title: "Wave GIF" },
+		],
+		[
+			"the alt text",
+			{ title: "", altText: "A wave" },
+			{ kind: "title", title: "A wave" },
+		],
+		["a generic label", { title: "", altText: "" }, { kind: "untitled" }],
 	])("labels a tile with %s", async (_, names, alt) => {
 		respondWithPage({ data: [capturedGif(names)] });
 
 		const { gifs } = await getTrendingGifs({ offset: 0 });
 
-		expect(gifs[0]?.alt).toBe(alt);
+		expect(gifs[0]?.alt).toEqual(alt);
 	});
 
 	it.each([
@@ -350,19 +362,19 @@ describe("GIPHY request failures", () => {
 describe("receivedGiphySrc", () => {
 	it("loads the renditions the official app sends", () => {
 		const url = `${media}/200.gif`;
-		expect(receivedGiphySrc(url)).toBe(url);
+		expect(receivedGiphySrc(url)).toBe(proxyMediaUrl(url));
 	});
 
 	it("loads bare media.giphy.com links from pasted GIPHY links", () => {
 		const url = "https://media.giphy.com/media/xT0xeChUR33EsYNNRK/200.gif";
-		expect(receivedGiphySrc(url)).toBe(url);
+		expect(receivedGiphySrc(url)).toBe(proxyMediaUrl(url));
 	});
 
 	it.each(["media0", "media1", "media2", "media3", "media4"])(
 		"loads GIPHY's %s host",
 		(host) => {
 			const url = `https://${host}.giphy.com/media/xT0xeChUR33EsYNNRK/200.gif`;
-			expect(receivedGiphySrc(url)).toBe(url);
+			expect(receivedGiphySrc(url)).toBe(proxyMediaUrl(url));
 		},
 	);
 

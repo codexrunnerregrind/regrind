@@ -16,7 +16,7 @@ const OTHER_CONVERSATION = "/chat/100009:123456000";
 test.describe("composer albums tab", () => {
 	test("the albums tab shares from its own button", async ({ page }) => {
 		await serveImages(page, CHAT_MEDIA_HOST);
-		await openAttachments(page);
+		await openAttachments(page, { platform: "macos" });
 
 		await page.getByRole("tab", { name: "Albums" }).click();
 		const tiles = page.locator(ALBUM_TILE);
@@ -46,13 +46,13 @@ test.describe("composer albums tab", () => {
 		await share.click();
 		await expect(page.locator(DRAWER)).toBeHidden();
 
-		await expectNoToast(page, "Couldn't share album");
+		await expectNoToast(page, "Couldn’t share album");
 	});
 
 	test("a conversation change closes the armed drawer", async ({ page }) => {
 		await page.setViewportSize({ width: 1280, height: 900 });
 		await serveImages(page, CHAT_MEDIA_HOST);
-		await installTauriShim(page);
+		await installTauriShim(page, { platform: "macos" });
 
 		await page.goto(DEMO_CONVERSATION);
 		await page.waitForTimeout(2500);
@@ -83,7 +83,7 @@ test.describe("composer albums tab", () => {
 		page,
 	}) => {
 		await serveImages(page, CHAT_MEDIA_HOST);
-		await openAttachments(page);
+		await openAttachments(page, { platform: "macos" });
 
 		await page.getByRole("tab", { name: "Albums" }).click();
 		const tiles = page.locator(ALBUM_TILE);
@@ -113,7 +113,7 @@ test.describe("composer albums tab", () => {
 		page,
 	}) => {
 		await serveImages(page, CHAT_MEDIA_HOST);
-		await openAttachments(page);
+		await openAttachments(page, { platform: "macos" });
 
 		await page.getByRole("tab", { name: "Albums" }).click();
 		const tiles = page.locator(ALBUM_TILE);
@@ -144,7 +144,7 @@ test.describe("composer albums tab", () => {
 		page,
 	}) => {
 		await serveImages(page, CHAT_MEDIA_HOST);
-		await openAttachments(page);
+		await openAttachments(page, { platform: "macos" });
 
 		const ratio = async (selector: string) => {
 			const box = await page.locator(selector).first().boundingBox();

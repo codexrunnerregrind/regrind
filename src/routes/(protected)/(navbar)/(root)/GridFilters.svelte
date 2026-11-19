@@ -21,6 +21,7 @@
 	import { Button } from "#lib/components/ui/button/index.ts";
 	import * as Sheet from "#lib/components/ui/sheet/index.ts";
 	import { gridState } from "#lib/grid/grid-state.svelte.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import {
 		countActiveFilters,
 		defaultFilters,
@@ -92,16 +93,16 @@
 			Online now
 		</FilterSwitch>
 		<FilterSwitch id="right-now" bind:checked={filters.isRightNow}>
-			Right now
+			{t("common.filters.rightNow")}
 		</FilterSwitch>
 		<FilterSwitch id="fresh" bind:checked={filters.isFresh}>
-			Fresh
+			{t("common.filters.fresh")}
 		</FilterSwitch>
 		<FilterSwitch
 			id="havent-chatted-today"
 			bind:checked={filters.haventChattedTodayEnabled}
 		>
-			Haven't chatted today
+			{t("common.filters.haventChattedToday")}
 		</FilterSwitch>
 	</FilterRowGroup>
 	<AgeFilter bind:checked={filters.ageEnabled} bind:value={filters.age} />
@@ -220,7 +221,7 @@
 			<!-- Reset sits on the title's line, tucked in beside the close
 			     button the sheet draws at the top right. -->
 			<div class="flex min-w-0 items-center justify-between gap-3 pe-11">
-				<Sheet.Title>Filters</Sheet.Title>
+				<Sheet.Title>{t("browse.gridFilters.title")}</Sheet.Title>
 				{#if activeCount > 0}
 					<Button
 						variant="ghost"
@@ -228,7 +229,7 @@
 						class="-me-2 text-primary"
 						onclick={() => (filters = { ...defaultFilters })}
 					>
-						Reset
+						{t("browse.filters.reset")}
 					</Button>
 				{/if}
 			</div>
@@ -269,7 +270,9 @@
 				{ "border-muted": !atBottom },
 			]}
 		>
-			<Button type="submit" onclick={apply}>Apply</Button>
+			<Button type="submit" onclick={apply}
+				>{t("browse.filters.apply")}</Button
+			>
 		</Sheet.Footer>
 	</Sheet.Content>
 </Sheet.Root>

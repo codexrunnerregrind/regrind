@@ -1,6 +1,9 @@
+use std::time::Duration;
+
 use tauri::async_runtime::JoinHandle;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::broadcast::error::RecvError;
+use tokio::time::timeout;
 
 use crate::api::session_recovery::{
 	report_refresh_failure, SessionErrorPayload,
@@ -145,6 +148,21 @@ pub async fn ws_connect(
 ) -> Result<(), AppError> {
 	state.client()?.connect().await;
 	Ok(())
+}
+
+const RECONNECT_STEP_TIMEOUT: Duration = Duration::from_secs(3);
+
+pub async fn wait_until_disconnected(
+	states: &mut tokio::sync::watch::Receiver<grindr::WsConnectionState>,
+) -> bool {
+	timeout(
+		RECONNECT_STEP_TIMEOUT,
+		states.wait_for(|state| {
+			*state == grindr::WsConnectionState::Disconnected
+		}),
+	)
+	.await
+	.is_ok()
 }
 
 #[tauri::command]

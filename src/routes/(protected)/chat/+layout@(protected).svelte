@@ -7,9 +7,11 @@
 		setConversations,
 	} from "#lib/chat/conversations-context.svelte.ts";
 	import NavBar from "#lib/components/shared/NavBar.svelte";
+	import PageTitle from "#lib/components/shared/PageTitle.svelte";
 	import { tabShellRoot } from "#lib/components/tab-shell/tab-shell-state.svelte.ts";
 	import * as Card from "#lib/components/ui/card/index.ts";
 	import * as Resizable from "#lib/components/ui/resizable/index.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import { below } from "#lib/util/breakpoints.svelte.ts";
 	import ConversationScreen from "./[conversationId]/ConversationScreen.svelte";
 	import {
@@ -79,6 +81,9 @@
 	/>
 {/snippet}
 
+{#if conversationId === null}
+	<PageTitle page={t("shell.navBar.tabs.inbox")} />
+{/if}
 {#if mobile.current}
 	<!-- The conversation slides over the tab shell, whose Inbox pane is the list,
 	     so coming back finds it where it was. -->
@@ -94,9 +99,7 @@
 		{/snippet}
 	</LiveStack>
 {:else}
-	<main
-		class="flex h-(--viewport-height) w-full flex-1 pt-(--safe-area-top) pb-(--safe-area-bottom)"
-	>
+	<main class="flex h-(--viewport-height) w-full flex-1 p-safe">
 		<Resizable.PaneGroup
 			direction="horizontal"
 			class="mx-auto h-auto! max-h-full max-w-300"
@@ -130,7 +133,7 @@
 						{#if conversationId === null}
 							<Card.Content class="m-auto flex p-6">
 								<span class="text-center text-xl text-muted">
-									Select a conversation to start chatting
+									{t("chat.layout.selectConversation")}
 								</span>
 							</Card.Content>
 						{:else}

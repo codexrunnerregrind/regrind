@@ -117,13 +117,14 @@ async fn transcode(
 	})
 	.await
 	.map_err(|e| {
-		AppError::Media(format!("Video conversion did not run: {e}"))
+		AppError::Media(format!("Video conversion did not run: {e}").into())
 	})?;
 
 	if status != 0 {
-		return Err(AppError::Media(format!(
-			"Could not convert that video: {reason} (code {status})"
-		)));
+		return Err(AppError::Media(
+			format!("Could not convert that video: {reason} (code {status})")
+				.into(),
+		));
 	}
 	Ok(())
 }
@@ -152,9 +153,12 @@ async fn transcode(
 		)
 		.await
 		.map_err(|error| {
-			AppError::Media(format!(
-				"That video could not be converted for sending: {error}"
-			))
+			AppError::Media(
+				format!(
+					"That video could not be converted for sending: {error}"
+				)
+				.into(),
+			)
 		})?;
 	Ok(())
 }
@@ -183,7 +187,9 @@ pub async fn shrink(app: &AppHandle, input: &str) -> Result<Vec<u8>, AppError> {
 	// worth keeping, and on the happy path the bytes are already in hand.
 	let bytes = match result {
 		Ok(()) => std::fs::read(&output).map_err(|e| {
-			AppError::Media(format!("Could not read the converted clip: {e}"))
+			AppError::Media(
+				format!("Could not read the converted clip: {e}").into(),
+			)
 		}),
 		Err(error) => Err(error),
 	};

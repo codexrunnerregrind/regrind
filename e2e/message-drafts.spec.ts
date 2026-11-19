@@ -19,7 +19,7 @@ function rowPreview(page: Page, href: string) {
 }
 
 async function openConversations(page: Page): Promise<string[]> {
-	await installTauriShim(page);
+	await installTauriShim(page, { platform: "macos" });
 	await page.goto("/chat");
 	await page.locator(CONVERSATION_LINK).first().waitFor({ timeout: 60_000 });
 	const hrefs = await page
@@ -41,7 +41,7 @@ test("a draft outlives leaving its conversation and never follows another one", 
 	await rowLink(page, first!).click();
 	await composer(page).waitFor({ timeout: 60_000 });
 	await composer(page).fill(DRAFT);
-	await page.getByRole("link", { name: "Back to chats" }).click();
+	await page.getByRole("link", { name: "Back to Inbox" }).click();
 
 	const preview = rowPreview(page, first!);
 	await expect(preview).toBeVisible();
@@ -73,7 +73,7 @@ test("a draft outlives leaving its conversation and never follows another one", 
 	await composer(page).waitFor({ timeout: 60_000 });
 	await expect(composer(page)).toHaveValue("");
 
-	await page.getByRole("link", { name: "Back to chats" }).click();
+	await page.getByRole("link", { name: "Back to Inbox" }).click();
 	await rowLink(page, first!).click();
 	await expect(composer(page)).toHaveValue(DRAFT);
 });
@@ -85,7 +85,7 @@ test.describe("split layout", () => {
 		page,
 	}) => {
 		test.setTimeout(180_000);
-		await installTauriShim(page);
+		await installTauriShim(page, { platform: "macos" });
 		await page.goto(DEMO_CONVERSATION);
 		await composer(page).waitFor({ timeout: 60_000 });
 
@@ -101,11 +101,11 @@ test("the draft label stays on the first line of the preview", async ({
 	page,
 }) => {
 	test.setTimeout(180_000);
-	await installTauriShim(page);
+	await installTauriShim(page, { platform: "macos" });
 	await page.goto(DEMO_CONVERSATION);
 	await composer(page).waitFor({ timeout: 60_000 });
 	await composer(page).fill("supercalifragilisticexpialidocious tonight");
-	await page.getByRole("link", { name: "Back to chats" }).click();
+	await page.getByRole("link", { name: "Back to Inbox" }).click();
 
 	const preview = rowPreview(page, DEMO_CONVERSATION);
 	await preview.waitFor({ timeout: 30_000 });

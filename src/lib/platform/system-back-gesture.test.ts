@@ -146,7 +146,7 @@ describe("beginEdgeSwipeBack", () => {
 
 		const swipe = beginEdgeSwipeBack();
 		expect(calls.begin).toBe(1);
-		swipe?.commit();
+		if (swipe && swipe !== "native") swipe.commit();
 
 		expect(calls.commit).toBe(1);
 		expect(stack.tracking).toBe(false);
@@ -158,7 +158,8 @@ describe("beginEdgeSwipeBack", () => {
 		const { stack, calls } = makeStack();
 		const detach = attachSystemBackGesture(stack);
 
-		beginEdgeSwipeBack()?.cancel();
+		const swipe = beginEdgeSwipeBack();
+		if (swipe && swipe !== "native") swipe.cancel();
 
 		expect(calls.cancel).toBe(1);
 

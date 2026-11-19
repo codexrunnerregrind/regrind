@@ -1,5 +1,6 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { resetPlatform, runningOn } from "#lib/test/platform.ts";
 import { rememberScreen, showSwipeBackGhost } from "./swipe-back-ghost";
 
 function atIndex(index: number) {
@@ -14,7 +15,10 @@ function screenShowing(text: string): HTMLElement {
 	return screen;
 }
 
+beforeEach(() => runningOn("ios"));
+
 afterEach(() => {
+	resetPlatform();
 	document.body.replaceChildren();
 	history.replaceState(null, "");
 });

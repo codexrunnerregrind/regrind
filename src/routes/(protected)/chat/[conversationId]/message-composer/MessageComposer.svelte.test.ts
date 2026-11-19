@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-/* eslint max-lines: ["error", { "max": 850 }] -- Voice, sheets and replies share one composer. */
+/* eslint max-lines: ["error", { "max": 900 }] -- Voice, sheets and replies share one composer. */
 
 import { cleanup, fireEvent, render } from "@testing-library/svelte";
 import { flushSync, tick } from "svelte";
@@ -13,6 +13,7 @@ import {
 	runBackGestureHandlers,
 } from "#lib/platform/back-gesture-event.svelte.ts";
 import { MAX_DURATION_MS } from "#lib/platform/voice-recorder.svelte.ts";
+import { runningOn } from "#lib/test/platform.ts";
 import { ComposerSheetsState } from "./composer-sheets-state.svelte";
 
 const { conversations, composerSheets, conversationState } = vi.hoisted(() => ({
@@ -20,8 +21,10 @@ const { conversations, composerSheets, conversationState } = vi.hoisted(() => ({
 	composerSheets: { current: null as ComposerSheetsState | null },
 	conversationState: { conversationId: "a:1" },
 }));
+const sonner = vi.hoisted(() => ({ toast: { error: vi.fn() } }));
 
 vi.mock("$app/navigation", () => ({ onNavigate: vi.fn() }));
+vi.mock("svelte-sonner", () => sonner);
 vi.mock("#lib/chat/conversations-context.svelte.ts", () => ({
 	getConversations: () => conversations,
 }));
@@ -101,6 +104,7 @@ let sheets: ComposerSheetsState;
 beforeEach(() => {
 	sheets = new ComposerSheetsState();
 	composerSheets.current = sheets;
+	runningOn("windows");
 });
 
 function renderComposer({
@@ -136,7 +140,10 @@ describe("MessageComposer drafts", () => {
 		conversations.drafts = drafts;
 	});
 
-	afterEach(cleanup);
+	afterEach(() => {
+		cleanup();
+		vi.restoreAllMocks();
+	});
 
 	it("opens empty when the conversation has no draft", () => {
 		expect(renderComposer().textarea.value).toBe("");
@@ -238,6 +245,24 @@ describe("MessageComposer drafts", () => {
 		expect(onSend).toHaveBeenCalledWith([
 			draftFromMessage({ type: "Text", body: { text: "sending this" } }),
 		]);
+	});
+
+	it("keeps the text and says it couldn’t be sent when sending fails", async () => {
+		vi.spyOn(console, "error").mockImplementation(() => {});
+		const { textarea } = renderComposer({
+			onSend: () => Promise.reject(new Error("offline")),
+		});
+
+		await type(textarea, "sending this");
+		await fireEvent.submit(textarea.form!);
+
+		await vi.waitFor(() =>
+			expect(sonner.toast.error).toHaveBeenCalledWith(
+				"Couldn’t send message",
+				expect.anything(),
+			),
+		);
+		expect(textarea.value).toBe("sending this");
 	});
 });
 

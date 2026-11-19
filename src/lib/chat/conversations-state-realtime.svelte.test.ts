@@ -33,7 +33,9 @@ vi.mock("#lib/api/messaging/conversations.ts", () => ({
 	setConversationPinned: vi.fn(() => Promise.resolve()),
 	setConversationMuted: vi.fn(() => Promise.resolve()),
 }));
-vi.mock("#lib/util/breakpoints.svelte.ts", () => ({ below: () => singleColumn }));
+vi.mock("#lib/util/breakpoints.svelte.ts", () => ({
+	below: () => singleColumn,
+}));
 vi.mock("#lib/util/reconcile.ts", () => ({
 	reconciler: { subscribe: () => vi.fn() },
 }));
@@ -56,6 +58,7 @@ vi.mock("#lib/ws.svelte.ts", async (importOriginal) => ({
 	},
 }));
 
+import { runningOn } from "#lib/test/platform.ts";
 import { ConversationsState } from "./conversations-state.svelte";
 import {
 	conversation,
@@ -72,6 +75,7 @@ function emitMessageSent(payload: unknown) {
 
 beforeEach(() => {
 	vi.clearAllMocks();
+	runningOn("android");
 	for (const handlers of [
 		conversationDeleteHandlers,
 		conversationUpdateHandlers,

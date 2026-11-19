@@ -3,20 +3,17 @@
 import { flushSync } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-const { invokeMock, platformMock, toastError, nativeDrop, systemDrag } =
-	vi.hoisted(() => ({
-		invokeMock: vi.fn(),
-		platformMock: vi.fn(),
-		toastError: vi.fn(),
-		nativeDrop: { handler: null as ((event: unknown) => void) | null },
-		systemDrag: { handler: null as ((event: unknown) => void) | null },
-	}));
+const { invokeMock, toastError, nativeDrop, systemDrag } = vi.hoisted(() => ({
+	invokeMock: vi.fn(),
+	toastError: vi.fn(),
+	nativeDrop: { handler: null as ((event: unknown) => void) | null },
+	systemDrag: { handler: null as ((event: unknown) => void) | null },
+}));
 
 vi.mock("@tauri-apps/api/core", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@tauri-apps/api/core")>()),
 	invoke: invokeMock,
 }));
-vi.mock("@tauri-apps/plugin-os", () => ({ platform: platformMock }));
 vi.mock("@tauri-apps/api/webview", () => ({
 	getCurrentWebview: () => ({
 		onDragDropEvent: (handler: (event: unknown) => void) => {
@@ -45,9 +42,8 @@ import {
 	receiveMedia,
 	screenMedia,
 } from "#lib/platform/media-intake.svelte.ts";
+import { runningOn } from "#lib/test/platform.ts";
 import type { PickedMedia } from "#lib/platform/media-picker.ts";
-
-const tauri = globalThis as { isTauri?: boolean };
 
 let stopListening: () => void;
 let unregister: (() => void)[] = [];
@@ -123,7 +119,7 @@ function stagingSucceeds() {
 beforeEach(() => {
 	invokeMock.mockReset();
 	toastError.mockReset();
-	platformMock.mockReturnValue("android");
+	runningOn("android");
 	stopListening = listenForMedia();
 });
 
@@ -131,7 +127,6 @@ afterEach(() => {
 	stopListening();
 	for (const stop of unregister) stop();
 	unregister = [];
-	delete tauri.isTauri;
 });
 
 describe("pasting", () => {
@@ -253,7 +248,7 @@ describe("pasting", () => {
 		paste([png()]);
 
 		await vi.waitFor(() =>
-			expect(toastError).toHaveBeenCalledWith("Couldn't read that file"),
+			expect(toastError).toHaveBeenCalledWith("Couldn’t read that file"),
 		);
 		expect(invokeMock).toHaveBeenCalledWith("discard_staged_media", {
 			id: "staged-1",
@@ -357,7 +352,7 @@ describe("dragging", () => {
 		);
 
 		expect(event.defaultPrevented).toBe(true);
-		expect(toastError).toHaveBeenCalledWith("Couldn't download that image");
+		expect(toastError).toHaveBeenCalledWith("Couldn’t download that image");
 		expect(invokeMock).not.toHaveBeenCalled();
 	});
 
@@ -449,10 +444,6 @@ describe("dragging", () => {
 	});
 
 	it("judges by the types Android reports when the webview hides them", () => {
-		stopListening();
-		tauri.isTauri = true;
-		platformMock.mockReturnValue("android");
-		stopListening = listenForMedia();
 		register(target("Drop to send"));
 		const hidden = [file("shared", "")];
 
@@ -499,8 +490,7 @@ describe("dragging", () => {
 
 	function onLinux() {
 		stopListening();
-		tauri.isTauri = true;
-		platformMock.mockReturnValue("linux");
+		runningOn("linux");
 		stopListening = listenForMedia();
 	}
 
@@ -586,7 +576,7 @@ describe("dragging", () => {
 		vi.spyOn(console, "error").mockImplementation(() => {});
 		invokeMock.mockRejectedValue({
 			kind: "Media",
-			message: "That link isn't a photo or video",
+			message: { reason: "linkNotMedia" },
 		});
 		const chat = target();
 		register(chat);
@@ -597,22 +587,24 @@ describe("dragging", () => {
 
 		await vi.waitFor(() =>
 			expect(toastError).toHaveBeenCalledWith(
-				"That link isn't a photo or video",
+				"That link isn’t a photo or video",
 			),
 		);
 		expect(chat.receive).not.toHaveBeenCalled();
 	});
 
-	it("leaves macOS and Windows drops to the webview", () => {
-		stopListening();
-		tauri.isTauri = true;
-		platformMock.mockReturnValue("macos");
-		nativeDrop.handler = null;
+	it.each(["ios", "macos", "windows"] as const)(
+		"leaves %s drops to the webview",
+		(platform) => {
+			stopListening();
+			runningOn(platform);
+			nativeDrop.handler = null;
 
-		stopListening = listenForMedia();
+			stopListening = listenForMedia();
 
-		expect(nativeDrop.handler).toBeNull();
-	});
+			expect(nativeDrop.handler).toBeNull();
+		},
+	);
 });
 
 describe("screenMedia", () => {
@@ -630,10 +622,6 @@ describe("screenMedia", () => {
 			},
 		);
 	}
-
-	beforeEach(() => {
-		tauri.isTauri = true;
-	});
 
 	it("keeps photos, GIFs and videos and turns the rest away once", async () => {
 		inspections({
@@ -655,7 +643,7 @@ describe("screenMedia", () => {
 			"video",
 		]);
 		expect(toastError.mock.calls).toEqual([
-			["That file isn't a photo or video"],
+			["That file isn’t a photo or video"],
 		]);
 		for (const id of ["pdf", "zip"]) {
 			expect(invokeMock).toHaveBeenCalledWith("discard_staged_media", {
@@ -676,6 +664,31 @@ describe("screenMedia", () => {
 		});
 
 		expect(accepted.map(({ media }) => media.key)).toEqual(["photo"]);
-		expect(toastError).toHaveBeenCalledWith("Videos can't be added here");
+		expect(toastError).toHaveBeenCalledWith("Videos can’t be added here");
+	});
+
+	it("discards a staged file it cannot inspect", async () => {
+		vi.spyOn(console, "error").mockImplementation(() => {});
+		invokeMock.mockImplementation(
+			(command: string, args: { file?: { id: string } }) => {
+				if (command !== "inspect_media_file") {
+					return Promise.resolve(undefined);
+				}
+				if (args.file?.id === "gone") {
+					return Promise.reject(new Error("gone"));
+				}
+				return Promise.resolve({ kind: "photo", size: 1 });
+			},
+		);
+
+		const accepted = await screenMedia({
+			media: ["photo", "gone"].map(staged),
+			videos: true,
+		});
+
+		expect(accepted.map(({ media }) => media.key)).toEqual(["photo"]);
+		expect(invokeMock).toHaveBeenCalledWith("discard_staged_media", {
+			id: "gone",
+		});
 	});
 });

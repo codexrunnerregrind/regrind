@@ -1,8 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
+import { PSEUDO_MESSAGE } from "#lib/i18n/fixtures/pseudo-message.ts";
+import { setLocale, SOURCE_LOCALE } from "#lib/i18n/index.ts";
 import {
 	previewFromMessage,
+	previewIsUserText,
 	previewLabel,
+	quoteIsUserText,
 	quoteLabel,
 } from "#lib/model/messaging/message-preview.ts";
 
@@ -142,7 +146,7 @@ describe("previewFromMessage", () => {
 			albumId: null,
 			imageHash: null,
 		});
-		expect(previewLabel(preview)).toBe("Expiring image");
+		expect(previewLabel(preview)).toBe("Expiring photo");
 	});
 
 	it("labels a chat video the way its bubble does", () => {
@@ -188,13 +192,12 @@ describe("quoteLabel", () => {
 	it.each([
 		["Unsent", "Unsent message"],
 		["Audio", "Voice message"],
-		["ExpiringImage", "Expiring image"],
+		["ExpiringImage", "Expiring photo"],
 		["Giphy", "GIF"],
 		["Gaymoji", "Gaymoji"],
 		["Location", "Location"],
 		["VideoCall", "Video call"],
 		["NonExpiringVideo", "Video"],
-		["ProfilePhotoReply", "Photo"],
 		["RightNowRequest", "Right Now"],
 	])("names a %s in the inbox and in a quote alike", (type, expected) => {
 		expect(previewLabel(preview(type))).toBe(expected);
@@ -229,6 +232,19 @@ describe("quoteLabel", () => {
 		},
 	);
 
+	it.each([
+		["ExpiringImage", "Expiring photo"],
+		["Location", "Location"],
+		["Giphy", "GIF"],
+		["Gaymoji", "Gaymoji"],
+	])(
+		"defers to the inbox wording for a %s, which the preview already names",
+		(type, expected) => {
+			expect(previewLabel(preview(type))).toBe(expected);
+			expect(quoteLabel(preview(type))).toBe(expected);
+		},
+	);
+
 	// A conversation with no last message at all is the one case with nothing to
 	// name: the inbox row shows no preview line rather than the word "Message".
 	it("names nothing when there is no message", () => {
@@ -238,6 +254,47 @@ describe("quoteLabel", () => {
 
 	it("does not render an empty pill for a blank text message", () => {
 		expect(quoteLabel(preview("Text", "   "))).toBe("Message");
+	});
+});
+
+describe("user text in previews", () => {
+	it("tells message text from a label we supply", () => {
+		expect(previewIsUserText({ type: "Text", text: "Photo" })).toBe(true);
+		expect(previewIsUserText({ type: "Image" })).toBe(false);
+		expect(previewIsUserText({ type: "Audio" })).toBe(false);
+		expect(
+			previewIsUserText({ type: "AlbumContentReaction", text: "" }),
+		).toBe(false);
+		expect(previewIsUserText(null)).toBe(false);
+	});
+
+	it("treats the stand-in for a blank quote as our label", () => {
+		expect(quoteIsUserText({ type: "Text", text: "hello" })).toBe(true);
+		expect(quoteIsUserText({ type: "Text", text: "   " })).toBe(false);
+		expect(quoteIsUserText({ type: "Giphy" })).toBe(false);
+	});
+});
+
+describe("preview labels across locales", () => {
+	afterEach(async () => {
+		await setLocale({ locale: SOURCE_LOCALE });
+	});
+
+	it("translates a type at call time and leaves message text alone", async () => {
+		await setLocale({ locale: "en-XA" });
+
+		expect(previewLabel({ type: "Image" })).toMatch(PSEUDO_MESSAGE);
+		expect(previewLabel({ type: "Album", albumId: 7 })).toMatch(
+			PSEUDO_MESSAGE,
+		);
+		expect(previewLabel({ type: "Text", text: "Album" })).toBe("Album");
+		expect(previewLabel(null)).toBeNull();
+		expect(quoteLabel({ type: "Unsent" })).toMatch(PSEUDO_MESSAGE);
+		expect(quoteLabel({ type: "Giphy" })).toMatch(PSEUDO_MESSAGE);
+		expect(quoteLabel({ type: "Text", text: "   " })).toMatch(
+			PSEUDO_MESSAGE,
+		);
+		expect(quoteLabel({ type: "Text", text: "Photo" })).toBe("Photo");
 	});
 });
 

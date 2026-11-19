@@ -3,11 +3,14 @@ use std::sync::Arc;
 use tauri::{AppHandle, Url, WebviewUrl, WebviewWindowBuilder};
 use tokio::sync::oneshot;
 
+use crate::api::oauth::user_agent::MAC_SAFARI;
 use crate::api::oauth::{
-	close_windows, is_allowed_target, is_cancel_url, new_nonce,
-	next_window_label, without_secrets, CANCELED,
+	await_sign_in, close_windows, is_allowed_target, is_cancel_url, new_nonce,
+	next_window_label, without_secrets, SignInWait, CANCELED,
 };
 use crate::error::AppError;
+#[cfg(desktop)]
+use crate::native_strings::NativeText;
 
 use super::GoogleOauthBridge;
 
@@ -19,9 +22,6 @@ const WINDOW_LABEL_PREFIX: &str = "google-oauth";
 /// app is what shows around anything smaller.
 #[cfg(not(target_os = "ios"))]
 const WINDOW_INNER_SIZE: (f64, f64) = (800.0, 500.0);
-
-const USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) \
-     AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15";
 
 const RESULT_PATH: &str = "/__open_grind_oauth__";
 
@@ -97,8 +97,7 @@ async fn run_flow(
 	#[allow(unused_mut)]
 	let mut builder =
 		WebviewWindowBuilder::new(app, &label, WebviewUrl::External(url))
-			.title("Sign in with Google")
-			.user_agent(USER_AGENT)
+			.user_agent(MAC_SAFARI)
 			.initialization_script(init_script(&nonce))
 			.incognito(true)
 			.general_autofill_enabled(false)
@@ -139,6 +138,14 @@ async fn run_flow(
 			.initialization_script(crate::api::oauth::close_button_script());
 	}
 
+	#[cfg(desktop)]
+	{
+		builder = builder.title(
+			crate::app_language::native_strings(app)
+				.text(NativeText::GoogleSignInTitle),
+		);
+	}
+
 	// `incognito` silently no-ops on WebView2 older than 101.0.1210.39
 	// https://docs.rs/wry/latest/src/wry/lib.rs.html#1440-1443
 	#[cfg(target_os = "windows")]
@@ -151,20 +158,16 @@ async fn run_flow(
 		AppError::Http(format!("failed to open sign-in window: {e}"))
 	})?;
 
-	let bridge_for_close = bridge.clone();
-	window.on_window_event(move |event| {
-		if matches!(event, tauri::WindowEvent::CloseRequested { .. }) {
-			bridge_for_close.fulfill(Err(CANCELED.to_owned()));
-		}
-	});
-
-	let result = rx
-		.await
-		.map_err(|_| AppError::Auth("sign-in flow ended unexpectedly".into()));
+	let result = await_sign_in(SignInWait {
+		window: &window,
+		bridge,
+		answer: rx,
+	})
+	.await;
 
 	close_windows(app, WINDOW_LABEL_PREFIX);
 
-	result?.map_err(AppError::Auth)
+	result.map_err(AppError::Auth)
 }
 
 #[cfg(test)]

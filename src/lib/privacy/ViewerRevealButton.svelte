@@ -41,7 +41,7 @@
 	<button
 		type="button"
 		aria-label={revealed ? "Hide image" : "Reveal image"}
-		class="pointer-events-auto absolute top-1/2 left-1/2 flex size-9 -translate-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm active:bg-black/60"
+		class="pointer-events-auto absolute top-1/2 left-1/2 flex size-9 -translate-1/2 items-center justify-center rounded-full bg-black/45 text-white backdrop-filter-(--bd-veil) active:bg-black/60"
 		onpointerdown={stop}
 		onpointerup={stop}
 		ontouchstart={stop}

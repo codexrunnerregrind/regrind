@@ -8,5 +8,9 @@
 	<string>ReGrind uses your camera for video calls.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>ReGrind uses your location to show where you are on the map and to share your location in chats.</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+	</array>
 </dict>
 </plist>

@@ -1,5 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 
+import type { SupportedPlatform } from "../src/lib/platform/os";
 import { installTauriShim } from "./support/app";
 
 const APP_SETTINGS = "/settings/app";
@@ -7,7 +8,7 @@ const DESCRIPTION = "Use the haptic engine for interactions.";
 
 test.describe.configure({ timeout: 120_000 });
 
-async function openAppSettings(page: Page, platform: string) {
+async function openAppSettings(page: Page, platform: SupportedPlatform) {
 	await installTauriShim(page, { platform });
 	await page.goto(APP_SETTINGS);
 	await page
@@ -18,7 +19,7 @@ async function openAppSettings(page: Page, platform: string) {
 const hapticSwitch = (page: Page) =>
 	page.getByRole("switch", { name: /^Haptic feedback/ });
 
-for (const platform of ["android", "macos"]) {
+for (const platform of ["android", "macos"] as const) {
 	test(`${platform} describes haptics without naming gestures`, async ({
 		page,
 	}) => {

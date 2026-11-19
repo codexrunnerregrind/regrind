@@ -5,6 +5,7 @@
 	import type { Component } from "svelte";
 
 	import * as DropdownMenu from "#lib/components/ui/dropdown-menu/index.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import type { Option } from "#lib/util/options.ts";
 	import { inlineLabelClass, inlineRowClass, valueClass } from "./row";
 
@@ -12,8 +13,8 @@
 		label,
 		value = $bindable(),
 		options,
-		placeholder = "Not set",
-		clearLabel = "Not set",
+		placeholder,
+		clearLabel,
 		nullable = true,
 	}: {
 		label: string;
@@ -69,7 +70,9 @@
 						{#if SelectedIcon}
 							<SelectedIcon data-slot="select-field-icon" />
 						{/if}
-						{selected?.label ?? placeholder}
+						{selected?.label ??
+							placeholder ??
+							t("settings.profile.notSet")}
 					</span>
 					<CaretUpDownIcon
 						class="size-4 shrink-0 text-muted-foreground/70"
@@ -97,7 +100,7 @@
 					value=""
 					data-inset={hasIcons || undefined}
 				>
-					{clearLabel}
+					{clearLabel ?? t("settings.profile.notSet")}
 				</DropdownMenu.RadioItem>
 			{/if}
 			{#each options as option (option.value)}

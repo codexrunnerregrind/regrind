@@ -20,7 +20,7 @@ describe("derivePresetName", () => {
 			heightEnabled: true,
 		};
 		expect(derivePresetName({ filters, taken: [] })).toBe(
-			"Online · 20 - 30 · +2",
+			"Online · 20–30 · +2",
 		);
 	});
 

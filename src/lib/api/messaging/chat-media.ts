@@ -5,17 +5,21 @@ import { signedInProfileId } from "#lib/api/current-session.ts";
 import { uploadRefusalMessage } from "#lib/api/methods.ts";
 import { invokeRest, uploadFileRest } from "#lib/api/transport.ts";
 import { demoEnabled, demoUploadChatMedia } from "#lib/demo/index.ts";
+import { t } from "#lib/i18n/index.ts";
 import { mediaUrlSchema } from "#lib/model/media.ts";
 import {
 	CHAT_MEDIA_MAX_BYTES,
-	CHAT_MEDIA_MAX_LABEL,
+	chatMediaMaxLabel,
 } from "#lib/model/messaging/chat-media-limits.ts";
 import {
 	inspectMediaFile,
 	mediaFileDescriptor,
 	type MediaFileInspection,
 } from "#lib/platform/media-file.ts";
-import { type PickedMedia, readMediaBytes } from "#lib/platform/media-picker.ts";
+import {
+	type PickedMedia,
+	readMediaBytes,
+} from "#lib/platform/media-picker.ts";
 import { toBase64 } from "#lib/util/base64.ts";
 import { saveMediaToDrawer } from "./drawer";
 
@@ -41,10 +45,12 @@ export class UnsupportedChatMediaError extends Error {
 }
 
 export function chatMediaFailureMessage(error: unknown): string {
-	if (error instanceof UnsupportedChatMediaError) return error.message;
+	if (error instanceof UnsupportedChatMediaError) {
+		return t("common.media.errors.unsupportedFile");
+	}
 	return (
-		uploadRefusalMessage({ error, limitLabel: CHAT_MEDIA_MAX_LABEL }) ??
-		"Couldn't upload photo or video"
+		uploadRefusalMessage({ error, limitLabel: chatMediaMaxLabel() }) ??
+		t("chat.composer.attachments.media.errors.uploadFailed")
 	);
 }
 
@@ -206,7 +212,7 @@ function uploadedContentType({
 }): string {
 	const fallback =
 		inspection.kind === "video" ? VIDEO_CONTENT_TYPE : PHOTO_CONTENT_TYPE;
-	return media.source === "web" ? (media.mimeType ?? fallback) : fallback;
+	return media.source === "demo" ? (media.mimeType ?? fallback) : fallback;
 }
 
 function streamedUploadPath(inspection: MediaFileInspection): string {

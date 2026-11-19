@@ -1,5 +1,7 @@
 use std::sync::{Mutex, MutexGuard, PoisonError};
 
+use keyring_core::CredentialStore;
+
 use crate::error::AppError;
 
 pub(crate) const SERVICE: &str = "open-grind";
@@ -9,9 +11,22 @@ static KEYRING_LOCK: Mutex<()> = Mutex::new(());
 pub(crate) struct Entry(keyring_core::Entry);
 
 pub(crate) fn entry(name: &str) -> Result<Entry, AppError> {
-	keyring_core::Entry::new(SERVICE, name)
-		.map(Entry)
-		.map_err(|e| AppError::Auth(e.to_string()))
+	#[cfg(target_os = "ios")]
+	let entry = if cfg!(demo) {
+		keyring_core::Entry::new(SERVICE, name)
+	} else {
+		keyring_core::Entry::new_with_modifiers(
+			SERVICE,
+			name,
+			&std::collections::HashMap::from([(
+				"access-policy",
+				"after-first-unlock-this-device-only",
+			)]),
+		)
+	};
+	#[cfg(any(target_os = "android", desktop))]
+	let entry = keyring_core::Entry::new(SERVICE, name);
+	entry.map(Entry).map_err(|e| AppError::Auth(e.to_string()))
 }
 
 impl Entry {
@@ -33,6 +48,18 @@ impl Entry {
 
 fn exclusive() -> MutexGuard<'static, ()> {
 	KEYRING_LOCK.lock().unwrap_or_else(PoisonError::into_inner)
+}
+
+pub(super) fn delete_each(
+	store: &CredentialStore,
+	names: &[&str],
+) -> keyring_core::Result<()> {
+	names.iter().try_for_each(|name| {
+		match store.build(SERVICE, name, None)?.delete_credential() {
+			Ok(()) | Err(keyring_core::Error::NoEntry) => Ok(()),
+			Err(e) => Err(e),
+		}
+	})
 }
 
 #[cfg(test)]

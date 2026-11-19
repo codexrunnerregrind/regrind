@@ -3,6 +3,7 @@
 
 	import ProgressiveBlur from "#lib/components/shared/ProgressiveBlur.svelte";
 	import { Skeleton } from "#lib/components/ui/skeleton/index.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import { getConversationState } from "../conversation-state.svelte";
 	import ConversationActionsMenu from "./ConversationActionsMenu.svelte";
 	import ConversationNavBarProfile from "./ConversationNavBarProfile.svelte";
@@ -17,11 +18,11 @@
 	bgClass="bg-linear-to-b max-split:from-background split:from-card to-transparent split:[--pblur-flat:var(--color-card)]"
 	contentClass="flex items-center h-full"
 	tag="nav"
-	aria-label="Conversation"
+	aria-label={t("chat.conversation.navBar.a11y.navigation")}
 >
 	<a
 		href="/chat"
-		aria-label="Back to chats"
+		aria-label={t("chat.conversation.navBar.a11y.back")}
 		class="flex h-full items-center py-4 pr-1 pl-3"
 	>
 		<ArrowLeftIcon size={26} />
@@ -39,7 +40,7 @@
 			profileId={conversationState.profile.profileId}
 		/>
 	{:else if conversationState.error}
-		<span class="flex-1">Failed to load conversation</span>
+		<span class="flex-1">{t("chat.conversation.errors.loadFailed")}</span>
 	{:else}
 		<div class="flex flex-1 items-center gap-3 py-4 ps-1">
 			<Skeleton class="size-avatar rounded-full" />

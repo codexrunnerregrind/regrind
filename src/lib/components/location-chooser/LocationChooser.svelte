@@ -4,6 +4,7 @@
 	import * as Dialog from "#lib/components/ui/dialog/index.ts";
 	import * as Drawer from "#lib/components/ui/drawer/index.ts";
 	import Spinner from "#lib/components/ui/spinner/spinner.svelte";
+	import { t } from "#lib/i18n/index.ts";
 	import { encodeGeohash } from "#lib/model/geohash.ts";
 	import { dismissOnBackGesture } from "#lib/platform/back-gesture-event.svelte.ts";
 	import { above } from "#lib/util/breakpoints.svelte.ts";
@@ -95,6 +96,14 @@
 			class="flex h-[calc(var(--screen-safe)-4rem)] flex-col sm:max-w-200"
 			showCloseButton={false}
 		>
+			<Dialog.Header class="sr-only">
+				<Dialog.Title>
+					{t("browse.locationChooser.a11y.title")}
+				</Dialog.Title>
+				<Dialog.Description>
+					{t("browse.locationChooser.a11y.description")}
+				</Dialog.Description>
+			</Dialog.Header>
 			<div
 				class="h-full flex-1 touch-manipulation overflow-clip rounded-lg"
 				data-vaul-no-drag
@@ -103,7 +112,7 @@
 			</div>
 			<Dialog.Footer>
 				<Button type="submit" disabled={!pinPos} onclick={onSubmitPin}>
-					Save
+					{t("common.actions.save")}
 				</Button>
 			</Dialog.Footer>
 		</Dialog.Content>
@@ -125,7 +134,7 @@
 			</div>
 			<Drawer.Footer class="pt-2 pb-(--safe-area-bottom)">
 				<Button type="submit" disabled={!pinPos} onclick={onSubmitPin}>
-					Save
+					{t("common.actions.save")}
 				</Button>
 			</Drawer.Footer>
 		</Drawer.Content>

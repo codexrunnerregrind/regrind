@@ -1,6 +1,6 @@
 import { expect, type Locator, test } from "@playwright/test";
 
-import { openSharedAlbum } from "./support/albums";
+import { openAlbum, SHARED_ALBUM } from "./support/albums";
 import { openAttachments } from "./support/drawer";
 
 async function shownOnScreen(locator: Locator): Promise<boolean> {
@@ -10,19 +10,19 @@ async function shownOnScreen(locator: Locator): Promise<boolean> {
 }
 
 test.describe("media sheet titles", () => {
-	test("the album's previous uploads sheet is titled Previous uploads", async ({
+	test("the album's previous uploads sheet is titled Previous Uploads", async ({
 		page,
 	}) => {
-		await openSharedAlbum(page);
+		await openAlbum(page, { tile: SHARED_ALBUM, platform: "macos" });
 		await page
 			.getByRole("button", { name: "Add photos or videos" })
 			.click();
 
-		const sheet = page.getByRole("dialog", { name: "Previous uploads" });
+		const sheet = page.getByRole("dialog", { name: "Previous Uploads" });
 		await expect(sheet).toBeVisible();
 		expect(
 			await shownOnScreen(
-				sheet.getByRole("heading", { name: "Previous uploads" }),
+				sheet.getByRole("heading", { name: "Previous Uploads" }),
 			),
 			"the title is shown on the sheet",
 		).toBe(true);
@@ -31,7 +31,7 @@ test.describe("media sheet titles", () => {
 	test("the chat attachments sheet is named Attachments for screen readers only", async ({
 		page,
 	}) => {
-		await openAttachments(page);
+		await openAttachments(page, { platform: "macos" });
 
 		const sheet = page.getByRole("dialog", { name: "Attachments" });
 		await expect(sheet).toBeVisible();

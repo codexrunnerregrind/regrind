@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from "#lib/i18n/index.ts";
 	import {
 		AGE_MAX,
 		AGE_MIN,
@@ -15,7 +16,10 @@
 	const label = $derived(ageRangeLabel(value));
 </script>
 
-<FilterSection title="Age" status={checked ? label : undefined}>
+<FilterSection
+	title={t("common.filters.age.label")}
+	status={checked ? label : undefined}
+>
 	<div class="px-1 pt-1">
 		<AgeFilterSlider
 			bind:value={

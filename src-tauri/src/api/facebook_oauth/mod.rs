@@ -12,9 +12,7 @@ use crate::error::AppError;
 
 pub struct Facebook;
 
-impl OauthProvider for Facebook {
-	const NAME: &'static str = "Facebook";
-}
+impl OauthProvider for Facebook {}
 
 pub type FacebookOauthBridge = OauthBridge<Facebook>;
 
@@ -40,7 +38,7 @@ pub fn plugin() -> tauri::plugin::TauriPlugin<tauri::Wry> {
 pub async fn forget_sign_in_profile(app: &AppHandle) {
 	#[cfg(target_os = "android")]
 	android::clear_profile(app).await;
-	#[cfg(not(target_os = "android"))]
+	#[cfg(any(target_os = "ios", desktop))]
 	let _ = app;
 }
 

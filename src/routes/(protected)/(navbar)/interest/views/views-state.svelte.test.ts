@@ -41,7 +41,9 @@ const {
 	viewHandlers: [] as ((event: unknown) => void)[],
 }));
 
-vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast: showErrorToastMock }));
+vi.mock("#lib/api/error-toast.ts", () => ({
+	showErrorToast: showErrorToastMock,
+}));
 vi.mock("#lib/api/interest/views.ts", () => ({ getViews: getViewsMock }));
 vi.mock("#lib/api/users/profiles.ts", async (importOriginal) => ({
 	...(await importOriginal<typeof import("#lib/api/users/profiles.ts")>()),
@@ -297,7 +299,7 @@ describe("ViewsState", () => {
 		await state.refresh();
 
 		expect(showErrorToastMock).toHaveBeenCalledWith({
-			label: "Failed to refresh views",
+			label: "Couldn’t refresh views",
 			error: expect.any(Error),
 			onRetry: expect.any(Function),
 		});
@@ -635,7 +637,7 @@ describe("ViewsState viewed-me tracking", () => {
 		expect(state.viewedMeHidden).toBe(true);
 		expect(state.enablingViewedMe).toBe(false);
 		expect(showErrorToastMock).toHaveBeenCalledWith({
-			label: "Failed to turn on the Viewed Me List",
+			label: "Couldn’t turn on Viewed Me",
 			error: expect.any(Error),
 		});
 	});

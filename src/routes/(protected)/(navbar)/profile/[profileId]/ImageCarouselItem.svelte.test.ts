@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 
-import { cleanup, fireEvent, render } from "@testing-library/svelte";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { runningOn } from "#lib/test/platform.ts";
 import ImageCarouselItem from "./ImageCarouselItem.svelte";
 
 const PROPS = {
@@ -11,6 +12,10 @@ const PROPS = {
 	createdAt: null,
 	label: "Profile photo 1 of 2",
 };
+
+beforeEach(() => {
+	runningOn("windows");
+});
 
 describe("ImageCarouselItem", () => {
 	afterEach(cleanup);
@@ -40,5 +45,23 @@ describe("ImageCarouselItem", () => {
 		expect(
 			container.querySelector('[data-slot="broken-media"]'),
 		).not.toBeNull();
+	});
+
+	it("keeps a covered photo out of the lightbox and links to the mature content setting", () => {
+		const { container } = render(ImageCarouselItem, {
+			props: { ...PROPS, covered: true },
+		});
+
+		expect(container.querySelector(".item[href]")).toBeNull();
+		expect(
+			screen
+				.getByRole("group", { name: PROPS.label })
+				.contains(
+					screen.getByRole("link", { name: "Show mature content" }),
+				),
+		).toBe(true);
+		expect(container.querySelector("img")?.getAttribute("src")).toBe(
+			PROPS.src,
+		);
 	});
 });

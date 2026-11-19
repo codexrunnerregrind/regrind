@@ -9,7 +9,7 @@ const pane = (name: string) => `[data-slot="interest-pane-${name}"]`;
 const shownScroller = `${PAGER} [data-slot^="interest-pane-"]:not([inert]) [data-slot$="-scroller"]`;
 
 test.beforeEach(async ({ page }) => {
-	await openTaps(page);
+	await openTaps(page, { platform: "macos" });
 });
 
 /** Tabs the track has moved: 1 rests on Taps, 1.5 is halfway to Matches. */

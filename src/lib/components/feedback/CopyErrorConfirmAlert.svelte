@@ -8,8 +8,18 @@
 	import { Button } from "#lib/components/ui/button/index.ts";
 	import Label from "#lib/components/ui/label/label.svelte";
 	import Switch from "#lib/components/ui/switch/switch.svelte";
+	import { t } from "#lib/i18n/index.ts";
+	import { dismissOnBackGesture } from "#lib/platform/back-gesture-event.svelte.ts";
 
 	let redact = $state(true);
+
+	function dismiss() {
+		settleCopyErrorConfirm({ abort: true });
+		redact = true;
+	}
+
+	dismissOnBackGesture({ active: () => copyErrorConfirmState.open, dismiss });
+
 	const preview = $derived(
 		getErrorText(copyErrorConfirmState.error, { redact }),
 	);
@@ -18,23 +28,21 @@
 <AlertDialog.Root
 	bind:open={copyErrorConfirmState.open}
 	onOpenChange={(open) => {
-		if (!open) {
-			settleCopyErrorConfirm({ abort: true });
-			redact = true;
-		}
+		if (!open) dismiss();
 	}}
 >
 	<AlertDialog.Content
-		class="shrink-0 max-sm:max-w-[calc(100%-2rem)]!"
+		class="shrink-0 max-sm:max-w-[calc(100%-2rem-var(--safe-area-left)-var(--safe-area-right))]!"
 		interactOutsideBehavior="close"
 	>
 		<div class="grid grid-rows-[auto_minmax(0,1fr)_auto] gap-4">
 			<AlertDialog.Header>
-				<AlertDialog.Title>Copy error details?</AlertDialog.Title>
+				<AlertDialog.Title
+					>{t("feedback.copyErrorConfirm.title")}</AlertDialog.Title
+				>
 				<AlertDialog.Description class="text-wrap">
-					<b>Be mindful of what you share on the internet!</b> The error
-					might contain your personal data. Only copy it unredacted if a
-					developer asks you to.
+					<b>{t("feedback.copyErrorConfirm.warning")}</b>
+					<span>{t("feedback.copyErrorConfirm.description")}</span>
 				</AlertDialog.Description>
 			</AlertDialog.Header>
 			<div
@@ -50,7 +58,7 @@
 						bind:checked={redact}
 					/>
 					<span class="truncate">
-						Redact sensitive info (recommended)
+						{t("feedback.copyErrorConfirm.redact")}
 					</span>
 				</Label>
 				<div
@@ -65,12 +73,14 @@
 						class="rounded-t-none rounded-b-[inherit] border-0"
 						size="lg"
 					>
-						Copy
+						{t("feedback.copyErrorConfirm.copy")}
 					</Button>
 				</div>
 			</div>
 			<AlertDialog.Footer>
-				<AlertDialog.Cancel>Close</AlertDialog.Cancel>
+				<AlertDialog.Cancel
+					>{t("common.actions.close")}</AlertDialog.Cancel
+				>
 			</AlertDialog.Footer>
 		</div>
 	</AlertDialog.Content>

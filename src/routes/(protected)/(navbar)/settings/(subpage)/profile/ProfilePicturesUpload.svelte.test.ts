@@ -11,6 +11,7 @@ const profiles = vi.hoisted(() => ({
 
 vi.mock("#lib/api/users/profiles.ts", () => profiles);
 
+import { resetPlatform, runningOn } from "#lib/test/platform.ts";
 import ProfilePicturesUpload from "./ProfilePicturesUpload.svelte";
 
 function previousUploads(...mediaHashes: string[]) {
@@ -23,10 +24,14 @@ function previousUploads(...mediaHashes: string[]) {
 	});
 }
 
-beforeEach(() => previousUploads());
+beforeEach(() => {
+	runningOn("android");
+	previousUploads();
+});
 
 afterEach(() => {
 	cleanup();
+	resetPlatform();
 	vi.clearAllMocks();
 });
 
@@ -67,7 +72,7 @@ describe("profile pictures upload", () => {
 		);
 
 		expect(
-			await findByRole("dialog", { name: "Previous uploads" }),
+			await findByRole("dialog", { name: "Previous Uploads" }),
 		).toBeTruthy();
 		expect(
 			await findByRole("button", { name: "Upload photos" }),

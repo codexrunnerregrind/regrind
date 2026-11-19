@@ -2,6 +2,7 @@
 import { lstat, symlink } from "node:fs/promises";
 import path from "path";
 import { parseVersion, type Version } from "./lib/semver";
+import type { Occurrence } from "./lib/version-occurrences";
 
 const root = path.join(import.meta.dir, "..");
 const usage = "usage: bun scripts/bump-version.ts <version> [--code <n>]";
@@ -13,8 +14,6 @@ const handAssignedPreMvpCodes: Record<string, (index: number) => number> = {
 	beta: (index) => 1000 + 10 * index,
 	rc: (index) => 10_000 + 1000 * index,
 };
-
-type Occurrence = { file: string; literal: string };
 
 function fail(message: string): never {
 	console.error(message);

@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { formatDistanceStrict } from "date-fns";
 	import AirplaneTiltIcon from "phosphor-svelte/lib/AirplaneTiltIcon";
 
+	import { formatRelativeTime } from "#lib/i18n/format.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import { getNow } from "#lib/util/now.ts";
 
 	let {
@@ -21,7 +22,7 @@
 
 {#snippet visiting(className: string)}
 	<AirplaneTiltIcon weight="fill" class={["size-3 shrink-0", className]} />
-	<span class="sr-only">Visiting.</span>
+	<span class="sr-only">{t("profile.onlineStatus.visiting")}.</span>
 {/snippet}
 
 {#if self || online}
@@ -34,7 +35,7 @@
 			>
 			</span>
 		{/if}
-		Online now
+		{t("profile.onlineStatus.onlineNow")}
 	</div>
 {:else}
 	<span class="flex items-center gap-1.5 whitespace-nowrap text-gray-500">
@@ -42,9 +43,11 @@
 			{@render visiting("")}
 		{/if}
 		{#if seen !== null}
-			Online {formatDistanceStrict(seen, getNow(), { addSuffix: true })}
+			{t("profile.onlineStatus.lastOnline", {
+				ago: formatRelativeTime({ date: seen, baseDate: getNow() }),
+			})}
 		{:else}
-			Offline
+			{t("profile.onlineStatus.offline")}
 		{/if}
 	</span>
 {/if}

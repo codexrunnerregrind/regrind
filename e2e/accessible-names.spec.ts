@@ -3,16 +3,16 @@ import { test } from "@playwright/test";
 import { expectEveryControlNamed } from "./support/a11y";
 import {
 	DEMO_CONVERSATION,
-	ensureGridLocation,
 	installTauriShim,
 	MESSAGE_ROW,
+	openGrid,
 } from "./support/app";
 import { ALBUM_TILE } from "./support/drawer";
 
 const DEMO_PROFILE = "/profile/100001";
 
 test.beforeEach(async ({ page }) => {
-	await installTauriShim(page);
+	await installTauriShim(page, { platform: "macos" });
 });
 
 test.describe("every control has an accessible name", () => {
@@ -56,9 +56,7 @@ test.describe("every control has an accessible name", () => {
 
 	test("grid and its filter sheets", async ({ page }) => {
 		test.setTimeout(240_000);
-		await page.goto("/");
-		await page.locator("nav a").first().waitFor({ timeout: 120_000 });
-		await ensureGridLocation(page);
+		await openGrid(page);
 		await expectEveryControlNamed(page, "grid");
 
 		const allFilters = page.locator('[aria-label="All filters"]');
@@ -69,13 +67,13 @@ test.describe("every control has an accessible name", () => {
 		await page.keyboard.press("Escape");
 
 		await page.getByRole("button", { name: "Age", exact: true }).click();
-		await page.getByRole("slider", { name: "Minimum age" }).waitFor();
+		await page.getByRole("slider", { name: "Minimum Age" }).waitFor();
 		await expectEveryControlNamed(page, "age filter");
 		await page.keyboard.press("Escape");
 
 		await page.locator('[aria-label="Change location"]').click();
 		await page
-			.getByPlaceholder("Search places...")
+			.getByPlaceholder("Search places…")
 			.waitFor({ timeout: 180_000 });
 		await page
 			.getByRole("button", { name: "Selected location" })

@@ -6,6 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Drafts } from "#lib/chat/drafts.svelte.ts";
 import { TypingTracker } from "#lib/chat/typing.svelte.ts";
+import { restoreCountFormatter } from "#lib/i18n/fixtures/count-formatter.ts";
+import { setCountFormatter } from "#lib/i18n/index.ts";
 
 const { conversations, currentPage, playHapticMock } = vi.hoisted(() => ({
 	conversations: {
@@ -22,19 +24,31 @@ vi.mock("#lib/chat/conversations-context.svelte.ts", () => ({
 }));
 vi.mock("#lib/haptics.ts", () => ({ playHaptic: playHapticMock }));
 
-import { applyBackGestureHandler } from "#lib/platform/android-native-bridge.ts";
+import { applyBackGestureHandler } from "#lib/platform/android-system-back.ts";
 import { contextMenuEvent } from "#lib/test/context-menu.ts";
+import { useHoldClock } from "#lib/test/long-press.ts";
+import { resetPlatform, runningOn } from "#lib/test/platform.ts";
+import { pointerEvent } from "#lib/test/pointer.ts";
+import { untranslatableTexts } from "#lib/test/untranslatable.ts";
+import { LONG_PRESS_DURATION_MS } from "#lib/util/long-press.ts";
 import type { Conversation as ConversationType } from "#lib/model/messaging/conversations.ts";
 import Conversation from "./Conversation.svelte";
 
 const DESCRIPTION = '[data-slot="item-description"]';
 const DRAFT_PREFIX = '[data-slot="conversation-draft-prefix"]';
+const UNREAD_BADGE = '[data-slot="badge"]';
 const MENU_TRIGGER = '[data-slot="context-menu-trigger"]';
 const CONVERSATION_ID = "a:1";
 const BITS_HOLD_MS = 750;
 
 let drafts: Drafts;
 let typing: TypingTracker;
+
+beforeEach(() => {
+	runningOn("android");
+});
+
+afterEach(resetPlatform);
 
 function conversation(
 	preview: ConversationType["data"]["preview"],
@@ -98,6 +112,12 @@ function renderRow(
 
 function descriptionClass(container: HTMLElement): string {
 	return container.querySelector(DESCRIPTION)?.className ?? "";
+}
+
+function untranslatablePreview(container: HTMLElement): string[] {
+	const description = container.querySelector(DESCRIPTION);
+	if (description === null) throw new Error("Missing preview line");
+	return untranslatableTexts(description);
 }
 
 function previewLine(container: HTMLElement): string {
@@ -191,6 +211,35 @@ describe("Conversation preview line", () => {
 		expect(descriptionClass(drafted)).not.toContain("font-semibold");
 	});
 
+	it("keeps message words out of page translation but not a type label", () => {
+		const { container: text } = renderRow(textPreview("hello there"));
+
+		expect(untranslatablePreview(text)).toEqual(["hello there"]);
+		cleanup();
+
+		const { container: photo } = renderRow({
+			...textPreview("hello there"),
+			type: "Image",
+			text: null,
+			imageHash: "abc",
+		});
+
+		expect(previewLine(photo)).toBe("Photo");
+		expect(untranslatablePreview(photo)).toEqual([]);
+		cleanup();
+
+		const { container: missing } = renderRow(null);
+
+		expect(untranslatablePreview(missing)).toEqual([]);
+	});
+
+	it("keeps the draft out of page translation but not its prefix", () => {
+		drafts.save({ conversationId: CONVERSATION_ID, text: "see you at" });
+		const { container } = renderRow(textPreview("hello there"));
+
+		expect(untranslatablePreview(container)).toEqual(["see you at"]);
+	});
+
 	it("ignores a draft belonging to another conversation", () => {
 		drafts.save({ conversationId: "b:2", text: "not mine" });
 		const { container } = renderRow(textPreview("hello there"));
@@ -246,6 +295,27 @@ describe("Conversation typing line", () => {
 	});
 });
 
+describe("Conversation unread badge", () => {
+	beforeEach(() => {
+		conversations.drafts = new Drafts();
+	});
+
+	afterEach(() => {
+		cleanup();
+		restoreCountFormatter();
+	});
+
+	it("prints the unread count with the count formatter", () => {
+		const bracketed = (value: number) => `[${value}]`;
+		setCountFormatter(({ count }) => bracketed(count));
+		const { container } = renderRow(textPreview("hello there"), 12);
+
+		expect(container.querySelector(UNREAD_BADGE)?.textContent?.trim()).toBe(
+			bracketed(12),
+		);
+	});
+});
+
 function renderRowWithMenu(): HTMLElement {
 	const { container } = render(Conversation, {
 		props: { conversation: conversation(null) },
@@ -253,12 +323,6 @@ function renderRowWithMenu(): HTMLElement {
 	const trigger = container.querySelector<HTMLElement>(MENU_TRIGGER);
 	if (trigger === null) throw new Error("Missing context menu trigger");
 	return trigger;
-}
-
-function pointerDown(pointerType: string): MouseEvent {
-	return Object.assign(new MouseEvent("pointerdown", { bubbles: true }), {
-		pointerType,
-	});
 }
 
 async function menuOpened(trigger: HTMLElement): Promise<boolean> {
@@ -278,7 +342,7 @@ describe("Conversation menu haptics", () => {
 	it("taps once when a touch long press opens the menu", async () => {
 		const trigger = renderRowWithMenu();
 
-		trigger.dispatchEvent(pointerDown("touch"));
+		trigger.dispatchEvent(pointerEvent("pointerdown"));
 		trigger.dispatchEvent(contextMenuEvent({ pointerType: "touch" }));
 
 		expect(await menuOpened(trigger)).toBe(true);
@@ -288,7 +352,7 @@ describe("Conversation menu haptics", () => {
 	it("taps when the menu's own hold timer opens it for a touch", async () => {
 		const trigger = renderRowWithMenu();
 
-		trigger.dispatchEvent(pointerDown("touch"));
+		trigger.dispatchEvent(pointerEvent("pointerdown"));
 		await new Promise((resolve) => setTimeout(resolve, BITS_HOLD_MS));
 
 		expect(await menuOpened(trigger)).toBe(true);
@@ -298,7 +362,9 @@ describe("Conversation menu haptics", () => {
 	it("stays quiet when a right-click opens the menu", async () => {
 		const trigger = renderRowWithMenu();
 
-		trigger.dispatchEvent(pointerDown("mouse"));
+		trigger.dispatchEvent(
+			pointerEvent("pointerdown", { pointerType: "mouse" }),
+		);
 		trigger.dispatchEvent(contextMenuEvent({ pointerType: "mouse" }));
 
 		expect(await menuOpened(trigger)).toBe(true);
@@ -308,7 +374,7 @@ describe("Conversation menu haptics", () => {
 	it("stays quiet when the menu key opens the menu after a touch", async () => {
 		const trigger = renderRowWithMenu();
 
-		trigger.dispatchEvent(pointerDown("touch"));
+		trigger.dispatchEvent(pointerEvent("pointerdown"));
 		trigger.dispatchEvent(contextMenuEvent({ pointerType: "" }));
 
 		expect(await menuOpened(trigger)).toBe(true);
@@ -332,7 +398,7 @@ describe("Conversation menu back gesture", () => {
 			"a closed menu leaves Back alone",
 		).toBe(true);
 
-		trigger.dispatchEvent(pointerDown("touch"));
+		trigger.dispatchEvent(pointerEvent("pointerdown"));
 		trigger.dispatchEvent(contextMenuEvent({ pointerType: "touch" }));
 		expect(await menuOpened(trigger)).toBe(true);
 
@@ -345,5 +411,53 @@ describe("Conversation menu back gesture", () => {
 			window.__AndroidOnBackGesture?.(),
 			"the next Back goes on to navigation",
 		).toBe(true);
+	});
+});
+
+describe("Conversation menu on iOS", () => {
+	useHoldClock();
+
+	beforeEach(() => {
+		runningOn("ios");
+		conversations.drafts = new Drafts();
+		playHapticMock.mockReset();
+	});
+
+	afterEach(cleanup);
+
+	it("opens once a touch is held, with one haptic tap", async () => {
+		const trigger = renderRowWithMenu();
+
+		trigger.dispatchEvent(pointerEvent("pointerdown"));
+		vi.advanceTimersByTime(LONG_PRESS_DURATION_MS);
+		vi.useRealTimers();
+
+		expect(await menuOpened(trigger)).toBe(true);
+		expect(playHapticMock).toHaveBeenCalledExactlyOnceWith("longPress");
+	});
+
+	it("still opens when the finger drifts a little during the hold", async () => {
+		const trigger = renderRowWithMenu();
+
+		trigger.dispatchEvent(pointerEvent("pointerdown"));
+		vi.advanceTimersByTime(100);
+		trigger.dispatchEvent(pointerEvent("pointermove", { x: 15 }));
+		vi.advanceTimersByTime(LONG_PRESS_DURATION_MS - 100);
+		vi.useRealTimers();
+
+		expect(await menuOpened(trigger)).toBe(true);
+	});
+
+	it("stays closed when the finger drifts past the hold's tolerance", async () => {
+		const trigger = renderRowWithMenu();
+
+		trigger.dispatchEvent(pointerEvent("pointerdown"));
+		vi.advanceTimersByTime(100);
+		trigger.dispatchEvent(pointerEvent("pointermove", { x: 23 }));
+		vi.advanceTimersByTime(1000);
+		vi.useRealTimers();
+
+		expect(await menuOpened(trigger)).toBe(false);
+		expect(playHapticMock).not.toHaveBeenCalled();
 	});
 });

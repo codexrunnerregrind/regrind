@@ -1,9 +1,22 @@
 <script lang="ts">
 	import { afterNavigate, beforeNavigate } from "$app/navigation";
+	import { page } from "$app/state";
 
+	import DiscardChangesDialog from "#lib/components/shared/DiscardChangesDialog.svelte";
+	import { provideUnsavedChangesGuard } from "#lib/components/shared/unsaved-changes-guard.svelte.ts";
+	import { scrollsToTopOnStatusBarTap } from "#lib/platform/status-bar-tap.ts";
+	import { goBack } from "#lib/util/history.ts";
 	import SettingsNavBar from "../SettingsNavBar.svelte";
 
 	let { children }: import("./$types").LayoutProps = $props();
+
+	const unsavedChanges = provideUnsavedChangesGuard({
+		goBack: () =>
+			goBack({
+				fallback:
+					page.url.pathname.replace(/\/[^/]+$/, "") || "/settings",
+			}),
+	});
 
 	let scroller: HTMLDivElement | null = $state(null);
 	const offsets: Record<string, number> = {};
@@ -30,6 +43,7 @@
 		bind:this={scroller}
 		class="h-full w-full overflow-y-auto overscroll-none"
 		data-slot="settings-scroller"
+		{@attach scrollsToTopOnStatusBarTap}
 	>
 		<div class="flex w-full px-4 pt-19 pb-nav-clear">
 			<!-- No container gap: section headers and footers own their own vertical
@@ -40,3 +54,7 @@
 		</div>
 	</div>
 </main>
+<DiscardChangesDialog
+	bind:open={unsavedChanges.confirming}
+	ondiscard={() => unsavedChanges.discard()}
+/>

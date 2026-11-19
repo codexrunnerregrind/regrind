@@ -38,7 +38,7 @@
 		type="button"
 		aria-label={revealed ? "Hide image" : "Reveal image"}
 		class={[
-			"absolute z-2 flex -translate-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm active:bg-black/60",
+			"absolute z-2 flex -translate-1/2 items-center justify-center rounded-full bg-black/40 text-white backdrop-filter-(--bd-veil) active:bg-black/60",
 			{ "size-5": box.size < 64, "size-7": box.size >= 64 },
 		]}
 		style:left="{box.x}px"

@@ -1,19 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-import {
-	ensureGridLocation,
-	installTauriShim,
-	MESSAGE_ROW,
-} from "./support/app";
+import { installTauriShim, MESSAGE_ROW, openGrid } from "./support/app";
 
 test("grid tile opens a profile, which opens a conversation that accepts a message", async ({
 	page,
 }) => {
 	test.setTimeout(240_000);
-	await installTauriShim(page);
-	await page.goto("/");
-	await page.locator("nav a").first().waitFor({ timeout: 120_000 });
-	await ensureGridLocation(page);
+	await installTauriShim(page, { platform: "macos" });
+	await openGrid(page);
 
 	const tile = page.locator('a[href^="/profile/"]').first();
 	await tile.waitFor({ timeout: 60_000 });
@@ -21,7 +15,7 @@ test("grid tile opens a profile, which opens a conversation that accepts a messa
 	await expect(page).toHaveURL(/\/profile\/\d+$/);
 
 	await page
-		.getByRole("link", { name: "Write a message..." })
+		.getByRole("link", { name: "Write a message…" })
 		.click({ timeout: 60_000 });
 	await expect(page).toHaveURL(/\/chat\/\d+:\d+$/);
 
@@ -33,6 +27,6 @@ test("grid tile opens a profile, which opens a conversation that accepts a messa
 
 	await expect(page.locator(MESSAGE_ROW).last()).toContainText(sent);
 	await expect(composer).toHaveValue("");
-	await expect(page.getByText("Sending...")).toHaveCount(0);
-	await expect(page.getByText("Failed to send")).toHaveCount(0);
+	await expect(page.getByText("Sending…")).toHaveCount(0);
+	await expect(page.getByText("Not sent")).toHaveCount(0);
 });

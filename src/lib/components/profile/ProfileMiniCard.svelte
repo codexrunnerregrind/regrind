@@ -9,9 +9,13 @@
 	import ProfileStatusIndicator from "#lib/components/profile/ProfileStatusIndicator.svelte";
 	import TapIcon from "#lib/components/profile/TapIcon.svelte";
 	import UserAvatar from "#lib/components/profile/UserAvatar.svelte";
+	import { t } from "#lib/i18n/index.ts";
+	import Rich from "#lib/i18n/Rich.svelte";
 	import { getNow } from "#lib/util/now.ts";
 	import type { GridTap } from "#lib/interest/profile-activity.svelte.ts";
-	import type { RightNowStatus } from "#lib/model/right-now.ts";
+	import type { RightNowStatus } from "#lib/model/right-now/index.ts";
+
+	const UNREAD_COUNT_CAP = 99;
 
 	let {
 		mediaHash = null,
@@ -112,6 +116,11 @@
 	);
 </script>
 
+{#snippet srOnly(text: string)}<span class="sr-only">{text}</span>{/snippet}
+{#snippet cappedCount(text: string)}
+	<span class="text-3xs">{text}</span>
+{/snippet}
+
 {#snippet content()}
 	<div class="absolute size-full bg-media-placeholder">
 		<UserAvatar {mediaHash} class="size-full" size="xl" />
@@ -130,7 +139,7 @@
 				<StarIcon
 					weight="fill"
 					class="marker text-yellow-400"
-					aria-label="Favorite"
+					aria-label={t("profile.favoriteStar.a11y.label")}
 					role="img"
 				/>
 			{/if}
@@ -228,12 +237,20 @@
 				<span
 					class="flex size-5 shrink-0 items-center justify-center rounded-full bg-primary text-2xs font-semibold text-primary-foreground"
 				>
-					{#if unread > 99}
-						<span class="text-3xs">99+</span>
+					{#if unread > UNREAD_COUNT_CAP}
+						<Rich
+							key="profile.miniCard.cappedUnreadCount"
+							count={UNREAD_COUNT_CAP}
+							{cappedCount}
+							{srOnly}
+						/>
 					{:else}
-						{unread}
+						<Rich
+							key="profile.miniCard.unreadCount"
+							count={unread}
+							{srOnly}
+						/>
 					{/if}
-					<span class="sr-only">unread messages</span>
 				</span>
 			{/if}
 		</div>
@@ -253,7 +270,9 @@
 		{href}
 		{onclick}
 		{...gestures}
-		aria-label={hasVisibleText ? undefined : "Profile"}
+		aria-label={hasVisibleText
+			? undefined
+			: t("profile.miniCard.a11y.anonymous")}
 		class={[
 			"relative flex items-end overflow-hidden",
 			{

@@ -3,8 +3,10 @@
 	import XIcon from "phosphor-svelte/lib/XIcon";
 
 	import MediaImage from "#lib/components/shared/MediaImage.svelte";
+	import { t } from "#lib/i18n/index.ts";
 	import {
 		previewFromMessage,
+		quoteIsUserText,
 		quoteLabel,
 		replyThumbnailUrl,
 	} from "#lib/model/messaging/message-preview.ts";
@@ -16,7 +18,9 @@
 		onCancel,
 	}: { message: ApiResponseMessage; onCancel?: () => void } = $props();
 
-	const label = $derived(quoteLabel(previewFromMessage(message)));
+	const preview = $derived(previewFromMessage(message));
+	const label = $derived(quoteLabel(preview));
+	const userText = $derived(quoteIsUserText(preview));
 	const thumbnail = $derived(replyThumbnailUrl(message));
 
 	const conversationState = $derived(getConversationState()());
@@ -53,7 +57,10 @@
 			<span class="truncate text-caption font-semibold">
 				Replying to {who}
 			</span>
-			<span class="truncate text-caption text-muted-foreground">
+			<span
+				class="truncate text-caption text-muted-foreground"
+				translate={userText ? "no" : undefined}
+			>
 				{label}
 			</span>
 		</div>
@@ -62,7 +69,7 @@
 	     the field that dismissing a reply took aim. -->
 	<button
 		type="button"
-		aria-label="Cancel reply"
+		aria-label={t("chat.composer.replyPreview.a11y.cancel")}
 		class="me-1.5 flex size-9 shrink-0 items-center justify-center self-center rounded-full text-muted-foreground active:bg-foreground/10"
 		onclick={onCancel}
 	>

@@ -16,7 +16,7 @@ function pageKey(pathname: string): string {
 	}
 }
 
-function isDeleted(pathname: string | null): boolean {
+export function isDeleted(pathname: string | null): boolean {
 	return pathname !== null && parentsOfDeleted.has(pageKey(pathname));
 }
 
@@ -39,8 +39,6 @@ function skipBackPast({
 	delta: number;
 	parent: string;
 }): () => void {
-	if (!window.navigation) return () => history.go(delta - 1);
-
 	const steps = earlierPathnames().findIndex(
 		(pathname) => !isDeleted(pathname),
 	);

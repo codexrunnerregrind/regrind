@@ -128,7 +128,7 @@
 		</div>
 		<ReportSheet
 			bind:open={reportOpen}
-			{profileId}
+			target={{ kind: "profile", profileId }}
 			onBlock={() => void blockProfile({ profileId, markBlocked })}
 		/>
 	{/if}

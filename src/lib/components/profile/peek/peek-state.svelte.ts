@@ -6,7 +6,10 @@ import { blockUser } from "#lib/api/browse/blocks.ts";
 import { showErrorToast } from "#lib/api/error-toast.ts";
 import { sendTap } from "#lib/api/interest/taps.ts";
 import { forgetFavoriteNote } from "#lib/api/users/favorite-notes-state.svelte.ts";
-import { addFavoriteUser, removeFavoriteUser } from "#lib/api/users/favorites.ts";
+import {
+	addFavoriteUser,
+	removeFavoriteUser,
+} from "#lib/api/users/favorites.ts";
 import { mergeProfileEditIntoCaches } from "#lib/api/users/profiles.ts";
 import { preferencesSnapshot } from "#lib/app-data/preferences.svelte.ts";
 import { showBlockFailure } from "#lib/components/report/block-failure.ts";
@@ -17,7 +20,7 @@ import {
 	longPressHandlers,
 } from "#lib/util/long-press.ts";
 import { reducedMotion } from "#lib/util/reduced-motion.ts";
-import type { RightNowStatus } from "#lib/model/right-now.ts";
+import type { RightNowStatus } from "#lib/model/right-now/index.ts";
 
 export type PeekProfile = {
 	profileId: number;

@@ -2,6 +2,7 @@
 	import StickerIcon from "phosphor-svelte/lib/StickerIcon";
 
 	import ComposerButton from "#lib/components/shared/ComposerButton.svelte";
+	import { t } from "#lib/i18n/index.ts";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
 
 	let {
@@ -16,7 +17,7 @@
 	bind:ref
 	variant="ghost"
 	class="size-8 text-muted-foreground hover:bg-transparent"
-	aria-label="GIFs and stickers"
+	aria-label={t("chat.composer.stickers.a11y.open")}
 	onclick={onClick}
 	{disabled}
 >

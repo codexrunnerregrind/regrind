@@ -5,6 +5,7 @@ import {
 	preferencesAccount,
 	setPreferences,
 } from "#lib/app-data/preferences.svelte.ts";
+import { t } from "#lib/i18n/index.ts";
 import {
 	defaultFilters,
 	type GridSearchFilters,
@@ -104,7 +105,10 @@ export class GridSearchFiltersState {
 			this.value = gridSearchFilters ?? defaultFilters;
 		} catch (error) {
 			console.error(error);
-			showErrorToast({ label: "Failed to load filters", error });
+			showErrorToast({
+				label: t("browse.grid.searchFilters.errors.loadFailed"),
+				error,
+			});
 		}
 	}
 
@@ -115,7 +119,10 @@ export class GridSearchFiltersState {
 			}
 		} catch (error) {
 			console.error(error);
-			showErrorToast({ label: "Failed to update filters", error });
+			showErrorToast({
+				label: t("browse.grid.searchFilters.errors.updateFailed"),
+				error,
+			});
 		}
 	}
 }

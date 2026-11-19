@@ -13,9 +13,9 @@ const NON_BLOCKABLE_PROFILE = "/profile/100010";
 const NON_BLOCKABLE_BLOCK_PATH = "/v3/me/blocks/100010";
 const WHY_BLOCKING_FAILS =
 	"https://opengrind.org/guides/blocking-and-hiding-profiles#why-cant-i-block-some-profiles";
-const BLOCKED = "You have blocked this profile.";
-const DID_NOT_STICK = "Blocking this profile failed. Try hiding instead.";
-const FAILED = "Failed to block user";
+const BLOCKED = "You have blocked this user";
+const DID_NOT_STICK = "Can’t block this user. Try hiding instead.";
+const FAILED = "Couldn’t block";
 
 async function answerBlocksWith({
 	page,
@@ -49,7 +49,7 @@ async function answerBlocksWith({
 }
 
 async function openProfile({ page, profile }: { page: Page; profile: string }) {
-	await installTauriShim(page);
+	await installTauriShim(page, { platform: "macos" });
 	await page.goto(profile);
 	await page.getByRole("button", { name: "Hide profile" }).waitFor();
 }
@@ -71,7 +71,7 @@ async function reportAsSpam({
 	await drawer.getByRole("radio", { name: "Spam" }).click();
 	await drawer.getByRole("button", { name: "Submit report" }).click();
 	await expect(
-		drawer.getByText("Grindr will review this profile."),
+		drawer.getByText("Grindr will review your report."),
 	).toBeVisible();
 	return drawer;
 }
@@ -96,9 +96,11 @@ test("reporting a non-blockable profile offers Block and blocks", async ({
 	const drawer = await reportAsSpam({ page, profile: NON_BLOCKABLE_PROFILE });
 
 	await expect(
-		drawer.getByText("You can block this profile so you stop seeing it."),
+		drawer.getByText(
+			"You can block this user so you no longer see each other.",
+		),
 	).toBeVisible();
-	const block = drawer.getByRole("button", { name: "Block profile" });
+	const block = drawer.getByRole("button", { name: "Block user" });
 	await expect(block).toBeEnabled();
 	await block.click();
 
@@ -113,7 +115,7 @@ test("a block from the report sheet shows at once and is taken back when it does
 	await answerBlocksWith({ page, status: 200, delayMs: 1_500 });
 	const drawer = await reportAsSpam({ page, profile: NON_BLOCKABLE_PROFILE });
 
-	await drawer.getByRole("button", { name: "Block profile" }).click();
+	await drawer.getByRole("button", { name: "Block user" }).click();
 
 	await expect(drawer).toBeHidden();
 	await expect(page.getByText(BLOCKED)).toBeVisible();

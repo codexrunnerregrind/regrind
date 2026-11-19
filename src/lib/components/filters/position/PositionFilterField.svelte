@@ -2,6 +2,7 @@
 	import type z from "zod";
 
 	import PositionFilterToggle from "#lib/components/filters/position/PositionFilterToggle.svelte";
+	import { t } from "#lib/i18n/index.ts";
 	import {
 		FilterPosition,
 		type filterPositionSchema,
@@ -32,7 +33,7 @@
 
 <FilterDropdown
 	id="position"
-	label="Position"
+	label={t("common.filters.position.label")}
 	{endLabel}
 	bind:checked={
 		() => checked,

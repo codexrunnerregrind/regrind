@@ -3,45 +3,26 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
 	currentPlatform,
 	isAndroidPlatform,
+	isDesktopPlatform,
 	isIosPlatform,
 	isLinuxPlatform,
 	isMacosPlatform,
 	isMobilePlatform,
+	type SupportedPlatform,
 } from "#lib/platform/os.ts";
+import { resetPlatform, runningOn } from "#lib/test/platform.ts";
 
-const tauri = globalThis as {
-	isTauri?: boolean;
-	__TAURI_OS_PLUGIN_INTERNALS__?: { platform: string };
-};
+const families = {
+	android: "mobile",
+	ios: "mobile",
+	linux: "desktop",
+	macos: "desktop",
+	windows: "desktop",
+} as const satisfies Record<SupportedPlatform, "mobile" | "desktop">;
 
-function runningOn(platform: string) {
-	tauri.isTauri = true;
-	tauri.__TAURI_OS_PLUGIN_INTERNALS__ = { platform };
-}
+const platforms = Object.keys(families) as SupportedPlatform[];
 
-afterEach(() => {
-	delete tauri.isTauri;
-	delete tauri.__TAURI_OS_PLUGIN_INTERNALS__;
-});
-
-describe("isMobilePlatform", () => {
-	it("is false outside Tauri instead of reading the missing os plugin", () => {
-		expect(isMobilePlatform()).toBe(false);
-	});
-
-	it("is true on android and ios", () => {
-		runningOn("android");
-		expect(isMobilePlatform()).toBe(true);
-
-		runningOn("ios");
-		expect(isMobilePlatform()).toBe(true);
-	});
-
-	it("is false on desktop", () => {
-		runningOn("macos");
-		expect(isMobilePlatform()).toBe(false);
-	});
-});
+afterEach(resetPlatform);
 
 describe("isAndroidPlatform", () => {
 	it("is false outside Tauri instead of reading the missing os plugin", () => {
@@ -100,14 +81,41 @@ describe("isMacosPlatform", () => {
 });
 
 describe("currentPlatform", () => {
-	it("reports web outside Tauri instead of reading the missing os plugin", () => {
-		expect(currentPlatform()).toBe("web");
+	it.each(platforms)("reports %s", (platform) => {
+		runningOn(platform);
+		expect(currentPlatform()).toBe(platform);
 	});
 
-	it("reports the host platform inside Tauri", () => {
-		runningOn("android");
-		expect(currentPlatform()).toBe("android");
-		runningOn("macos");
-		expect(currentPlatform()).toBe("macos");
+	it.each(["dragonfly", "freebsd", "netbsd", "openbsd", "solaris"])(
+		"refuses %s, which ReGrind does not build for",
+		(host) => {
+			Object.assign(globalThis, {
+				__TAURI_OS_PLUGIN_INTERNALS__: { platform: host },
+			});
+			expect(currentPlatform).toThrow(`ReGrind does not support ${host}`);
+		},
+	);
+});
+
+describe("without the Tauri os plugin", () => {
+	it("currentPlatform throws instead of guessing a platform", () => {
+		resetPlatform();
+		expect(currentPlatform).toThrow(TypeError);
+	});
+
+	it.each([isMobilePlatform, isDesktopPlatform])(
+		"%o is false instead of reading the missing os plugin",
+		(helper) => {
+			resetPlatform();
+			expect(helper()).toBe(false);
+		},
+	);
+});
+
+describe("isMobilePlatform and isDesktopPlatform", () => {
+	it.each(platforms)("put %s in exactly one family", (platform) => {
+		runningOn(platform);
+		expect(isMobilePlatform()).toBe(families[platform] === "mobile");
+		expect(isDesktopPlatform()).toBe(families[platform] === "desktop");
 	});
 });

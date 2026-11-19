@@ -115,7 +115,7 @@
 			aria-pressed={imagesHidden()}
 			aria-busy={imagePrivacy.pending}
 			class={[
-				"pointer-events-auto fixed flex -translate-1/2 touch-none items-center justify-center rounded-full border border-white/15 bg-black/55 text-white shadow-lg backdrop-blur-md select-none",
+				"pointer-events-auto fixed flex -translate-1/2 touch-none items-center justify-center rounded-full border border-white/15 bg-black/55 text-white shadow-lg backdrop-filter-(--bd-veil) select-none",
 				{
 					"scale-110 cursor-grabbing": drag?.moved,
 					"cursor-grab": !drag?.moved,

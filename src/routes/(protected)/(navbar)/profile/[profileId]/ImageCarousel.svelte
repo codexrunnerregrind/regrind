@@ -1,7 +1,6 @@
 <script lang="ts">
 	import "photoswipe/style.css";
 	import { goto } from "$app/navigation";
-	import { format } from "date-fns";
 	import type PhotoSwipeLightbox from "photoswipe/lightbox";
 
 	import { sendTap } from "#lib/api/interest/taps.ts";
@@ -14,12 +13,16 @@
 		type MediaViewerActions,
 		registerMediaViewerChrome,
 	} from "#lib/chat/media-viewer-chrome.ts";
+	import { matureContentCovered } from "#lib/components/mature-content/mature-content.ts";
 	import UserSilhouette from "#lib/components/profile/UserSilhouette.svelte";
+	import { formatDate, formatInteger } from "#lib/i18n/format.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import { TapType } from "#lib/model/interest/taps.ts";
 	import { profileMediaUrl } from "#lib/util/media.ts";
 	import {
 		applyPhotoSwipeBackGesture,
 		applyPhotoSwipeErrorUi,
+		applyPhotoSwipeLabels,
 		applyPhotoSwipeThumbDimensions,
 		applyPhotoSwipeViewportSync,
 	} from "#lib/util/photoswipe/index.ts";
@@ -49,11 +52,13 @@
 		[profileId, ourProfileId].toSorted((a, b) => a - b).join(":"),
 	);
 
+	const covered = $derived(!self && matureContentCovered());
+
 	function dateLabel(index: number): string | null {
 		const createdAt = medias[index]?.createdAt;
 		return createdAt === null || createdAt === undefined
 			? null
-			: format(createdAt, "dd MMMM yyyy");
+			: formatDate({ date: createdAt, preset: "dayMonthYear" });
 	}
 
 	// A reply to a profile photo is its own message type, quoting the photo by
@@ -132,6 +137,7 @@
 					counter: false,
 				});
 				applyPhotoSwipeErrorUi(lightbox);
+				applyPhotoSwipeLabels(lightbox);
 				applyPhotoSwipeThumbDimensions(lightbox);
 				applyPhotoSwipeViewportSync(lightbox);
 				applyPhotoSwipeBackGesture(lightbox);
@@ -238,7 +244,11 @@
 					{src}
 					thumb={src}
 					{createdAt}
-					label="Profile photo {index + 1} of {medias.length}"
+					{covered}
+					label={t("profile.imageCarousel.a11y.photo", {
+						position: formatInteger(index + 1),
+						total: formatInteger(medias.length),
+					})}
 				/>
 			{/each}
 		</div>

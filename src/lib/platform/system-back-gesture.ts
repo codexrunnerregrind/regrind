@@ -18,7 +18,12 @@ export type EdgeSwipe = {
 	cancel(): void;
 };
 
-let edgeSwipeOwner: (() => EdgeSwipe | null) | null = null;
+/** The stack's native swipe (iOS) takes this one; the JS swipe stands aside. */
+export const NATIVE_SWIPE = "native";
+
+type EdgeSwipeClaim = EdgeSwipe | typeof NATIVE_SWIPE | null;
+
+let edgeSwipeOwner: (() => EdgeSwipeClaim) | null = null;
 
 /** Whether a dialog, sheet or other overlay would take the next back gesture. */
 export function backGestureOverlayOpen(): boolean {
@@ -29,8 +34,16 @@ export function backGestureOverlayOpen(): boolean {
 }
 
 /** Hands a touch edge swipe (iOS) to the attached stack, if it can go back. */
-export function beginEdgeSwipeBack(): EdgeSwipe | null {
+export function beginEdgeSwipeBack(): EdgeSwipeClaim {
 	return edgeSwipeOwner?.() ?? null;
+}
+
+/** Makes `begin` the taker of the next edge swipe, until the returned undo. */
+export function ownEdgeSwipe(begin: () => EdgeSwipeClaim): () => void {
+	edgeSwipeOwner = begin;
+	return () => {
+		if (edgeSwipeOwner === begin) edgeSwipeOwner = null;
+	};
 }
 
 export function attachSystemBackGesture(stack: SwipeBackStack): () => void {

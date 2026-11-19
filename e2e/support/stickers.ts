@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
+import type { SupportedPlatform } from "../../src/lib/platform/os";
 import type { DemoRequest } from "./demo-faults";
 import { DRAWER, openComposerSheet } from "./drawer";
 
@@ -49,23 +50,32 @@ export function giphyTrendingPageAt({ offset }: { offset: number }): string {
 	return `${GIPHY_TRENDING_PATH}?limit=${GIPHY_PAGE_SIZE}&rating=r&offset=${offset}&`;
 }
 
-type StickersSheetOptions = { giphyConsent?: boolean; stretchPanel?: boolean };
+type StickersSheetOptions = {
+	platform: SupportedPlatform;
+	giphyConsent?: boolean;
+	stretchPanel?: boolean;
+};
 
 export async function openStickers(
 	page: Page,
-	{ giphyConsent = true, stretchPanel = true }: StickersSheetOptions = {},
+	{
+		platform,
+		giphyConsent = true,
+		stretchPanel = true,
+	}: StickersSheetOptions,
 ): Promise<void> {
 	await openComposerSheet(page, {
 		trigger: "GIFs and stickers",
 		preferences: { giphyConsent },
 		stretchPanel,
+		platform,
 	});
 	if (giphyConsent) await expect(gifTiles(page).first()).toBeVisible();
 }
 
 export async function openGaymoji(
 	page: Page,
-	options: StickersSheetOptions = {},
+	options: StickersSheetOptions,
 ): Promise<void> {
 	await openStickers(page, options);
 	await showGaymojiTab(page);
@@ -76,8 +86,11 @@ export async function showGaymojiTab(page: Page): Promise<void> {
 	await expect(gaymojiTiles(page).first()).toBeVisible();
 }
 
-export async function sendGif(page: Page): Promise<void> {
-	await openStickers(page);
+export async function sendGif(
+	page: Page,
+	{ platform }: { platform: SupportedPlatform },
+): Promise<void> {
+	await openStickers(page, { platform });
 	await gifTiles(page).nth(1).click();
 	await stickerSendButton(page).click();
 }
@@ -107,7 +120,7 @@ export function gaymojiTiles(page: Page): Locator {
 
 export function gaymojiSectionStrip(page: Page): Locator {
 	return gaymojiPanel(page).getByRole("navigation", {
-		name: "Gaymoji categories",
+		name: "Gaymoji Categories",
 	});
 }
 
@@ -175,7 +188,7 @@ export async function countGaymojiTileChurn(
 
 export function gifSearchBox(page: Page): Locator {
 	return page.getByRole("searchbox", {
-		name: "Search GIFs or paste GIPHY link",
+		name: "Search GIFs or paste GIPHY link…",
 	});
 }
 

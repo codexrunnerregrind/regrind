@@ -5,18 +5,18 @@ import { FIRST_ROUTE_COMPILE_MS, installTauriShim } from "./support/app";
 const BLOCKED_LIST = "/settings/account/blocked";
 
 test.beforeEach(async ({ page }) => {
-	await installTauriShim(page);
+	await installTauriShim(page, { platform: "macos" });
 });
 
 test("account settings link to the profile lists", async ({ page }) => {
 	await page.goto("/settings/account");
 	await page
-		.getByRole("link", { name: "Blocked users" })
+		.getByRole("link", { name: "Blocked Users" })
 		.waitFor({ timeout: FIRST_ROUTE_COMPILE_MS });
 
 	for (const [name, href] of [
-		["Blocked users", BLOCKED_LIST],
-		["Hidden users", "/settings/account/hidden"],
+		["Blocked Users", BLOCKED_LIST],
+		["Hidden Users", "/settings/account/hidden"],
 	]) {
 		await expect(page.getByRole("link", { name })).toHaveAttribute(
 			"href",

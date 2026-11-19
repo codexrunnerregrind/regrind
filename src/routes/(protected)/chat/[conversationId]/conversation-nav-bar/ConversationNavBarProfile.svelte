@@ -5,6 +5,7 @@
 	import UserAvatar from "#lib/components/profile/UserAvatar.svelte";
 	import * as Avatar from "#lib/components/ui/avatar/index.ts";
 	import * as Card from "#lib/components/ui/card/index.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import type { ConversationProfile } from "../conversation-state.svelte";
 
 	let {
@@ -41,7 +42,7 @@
 				</Card.Description>
 			{:else if profile.distance === null}
 				<Card.Description class="truncate text-meta text-ink3">
-					Distance unknown
+					{t("chat.conversation.navBar.distanceUnknown")}
 				</Card.Description>
 			{:else}
 				<Card.Description class="truncate text-meta text-ink3">

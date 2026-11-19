@@ -1,31 +1,35 @@
 <script lang="ts">
 	import CaretUpIcon from "phosphor-svelte/lib/CaretUpIcon";
 
-	import { reducedMotion } from "#lib/util/reduced-motion.ts";
-	import { glideScrollTop } from "#lib/util/scroll.ts";
+	import { t } from "#lib/i18n/index.ts";
+	import { answerStatusBarTaps } from "#lib/platform/status-bar-tap.ts";
+	import {
+		glidingToTop,
+		jumpThenGlideToTop,
+		stopGlidingToTop,
+		TOP_SLOP_PX,
+	} from "#lib/util/scroll.ts";
 	import { cn } from "#lib/util/utils.ts";
 	import ScrollJumpButton from "./ScrollJumpButton.svelte";
 
 	let {
 		container,
+		text,
+		onjump,
+		labeled = $bindable(false),
 		class: className,
 	}: {
 		container: HTMLElement | null;
+		text?: string;
+		onjump?: () => void;
+		labeled?: boolean;
 		class?: import("svelte/elements").ClassValue;
 	} = $props();
 
-	const TOP_SLOP_PX = 16;
 	const DIRECTION_SLOP_PX = 4;
-	const GLIDE_MS = 400;
 
 	let visible = $state(false);
 	let lastTop = 0;
-	let cancelGlide: (() => void) | null = null;
-
-	function releaseGlide() {
-		cancelGlide?.();
-		cancelGlide = null;
-	}
 
 	function atTop(el: HTMLElement) {
 		return el.scrollTop <= TOP_SLOP_PX;
@@ -39,7 +43,10 @@
 			const top = el.scrollTop;
 			const delta = top - lastTop;
 
-			if (cancelGlide !== null) return;
+			if (glidingToTop(el)) {
+				lastTop = top;
+				return;
+			}
 
 			if (atTop(el)) visible = false;
 			else if (delta <= -DIRECTION_SLOP_PX) visible = true;
@@ -50,7 +57,7 @@
 		};
 
 		const onScrollEnd = () => {
-			if (cancelGlide !== null) return;
+			if (glidingToTop(el)) return;
 			if (atTop(el)) visible = false;
 			lastTop = el.scrollTop;
 		};
@@ -59,49 +66,45 @@
 		if (atTop(el)) visible = false;
 		el.addEventListener("scroll", onScroll, { passive: true });
 		el.addEventListener("scrollend", onScrollEnd, { passive: true });
-		el.addEventListener("wheel", releaseGlide, { passive: true });
-		el.addEventListener("touchstart", releaseGlide, { passive: true });
+		const stopAnswering = answerStatusBarTaps({
+			scroller: el,
+			scrollToTop,
+		});
 		return () => {
 			el.removeEventListener("scroll", onScroll);
 			el.removeEventListener("scrollend", onScrollEnd);
-			el.removeEventListener("wheel", releaseGlide);
-			el.removeEventListener("touchstart", releaseGlide);
-			releaseGlide();
+			stopAnswering?.();
+			stopGlidingToTop(el);
 		};
 	});
 
-	function landed(el: HTMLElement) {
-		cancelGlide = null;
-		visible = false;
-		lastTop = el.scrollTop;
-	}
+	$effect.pre(() => {
+		if (visible) labeled = text !== undefined;
+	});
 
 	function scrollToTop() {
 		const el = container;
 		if (!el) return;
-		releaseGlide();
 		visible = false;
-		if (reducedMotion.current) {
-			el.scrollTop = 0;
-			lastTop = 0;
-			return;
-		}
-		el.scrollTop = Math.min(el.scrollTop, el.clientHeight);
-		lastTop = el.scrollTop;
-		cancelGlide = glideScrollTop({
-			element: el,
-			durationMs: GLIDE_MS,
-			onLanded: () => landed(el),
-		});
+		lastTop = 0;
+		onjump?.();
+		jumpThenGlideToTop({ element: el });
 	}
 </script>
 
 {#if visible}
 	<ScrollJumpButton
-		label="Scroll to top"
+		label={text === undefined
+			? t("shell.scrollToTopButton.a11y.label")
+			: t("shell.scrollToTopButton.a11y.labelWithText", { text })}
+		size={labeled ? "lg" : "icon-lg"}
 		class={cn("absolute inset-x-0 z-10 mx-auto w-fit", className)}
 		onclick={scrollToTop}
+		onoutroend={() => (labeled = false)}
 	>
 		<CaretUpIcon />
+		{#if text !== undefined}
+			{text}
+		{/if}
 	</ScrollJumpButton>
 {/if}

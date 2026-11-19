@@ -47,7 +47,7 @@ async function trackScrolling(page: Page): Promise<void> {
 }
 
 async function openConversation(page: Page): Promise<void> {
-	await installTauriShim(page);
+	await installTauriShim(page, { platform: "macos" });
 	await installEventInjection(page);
 	await trackScrolling(page);
 	await page.goto(DEMO_CONVERSATION);
@@ -353,7 +353,7 @@ test.describe("keyboard access to context menus", () => {
 		const composer = page.locator('[data-slot="message-composer"]');
 		const actions = page.getByRole("button", MESSAGE_ACTIONS);
 		const count = await actions.count();
-		await page.getByRole("textbox", { name: "Say something..." }).focus();
+		await page.getByRole("textbox", { name: "Write a message…" }).focus();
 
 		const tucked: number[] = [];
 		for (let index = count - 1; index >= 0; index -= 1) {
@@ -457,7 +457,7 @@ test.describe("keyboard access to context menus", () => {
 	test("the context menu key opens a media tile's menu, again after closing", async ({
 		page,
 	}) => {
-		await openAttachments(page);
+		await openAttachments(page, { platform: "macos" });
 		const tile = page.locator(MEDIA_TILE).nth(1);
 
 		for (let round = 0; round < 2; round += 1) {

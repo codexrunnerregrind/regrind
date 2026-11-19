@@ -1,11 +1,11 @@
 <script lang="ts">
+	import LocationChange from "#lib/components/location-chooser/LocationChange.svelte";
 	import ProgressiveBlur from "#lib/components/shared/ProgressiveBlur.svelte";
 	import { gridState } from "#lib/grid/grid-state.svelte.ts";
 	import { topChrome } from "#lib/util/screen-chrome.svelte.ts";
 	import type { FavoriteSearch } from "#lib/favorites/favorite-search.svelte.ts";
 	import FavoriteNoteSearch from "../FavoriteNoteSearch.svelte";
 	import GridFilters from "../GridFilters.svelte";
-	import LocationChange from "../LocationChange.svelte";
 	import QuickFilters from "./QuickFilters.svelte";
 
 	let {
@@ -33,7 +33,7 @@
 
 <ProgressiveBlur
 	data-fixed-header
-	class="fixed top-0 left-0 z-10 w-full"
+	class="fixed top-0 left-0 z-10 w-full px-safe"
 	bgClass="bg-linear-to-b from-background to-transparent"
 	contentClass="flex flex-col pt-fixed-header"
 	direction="topToBottom"

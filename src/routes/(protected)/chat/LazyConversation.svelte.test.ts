@@ -19,6 +19,7 @@ vi.mock("#lib/chat/conversations-context.svelte.ts", () => ({
 }));
 vi.mock("#lib/haptics.ts", () => ({ playHaptic: vi.fn() }));
 
+import { resetPlatform, runningOn } from "#lib/test/platform.ts";
 import type { Conversation as ConversationType } from "#lib/model/messaging/conversations.ts";
 import LazyConversation from "./LazyConversation.svelte";
 import { MountQueue, type MountTicket } from "./mount-queue";
@@ -141,6 +142,7 @@ const rowLink = ({
 }) => container.querySelector(`a[href="/chat/${conversationId}"]`);
 
 beforeEach(() => {
+	runningOn("android");
 	conversations.drafts = new Drafts();
 	conversations.typing = new TypingTracker();
 	vi.stubGlobal("IntersectionObserver", FakeIntersectionObserver);
@@ -150,6 +152,7 @@ afterEach(() => {
 	cleanup();
 	FakeIntersectionObserver.all = [];
 	vi.unstubAllGlobals();
+	resetPlatform();
 });
 
 describe("LazyConversation", () => {

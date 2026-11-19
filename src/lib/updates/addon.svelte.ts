@@ -1,4 +1,4 @@
-import { isAndroidPlatform } from "#lib/platform/os.ts";
+import { currentPlatform } from "#lib/platform/os.ts";
 import { buildSignedByOpenGrind } from "./capability.svelte";
 import {
 	ADDON_KEYS,
@@ -6,9 +6,9 @@ import {
 	GOOGLE_OAUTH_COMPONENT,
 	RECAPTCHA_COMPONENT,
 } from "./components";
-import { type StagePresenter, UpdateFlow } from "./flow";
+import { UpdateFlow } from "./flow";
 import { getUpdateReadiness, updatesAvailableHere } from "./index";
-import type { UpdateStage } from "./stage";
+import type { StagePresenter, UpdateStage } from "./stage";
 import { toastPresenter } from "./toast-presenter";
 
 type Activity = { stage: UpdateStage | null; installs: number };
@@ -23,18 +23,30 @@ type AddonRuntime = {
 	installListeners: Set<InstallListener>;
 };
 
+function installsAddonsHere(): boolean {
+	switch (currentPlatform()) {
+		case "android":
+			return true;
+		case "ios":
+		case "linux":
+		case "macos":
+		case "windows":
+			return false;
+	}
+}
+
 export function addonInstallerAvailable(): boolean {
 	return (
 		updatesAvailableHere() &&
-		isAndroidPlatform() &&
+		installsAddonsHere() &&
 		buildSignedByOpenGrind()
 	);
 }
 
-export async function addonPublishedHere(): Promise<boolean> {
-	const readiness = await getUpdateReadiness(GOOGLE_OAUTH_COMPONENT).catch(
-		() => null,
-	);
+export async function addonPublishedHere(
+	component: AddonKey,
+): Promise<boolean> {
+	const readiness = await getUpdateReadiness(component).catch(() => null);
 	return !(
 		readiness?.state === "unsupported" &&
 		readiness.detail.reason === "noReleaseArtifacts"

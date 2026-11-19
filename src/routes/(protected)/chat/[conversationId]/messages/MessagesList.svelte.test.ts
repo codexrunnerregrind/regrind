@@ -43,7 +43,9 @@ vi.mock("#lib/api/messaging/messages.ts", () => ({
 	deleteMessageForMe: deleteMessageForMeMock,
 	unsendMessage: unsendMessageMock,
 }));
-vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast: showErrorToastMock }));
+vi.mock("#lib/api/error-toast.ts", () => ({
+	showErrorToast: showErrorToastMock,
+}));
 vi.mock("#lib/api/error-copy.ts", () => ({ promptCopyError: vi.fn() }));
 vi.mock("#lib/entitlements/expiring-media-entitlement.ts", () => ({
 	withRegionGrant: <T>(run: () => Promise<T>) => run(),
@@ -396,7 +398,7 @@ describe("MessagesList actions", () => {
 		await (onDelete as () => Promise<void>)();
 
 		expect(showErrorToastMock).toHaveBeenCalledWith(
-			expect.objectContaining({ label: "Failed to delete message" }),
+			expect.objectContaining({ label: "Couldn’t delete message" }),
 		);
 		expect(remove.mock.results[0]!.value.revert).toHaveBeenCalledOnce();
 	});

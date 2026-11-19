@@ -17,6 +17,7 @@ import {
 	deletedMessageIds,
 } from "#lib/chat/message-deleted.ts";
 import { withRegionGrant } from "#lib/entitlements/expiring-media-entitlement.ts";
+import { t } from "#lib/i18n/index.ts";
 import { previewFromMessage } from "#lib/model/messaging/message-preview.ts";
 import { reconciler } from "#lib/util/reconcile.ts";
 import { stopListening } from "#lib/ws.svelte.ts";
@@ -67,6 +68,7 @@ export class ConversationState {
 	loading = $state(true);
 	loadingMore = $state(false);
 	refreshing = $state(false);
+	refreshFailed = $state(false);
 	error: Error | null = $state(null);
 	lastReadTimestamp: number | null = $state(null);
 	#focusComposer: (() => void) | null = null;
@@ -240,6 +242,7 @@ export class ConversationState {
 			return;
 		}
 		this.refreshing = true;
+		this.refreshFailed = false;
 		this.#refreshRequestedSinceFetchStart = false;
 		const localIdsAtFetchStart = this.messages.map((m) => m.messageId);
 		try {
@@ -276,11 +279,12 @@ export class ConversationState {
 		} catch (error) {
 			if (this.#destroyed) return;
 			console.error("Failed to reconcile messages", error);
+			this.refreshFailed = true;
 			if (error instanceof ConversationUnavailableError) {
 				this.error = error;
 			} else {
 				showErrorToast({
-					label: "Failed to refresh messages",
+					label: t("chat.conversation.errors.refreshFailed"),
 					error,
 					onRetry: () => void this.refresh(),
 				});
@@ -379,7 +383,7 @@ export class ConversationState {
 				this.error = error;
 			} else {
 				showErrorToast({
-					label: "Failed to load more messages",
+					label: t("chat.conversation.errors.loadMoreFailed"),
 					error,
 				});
 			}
@@ -611,7 +615,7 @@ export class ConversationState {
 		} catch (error) {
 			console.error(error);
 			showErrorToast({
-				label: "Failed to mark conversation as read",
+				label: t("chat.conversations.errors.markReadFailed"),
 				error,
 			});
 		}

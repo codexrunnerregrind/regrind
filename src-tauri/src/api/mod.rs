@@ -9,5 +9,6 @@ pub mod oauth;
 pub mod recaptcha;
 pub mod rest;
 pub mod session_recovery;
+#[cfg(any(target_os = "android", desktop))]
 pub mod update;
 pub mod ws;

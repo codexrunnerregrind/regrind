@@ -117,7 +117,7 @@ describe("SignInForm", () => {
 			await settle();
 
 			expect(toastMock.error).toHaveBeenCalledExactlyOnceWith(
-				"Account not registered in Grindr. Register first using the official Grindr app",
+				"This account isn’t registered with Grindr. Sign up in the official Grindr app first.",
 			);
 			expect(gotoMock).not.toHaveBeenCalled();
 		},
@@ -134,7 +134,7 @@ describe("SignInForm", () => {
 		await settle();
 
 		expect(toastMock.error).toHaveBeenCalledExactlyOnceWith(
-			"Something blocked the request before it reached Grindr",
+			"Something is blocking your requests to Grindr",
 		);
 	});
 
@@ -187,7 +187,7 @@ describe("SignInForm", () => {
 		await settle();
 
 		expect(toastMock.error).toHaveBeenCalledExactlyOnceWith(
-			untrustedCompanionMessage,
+			untrustedCompanionMessage(),
 		);
 		expect(gotoMock).toHaveBeenCalledExactlyOnceWith(
 			"/auth/sign-in/google?paste",
@@ -207,7 +207,7 @@ describe("SignInForm", () => {
 		await settle();
 
 		expect(toastMock.error).toHaveBeenCalledExactlyOnceWith(
-			refusedCompanionMessage,
+			refusedCompanionMessage(),
 		);
 		expect(gotoMock).toHaveBeenCalledExactlyOnceWith(
 			"/auth/sign-in/google?paste",
@@ -270,7 +270,7 @@ describe("SignInForm", () => {
 		await submitSignIn();
 
 		expect(toastMock.error).toHaveBeenCalledExactlyOnceWith(
-			"Invalid email or password",
+			"Incorrect email or password",
 		);
 	});
 });

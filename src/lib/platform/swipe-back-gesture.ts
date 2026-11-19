@@ -7,6 +7,7 @@ import {
 	backGestureOverlayOpen,
 	beginEdgeSwipeBack,
 	type EdgeSwipe,
+	NATIVE_SWIPE,
 } from "#lib/platform/system-back-gesture.ts";
 import { canGoBack } from "#lib/util/history.ts";
 
@@ -183,9 +184,14 @@ export function applySwipeBackGesture(): () => void {
 				return;
 			}
 			if (dx < ACTIVATION_SLOP) return;
+			const claim = beginEdgeSwipeBack();
+			if (claim === NATIVE_SWIPE) {
+				pointerId = null;
+				return;
+			}
 			active = true;
 			blurEditing();
-			driven = beginEdgeSwipeBack();
+			driven = claim;
 			if (driven) {
 				event.preventDefault();
 				return;

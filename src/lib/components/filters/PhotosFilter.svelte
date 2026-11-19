@@ -5,6 +5,7 @@
 	import type z from "zod";
 
 	import * as ToggleGroup from "#lib/components/ui/toggle-group/index.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import type { filterPhotosSchema } from "#lib/model/browse/grid/filters.ts";
 	import FilterDropdown from "./FilterDropdown.svelte";
 	import { selectionSummary } from "./summary";
@@ -26,7 +27,7 @@
 
 <FilterDropdown
 	id="photos"
-	label="Photos"
+	label={t("common.filters.photos.label")}
 	{endLabel}
 	bind:checked={
 		() => checked,

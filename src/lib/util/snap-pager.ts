@@ -1,9 +1,8 @@
 import type { Attachment } from "svelte/attachments";
 
-import { isLinuxPlatform, isMacosPlatform } from "#lib/platform/os.ts";
 import {
 	type ReleaseVelocity,
-	scrollGesture,
+	scrollGestureHere,
 	type ScrollGestureState,
 } from "#lib/platform/scroll-gesture.ts";
 import { reducedMotion as motionReduced } from "#lib/util/reduced-motion.ts";
@@ -52,9 +51,7 @@ export class SnapPager {
 		onVisible,
 		onRest,
 		onHeading = () => {},
-		fingerPhase = isMacosPlatform() || isLinuxPlatform()
-			? scrollGesture
-			: null,
+		fingerPhase = scrollGestureHere(),
 		reducedMotion = () => motionReduced.current,
 	}: {
 		count: () => number;

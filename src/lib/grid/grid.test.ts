@@ -240,6 +240,20 @@ describe("getGrid", () => {
 		},
 	);
 
+	it.each(["HOSTING", "NOT_HOSTING", "NOT_ACTIVE"] as const)(
+		"carries a %s Right Now status onto the tile",
+		async (rightNow) => {
+			const { items } = await cascade([
+				{
+					type: "full_profile_v1",
+					data: { ...v4Profile(1), rightNow },
+				},
+			]);
+
+			expect(items[0]).toHaveProperty("rightNow", rightNow);
+		},
+	);
+
 	it("marks a full row that sends no age as showing none, not unknown", async () => {
 		const { items } = await cascade([
 			{

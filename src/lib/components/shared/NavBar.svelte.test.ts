@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { cleanup, render } from "@testing-library/svelte";
+import { cleanup, render, screen } from "@testing-library/svelte";
 import { tick } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -39,6 +39,10 @@ vi.mock("#lib/util/media.ts", async (importOriginal) => ({
 }));
 
 import { mergeProfileEditIntoCaches } from "#lib/api/users/profiles.ts";
+import { PSEUDO_MESSAGE } from "#lib/i18n/fixtures/pseudo-message.ts";
+import { setLocale, SOURCE_LOCALE } from "#lib/i18n/index.ts";
+import { noteSoftKeyboardOpen } from "#lib/platform/soft-keyboard.svelte.ts";
+import { runningOn } from "#lib/test/platform.ts";
 import NavBar from "./NavBar.svelte";
 
 function medias(...mediaHashes: string[]): Profile["medias"] {
@@ -74,9 +78,54 @@ async function renderedAvatar(container: HTMLElement): Promise<string | null> {
 
 beforeEach(() => {
 	getProfileMock.mockReset();
+	runningOn("windows");
 });
 
-afterEach(() => cleanup());
+afterEach(async () => {
+	cleanup();
+	await setLocale({ locale: SOURCE_LOCALE });
+});
+
+function tabNames() {
+	const navigation = screen.getByRole("navigation");
+	return {
+		navigation: navigation.getAttribute("aria-label"),
+		links: screen
+			.getAllByRole("link")
+			.map(
+				(link) =>
+					link.getAttribute("aria-label") ?? link.textContent.trim(),
+			),
+	};
+}
+
+describe("NavBar", () => {
+	beforeEach(() => {
+		getProfileMock.mockResolvedValue(profileWith(medias()));
+	});
+
+	it("names the main navigation and its tabs", () => {
+		render(NavBar, { props: { ourProfileId: OUR_ID } });
+
+		expect(tabNames()).toEqual({
+			navigation: "Main",
+			links: ["Browse", "Right Now", "Interest", "Inbox", "You"],
+		});
+	});
+
+	it("renames the navigation and its tabs when the locale changes", async () => {
+		render(NavBar, { props: { ourProfileId: OUR_ID } });
+
+		await setLocale({ locale: "en-XA" });
+
+		const { navigation, links } = tabNames();
+		expect(navigation).toMatch(PSEUDO_MESSAGE);
+		expect(links).toHaveLength(5);
+		// The fork's "You" tab keeps its own literal wording.
+		for (const link of links.slice(0, 4))
+			expect(link).toMatch(PSEUDO_MESSAGE);
+	});
+});
 
 describe("navbar avatar", () => {
 	it("shows the new main photo once our profile photos are saved", async () => {
@@ -132,5 +181,30 @@ describe("navbar avatar", () => {
 		await tick();
 
 		expect(avatarSrc(container)).toBe("https://cdn.test/saved");
+	});
+});
+
+describe("navbar under the soft keyboard", () => {
+	beforeEach(() => {
+		getProfileMock.mockResolvedValue(profileWith(medias("first")));
+	});
+
+	afterEach(() => {
+		noteSoftKeyboardOpen(false);
+	});
+
+	it("steps aside while the keyboard shrinks the page and comes back once it closes", async () => {
+		runningOn("android");
+		render(NavBar, { props: { ourProfileId: OUR_ID } });
+		const nav = screen.getByRole("navigation", { name: "Main" });
+		expect(nav.hidden).toBe(false);
+
+		noteSoftKeyboardOpen(true);
+		await tick();
+		expect(nav.hidden).toBe(true);
+
+		noteSoftKeyboardOpen(false);
+		await tick();
+		expect(nav.hidden).toBe(false);
 	});
 });

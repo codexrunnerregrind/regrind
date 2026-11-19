@@ -11,10 +11,14 @@
 	} from "#lib/components/navigation/stack/motion.ts";
 	import { paneSurface } from "#lib/components/navigation/stack/surface.ts";
 	import {
+		followedKeyboardClosed,
+		followedKeyboardMoving,
+	} from "#lib/platform/keyboard-follow.ts";
+	import {
 		softKeyboardHidden,
 		softKeyboardVisibility,
-	} from "#lib/platform/android-native-bridge.ts";
-	import { attachSystemBackGesture } from "#lib/platform/system-back-gesture.ts";
+	} from "#lib/platform/native-insets.ts";
+	import { attachSystemBackGesture } from "#lib/platform/system-back-gesture.svelte.ts";
 	import { earlierPathnames } from "#lib/util/history.ts";
 	import { reducedMotion } from "#lib/util/reduced-motion.ts";
 	import { remeasureScreenChrome } from "#lib/util/screen-chrome.svelte.ts";
@@ -64,8 +68,10 @@
 		scope: untrack(() => basePath),
 		reducedMotion: () => reducedMotion.current,
 		backLandsOnBase: () => earlierPathnames()[0] === basePath,
-		keyboardVisible: () => softKeyboardVisibility() === true,
+		keyboardVisible: () =>
+			softKeyboardVisibility() === true || followedKeyboardMoving(),
 		keyboardHidden: () =>
+			followedKeyboardClosed({ settleMs: KEYBOARD_SETTLE_MS }) ??
 			softKeyboardHidden({ settleMs: KEYBOARD_SETTLE_MS }),
 	});
 
@@ -97,7 +103,10 @@
 	$effect(() => {
 		const node = externalBase?.();
 		if (!node) return;
-		node.toggleAttribute("data-covered", stack.covered);
+		node.toggleAttribute(
+			"data-covered",
+			stack.covered && !stack.basePrepared,
+		);
 		node.inert = stack.sheetOpen;
 		return () => {
 			node.removeAttribute("data-covered");
@@ -119,9 +128,9 @@
 	<div
 		bind:this={basePane}
 		data-slot="live-stack-base"
-		class="fixed inset-x-0 top-0 flex h-(--viewport-height) flex-col bg-background pt-(--safe-area-top) pb-(--safe-area-bottom)"
+		class="fixed inset-x-0 top-0 flex h-(--viewport-height) flex-col bg-background p-safe"
 		style:z-index={STACK_Z.back}
-		data-covered={stack.covered || undefined}
+		data-covered={(stack.covered && !stack.basePrepared) || undefined}
 		inert={stack.sheetOpen}
 	>
 		{#if baseMounted}
@@ -143,7 +152,7 @@
 			{@attach placePane}
 			data-slot="live-stack-sheet"
 			class={[
-				"fixed inset-x-0 top-0 flex h-(--viewport-height) flex-col bg-background pt-(--safe-area-top) pb-(--safe-area-bottom)",
+				"fixed inset-x-0 top-0 flex h-(--viewport-height) flex-col bg-background p-safe",
 				{
 					"shadow-(--stack-edge)": motion.edge,
 					"pointer-events-none": motion.fade && leaving,

@@ -25,7 +25,7 @@ const NAMED_TOGGLES = [
 	["isFresh", "Fresh"],
 ] as const;
 
-/** A default name from the filters it saves, e.g. "Online · 18 - 30 · +2". */
+/** A default name from the filters it saves, e.g. "Online · 18–30 · +2". */
 export function derivePresetName({
 	filters,
 	taken,

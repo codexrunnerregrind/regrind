@@ -65,5 +65,5 @@ export async function inspectPicks(
 }
 
 function mimeTypeOf(media: PickedMedia): string | null {
-	return media.source === "web" ? media.file.type : media.mimeType;
+	return media.source === "demo" ? media.file.type : media.mimeType;
 }

@@ -6,6 +6,9 @@ import {
 	type test,
 } from "@playwright/test";
 
+import type { SupportedPlatform } from "../../src/lib/platform/os";
+import { serveDemoImages } from "./media";
+
 export const DEMO_CONVERSATION_ID = "100001:123456000";
 export const DEMO_CONVERSATION = `/chat/${DEMO_CONVERSATION_ID}`;
 export const MESSAGE_ROW = '[role="article"]';
@@ -75,6 +78,7 @@ export function animationsFinished(
 
 declare global {
 	interface Window {
+		__backSwipeArms?: boolean[];
 		__capturedInvokes?: Record<string, unknown[]>;
 		__emitTauriEvent?: (event: string, payload: unknown) => void;
 		__rendered?: Record<string, boolean>;
@@ -271,6 +275,7 @@ export function flownIn(page: Page, button: string): Promise<unknown> {
 }
 
 export const GRID_READY_SELECTOR = '[aria-label="All filters"]';
+export const GRID_SCROLLER = '[data-slot="grid-scroller"]';
 
 export async function ensureGridLocation(page: Page): Promise<void> {
 	const allFilters = page.locator(GRID_READY_SELECTOR);
@@ -296,11 +301,16 @@ export async function openGrid(page: Page): Promise<void> {
 	await ensureGridLocation(page);
 }
 
+export async function commandCenterShortcut(page: Page): Promise<string> {
+	const platform = await page.evaluate(() => navigator.platform);
+	return /Mac|iPod|iPhone|iPad/.test(platform) ? "Meta+k" : "Control+k";
+}
+
 export async function runPaletteCommand(
 	page: Page,
 	command: string,
 ): Promise<void> {
-	await page.keyboard.press("ControlOrMeta+k");
+	await page.keyboard.press(await commandCenterShortcut(page));
 	const palette = page.getByRole("combobox");
 	await palette.waitFor();
 	await palette.fill(command);
@@ -312,12 +322,14 @@ export async function runPaletteCommand(
 	await page.keyboard.press("Enter");
 }
 
-// The platform decides which wheel path the app takes: "macos" (the
-// default) runs the gesture-phase bridge.
 export async function installTauriShim(
 	page: Page,
-	{ platform = "macos" } = {},
+	{
+		platform = "macos",
+		demoImages = true,
+	}: { platform?: SupportedPlatform; demoImages?: boolean } = {},
 ): Promise<void> {
+	if (demoImages) await serveDemoImages(page.context());
 	await page.addInitScript((platformName: string) => {
 		interface AppDataArgs {
 			file?: string;
@@ -325,11 +337,21 @@ export async function installTauriShim(
 		}
 
 		const files = new Map<string, Uint8Array>();
+		let menuResources = 0;
 
 		const invoke = (cmd: string, args?: unknown): unknown => {
 			const { file = "", content = "" } = (args ?? {}) as AppDataArgs;
 
 			if (cmd.startsWith("plugin:event|")) return null;
+			if (cmd === "set_back_swipe_armed") {
+				const { armed } = args as { armed: boolean };
+				(window.__backSwipeArms ??= []).push(armed);
+				return null;
+			}
+			if (cmd === "plugin:menu|new") {
+				menuResources += 1;
+				return [menuResources, `menu-${menuResources}`];
+			}
 			if (cmd === "read_app_data") {
 				return files.get(file)?.slice().buffer ?? null;
 			}
@@ -350,9 +372,6 @@ export async function installTauriShim(
 		};
 
 		Object.assign(window, {
-			// the real runtime defines this; isTauri() reads it, and the
-			// wheel-input mode hangs off isTauri()
-			isTauri: true,
 			__TAURI_OS_PLUGIN_INTERNALS__: {
 				eol: "\n",
 				platform: platformName,
@@ -468,6 +487,10 @@ export class TrustedTouch {
 
 	end() {
 		return this.send("touchEnd", []);
+	}
+
+	cancel() {
+		return this.send("touchCancel", []);
 	}
 
 	async drag(

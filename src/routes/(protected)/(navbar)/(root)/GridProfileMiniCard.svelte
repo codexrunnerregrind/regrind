@@ -4,7 +4,7 @@
 	import { recentGridTap } from "#lib/interest/profile-activity.svelte.ts";
 	import { formatTimeAgoShort } from "#lib/util/format-time.ts";
 	import { getNow } from "#lib/util/now.ts";
-	import type { RightNowStatus } from "#lib/model/right-now.ts";
+	import type { RightNowStatus } from "#lib/model/right-now/index.ts";
 
 	let {
 		id,

@@ -14,6 +14,7 @@
 	import { PhotoEditQueue } from "#lib/components/media/photo-edit-queue.svelte.ts";
 	import PhotoEditorDrawer from "#lib/components/media/PhotoEditorDrawer.svelte";
 	import { demoEnabled } from "#lib/demo/index.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import { PROFILE_PHOTO_AWAITING_REVIEW } from "#lib/model/users/profiles.ts";
 	import { discardStagedMedia } from "#lib/platform/media-file.ts";
 	import {
@@ -28,9 +29,6 @@
 	import { profileMediaUrl } from "#lib/util/media.ts";
 	import { maxProfilePhotos as MAX_PHOTOS } from "./options";
 	import ProfilePictureSlot from "./ProfilePictureSlot.svelte";
-
-	const DAILY_LIMIT_MESSAGE =
-		"You've reached today's limit for new profile photos";
 
 	type PreviousUpload = { mediaHash: string; state: number };
 	type ProfilePhoto = {
@@ -74,6 +72,16 @@
 		medias = next;
 	}
 
+	async function pickPhotos(): Promise<PickedMedia[]> {
+		try {
+			return await pickMultipleMedia("image");
+		} catch (error) {
+			console.error(error);
+			toast.error(t("settings.profile.photos.errors.openPickerFailed"));
+			return [];
+		}
+	}
+
 	/**
 	 * The photo reaches the CDN as soon as it is picked — that is the only way
 	 * to get the hash the profile is saved with — but it is on the profile only
@@ -87,14 +95,22 @@
 		}
 		const all =
 			received === undefined
-				? await pickMultipleMedia("image")
+				? await pickPhotos()
 				: (await screenMedia({ media: received, videos: false })).map(
 						({ media }) => media,
 					);
 		const picked = all.slice(0, room);
 		if (all.length > picked.length) {
 			toast.error(
-				`${all.length - picked.length} left out, a profile holds up to ${MAX_PHOTOS} photos`,
+				t("settings.profile.photos.errors.leftOut.title", {
+					count: all.length - picked.length,
+				}),
+				{
+					description: t(
+						"settings.profile.photos.errors.leftOut.description",
+						{ count: MAX_PHOTOS },
+					),
+				},
 			);
 			void discardStagedMedia(all.slice(room));
 		}
@@ -121,8 +137,13 @@
 			}
 		} catch (error) {
 			console.error(error);
-			if (httpStatusOf(error) === 403) toast.error(DAILY_LIMIT_MESSAGE);
-			else showErrorToast({ label: "Failed to upload photo", error });
+			if (httpStatusOf(error) === 403)
+				toast.error(t("settings.profile.photos.errors.dailyLimit"));
+			else
+				showErrorToast({
+					label: t("settings.profile.photos.errors.uploadFailed"),
+					error,
+				});
 		} finally {
 			uploading = false;
 		}
@@ -151,7 +172,7 @@
 	receiveMedia(() =>
 		medias.length < MAX_PHOTOS && !demoEnabled && !uploading
 			? {
-					label: "Drop to add photos",
+					label: t("settings.profile.photos.dropToAdd"),
 					videos: false,
 					receive: (media) => void addPhotos(media),
 				}
@@ -211,8 +232,8 @@
 
 <PreviousUploadsSheet
 	bind:open={sheetOpen}
-	uploadLabel="Upload photos"
-	submitLabel="Add to profile"
+	uploadLabel={t("settings.profile.photos.upload")}
+	submitLabel={t("settings.profile.photos.submit")}
 	max={MAX_PHOTOS - medias.length}
 	load={loadPreviousUploads}
 	describe={({ mediaHash }) => ({

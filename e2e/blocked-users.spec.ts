@@ -16,7 +16,7 @@ test.describe("blocked users settings screen", () => {
 
 		await openBlockedUsers(page);
 		await expect(
-			page.locator("nav").getByText("Blocked users", { exact: true }),
+			page.locator("nav").getByText("Blocked Users", { exact: true }),
 			"the nav bar is titled rather than blank",
 		).toBeVisible();
 

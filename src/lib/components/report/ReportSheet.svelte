@@ -7,7 +7,10 @@
 
 	import { blockUser } from "#lib/api/browse/blocks.ts";
 	import { showErrorToast } from "#lib/api/error-toast.ts";
-	import { reportProfile } from "#lib/api/safety/reports.ts";
+	import {
+		reportProfile,
+		reportRightNowPost,
+	} from "#lib/api/safety/reports.ts";
 	import { Button, buttonVariants } from "#lib/components/ui/button/index.ts";
 	import Link from "#lib/components/ui/link/Link.svelte";
 	import RadioGroup from "#lib/components/ui/radio/RadioGroup.svelte";
@@ -16,6 +19,7 @@
 	import { Spinner } from "#lib/components/ui/spinner/index.ts";
 	import { Textarea } from "#lib/components/ui/textarea/index.ts";
 	import * as ToggleGroup from "#lib/components/ui/toggle-group/index.ts";
+	import { type MessageKey, t } from "#lib/i18n/index.ts";
 	import {
 		type ReportLocation,
 		reportLocationSchema,
@@ -25,63 +29,67 @@
 	import { grindrHelpUrl } from "#lib/util/grindr-help.ts";
 	import type { Profile } from "#lib/model/users/profiles.ts";
 	import { showBlockFailure } from "./block-failure";
-	import { buildProfileReport } from "./report-request";
-
-	type ReportSubject = "profile" | "message";
+	import { buildReportRequest, type ReportTarget } from "./report-request";
 
 	let {
 		open = $bindable(),
-		profileId,
-		subject = "profile",
-		locations: presetLocations,
+		target,
 		onBlock,
-	}: {
-		open: boolean;
-		profileId: Profile["profileId"];
-		subject?: ReportSubject;
-		locations?: ReportLocation[];
-		onBlock?: () => void;
-	} = $props();
+	}: { open: boolean; target: ReportTarget; onBlock?: () => void } = $props();
 
-	const reasonLabels: Record<ReportReason, string> = {
-		SPAM: "Spam",
-		HARASSMENT_BULLYING: "Harassment or Bullying",
-		HATE_DISCRIMINATION: "Hate Speech/Discrimination",
-		NUDITY_PORNOGRAPHY: "Nudity or Pornography",
-		UNDERAGE: "Underage",
-		IMPERSONATION: "Impersonation",
-		ILLEGAL_ACTIVITY: "Illegal Activity",
-		SEXUAL_SOLICITATION: "Sexual Solicitation",
-		SERIOUS_IN_PERSON_INCIDENT: "Serious In Person Incident",
-	};
+	const reasonKeys = {
+		SPAM: "profile.report.reason.spam",
+		HARASSMENT_BULLYING: "profile.report.reason.harassmentBullying",
+		HATE_DISCRIMINATION: "profile.report.reason.hateDiscrimination",
+		NUDITY_PORNOGRAPHY: "profile.report.reason.nudityPornography",
+		UNDERAGE: "profile.report.reason.underage",
+		IMPERSONATION: "profile.report.reason.impersonation",
+		ILLEGAL_ACTIVITY: "profile.report.reason.illegalActivity",
+		SEXUAL_SOLICITATION: "profile.report.reason.sexualSolicitation",
+		SERIOUS_IN_PERSON_INCIDENT:
+			"profile.report.reason.seriousInPersonIncident",
+	} as const satisfies Record<ReportReason, MessageKey>;
 
-	const locationLabels: Record<ReportLocation, string> = {
-		PROFILE_PHOTO: "Profile Photo",
-		PROFILE_INFORMATION: "Profile Information",
-		CHAT_MESSAGE: "Chat Message",
-		ALBUM: "Album",
-		RIGHT_NOW_PHOTO: "Right Now Image",
-		RIGHT_NOW_TEXT: "Right Now Text",
-	};
+	const locationKeys = {
+		PROFILE_PHOTO: "profile.report.location.profilePhoto",
+		PROFILE_INFORMATION: "profile.report.location.profileInformation",
+		CHAT_MESSAGE: "profile.report.location.chatMessage",
+		ALBUM: "profile.report.location.album",
+		RIGHT_NOW_PHOTO: "profile.report.location.rightNowPhoto",
+		RIGHT_NOW_TEXT: "profile.report.location.rightNowText",
+	} as const satisfies Record<ReportLocation, MessageKey>;
 
-	const subjectCopy: Record<
-		ReportSubject,
-		{ title: string; description: string; reviewed: string }
-	> = {
+	const targetKeys = {
 		profile: {
-			title: "Report profile",
-			description: "Send a report about this profile to Grindr.",
-			reviewed: "Grindr will review this profile.",
+			title: "profile.report.profile.title",
+			description: "profile.report.profile.a11y.description",
+			reviewed: "profile.report.reviewed",
 		},
 		message: {
-			title: "Report message",
-			description:
-				"Send a report about this person's messages to Grindr.",
-			reviewed: "Grindr will review your report.",
+			title: "profile.report.message.title",
+			description: "profile.report.message.a11y.description",
+			reviewed: "profile.report.reviewed",
 		},
+		rightNowPost: {
+			title: "profile.report.rightNowPost.title",
+			description: "profile.report.rightNowPost.a11y.description",
+			reviewed: "profile.report.rightNowPost.reviewed",
+		},
+	} as const satisfies Record<
+		ReportTarget["kind"],
+		Record<"title" | "description" | "reviewed", MessageKey>
+	>;
+
+	const presetLocations: Record<
+		ReportTarget["kind"],
+		ReportLocation[] | null
+	> = {
+		profile: null,
+		message: ["CHAT_MESSAGE"],
+		rightNowPost: ["RIGHT_NOW_PHOTO", "RIGHT_NOW_TEXT"],
 	};
 
-	const detailsLabel = "Details (optional)";
+	const detailsLabel = $derived(t("profile.report.details"));
 
 	let reason = $state<ReportReason | null>(null);
 	let locations = $state<ReportLocation[]>([]);
@@ -90,7 +98,7 @@
 	let submitted = $state(false);
 	let onDetails = $state(false);
 
-	const copy = $derived(subjectCopy[subject]);
+	const copy = $derived(targetKeys[target.kind]);
 	const isSpam = $derived(reason === "SPAM");
 	const reasonChosen = $derived(reason !== null);
 	const isInPersonIncident = $derived(
@@ -98,14 +106,14 @@
 	);
 	const detailsShown = $derived(!isSpam && !isInPersonIncident);
 	const wherePickerShown = $derived(
-		detailsShown && presetLocations === undefined,
+		detailsShown && presetLocations[target.kind] === null,
 	);
 
 	$effect(() => {
 		if (!open) return;
 		untrack(() => {
 			reason = null;
-			locations = [...(presetLocations ?? [])];
+			locations = [...(presetLocations[target.kind] ?? [])];
 			comment = "";
 			submitted = false;
 			onDetails = false;
@@ -116,34 +124,45 @@
 	// the reason list live again, so the same reason can be tapped anew.
 	function back() {
 		reason = null;
-		locations = [...(presetLocations ?? [])];
+		locations = [...(presetLocations[target.kind] ?? [])];
 		onDetails = false;
 	}
 
 	async function submit() {
 		if (submitting || reason === null) return;
 		submitting = true;
+		const report = buildReportRequest({ reason, comment, locations });
 		try {
-			await reportProfile({
-				profileId,
-				report: buildProfileReport({ reason, comment, locations }),
-			});
+			if (target.kind === "rightNowPost")
+				await reportRightNowPost({
+					postId: target.postId,
+					profileId: target.profileId,
+					report,
+				});
+			else await reportProfile({ profileId: target.profileId, report });
 			submitted = true;
 		} catch (error) {
 			console.error(error);
-			showErrorToast({ label: "Failed to send report", error });
+			showErrorToast({
+				label: t("profile.report.errors.sendFailed"),
+				error,
+			});
 		} finally {
 			submitting = false;
 		}
 	}
 
-	function block() {
+	function block({ profileId }: { profileId: Profile["profileId"] }) {
 		open = false;
 		if (onBlock) onBlock();
-		else void blockInBackground();
+		else void blockInBackground({ profileId });
 	}
 
-	async function blockInBackground() {
+	async function blockInBackground({
+		profileId,
+	}: {
+		profileId: Profile["profileId"];
+	}) {
 		try {
 			await blockUser({ profileId });
 		} catch (error) {
@@ -180,7 +199,7 @@
 					</Button>
 				{/if}
 				<ResponsiveDialog.Title class="flex-1 text-left">
-					{submitted ? "Report submitted" : copy.title}
+					{submitted ? t("profile.report.submitted") : t(copy.title)}
 				</ResponsiveDialog.Title>
 				<Button
 					variant="ghost"
@@ -189,11 +208,11 @@
 					onclick={() => (open = false)}
 				>
 					<XIcon />
-					<span class="sr-only">Close</span>
+					<span class="sr-only">{t("common.actions.close")}</span>
 				</Button>
 			</div>
 			<ResponsiveDialog.Description class="sr-only">
-				{copy.description}
+				{t(copy.description)}
 			</ResponsiveDialog.Description>
 		</ResponsiveDialog.Header>
 		{#if submitted}
@@ -202,18 +221,26 @@
 					data-slot="report-submitted"
 					class="flex flex-col items-center gap-2 py-4 text-center"
 				>
-					<p>{copy.reviewed}</p>
-					<p class="text-sm text-muted-foreground">
-						You can block this profile so you stop seeing it.
-					</p>
+					<p>{t(copy.reviewed)}</p>
+					{#if target.profileId !== null}
+						<p class="text-sm text-muted-foreground">
+							{t("profile.report.blockHint")}
+						</p>
+					{/if}
 				</div>
 			</ResponsiveDialog.Body>
 			<ResponsiveDialog.Footer>
-				<Button variant="destructive" onclick={block}>
-					Block profile
-				</Button>
+				{#if target.profileId !== null}
+					{@const profileId = target.profileId}
+					<Button
+						variant="destructive"
+						onclick={() => block({ profileId })}
+					>
+						{t("profile.topNav.actionsMenu.block")}
+					</Button>
+				{/if}
 				<Button variant="secondary" onclick={() => (open = false)}>
-					Done
+					{t("profile.report.done")}
 				</Button>
 			</ResponsiveDialog.Footer>
 		{:else}
@@ -229,7 +256,7 @@
 						>
 							<ShieldIcon class="size-5 text-primary" />
 							<span class="min-w-0 flex-1 font-medium">
-								{reason === null ? "" : reasonLabels[reason]}
+								{reason === null ? "" : t(reasonKeys[reason])}
 							</span>
 							<Button
 								variant="link"
@@ -245,12 +272,16 @@
 								data-slot="report-locations"
 								class="flex flex-col gap-1.5"
 							>
-								{@render sectionLabel("Where it happened")}
+								{@render sectionLabel(
+									t("profile.report.whereItHappened"),
+								)}
 								<ToggleGroup.Root
 									type="multiple"
 									variant="outline"
 									spacing={2}
-									aria-label="Where it happened"
+									aria-label={t(
+										"profile.report.whereItHappened",
+									)}
 									class="w-full flex-wrap gap-1"
 									bind:value={
 										() => locations,
@@ -261,7 +292,7 @@
 								>
 									{#each reportLocationSchema.options as value (value)}
 										<ToggleGroup.Item {value}>
-											{locationLabels[value]}
+											{t(locationKeys[value])}
 										</ToggleGroup.Item>
 									{/each}
 								</ToggleGroup.Root>
@@ -286,16 +317,14 @@
 								data-slot="report-incident-note"
 								class="px-1 text-sm text-muted-foreground"
 							>
-								Grindr's trust and safety team handles serious
-								in-person incidents through its help center. The
-								form opens in your browser.
+								{t("profile.report.inPersonIncident.note")}
 							</p>
 						{/if}
 					{:else}
 						<div data-slot="report-reasons">
 							<RadioGroup
 								name="report-reason"
-								legend="Reason"
+								legend={t("profile.report.a11y.reason")}
 								hideLegend={true}
 								bind:value={
 									() => reason ?? "",
@@ -314,7 +343,7 @@
 							>
 								{#each reportReasonSchema.options as value (value)}
 									<RadioItem {value}>
-										{reasonLabels[value]}
+										{t(reasonKeys[value])}
 									</RadioItem>
 								{/each}
 							</RadioGroup>
@@ -327,7 +356,8 @@
 							href={grindrHelpUrl("inPersonIncidentForm")}
 							class={buttonVariants()}
 						>
-							Open help form <ArrowUpRightIcon />
+							{t("profile.report.inPersonIncident.openHelpForm")}
+							<ArrowUpRightIcon />
 						</Link>
 					{:else}
 						<Button
@@ -338,7 +368,7 @@
 							{#if submitting}
 								<Spinner aria-hidden="true" />
 							{/if}
-							Submit report
+							{t("profile.report.submit")}
 						</Button>
 					{/if}
 				</ResponsiveDialog.Footer>

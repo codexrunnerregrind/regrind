@@ -10,7 +10,7 @@ import { getActiveGeohashSnapshot } from "#lib/app-data/preferences.svelte.ts";
 import { decodeGeohash } from "#lib/model/geohash.ts";
 import { postExpired } from "#lib/right-now/post-expiry.ts";
 import { getNow } from "#lib/util/now.ts";
-import type { RightNowShareLocation } from "#lib/model/right-now.ts";
+import type { RightNowShareLocation } from "#lib/model/right-now/index.ts";
 import type {
 	RightNowOwnPost,
 	RightNowPostMedia,

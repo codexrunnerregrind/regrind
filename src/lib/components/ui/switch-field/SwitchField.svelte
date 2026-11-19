@@ -1,10 +1,13 @@
 <script lang="ts">
+	import type { Snippet } from "svelte";
+
 	import { Label } from "#lib/components/ui/label/index.ts";
 	import { Spinner } from "#lib/components/ui/spinner/index.ts";
 	import { Switch } from "#lib/components/ui/switch/index.ts";
 	import { cn } from "#lib/util/utils.ts";
 
 	let {
+		id,
 		title,
 		description,
 		icon,
@@ -13,10 +16,11 @@
 		busy = false,
 		class: className,
 	}: {
+		id?: string;
 		title: string;
 		description?: string;
 		/** Drawn in a tile at the start of the row, ahead of the title. */
-		icon?: import("svelte").Snippet;
+		icon?: Snippet;
 		checked: boolean;
 		disabled?: boolean;
 		busy?: boolean;
@@ -25,6 +29,7 @@
 </script>
 
 <Label
+	{id}
 	class={cn(
 		"flex items-center gap-3 rounded-xl border p-4 transition-all hover:bg-muted aria-disabled:opacity-60",
 		className,
@@ -36,6 +41,7 @@
 		     whichever row it is on, and reads as part of the field instead of as
 		     punctuation in front of the title. -->
 		<span
+			data-slot="switch-field-icon"
 			class="flex size-8 shrink-0 items-center justify-center rounded-lg bg-background"
 		>
 			{@render icon()}

@@ -13,12 +13,28 @@
 		finishSignIn,
 		refusedCompanionMessage,
 		reportSignInFailure,
+		signInFlowEnded,
+		signInInProgress,
+		signInTimedOut,
 		untrustedCompanionMessage,
 	} from "#lib/api/sign-in.ts";
 	import { Button } from "#lib/components/ui/button/index.ts";
 	import { Input } from "#lib/components/ui/input/index.ts";
 	import { Label } from "#lib/components/ui/label/index.ts";
 	import { Spinner } from "#lib/components/ui/spinner/index.ts";
+	import { type PlainMessageKey, t } from "#lib/i18n/index.ts";
+	import { openExternalLink } from "#lib/platform/link-opener.ts";
+	import {
+		addonInstallerAvailable,
+		addonPublishedHere,
+		recaptchaUpdates,
+	} from "#lib/updates/addon.svelte.ts";
+	import { RECAPTCHA_COMPONENT } from "#lib/updates/components.ts";
+	import {
+		manualInstallHref,
+		RECAPTCHA_HELPER_GUIDE,
+	} from "#lib/updates/manual-install.ts";
+	import RecaptchaHelperDialog from "./RecaptchaHelperDialog.svelte";
 
 	type OauthProvider = "google" | "facebook";
 
@@ -36,13 +52,13 @@
 			failures: {
 				[companionUnavailable]: () => void goto("/auth/sign-in/google"),
 				[companionDisabled]: () =>
-					toast.error(disabledCompanionMessage),
+					toast.error(disabledCompanionMessage()),
 				[companionUntrusted]: () => {
-					toast.error(untrustedCompanionMessage);
+					toast.error(untrustedCompanionMessage());
 					void goto("/auth/sign-in/google?paste");
 				},
 				[companionRefused]: () => {
-					toast.error(refusedCompanionMessage);
+					toast.error(refusedCompanionMessage());
 					void goto("/auth/sign-in/google?paste");
 				},
 			},
@@ -52,15 +68,24 @@
 			label: "Facebook",
 			failures: {
 				"facebook-dialog-error": () =>
-					toast.error(
-						"Facebook didn't grant access. Try again, or sign in with your email and password.",
-					),
+					toast.error(t("auth.signIn.facebook.errors.dialogError")),
 				"facebook-handoff-refused": () =>
 					toast.error(
-						"Facebook tried to open its own app, which ReGrind can't use. Sign in with your email and password instead.",
+						t("auth.signIn.facebook.errors.handoffRefused"),
 					),
+				"facebook-unverified": () =>
+					toast.error(t("auth.signIn.facebook.errors.unverified")),
 			},
 		},
+	};
+
+	const flowFailures: Record<string, (label: string) => void> = {
+		[signInInProgress]: (label) =>
+			toast.error(
+				t("auth.signIn.errors.inProgress", { provider: label }),
+			),
+		[signInFlowEnded]: () => toast.error(t("auth.signIn.errors.flowEnded")),
+		[signInTimedOut]: () => toast.error(t("auth.signIn.errors.timedOut")),
 	};
 
 	let email = $state("");
@@ -68,12 +93,20 @@
 	let submitting: false | "password" | OauthProvider = $state(false);
 	let showPassword = $state(false);
 
-	const invalidCredentialsSchema = z.object({
-		kind: z.literal("Api"),
-		message: z.object({
-			code: z.literal(4),
-			message: z.literal("Invalid input parameters"),
+	const refusedCredentialsSchema = z.union([
+		z.object({ kind: z.literal("Unauthorized") }),
+		z.object({
+			kind: z.literal("Api"),
+			message: z.object({
+				code: z.literal(4),
+				message: z.literal("Invalid input parameters"),
+			}),
 		}),
+	]);
+
+	const rejectedCaptchaSchema = z.object({
+		kind: z.literal("Api"),
+		message: z.object({ code: z.literal(18) }),
 	});
 
 	const recaptchaErrorSchema = z.object({
@@ -81,32 +114,55 @@
 		message: z.object({ reason: z.string() }),
 	});
 
-	const captchaSignInMessages: Record<string, string> = {
+	const captchaGuideMessageKeys = {
 		unsupportedPlatform:
-			"This account needs captcha verification, available through the Open Grind reCAPTCHA helper on Android.",
-		addonUnavailable:
-			"Install the Open Grind reCAPTCHA helper to sign in to this account.",
-		addonDisabled:
-			"Enable the Open Grind reCAPTCHA helper to sign in to this account.",
-		addonUntrusted:
-			"The installed reCAPTCHA helper isn't the official Open Grind build.",
-		grindrMissing:
-			"The reCAPTCHA helper needs the Grindr app installed to verify this sign-in.",
-	};
+			"auth.signIn.captcha.errors.credentialsOrUnsupportedPlatform",
+		grindrMissing: "auth.signIn.captcha.errors.grindrMissing",
+	} as const satisfies Record<string, PlainMessageKey>;
+
+	const captchaSignInMessageKeys = {
+		addonDisabled: "auth.signIn.captcha.errors.addonDisabled",
+		addonUntrusted: "auth.signIn.captcha.errors.addonUntrusted",
+	} as const satisfies Record<string, PlainMessageKey>;
+
+	function captchaMessageKey(
+		keys: Readonly<Record<string, PlainMessageKey>>,
+		reason: string | undefined,
+	): PlainMessageKey | undefined {
+		return reason !== undefined && Object.hasOwn(keys, reason)
+			? keys[reason]
+			: undefined;
+	}
+
+	let helperDialog: "install" | "manual" | null = $state(null);
 
 	async function signIn(event: SubmitEvent) {
 		event.preventDefault();
 		if (submitting) return;
 		submitting = "password";
 		try {
-			if (await trySignIn()) return;
-			await trySignInWithCaptcha();
+			const refusal = await trySignIn();
+			if (refusal) await trySignInWithCaptcha(refusal);
 		} finally {
 			submitting = false;
 		}
 	}
 
-	async function trySignIn(captchaToken?: string): Promise<boolean> {
+	type Refusal = "credentials" | "captcha";
+
+	const refusalAfterCaptchaMessageKeys = {
+		captcha: "auth.signIn.captcha.errors.rejected",
+		credentials: "auth.signIn.captcha.errors.credentialsOrRejected",
+	} as const satisfies Record<Refusal, PlainMessageKey>;
+
+	function refusalOf(error: unknown): Refusal | null {
+		if (rejectedCaptchaSchema.safeParse(error).success) return "captcha";
+		if (refusedCredentialsSchema.safeParse(error).success)
+			return "credentials";
+		return null;
+	}
+
+	async function trySignIn(captchaToken?: string): Promise<Refusal | null> {
 		try {
 			await finishSignIn(
 				await callMethod("sign_in_with_email", {
@@ -115,40 +171,31 @@
 					captchaToken,
 				}),
 			);
-			return true;
+			return null;
 		} catch (error) {
-			let invalidCredentials = false;
-			reportSignInFailure({
-				error,
-				onFailure: (appError) => {
-					if (
-						appError.kind !== "Unauthorized" &&
-						!invalidCredentialsSchema.safeParse(appError).success
-					) {
-						return false;
-					}
-					invalidCredentials = true;
-					return true;
-				},
-			});
-			if (invalidCredentials && captchaToken === undefined) return false;
-			if (invalidCredentials) toast.error("Invalid email or password");
-			return true;
+			const refusal = refusalOf(error);
+			reportSignInFailure({ error, onFailure: () => refusal !== null });
+			if (refusal === null || captchaToken === undefined) return refusal;
+			showCaptchaGuideToast(refusalAfterCaptchaMessageKeys[refusal]);
+			return null;
 		}
 	}
 
-	async function trySignInWithCaptcha() {
-		let required = false;
+	async function captchaAssigned(): Promise<boolean> {
 		try {
-			required = await callMethod("recaptcha_first_party_enabled");
+			return await callMethod("recaptcha_first_party_enabled");
 		} catch (error) {
 			console.error(
 				"[sign-in] failed to check recaptcha_first_party assignment",
 				error,
 			);
+			return false;
 		}
-		if (!required) {
-			toast.error("Invalid email or password");
+	}
+
+	async function trySignInWithCaptcha(refusal: Refusal) {
+		if (refusal === "credentials" && !(await captchaAssigned())) {
+			toast.error(t("auth.signIn.errors.invalidCredentials"));
 			return;
 		}
 		try {
@@ -165,10 +212,40 @@
 		const parsed = recaptchaErrorSchema.safeParse(error);
 		const reason = parsed.success ? parsed.data.message.reason : undefined;
 		if (reason === "cancelled") return;
+		if (reason === "addonUnavailable") {
+			helperDialog = addonInstallerAvailable() ? "install" : "manual";
+			return;
+		}
+		const guided = captchaMessageKey(captchaGuideMessageKeys, reason);
+		if (guided) {
+			showCaptchaGuideToast(guided);
+			return;
+		}
 		toast.error(
-			(reason ? captchaSignInMessages[reason] : undefined) ??
-				"Captcha verification failed. Try again.",
+			t(
+				captchaMessageKey(captchaSignInMessageKeys, reason) ??
+					"auth.signIn.captcha.errors.verifyFailed",
+			),
 		);
+	}
+
+	function showCaptchaGuideToast(message: PlainMessageKey) {
+		toast.error(t(message), {
+			action: {
+				label: t("common.actions.learnMore"),
+				onClick: () => openExternalLink(RECAPTCHA_HELPER_GUIDE),
+			},
+		});
+	}
+
+	async function continueToHelper() {
+		const installable = helperDialog === "install";
+		helperDialog = null;
+		if (installable && (await addonPublishedHere(RECAPTCHA_COMPONENT))) {
+			await recaptchaUpdates.installNow();
+			return;
+		}
+		openExternalLink(manualInstallHref(RECAPTCHA_COMPONENT));
 	}
 
 	async function signInWith(provider: OauthProvider) {
@@ -180,10 +257,12 @@
 		} catch (error) {
 			reportSignInFailure({
 				error,
-				label: `${label} sign-in failed`,
+				label: t("auth.signIn.errors.providerFailed", {
+					provider: label,
+				}),
 				onAuthFailure: (message) => {
-					const handle = failures[message];
-					handle?.();
+					const handle = failures[message] ?? flowFailures[message];
+					handle?.(label);
 					return handle !== undefined;
 				},
 			});
@@ -207,7 +286,7 @@
 		<div class="flex flex-col gap-4">
 			<div class="grid gap-2">
 				<Label for="email" class="text-sm text-muted-foreground">
-					Email
+					{t("auth.signIn.email.label")}
 				</Label>
 				<Input
 					id="email"
@@ -223,7 +302,7 @@
 
 			<div class="grid gap-2">
 				<Label for="password" class="text-sm text-muted-foreground">
-					Password
+					{t("auth.signIn.password.label")}
 				</Label>
 				<div class="relative">
 					<Input
@@ -247,7 +326,7 @@
 					href="/auth/password-reset"
 					class="text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
 				>
-					Forgot your password?
+					{t("auth.signIn.forgotPassword")}
 				</a>
 			</div>
 		</div>
@@ -262,7 +341,7 @@
 				{#if submitting === "password"}
 					<Spinner aria-hidden="true" />
 				{/if}
-				Sign in
+				{t("auth.signIn.submit")}
 			</Button>
 
 			<div class="flex items-center gap-4 text-sm text-muted-foreground">
@@ -341,3 +420,12 @@
 		</a>
 	</p>
 </form>
+<RecaptchaHelperDialog
+	bind:open={
+		() => helperDialog !== null,
+		(next) => {
+			if (!next) helperDialog = null;
+		}
+	}
+	onContinue={() => void continueToHelper()}
+/>

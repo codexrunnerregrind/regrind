@@ -6,6 +6,7 @@
 	import Button from "#lib/components/ui/button/button.svelte";
 	import { Spinner } from "#lib/components/ui/spinner/index.ts";
 	import * as ToggleGroup from "#lib/components/ui/toggle-group/index.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import { compareFilterGenders } from "#lib/model/browse/grid/filters.ts";
 	import { instantWhenReducedMotion } from "#lib/util/reduced-motion.ts";
 	import FilterDropdown from "./FilterDropdown.svelte";
@@ -38,17 +39,20 @@
 	// The row's summary needs names, which only arrive with the gender list.
 	let names: Record<string, string> = $state({});
 	$effect(() => {
-		void genders.then((list) => {
-			names = {
-				"-1": "Not specified",
-				...Object.fromEntries(
-					list.map((g) => [
-						String(g.genderId),
-						g.genderPlural ?? g.gender,
-					]),
-				),
-			};
-		});
+		void genders.then(
+			(list) => {
+				names = {
+					"-1": t("common.filters.notSpecified"),
+					...Object.fromEntries(
+						list.map((g) => [
+							String(g.genderId),
+							g.genderPlural ?? g.gender,
+						]),
+					),
+				};
+			},
+			() => {},
+		);
 	});
 
 	const endLabel = $derived(
@@ -58,7 +62,7 @@
 
 <FilterDropdown
 	id="gender"
-	label="Gender"
+	label={t("common.filters.genders.label")}
 	{endLabel}
 	bind:checked={
 		() => checked,
@@ -105,20 +109,24 @@
 						</div>
 					{/if}
 				{/each}
-				<ToggleGroup.Item value="-1">Not specified</ToggleGroup.Item>
+				<ToggleGroup.Item value="-1">
+					{t("common.filters.notSpecified")}
+				</ToggleGroup.Item>
 				<Button
 					variant="secondary"
 					onclick={() => (expanded = !expanded)}
 				>
 					{#if expanded}
-						Less
+						{t("browse.filters.less")}
 					{:else}
-						More
+						{t("browse.filters.more")}
 					{/if}
 				</Button>
 			</ToggleGroup.Root>
 		{:catch}
-			<div class="text-sm text-destructive">Failed to load genders</div>
+			<div class="text-sm text-destructive">
+				{t("common.genders.errors.loadFailed")}
+			</div>
 		{/await}
 	</div>
 </FilterDropdown>

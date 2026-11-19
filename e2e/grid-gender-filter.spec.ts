@@ -1,10 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 
-import {
-	ensureGridLocation,
-	installTauriShim,
-	runPaletteCommand,
-} from "./support/app";
+import { installTauriShim, openGrid, runPaletteCommand } from "./support/app";
 import {
 	installPersistentAppData,
 	storedPreferences,
@@ -19,13 +15,13 @@ const PRIMARY_CHIPS = [
 	"Trans Women",
 	"Non-Binary",
 ];
-const COLLAPSED_CHIPS = [...PRIMARY_CHIPS, "Not specified"];
+const COLLAPSED_CHIPS = [...PRIMARY_CHIPS, "Not Specified"];
 const EXPANDED_CHIPS = [
 	...PRIMARY_CHIPS,
 	"Agender",
 	"Androgynous",
 	"Bigender",
-	"Not specified",
+	"Not Specified",
 ];
 
 const genderFilter = (page: Page) =>
@@ -52,11 +48,9 @@ async function storedGenderFilter(page: Page) {
 
 test.beforeEach(async ({ page }) => {
 	test.setTimeout(180_000);
-	await installTauriShim(page);
+	await installTauriShim(page, { platform: "macos" });
 	await installPersistentAppData(page);
-	await page.goto("/");
-	await page.locator("nav a").first().waitFor({ timeout: 120_000 });
-	await ensureGridLocation(page);
+	await openGrid(page);
 });
 
 test("the gender filter offers Men, Women and their Cis and Trans genders first and never Ask Me", async ({
@@ -88,7 +82,7 @@ test("a saved Men selection shows its chip and can be swapped for Trans Women", 
 		"Cis Woman",
 		"Trans Women",
 		"Non-Binary",
-		"Not specified",
+		"Not Specified",
 	]);
 
 	await genderChip(page, "Men").click();

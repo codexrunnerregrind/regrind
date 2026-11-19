@@ -7,10 +7,12 @@
 	import AccountsSheet from "#lib/components/accounts/AccountsSheet.svelte";
 	import UserAvatar from "#lib/components/profile/UserAvatar.svelte";
 	import { navTabs } from "#lib/components/shared/nav-tabs.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import { getTapsState } from "#lib/interest/taps-state.svelte.ts";
 	import { getViewActivityState } from "#lib/interest/view-activity.svelte.ts";
 	import { hapticSelection } from "#lib/platform/haptics.ts";
 	import { isFloatingNav } from "#lib/platform/nav-style.svelte.ts";
+	import { softKeyboardShrinksPage } from "#lib/platform/soft-keyboard.svelte.ts";
 	import { longPressHandlers } from "#lib/util/long-press.ts";
 	import { bottomChrome } from "#lib/util/screen-chrome.svelte.ts";
 	import { scrollActiveViewToTop } from "#lib/util/scroll.ts";
@@ -95,7 +97,8 @@
      directly on top of this bar). The capsule floats *inside* that box, so
      switching shapes never moves anything else on the screen. -->
 <nav
-	aria-label="Main"
+	aria-label={t("shell.navBar.a11y.navigation")}
+	hidden={softKeyboardShrinksPage()}
 	class={[
 		"fixed bottom-0 z-50 flex h-[calc(var(--nav-height)+var(--safe-area-bottom,0px))] w-full pb-(--safe-area-bottom)",
 		{

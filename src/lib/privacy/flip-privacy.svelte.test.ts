@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock("@tauri-apps/api/core", () => ({ invoke: mocks.invoke }));
 vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast: vi.fn() }));
-vi.mock("#lib/app-data/preferences.svelte", () => ({
+vi.mock("#lib/app-data/preferences.svelte.ts", () => ({
 	preferencesLoaded: () => mocks.loaded,
 }));
 vi.mock("#lib/platform/os.ts", () => ({

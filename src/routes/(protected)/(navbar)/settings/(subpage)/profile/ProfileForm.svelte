@@ -21,9 +21,11 @@
 	import SectionHeader from "#lib/components/settings/SectionHeader.svelte";
 	import SettingsGroup from "#lib/components/settings/SettingsGroup.svelte";
 	import ProgressiveBlur from "#lib/components/shared/ProgressiveBlur.svelte";
+	import { guardUnsavedChanges } from "#lib/components/shared/unsaved-changes-guard.svelte.ts";
 	import { Button } from "#lib/components/ui/button/index.ts";
 	import { WheelPicker } from "#lib/components/ui/carousel/index.ts";
 	import { Spinner } from "#lib/components/ui/spinner/index.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import {
 		type Profile,
 		PROFILE_PHOTO_AWAITING_REVIEW,
@@ -33,6 +35,7 @@
 	import type { Gender } from "#lib/model/users/genders.ts";
 	import type { Pronoun } from "#lib/model/users/pronouns.ts";
 	import type { ProfileTagsResponse } from "#lib/model/users/tags.ts";
+	import { bannedTermsDetail } from "./banned-terms";
 	import ComboField from "./fields/ComboField.svelte";
 	import DateField from "./fields/DateField.svelte";
 	import Field from "./fields/Field.svelte";
@@ -140,6 +143,8 @@
 	let savedForm = $state.raw($state.snapshot(form));
 	const dirty = $derived(!deepEqual($state.snapshot(form), savedForm));
 
+	guardUnsavedChanges(() => dirty && !saving);
+
 	async function save() {
 		if (saving || aboutMeOverLimit || !dirty) return;
 		saving = true;
@@ -204,17 +209,17 @@
 				});
 			}
 			savedForm = sent;
-			toast.success("Profile updated");
+			toast.success(t("settings.profile.saved"));
 		} catch (error) {
 			if (error instanceof ProfileModerationError) {
-				const detail = error.rejected
-					.map((r) => `${r.field}: ${r.terms.join(", ")}`)
-					.join("; ");
-				toast.error("Couldn't save — these terms aren't allowed", {
-					description: detail || undefined,
+				toast.error(t("settings.profile.errors.bannedTerms"), {
+					description: bannedTermsDetail(error.rejected) || undefined,
 				});
 			} else {
-				showErrorToast({ label: "Failed to update profile", error });
+				showErrorToast({
+					label: t("settings.profile.errors.saveFailed"),
+					error,
+				});
 			}
 		} finally {
 			saving = false;
@@ -228,7 +233,7 @@
 	onsubmit={(event) => event.preventDefault()}
 >
 	<fieldset disabled={saving} class="contents">
-		<SectionHeader>Photos</SectionHeader>
+		<SectionHeader>{t("settings.profile.sections.photos")}</SectionHeader>
 		<SettingsGroup divider="none">
 			<div class="p-3">
 				<ProfilePicturesUpload
@@ -241,86 +246,99 @@
 		<SectionHeader>About you</SectionHeader>
 		<SettingsGroup divider="full">
 			<TextField
-				label="Display name"
+				label={t("settings.profile.fields.displayName")}
 				bind:value={form.displayName}
 				maxLength={fieldLimits.displayName}
-				placeholder="Everyone will see this on the grid..."
+				placeholder={t("settings.profile.placeholders.displayName")}
 			/>
 			<MultilineField
-				label="About me"
+				label={t("settings.profile.fields.aboutMe")}
 				bind:value={form.aboutMe}
 				maxLength={fieldLimits.aboutMe}
-				placeholder="Tell people who you are and what you're looking for (not what you're not looking for)"
+				placeholder={t("settings.profile.placeholders.aboutMe")}
 			/>
 			<ComboField
-				label="Tags"
+				label={t("settings.profile.fields.tags")}
 				bind:values={form.profileTags}
 				options={tagOptions}
 				resolveLabel={resolveTagLabel}
 				max={maxProfileTags}
-				searchPlaceholder="Search tags..."
+				searchPlaceholder={t("common.tags.searchPlaceholder")}
 			/>
 		</SettingsGroup>
 
 		<SectionHeader>Identity</SectionHeader>
 		<SettingsGroup divider="full">
 			<ComboField
-				label="Gender"
+				label={t("settings.profile.fields.gender")}
 				bind:values={form.genderIds}
 				options={genderOptions}
 				resolveLabel={resolveGenderLabel}
 				exclude={genderExclusions}
 				max={maxProfileGenders}
-				searchPlaceholder="Search genders..."
+				searchPlaceholder={t(
+					"settings.profile.placeholders.searchGenders",
+				)}
 			/>
 			<ComboField
-				label="Pronouns"
+				label={t("settings.profile.fields.pronouns")}
 				bind:values={form.pronounIds}
 				options={pronounOptions}
 				resolveLabel={resolvePronounLabel}
 				max={maxProfilePronouns}
-				searchPlaceholder="Search pronouns..."
+				searchPlaceholder={t(
+					"settings.profile.placeholders.searchPronouns",
+				)}
 			/>
 		</SettingsGroup>
 
-		<SectionHeader>Stats</SectionHeader>
+		<SectionHeader>{t("common.profileSections.stats")}</SectionHeader>
 		<SettingsGroup divider="full">
-			<Field label="Age">
+			<Field label={t("settings.profile.fields.age")}>
 				{#snippet picker({ labelId })}
 					<WheelPicker
 						bind:value={form.age}
 						min={ageRange.min}
 						max={ageRange.max}
-						unit="years"
+						unit={t("settings.profile.age.unit", {
+							count: form.age,
+						})}
+						valueText={(age) =>
+							t("settings.profile.age.a11y.value", {
+								count: age,
+							})}
 						disabled={saving}
 						aria-labelledby={labelId}
 					/>
 				{/snippet}
 			</Field>
-			<SwitchRow label="Show my age" bind:checked={form.showAge} />
+			<SwitchRow
+				label={t("settings.profile.fields.showAge")}
+				bind:checked={form.showAge}
+			/>
 			<SelectField
-				label="Position"
+				label={t("settings.profile.fields.position")}
 				bind:value={form.sexualPosition}
 				options={positionOptions}
 			/>
 			<SwitchRow
-				label="Show my position"
+				label={t("settings.profile.fields.showPosition")}
 				bind:checked={form.showPosition}
 			/>
 			<HeightField bind:value={form.height} />
 			<WeightField bind:value={form.weightKg} />
 			<SelectField
-				label="Body type"
+				label={t("settings.profile.fields.bodyType")}
 				bind:value={form.bodyType}
 				options={bodyTypeOptions}
 			/>
 			<SelectField
-				label="Ethnicity"
+				label={t("settings.profile.fields.ethnicity")}
 				bind:value={form.ethnicity}
 				options={ethnicityOptions}
 			/>
 			<SelectField
-				label="Relationship status"
+				label={t("settings.profile.fields.relationshipStatus")}
 				bind:value={form.relationshipStatus}
 				options={relationshipOptions}
 			/>
@@ -328,55 +346,61 @@
 
 		<SectionHeader>Preferences</SectionHeader>
 		<SettingsGroup divider="full">
-			<SwitchRow label="Show my tribes" bind:checked={form.showTribes} />
+			<SwitchRow
+				label={t("settings.profile.fields.showTribes")}
+				bind:checked={form.showTribes}
+			/>
 			<MultiSelectField
-				label="My tribes"
+				label={t("settings.profile.fields.myTribes")}
 				bind:values={form.grindrTribes}
 				options={tribeOptions}
 			/>
 			<MultiSelectField
-				label="Tribes I'm into"
+				label={t("settings.profile.fields.tribesImInto")}
 				bind:values={form.tribesImInto}
 				options={tribeOptions}
 			/>
 			<MultiSelectField
-				label="Looking for"
+				label={t("settings.profile.fields.lookingFor")}
 				bind:values={form.lookingFor}
 				options={lookingForOptions}
 			/>
 			<MultiSelectField
-				label="Meet at"
+				label={t("settings.profile.fields.meetAt")}
 				bind:values={form.meetAt}
 				options={meetAtOptions}
 			/>
 			<SelectField
-				label="Accept NSFW pics"
+				label={t("settings.profile.fields.acceptNsfwPics")}
 				bind:value={form.nsfw}
 				options={nsfwOptions}
 			/>
 		</SettingsGroup>
 
-		<SectionHeader>Health</SectionHeader>
+		<SectionHeader>{t("common.profileSections.health")}</SectionHeader>
 		<SettingsGroup divider="full">
 			<SelectField
-				label="HIV status"
+				label={t("settings.profile.fields.hivStatus")}
 				bind:value={form.hivStatus}
 				options={hivOptions}
 			/>
-			<DateField label="Last tested" bind:value={form.lastTestedDate} />
+			<DateField
+				label={t("settings.profile.fields.lastTested")}
+				bind:value={form.lastTestedDate}
+			/>
 			<MultiSelectField
-				label="Sexual health practices"
+				label={t("settings.profile.fields.sexualHealthPractices")}
 				bind:values={form.sexualHealth}
 				options={healthOptions}
 			/>
 			<MultiSelectField
-				label="Vaccines"
+				label={t("settings.profile.fields.vaccines")}
 				bind:values={form.vaccineIds}
 				options={vaccineOptions}
 			/>
 		</SettingsGroup>
 
-		<SectionHeader>Social</SectionHeader>
+		<SectionHeader>{t("common.profileSections.socials")}</SectionHeader>
 		<SettingsGroup divider="full">
 			<SocialField
 				label="Instagram"
@@ -408,12 +432,13 @@
 					size="lg"
 					class="h-12 w-full text-base"
 					disabled={saving || aboutMeOverLimit}
+					aria-busy={saving}
 					onclick={() => save()}
 				>
 					{#if saving}
-						<Spinner class="size-5" />
+						<Spinner class="size-5" aria-hidden="true" />
 					{/if}
-					Save changes
+					{t("shell.saveChangesBar.save")}
 				</Button>
 			</ProgressiveBlur>
 		</div>

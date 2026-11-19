@@ -2,19 +2,13 @@
 mod android;
 #[cfg(target_os = "android")]
 pub use android::AndroidUpdater;
-#[cfg(not(target_os = "android"))]
+#[cfg(desktop)]
 mod desktop;
-mod hold;
 
 use serde::{Deserialize, Serialize};
 
 use super::baseline::Baseline;
 use super::component::Component;
-use hold::TransferPurpose;
-pub use hold::{TransferHold, TransferProgress};
-
-#[cfg_attr(not(target_os = "android"), allow(dead_code))]
-const MEDIA_UPLOAD: &str = "mediaUpload";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(
@@ -34,7 +28,7 @@ pub enum Unsupported {
 }
 
 impl Unsupported {
-	#[cfg_attr(not(target_os = "android"), allow(dead_code))]
+	#[cfg_attr(desktop, allow(dead_code))]
 	fn from_gate_marker(
 		marker: &str,
 		installer: Option<String>,
@@ -46,6 +40,16 @@ impl Unsupported {
 			"foreign-signer" => Some(Self::ForeignSigner),
 			"foreign-target" => Some(Self::ForeignTarget),
 			_ => None,
+		}
+	}
+
+	fn no_release_artifacts() -> Self {
+		Self::NoReleaseArtifacts {
+			target: format!(
+				"{}-{}",
+				std::env::consts::OS,
+				std::env::consts::ARCH
+			),
 		}
 	}
 }
@@ -97,6 +101,7 @@ fn suffix_for(os: &str, arch: &str) -> Option<String> {
 			Some(abi) => format!("-android-{abi}.apk"),
 			None => "-android.apk".to_owned(),
 		}),
+		"ios" => None,
 		"macos" => Some("-macos.zip".to_owned()),
 		"windows" => Some(format!("-windows-{desktop_arch}.exe")),
 		"linux" => Some(format!("-linux-{desktop_arch}.AppImage")),
@@ -105,15 +110,9 @@ fn suffix_for(os: &str, arch: &str) -> Option<String> {
 }
 
 pub fn release_asset_suffix() -> Option<String> {
-	let os = std::env::consts::OS;
-	if os == "linux" && crate::appimage::path().is_none() {
-		return None;
-	}
-	suffix_for(os, std::env::consts::ARCH)
-}
-
-fn target() -> String {
-	format!("{}-{}", std::env::consts::OS, std::env::consts::ARCH)
+	#[cfg(target_os = "linux")]
+	crate::appimage::path()?;
+	suffix_for(std::env::consts::OS, std::env::consts::ARCH)
 }
 
 pub fn capability_for(
@@ -129,9 +128,7 @@ pub fn capability_for(
 			payload_suffix,
 			can_install_now,
 		},
-		None => Capability::Unsupported(Unsupported::NoReleaseArtifacts {
-			target: target(),
-		}),
+		None => Capability::Unsupported(Unsupported::no_release_artifacts()),
 	}
 }
 
@@ -144,12 +141,14 @@ pub fn probe(app: &tauri::AppHandle, component: &Component) -> Baseline {
 
 #[cfg(target_os = "android")]
 use android as platform;
-#[cfg(not(target_os = "android"))]
+#[cfg(desktop)]
 use desktop as platform;
 
+#[cfg(target_os = "macos")]
+pub use platform::enforce_home;
 pub use platform::{
-	enforce_home, install, install_pending, open_install_permission_settings,
-	sweep_replaced, take_outcome, watch_install,
+	install, install_pending, open_install_permission_settings, take_outcome,
+	watch_install,
 };
 
 #[cfg(test)]
@@ -158,8 +157,11 @@ mod pins {
 	use crate::pin_support::{
 		addon_gate_verdicts, assert_rejections_classify_as, braced_block,
 		camel_case, is_identifier, kotlin_constant, kotlin_package,
-		source_tokens, spaced_match, squashed, ADDON_GATE, MANIFEST,
+		manifest_element, source_tokens, spaced_match, squashed, xml_attribute,
+		ADDON_GATE, MANIFEST,
 	};
+
+	mod addon_titles;
 
 	const KEYS: &str = include_str!("../../../../../KEYS.md");
 	const LINUX_BUILD: &str = include_str!("../../../../../ci/linux/build.sh");
@@ -206,13 +208,7 @@ mod pins {
 		"../../../../gen/android/app/src/main/java/org/regrind/TokenHandoffActivity.kt"
 	);
 
-	const TRANSFER_TITLE: &str = include_str!(
-		"../../../../android-logic/src/main/kotlin/org/regrind/update/TransferTitle.kt"
-	);
-
-	const TRANSFER_SERVICE: &str = include_str!(
-		"../../../../gen/android/app/src/main/java/org/regrind/update/TransferService.kt"
-	);
+	const TRANSFER_BRIDGE: &str = include_str!("../../../transfer/android.rs");
 
 	const RECAPTCHA_PLUGIN: &str = include_str!(
 		"../../../../gen/android/app/src/main/java/org/opengrind/recaptcha/RecaptchaPlugin.kt"
@@ -222,14 +218,6 @@ mod pins {
 
 	const MINT_TOKEN_PERMISSION: &str =
 		"org.opengrind.recaptcha.permission.MINT_TOKEN";
-
-	const ADDON_NAMES: &str = include_str!(
-		"../../../../gen/android/app/src/main/java/org/opengrind/addon/AddonNames.kt"
-	);
-
-	const ANDROID_STRINGS: &str = include_str!(
-		"../../../../gen/android/app/src/main/res/values/strings.xml"
-	);
 
 	const SIGNING_CERTIFICATES: &str = include_str!(
 		"../../../../gen/android/app/src/main/java/org/opengrind/addon/PackageSigningCertificates.kt"
@@ -266,32 +254,6 @@ mod pins {
 			tag.starts_with(|c: char| c.is_ascii_alphabetic())
 				.then_some((tag, element))
 		})
-	}
-
-	fn xml_attribute<'a>(element: &'a str, name: &str) -> Option<&'a str> {
-		let assignment = format!("{name}=\"");
-		element.match_indices(&assignment).find_map(|(at, _)| {
-			let value = &element[at + assignment.len()..];
-			element[..at]
-				.ends_with(char::is_whitespace)
-				.then(|| value.split('"').next().unwrap_or_default())
-		})
-	}
-
-	fn manifest_element(tag: &str, name: &str) -> &'static str {
-		let opening = format!("<{tag}");
-		let named = format!("android:name=\"{name}\"");
-		MANIFEST
-			.match_indices(&opening)
-			.map(|(at, _)| {
-				let end =
-					MANIFEST[at..].find('>').map_or(MANIFEST.len(), |i| at + i);
-				&MANIFEST[at..end]
-			})
-			.find(|element| element.contains(&named))
-			.unwrap_or_else(|| {
-				panic!("the manifest has no <{tag}> named {name}")
-			})
 	}
 
 	fn gate_verdicts() -> Vec<String> {
@@ -568,6 +530,13 @@ mod pins {
 		plugin: PLUGIN,
 	};
 
+	const TRANSFER_PAIR: PluginPair = PluginPair {
+		bridge_file: "transfer/android.rs",
+		bridge: TRANSFER_BRIDGE,
+		plugin_file: "UpdatePlugin.kt",
+		plugin: PLUGIN,
+	};
+
 	const RECAPTCHA_PAIR: PluginPair = PluginPair {
 		bridge_file: "recaptcha/android.rs",
 		bridge: RECAPTCHA_BRIDGE,
@@ -732,7 +701,7 @@ mod pins {
 
 	#[test]
 	fn every_transfer_command_exists_in_kotlin_with_its_fields() {
-		let bridge = squashed(ANDROID_BRIDGE);
+		let bridge = squashed(TRANSFER_BRIDGE);
 		let sent: Vec<&str> = bridge
 			.split("send_transfer(app,\"")
 			.skip(1)
@@ -741,8 +710,8 @@ mod pins {
 		assert_eq!(sent, ["beginTransfer", "transferProgress", "endTransfer"]);
 		assert_plugin_declares(&sent);
 		assert_eq!(
-			UPDATE_PAIR.rust_wire_fields("TransferRequest"),
-			UPDATE_PAIR.kotlin_arg_fields("TransferArgs"),
+			TRANSFER_PAIR.rust_wire_fields("TransferRequest"),
+			TRANSFER_PAIR.kotlin_arg_fields("TransferArgs"),
 			"TransferRequest and TransferArgs disagree on field names"
 		);
 	}
@@ -816,45 +785,6 @@ mod pins {
 			expected,
 			"install outcomes are routed by COMPONENT_PACKAGE, so it must name every component's install target"
 		);
-	}
-
-	#[test]
-	fn every_addon_is_named_the_same_in_the_app_and_in_its_download_notification(
-	) {
-		use super::super::component;
-
-		let names = components_ts_table("ADDON_NAME");
-		let mut addons: Vec<&str> = component::ALL
-			.iter()
-			.filter(|component| !component.is_self())
-			.map(|component| component.key)
-			.collect();
-		addons.sort_unstable();
-		assert_eq!(
-			names
-				.iter()
-				.map(|(key, _)| key.as_str())
-				.collect::<Vec<_>>(),
-			addons,
-			"ADDON_NAME must name every add-on the component table knows"
-		);
-
-		for (key, name) in names {
-			let resource = format!("addon_name_{}", key.replace('-', "_"));
-			assert!(
-				squashed(ANDROID_STRINGS).contains(&squashed(&format!(
-					"<string name=\"{resource}\">{name}</string>"
-				))),
-				"strings.xml {resource} does not match ADDON_NAME, so the download notification names the add-on differently from the rest of the app"
-			);
-			let package = component::by_key(&key).unwrap().install_target();
-			assert!(
-				squashed(ADDON_NAMES).contains(&squashed(&format!(
-					"\"{package}\"->R.string.{resource}"
-				))),
-				"AddonNames.kt does not map {package} to {resource}"
-			);
-		}
 	}
 
 	#[test]
@@ -1304,35 +1234,5 @@ mod pins {
 				"the Play overlay keeps the updater's <{tag}> {name}"
 			);
 		}
-	}
-
-	#[test]
-	fn a_media_upload_holds_the_transfer_service_under_its_own_title() {
-		assert_eq!(
-			kotlin_constant(TRANSFER_TITLE, "TransferTitle.kt", "MEDIA_UPLOAD"),
-			super::MEDIA_UPLOAD,
-			"the upload purpose the bridge sends is not the one TransferTitle reads"
-		);
-		let service = squashed(TRANSFER_SERVICE);
-		assert!(
-			service.contains(
-				"funstart(context:Context,transfer:Transfer,){holds.begin(transfer)context.startForegroundService("
-			),
-			"TransferService no longer restarts on every hold"
-		);
-		assert!(
-			service.contains(
-				"funstop(context:Context,transfer:Transfer,){holds.end(transfer)ContextCompat.getMainExecutor(context).execute{running?.get()?.settle()}}"
-			) && !service.contains("stopService("),
-			"TransferService is stopped from outside instead of stopping itself on the main thread"
-		);
-		assert!(
-			service.contains(
-				"}catch(e:Exception){stopIfLatest(startId)returnSTART_NOT_STICKY}foregroundStartId=startIdsettle()"
-			) && service.contains(
-				"privatefunsettle(){valstartId=foregroundStartId?:returnvalshowing=holds.newest()if(showing==null){stopIfLatest(startId)return}"
-			),
-			"TransferService can stop before it entered the foreground or while a transfer still runs"
-		);
 	}
 }

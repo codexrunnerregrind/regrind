@@ -4,6 +4,7 @@
 	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import { getSingleMessage } from "#lib/api/messaging/messages.ts";
 	import { openImageGalleryLightbox } from "#lib/chat/image-gallery.ts";
+	import { t } from "#lib/i18n/index.ts";
 	import {
 		type ExpiringImageMessage,
 		expiringImageMessageSchema,
@@ -84,7 +85,10 @@
 		} catch (error) {
 			phase = "idle";
 			console.error(error);
-			showErrorToast({ label: "Failed to open expiring image", error });
+			showErrorToast({
+				label: t("chat.message.expiringImage.errors.openFailed"),
+				error,
+			});
 		}
 	}
 
@@ -157,7 +161,7 @@
 		{@attach media.attach}
 	>
 		<ImagesIcon size={24} weight="fill" class="shrink-0" />
-		<span>Expiring image</span>
+		<span>{t("chat.messagePreview.expiringPhoto")}</span>
 		{@render media.adornments?.()}
 	</button>
 {:else}
@@ -173,7 +177,7 @@
 			]}
 			size="sm"
 		>
-			Expired image
+			{t("chat.message.expiringImage.expired")}
 		</LockedMedia>
 		{@render media.adornments?.()}
 	</div>

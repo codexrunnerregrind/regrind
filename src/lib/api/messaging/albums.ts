@@ -2,7 +2,11 @@ import { invoke } from "@tauri-apps/api/core";
 import z from "zod";
 
 import { cachedFetch } from "#lib/api/cache.ts";
-import { fetchRest, uploadFileRest } from "#lib/api/transport.ts";
+import {
+	fetchRest,
+	sceneFaultResponse,
+	uploadFileRest,
+} from "#lib/api/transport.ts";
 import {
 	demoEnabled,
 	demoUploadAlbumContent,
@@ -218,7 +222,9 @@ export async function uploadAlbumContent({
 	profileId: number;
 	onHashed?: (sha256: string) => void;
 }): Promise<{ contentId: number; sha256: string | null }> {
+	const path = `/v1/albums/${albumId}/content?${albumContentQuery(inspection)}isFresh=false`;
 	if (demoEnabled) {
+		(await sceneFaultResponse({ method: "POST", path }))?.assertOk();
 		const uploaded = demoUploadAlbumFile({
 			albumId,
 			kind: inspection.kind === "video" ? "video" : "photo",
@@ -227,16 +233,13 @@ export async function uploadAlbumContent({
 		return uploaded;
 	}
 	const file = mediaFileDescriptor(media);
-	const { response, sha256 } = await uploadFileRest(
-		`/v1/albums/${albumId}/content?${albumContentQuery(inspection)}isFresh=false`,
-		{
-			file,
-			part: { name: "content", filename: "" },
-			maxBodySize: limits.maxContentSize,
-			profileId,
-			onHashed,
-		},
-	);
+	const { response, sha256 } = await uploadFileRest(path, {
+		file,
+		part: { name: "content", filename: "" },
+		maxBodySize: limits.maxContentSize,
+		profileId,
+		onHashed,
+	});
 	const { contentId } = response.jsonParsed(albumContentUploadResponseSchema);
 	return { contentId, sha256 };
 }

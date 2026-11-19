@@ -7,7 +7,8 @@ use tauri::{AppHandle, Manager, Runtime};
 use uuid::Uuid;
 
 use super::media_error;
-use crate::error::AppError;
+use crate::error::{AppError, MediaError};
+use crate::media::read_photo;
 use crate::photo;
 
 const DIRECTORY: &str = "staged-media";
@@ -48,12 +49,35 @@ impl StagedMedia {
 		Ok(id)
 	}
 
+	#[cfg(any(test, target_os = "ios"))]
+	pub fn adopt(&self, source: &std::path::Path) -> io::Result<String> {
+		fs::create_dir_all(&self.0)?;
+		let id = Uuid::new_v4().hyphenated().to_string();
+		let target = self.0.join(&id);
+		if fs::rename(source, &target).is_err() {
+			if let Err(error) = fs::copy(source, &target) {
+				let _ = fs::remove_file(&target);
+				return Err(error);
+			}
+		}
+		Ok(id)
+	}
+
 	pub fn appender(&self, id: &str) -> io::Result<File> {
 		OpenOptions::new().append(true).open(self.path(id)?)
 	}
 
 	pub fn append(&self, id: &str, bytes: &[u8]) -> io::Result<()> {
 		self.appender(id)?.write_all(bytes)
+	}
+
+	pub fn create_with(&self, bytes: &[u8]) -> io::Result<String> {
+		let id = self.create()?;
+		if let Err(error) = self.append(&id, bytes) {
+			let _ = self.discard(&id);
+			return Err(error);
+		}
+		Ok(id)
 	}
 
 	pub fn discard(&self, id: &str) -> io::Result<()> {
@@ -93,11 +117,24 @@ pub async fn append_staged_media(
 	id: String,
 	chunk: String,
 ) -> Result<(), AppError> {
-	let bytes = STANDARD
-		.decode(chunk)
-		.map_err(|error| AppError::Media(error.to_string()))?;
+	let bytes = STANDARD.decode(chunk).map_err(|error| {
+		AppError::Media(MediaError::Io {
+			detail: error.to_string(),
+		})
+	})?;
 	photo::off_thread(move || StagedMedia::of(&app)?.append(&id, &bytes))
 		.await?
+		.map_err(media_error)
+}
+
+#[tauri::command]
+pub async fn read_staged_media(
+	app: AppHandle,
+	id: String,
+) -> Result<tauri::ipc::Response, AppError> {
+	photo::off_thread(move || std::fs::read(StagedMedia::of(&app)?.path(&id)?))
+		.await?
+		.map(tauri::ipc::Response::new)
 		.map_err(media_error)
 }
 
@@ -107,6 +144,19 @@ pub async fn discard_staged_media(
 	id: String,
 ) -> Result<(), AppError> {
 	photo::off_thread(move || StagedMedia::of(&app)?.discard(&id))
+		.await?
+		.map_err(media_error)
+}
+
+#[tauri::command]
+pub async fn stage_proxied_photo(
+	app: AppHandle,
+	url: String,
+) -> Result<String, AppError> {
+	let bytes = read_photo(&app, &url)
+		.await
+		.ok_or(MediaError::PhotoUnloadable)?;
+	photo::off_thread(move || StagedMedia::of(&app)?.create_with(&bytes))
 		.await?
 		.map_err(media_error)
 }
@@ -149,6 +199,48 @@ mod tests {
 			fs::read(stage.0.path(&id).expect("path")).expect("read"),
 			b"first second"
 		);
+	}
+
+	#[test]
+	fn a_file_staged_with_bytes_holds_them() {
+		let stage = TempStage::new();
+
+		let id = stage.0.create_with(b"jpeg bytes").expect("create");
+
+		assert_eq!(
+			fs::read(stage.0.path(&id).expect("path")).expect("read"),
+			b"jpeg bytes"
+		);
+	}
+
+	#[test]
+	fn an_adopted_file_moves_into_the_stage() {
+		let stage = TempStage::new();
+		let picked = std::env::temp_dir().join(format!(
+			"og-picked-{}-{}",
+			std::process::id(),
+			NEXT.fetch_add(1, Ordering::Relaxed)
+		));
+		fs::write(&picked, b"picked").expect("write");
+
+		let id = stage.0.adopt(&picked).expect("adopt");
+
+		assert!(!picked.exists());
+		assert_eq!(
+			fs::read(stage.0.path(&id).expect("path")).expect("read"),
+			b"picked"
+		);
+	}
+
+	#[test]
+	fn adopting_a_missing_file_stages_nothing() {
+		let stage = TempStage::new();
+		let missing = stage.0 .0.join("missing");
+
+		let refused = stage.0.adopt(&missing).expect_err("refused");
+
+		assert_eq!(refused.kind(), io::ErrorKind::NotFound);
+		assert_eq!(fs::read_dir(&stage.0 .0).expect("directory").count(), 0);
 	}
 
 	#[test]

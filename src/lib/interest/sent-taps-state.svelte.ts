@@ -1,4 +1,7 @@
-import { accountScoped, registerAccountCache } from "#lib/api/account-caches.ts";
+import {
+	accountScoped,
+	registerAccountCache,
+} from "#lib/api/account-caches.ts";
 import { getSentTaps } from "#lib/api/interest/taps.ts";
 import {
 	isProfileViewable,
@@ -54,7 +57,7 @@ export class SentTapsState extends ReconcilingListState<
 	constructor() {
 		super({
 			pageSize: PAGE_SIZE,
-			refreshErrorLabel: "Failed to refresh sent taps",
+			refreshErrorLabel: () => "Failed to refresh sent taps",
 		});
 		this.start();
 	}

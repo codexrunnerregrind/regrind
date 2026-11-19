@@ -166,7 +166,13 @@ describe("resolveTagKeys", () => {
 		await state.resolveTagKeys();
 
 		expect(state.value?.tags).toEqual(["hiking", "unknown"]);
-		expect(setPreferencesMock).toHaveBeenCalledOnce();
+		expect(setPreferencesMock).toHaveBeenCalledExactlyOnceWith({
+			gridSearchFilters: {
+				...defaultFilters,
+				tagsEnabled: true,
+				tags: ["hiking", "unknown"],
+			},
+		});
 		expect(onQueryChange).not.toHaveBeenCalled();
 	});
 

@@ -4,10 +4,12 @@ use tauri::{AppHandle, WebviewUrl, WebviewWindowBuilder};
 use tokio::sync::oneshot;
 
 use crate::error::AppError;
+#[cfg(desktop)]
+use crate::native_strings::NativeText;
 
 use crate::api::oauth::{
-	close_windows, is_allowed_target, is_cancel_url, new_nonce,
-	next_window_label, without_secrets, CANCELED,
+	await_sign_in, close_windows, is_allowed_target, is_cancel_url, new_nonce,
+	next_window_label, without_secrets, SignInWait, CANCELED,
 };
 
 use super::dialog::{
@@ -17,20 +19,12 @@ use super::FacebookOauthBridge;
 
 const WINDOW_LABEL_PREFIX: &str = "facebook-oauth";
 
-const FLOW_TIMEOUT: std::time::Duration =
-	std::time::Duration::from_secs(10 * 60);
-
 /// iOS asks for no size: a window built without one covers the screen, and the
 /// app is what shows around anything smaller.
 #[cfg(desktop)]
 const WINDOW_INNER_SIZE: (f64, f64) = (600.0, 700.0);
 #[cfg(target_os = "android")]
 const WINDOW_INNER_SIZE: (f64, f64) = (500.0, 720.0);
-
-#[cfg(desktop)]
-const DESKTOP_USER_AGENT: &str =
-	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) \
-	 AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Safari/605.1.15";
 
 pub async fn fetch_access_token(
 	app: &AppHandle,
@@ -62,7 +56,6 @@ async fn run_flow(
 		&label,
 		WebviewUrl::External(dialog_url(&state)?),
 	)
-	.title("Sign in with Facebook")
 	.incognito(true)
 	.general_autofill_enabled(false)
 	.on_navigation(move |url| {
@@ -85,9 +78,18 @@ async fn run_flow(
 		false
 	});
 
+	#[cfg(target_os = "ios")]
+	{
+		builder =
+			builder.user_agent(&crate::api::oauth::user_agent::iphone_safari());
+	}
+
 	#[cfg(desktop)]
 	{
-		builder = builder.user_agent(DESKTOP_USER_AGENT);
+		let strings = crate::app_language::native_strings(app);
+		builder = builder
+			.user_agent(crate::api::oauth::user_agent::MAC_SAFARI)
+			.title(strings.text(NativeText::FacebookSignInTitle));
 	}
 
 	#[cfg(not(target_os = "ios"))]
@@ -119,27 +121,12 @@ async fn run_flow(
 		AppError::Http(format!("failed to open sign-in window: {e}"))
 	})?;
 
-	let bridge_for_close = bridge.clone();
-	window.on_window_event(move |event| {
-		if matches!(
-			event,
-			tauri::WindowEvent::CloseRequested { .. }
-				| tauri::WindowEvent::Destroyed
-		) {
-			bridge_for_close.fulfill(Err(CANCELED.to_owned()));
-		}
-	});
-
-	let result = match tokio::time::timeout(FLOW_TIMEOUT, rx).await {
-		Ok(Ok(result)) => result,
-		Ok(Err(_)) => {
-			dismiss_window(app).await;
-			return Err(AppError::Auth(
-				"sign-in flow ended unexpectedly".into(),
-			));
-		}
-		Err(_) => Err("Sign-in timed out".to_owned()),
-	};
+	let result = await_sign_in(SignInWait {
+		window: &window,
+		bridge,
+		answer: rx,
+	})
+	.await;
 
 	dismiss_window(app).await;
 

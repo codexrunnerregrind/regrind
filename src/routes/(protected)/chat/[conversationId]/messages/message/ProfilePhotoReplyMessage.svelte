@@ -43,7 +43,7 @@
 			title={isOut ? "Reply to them" : "Reply to me"}
 			label="Profile photo"
 		/>
-		<span class="wrap-anywhere whitespace-pre-wrap">
+		<span class="wrap-anywhere whitespace-pre-wrap" translate="no">
 			{message.photoContentReply}
 		</span>
 		{@render adornments?.()}

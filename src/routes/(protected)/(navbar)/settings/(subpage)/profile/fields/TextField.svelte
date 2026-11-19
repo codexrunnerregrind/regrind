@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Input } from "#lib/components/ui/input/index.ts";
+	import { formatInteger } from "#lib/i18n/format.ts";
 	import Field from "./Field.svelte";
 
 	let {
@@ -15,7 +16,7 @@
 	} = $props();
 </script>
 
-<Field {label} hint="{value.length}/{maxLength}">
+<Field {label} hint="{formatInteger(value.length)}/{formatInteger(maxLength)}">
 	{#snippet control({ id })}
 		<Input
 			{id}

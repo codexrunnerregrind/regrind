@@ -24,6 +24,7 @@ import {
 import { demoDrawerMedia } from "./drawer";
 import { demoFavoriteOf } from "./favorites";
 import { demoGiphyMessageBody } from "./giphy";
+import { neutralText } from "./neutral";
 import { picsum } from "./picsum";
 import { lastOnlineOf, onlineUntilOf, photosOf, profileSeed } from "./profiles";
 import { demoRightNowOf } from "./right-now";
@@ -99,7 +100,7 @@ function buildMessage({
 			? null
 			: {
 					type: "Text",
-					body: { text: message.replyToText },
+					body: { text: neutralText(message.replyToText) },
 					messageId: `${messageId}-quoted`,
 					conversationId,
 					senderId: message.fromMe ? conv.withId : demoMeProfileId,
@@ -256,7 +257,7 @@ function buildMessage({
 				type: "AlbumContentReply",
 				body: {
 					...contentBody,
-					albumContentReply: message.reply,
+					albumContentReply: neutralText(message.reply),
 					contentType: "image/jpeg",
 				},
 				...base,
@@ -275,7 +276,7 @@ function buildMessage({
 		default:
 			return {
 				type: "Text",
-				body: { text: message.text },
+				body: { text: neutralText(message.text) },
 				...base,
 				unsent: false,
 			};

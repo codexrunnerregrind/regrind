@@ -3,6 +3,7 @@
 
 	import ProfileMiniCard from "#lib/components/profile/ProfileMiniCard.svelte";
 	import LockIcon from "#lib/components/shared/LockIcon.svelte";
+	import { t } from "#lib/i18n/index.ts";
 	import type { ViewPreview } from "#lib/model/interest/views.ts";
 	import ViewedMeta from "./ViewedMeta.svelte";
 
@@ -35,10 +36,14 @@
 			>
 				{#if preview.isSecretAdmirer}
 					<HeartIcon weight="fill" class="size-4.5 text-rose-400" />
-					<span class="sr-only">Secret admirer</span>
+					<span class="sr-only"
+						>{t("interest.views.preview.a11y.secretAdmirer")}</span
+					>
 				{:else}
 					<LockIcon class="size-4.5" />
-					<span class="sr-only">Hidden viewer</span>
+					<span class="sr-only"
+						>{t("interest.views.preview.a11y.hiddenViewer")}</span
+					>
 				{/if}
 			</div>
 		</div>

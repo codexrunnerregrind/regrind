@@ -5,6 +5,7 @@
 	import { reportAccountProfile } from "#lib/api/accounts.svelte.ts";
 	import { preferencesSnapshot } from "#lib/app-data/preferences.svelte.ts";
 	import CommandCenter from "#lib/components/command-center/CommandCenter.svelte";
+	import RefreshAnnouncements from "#lib/components/feedback/refresh/RefreshAnnouncements.svelte";
 	import ProfilePeekHost from "#lib/components/profile/peek/ProfilePeekHost.svelte";
 	import MediaDropOverlay from "#lib/components/shared/MediaDropOverlay.svelte";
 	import { tabShellShowing } from "#lib/components/tab-shell/tab-shell-state.svelte.ts";
@@ -73,3 +74,4 @@
 {#key data.ourProfileId}
 	<ProfilePeekHost ourProfileId={data.ourProfileId} />
 {/key}
+<RefreshAnnouncements />

@@ -18,6 +18,8 @@ import {
 	MINUTE,
 	NOW,
 } from "../config";
+import { num } from "../routing";
+import { sceneProfile } from "../screenshot-scene";
 import { demoProfileResolves } from "./blocks";
 import { demoFavoriteNote } from "./favorite-notes";
 import { demoFavoriteOf } from "./favorites";
@@ -32,12 +34,6 @@ import {
 	socialNetworksOf,
 } from "./profiles";
 import { demoRightNowOf } from "./right-now";
-
-export function num(value: string | null): number | undefined {
-	if (value === null) return undefined;
-	const n = Number(value);
-	return Number.isFinite(n) ? n : undefined;
-}
 
 export type DemoShortProfile = z.infer<typeof profileShortSchema> &
 	z.infer<typeof profileRightNowSchema>;
@@ -168,15 +164,20 @@ type CascadePartialItem = z.infer<
 
 function cascadeProfileData(seed: DemoSeed) {
 	const photos = photosOf(seed.id);
+	const {
+		onlineUntil = onlineUntilOf(seed),
+		unreadCount = seed.unread,
+		isVisiting = false,
+	} = __SCREENSHOTS__ ? sceneProfile(seed.id) : {};
 	return {
 		profileId: seed.id,
-		onlineUntil: onlineUntilOf(seed),
+		onlineUntil,
 		displayName: seed.name,
 		distanceMeters: seed.distanceM ?? undefined,
 		lastOnline: lastOnlineOf(seed),
 		rightNow: "NOT_ACTIVE" as const,
-		unreadCount: seed.unread,
-		isVisiting: false,
+		unreadCount,
+		isVisiting,
 		isPopular: seed.favorite || seed.unread > 0,
 		primaryImageUrl: photos[0]
 			? `https://cdns.grindr.com/images/profile/480x480/${photos[0]}`
@@ -222,12 +223,14 @@ function isPartialId(id: number): boolean {
 function filteredGridIds(params: URLSearchParams): number[] {
 	const favorites = params.get("favorites") === "true";
 	const onlineOnly = params.get("onlineOnly") === "true";
+	const rightNow = params.get("rightNow") === "true";
 	const fresh = params.get("fresh") === "true";
 	const ageMin = num(params.get("ageMin"));
 	const ageMax = num(params.get("ageMax"));
 	if (
 		!favorites &&
 		!onlineOnly &&
+		!rightNow &&
 		!fresh &&
 		ageMin === undefined &&
 		ageMax === undefined
@@ -242,6 +245,8 @@ function filteredGridIds(params: URLSearchParams): number[] {
 		)
 			return false;
 		if (onlineOnly && !seed.online) return false;
+		if (rightNow && demoRightNowOf(id).rightNow === "NOT_ACTIVE")
+			return false;
 		if (fresh && !isNewId(id)) return false;
 		if (ageMin !== undefined && (seed.age === null || seed.age < ageMin))
 			return false;

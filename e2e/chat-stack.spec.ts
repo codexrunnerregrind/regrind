@@ -10,7 +10,7 @@ import {
 	pathname,
 } from "./support/app";
 import {
-	backToChats,
+	backToInbox,
 	base,
 	dim,
 	listScroller,
@@ -145,7 +145,7 @@ test.describe("the chat stack on a phone", () => {
 		await openConversation(page, { href: visibleRow! });
 
 		const recording = recordFrames(page);
-		await backToChats(page).click();
+		await backToInbox(page).click();
 		const leaving = (await recording).filter(
 			({ path, sheet }) => path === "/chat" && sheet !== null,
 		);
@@ -283,7 +283,7 @@ test.describe("the chat stack on a phone", () => {
 		await page.getByRole("button", { name: "Reply" }).click();
 		await expect(page.getByLabel("Cancel reply")).toBeVisible();
 
-		await backToChats(page).click();
+		await backToInbox(page).click();
 		await expect(page.locator("[data-leaving]")).toBeAttached();
 		expect(
 			await page.evaluate(() => window.__AndroidOnBackGesture?.()),
@@ -315,12 +315,12 @@ test.describe("the chat stack on a phone", () => {
 	}) => {
 		await installTauriShim(page, { platform: "android" });
 		await page.goto(DEMO_CONVERSATION);
-		await backToChats(page).waitFor({ timeout: FIRST_ROUTE_COMPILE_MS });
+		await backToInbox(page).waitFor({ timeout: FIRST_ROUTE_COMPILE_MS });
 
 		expect(await startSystemBack(page)).toBe(false);
 
 		const recording = recordFrames(page);
-		await backToChats(page).click();
+		await backToInbox(page).click();
 		const frames = (await recording).filter(({ sheet }) => sheet !== null);
 		expect(frames.length).toBeGreaterThan(3);
 		await expect(page).toHaveURL(/\/chat$/);
@@ -363,7 +363,7 @@ test.describe("the list behind a conversation that is sliding out on an Android 
 
 	async function pressBackAndHoldMidSlide(page: Page) {
 		const paused = pauseMidSlide(page, { pane: SHEET });
-		await backToChats(page).click();
+		await backToInbox(page).click();
 		const edge = await paused;
 		await expect(sheet(page)).toHaveAttribute("data-leaving");
 		return edge;
@@ -472,7 +472,7 @@ test.describe("the list behind a conversation that is sliding out on an Android 
 		page,
 	}) => {
 		await openOneOfTwo(page);
-		const arrow = (await backToChats(page).boundingBox())!;
+		const arrow = (await backToInbox(page).boundingBox())!;
 		const edge = await pressBackAndHoldMidSlide(page);
 		const secondTap = {
 			x: arrow.x + arrow.width / 2,
@@ -485,7 +485,7 @@ test.describe("the list behind a conversation that is sliding out on an Android 
 		await expect(sheet(page)).toHaveCount(0);
 
 		expect(await pathname(page)).toBe("/chat");
-		for (const name of ["Favorites only", "Unread"])
+		for (const name of ["Favorites Only", "Unread"])
 			await expect(
 				page.getByRole("button", { name, exact: true }),
 			).toHaveAttribute("aria-pressed", "false");
@@ -527,9 +527,9 @@ test("wide screens show the list beside the conversation with no stack", async (
 	page,
 }) => {
 	await page.setViewportSize(WIDE);
-	await openInbox(page);
+	await openInbox(page, { platform: "macos" });
 	await rows(page).nth(1).click();
-	await backToChats(page).waitFor();
+	await backToInbox(page).waitFor();
 
 	await expect(base(page)).toHaveCount(0);
 	await expect(sheet(page)).toHaveCount(0);

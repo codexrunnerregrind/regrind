@@ -2,7 +2,9 @@
 	import { goto } from "$app/navigation";
 	import { page } from "$app/state";
 
+	import PageTitle from "#lib/components/shared/PageTitle.svelte";
 	import UnderlineTabs from "#lib/components/shared/UnderlineTabs.svelte";
+	import { t } from "#lib/i18n/index.ts";
 	import { getSentTapsState } from "#lib/interest/sent-taps-state.svelte.ts";
 	import { getTapsState } from "#lib/interest/taps-state.svelte.ts";
 	import { getViewActivityState } from "#lib/interest/view-activity.svelte.ts";
@@ -47,12 +49,12 @@
 	const tabs = $derived([
 		{
 			value: interestTabs[0],
-			label: "Views",
+			label: t("interest.tabs.views"),
 			count: views.loading ? null : views.total,
 		},
 		{
 			value: interestTabs[1],
-			label: "Taps",
+			label: t("interest.tabs.taps"),
 			count: taps.loading ? null : taps.total,
 		},
 		{
@@ -97,15 +99,18 @@
 	let gliding = $state(false);
 </script>
 
+{#if active}
+	<PageTitle page={tabs[activeIndex]?.label ?? ""} />
+{/if}
 <!-- Opaque, not a blur gradient: the grid scrolls underneath, and a fading
      background let the tiles read straight through the title and tabs. -->
 <nav
 	bind:clientHeight={headerHeight}
-	aria-label="Interest"
+	aria-label={t("common.sections.interest")}
 	data-fixed-header
 	class="fixed top-0 left-0 z-10 w-full bg-background px-screen pt-fixed-header"
 >
-	<h1 class="screen-title">Interest</h1>
+	<h1 class="screen-title">{t("common.sections.interest")}</h1>
 	<UnderlineTabs
 		{tabs}
 		value={tabs[activeIndex]?.value ?? ""}

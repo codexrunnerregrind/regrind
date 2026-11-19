@@ -1,14 +1,22 @@
-<script>
+<script lang="ts">
 	import UserIcon from "phosphor-svelte/lib/UserIcon";
 
 	import { Button } from "#lib/components/ui/button/index.ts";
 	import * as Kbd from "#lib/components/ui/kbd/index.ts";
-	import { modifierKeyLabel } from "#lib/platform/keybindings.ts";
+	import { t } from "#lib/i18n/index.ts";
+	import {
+		commandCenterKeybinding,
+		parseShortcut,
+	} from "#lib/platform/keybindings.ts";
 	import { isMobilePlatform } from "#lib/platform/os.ts";
 	import { commandCenterState } from "./command-center-state.svelte";
 
 	const isMobile = isMobilePlatform();
-	const modifierKey = modifierKeyLabel();
+	const shortcut = parseShortcut(commandCenterKeybinding);
+	const modifierKey = $derived(
+		shortcut.modifier === "meta" ? "⌘" : t("commands.trigger.controlKey"),
+	);
+	const keySuffix = ` + ${shortcut.key}`;
 </script>
 
 <Button
@@ -19,6 +27,8 @@
 >
 	<UserIcon />
 	{#if !isMobile}
-		<Kbd.Root>{modifierKey} + K</Kbd.Root>
+		<Kbd.Root>
+			<span>{modifierKey}<span translate="no">{keySuffix}</span></span>
+		</Kbd.Root>
 	{/if}
 </Button>

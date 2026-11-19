@@ -15,7 +15,7 @@
      and nav bar; the wrapper stays either way so the layouts below it (the
      settings stack) are not remounted as the shell comes and goes. -->
 <div
-	class="flex min-h-dvh flex-col pt-(--safe-area-top) pb-(--content-pb)"
+	class="flex min-h-dvh flex-col pt-(--safe-area-top) px-safe pb-(--content-pb)"
 	use:swipeTabs={{
 		enabled: !tabShellShowing(),
 		onNext: () => swipeToNavTab(page.route.id, 1),

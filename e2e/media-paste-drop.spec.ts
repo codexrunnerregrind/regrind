@@ -6,7 +6,7 @@ import {
 	test,
 } from "@playwright/test";
 
-import { MEDIA_SLOT, openSharedAlbum } from "./support/albums";
+import { MEDIA_SLOT, openAlbum, SHARED_ALBUM } from "./support/albums";
 import {
 	DEMO_CONVERSATION,
 	installTauriShim,
@@ -63,9 +63,9 @@ function bottomOf(locator: Locator): Promise<number> {
 }
 
 async function openChat(page: Page) {
-	await installTauriShim(page);
+	await installTauriShim(page, { platform: "macos" });
 	await page.goto(DEMO_CONVERSATION);
-	const composer = page.getByPlaceholder("Say something...");
+	const composer = page.getByPlaceholder("Write a message…");
 	await composer.waitFor({ timeout: 30_000 });
 	return composer;
 }
@@ -121,7 +121,7 @@ async function recordedVideo(page: Page): Promise<JSHandle<DataTransfer>> {
 async function paste(page: Page, file: FileSpec | JSHandle<DataTransfer>) {
 	const clipboardData =
 		"base64" in file ? await transferOf(page, file) : file;
-	await page.getByPlaceholder("Say something...").evaluate((input, data) => {
+	await page.getByPlaceholder("Write a message…").evaluate((input, data) => {
 		input.dispatchEvent(
 			new ClipboardEvent("paste", {
 				clipboardData: data,
@@ -322,7 +322,7 @@ test.describe("pasting and dropping media", () => {
 		await paste(page, PDF);
 
 		const toast = page.locator("[data-sonner-toast]", {
-			hasText: "That file isn't a photo or video",
+			hasText: "That file isn’t a photo or video",
 		});
 		await expect(toast).toBeVisible();
 		const onTop = await toast.evaluate((element) => {
@@ -415,7 +415,7 @@ test.describe("pasting and dropping media", () => {
 
 		await expect(
 			page.locator("[data-sonner-toast]", {
-				hasText: "Couldn't read that photo",
+				hasText: "Couldn’t read that photo",
 			}),
 		).toBeVisible();
 		await expect(sendDialog(page)).toHaveCount(0);
@@ -435,7 +435,7 @@ test.describe("pasting and dropping media", () => {
 	});
 
 	test("a photo dropped on an album lands in it", async ({ page }) => {
-		await openSharedAlbum(page);
+		await openAlbum(page, { tile: SHARED_ALBUM, platform: "macos" });
 		await expect(page.locator(MEDIA_SLOT)).toHaveCount(3);
 		const dataTransfer = await transferOf(page, PNG);
 

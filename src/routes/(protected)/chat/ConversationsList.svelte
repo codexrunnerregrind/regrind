@@ -409,9 +409,11 @@
 									</div>
 									<!-- The card closes the group, so the last row's separator would
 						     draw a stray line just inside its bottom edge. -->
+									<!-- eslint-disable better-tailwindcss/no-restricted-classes -->
 									<div
 										class="pinned-group mx-screen overflow-hidden rounded-xl bg-card [&>:last-child_a]:after:border-b-0"
 									>
+										<!-- eslint-enable better-tailwindcss/no-restricted-classes -->
 										{#each pinnedEntries as conversation (conversation.data.conversationId)}
 											{@render row(conversation, true)}
 										{/each}
@@ -438,6 +440,7 @@
 						<DataRefreshControl
 							{container}
 							updating={conversations.refreshing}
+							failed={conversations.refreshFailed}
 							position="top"
 							hintOffset={12}
 							onrefresh={() => {

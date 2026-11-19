@@ -1,6 +1,7 @@
 <script lang="ts">
 	import fireEmoji from "#lib/assets/emojis/fire/32px.png";
 	import { Badge } from "#lib/components/ui/badge/index.ts";
+	import { t } from "#lib/i18n/index.ts";
 
 	let { type }: { type: number } = $props();
 </script>
@@ -13,7 +14,7 @@
 		<img
 			src={fireEmoji}
 			data-ui-glyph
-			alt="Fire reaction"
+			alt={t("chat.message.reaction.a11y.fire")}
 			width="16"
 			height="16"
 			draggable="false"

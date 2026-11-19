@@ -9,6 +9,7 @@
 	import { Button } from "#lib/components/ui/button/index.ts";
 	import * as Dialog from "#lib/components/ui/dialog/index.ts";
 	import * as InputGroup from "#lib/components/ui/input-group/index.ts";
+	import { commandCenterKeybinding } from "#lib/platform/keybindings.ts";
 	import {
 		commandCenterClose,
 		commandCenterState,
@@ -22,7 +23,7 @@
 
 	onMount(() => {
 		return tinykeys(window, {
-			"$mod+k": (event) => {
+			[commandCenterKeybinding]: (event) => {
 				event.preventDefault();
 				commandCenterState.open = true;
 			},

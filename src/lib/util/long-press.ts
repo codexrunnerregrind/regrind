@@ -1,9 +1,11 @@
 import type { HTMLAttributes } from "svelte/elements";
 
 import { playHaptic } from "#lib/haptics.ts";
+import { currentPlatform } from "#lib/platform/os.ts";
 import { firedByTouch } from "#lib/platform/touch-origin.ts";
+import type { PagePoint } from "#lib/util/page-point.ts";
 
-const LONG_PRESS_DURATION_MS = 450;
+export const LONG_PRESS_DURATION_MS = 450;
 const LONG_PRESS_MOVE_TOLERANCE_PX = 12;
 // iOS WebKit does not reliably fire `dblclick` for touch, so we synthesize a
 // double-tap from two quick taps landing close together.
@@ -84,8 +86,22 @@ export type LongPressHandlers = Pick<
 // Marks a click we dispatched ourselves so the capture handler lets it through.
 const REPLAYED_CLICKS = new WeakSet<Event>();
 
+type MenuLongPressSource = "holdTimer" | "contextMenu";
+
+export function menuLongPressSource(): MenuLongPressSource {
+	switch (currentPlatform()) {
+		case "ios":
+			return "holdTimer";
+		case "android":
+		case "linux":
+		case "macos":
+		case "windows":
+			return "contextMenu";
+	}
+}
+
 export function longPressHandlers(
-	onLongPress: () => void,
+	onLongPress: (point: PagePoint) => void,
 	onDoubleTap?: () => void,
 	// Media messages open a lightbox on the first tap, which swallows the second
 	// one — so their tap action waits out the double-tap window before it runs.
@@ -133,7 +149,10 @@ export function longPressHandlers(
 				pressConsumed = true;
 				cancelReplay();
 				holdTouch();
-				fireOnce({ onLongPress, byTouch });
+				fireOnce({
+					onLongPress: () => onLongPress({ x: originX, y: originY }),
+					byTouch,
+				});
 			}, LONG_PRESS_DURATION_MS);
 		},
 		onpointermove(event) {
@@ -212,14 +231,40 @@ export function longPressHandlers(
 			if (Date.now() < heldTouchUntil) return;
 			if (pressing && pressConsumed) return;
 			pressConsumed = true;
+			const point = { x: event.clientX, y: event.clientY };
 			const { pointerType } = event as Partial<PointerEvent>;
 			if (pointerType === "mouse" || pointerType === "") {
-				onLongPress();
+				onLongPress(point);
 				return;
 			}
 			const byTouch = firedByTouch(event);
 			if (byTouch) holdTouch();
-			fireOnce({ onLongPress, byTouch });
+			fireOnce({ onLongPress: () => onLongPress(point), byTouch });
 		},
 	};
+}
+
+export function menuPressHandlers({
+	openMenu,
+	onHold,
+}: {
+	openMenu: (press: { byTouch: boolean }) => boolean;
+	onHold?: () => void;
+}): LongPressHandlers {
+	switch (menuLongPressSource()) {
+		case "holdTimer":
+			return longPressHandlers(() => {
+				onHold?.();
+				openMenu({ byTouch: true });
+			});
+		case "contextMenu":
+			return {
+				oncontextmenu(event) {
+					event.preventDefault();
+					const byTouch = firedByTouch(event);
+					if (openMenu({ byTouch }) && byTouch)
+						playHaptic("longPress");
+				},
+			};
+	}
 }

@@ -11,20 +11,12 @@ import {
 	isMobilePlatform,
 } from "#lib/platform/os.ts";
 
-// Gesture kinds go through the native `play_haptic` command on Android and
-// macOS; iOS has no such command and maps them onto tauri-plugin-haptics, which
-// is only registered on mobile and also backs the impact/selection/notification
-// helpers below.
+// Gesture kinds go through the native `play_haptic` command; tauri-plugin-haptics
+// (mobile only) backs the impact/selection/notification helpers below.
 
 export type HapticKind = "longPress" | "threshold" | "dragStart";
 export type ImpactStyle = "light" | "medium" | "heavy" | "soft" | "rigid";
 export type NotificationType = "success" | "warning" | "error";
-
-const IOS_KIND_IMPACT: Record<HapticKind, ImpactStyle> = {
-	longPress: "medium",
-	threshold: "light",
-	dragStart: "medium",
-};
 
 export function hapticsAvailable(): boolean {
 	return isAndroidPlatform() || isIosPlatform() || isMacosPlatform();
@@ -46,10 +38,6 @@ function plugin(
 }
 
 export function playHaptic(kind: HapticKind): void {
-	if (isIosPlatform()) {
-		plugin(({ impactFeedback }) => impactFeedback(IOS_KIND_IMPACT[kind]));
-		return;
-	}
 	if (!enabled()) return;
 	void invoke("play_haptic", { kind }).catch(console.error);
 }

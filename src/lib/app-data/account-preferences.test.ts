@@ -3,6 +3,31 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("svelte-sonner", () => ({ toast: { error: vi.fn() } }));
 
+const files = new Map<string, Uint8Array>();
+vi.mock("#lib/app-data/index.ts", () => ({
+	existsAppDataFile: (path: string) => Promise.resolve(files.has(path)),
+	readAppDataFile: (path: string) => {
+		const content = files.get(path);
+		return content === undefined
+			? Promise.reject(new Error(`No app data file at ${path}`))
+			: Promise.resolve(content);
+	},
+	removeAppDataFile: (path: string) => {
+		files.delete(path);
+		return Promise.resolve();
+	},
+	writeAppDataFileAtomic: ({
+		path,
+		content,
+	}: {
+		path: string;
+		content: Uint8Array;
+	}) => {
+		files.set(path, content);
+		return Promise.resolve();
+	},
+}));
+
 import {
 	existsAppDataFile,
 	readAppDataFile,
@@ -31,7 +56,7 @@ async function write(path: string, values: unknown): Promise<void> {
 
 describe("preferences split between the app and each account", () => {
 	beforeEach(async () => {
-		localStorage.clear();
+		files.clear();
 		// Back to "nobody signed in", which is where the app starts.
 		await usePreferencesForAccount(null);
 	});

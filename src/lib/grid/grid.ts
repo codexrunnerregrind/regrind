@@ -11,7 +11,7 @@ import { notePhotos } from "#lib/interest/viewer-matches.ts";
 import { coarsenGeohash } from "#lib/model/geohash.ts";
 import { now } from "#lib/util/clock.ts";
 import type { cascadeV4ResponseFullProfileV1Schema } from "#lib/model/browse/grid/cascade/response/v4.ts";
-import type { RightNowStatus } from "#lib/model/right-now.ts";
+import type { RightNowStatus } from "#lib/model/right-now/index.ts";
 
 type CascadeProfileData = z.infer<
 	typeof cascadeV4ResponseFullProfileV1Schema
@@ -193,6 +193,17 @@ registerAccountCache({
 		storedGeohash = null;
 	},
 });
+
+export async function storeLocation({
+	geohash,
+}: {
+	geohash: string;
+}): Promise<void> {
+	await updateLocation({ geohash }).then(
+		() => recordStoredLocation(geohash),
+		(error: unknown) => console.error(error),
+	);
+}
 
 function recordStoredLocation(geohash: string): void {
 	const coarse = coarsenGeohash(geohash);

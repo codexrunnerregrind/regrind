@@ -14,7 +14,10 @@
 
 	function unimplemented() {
 		toast(ToastUnimplemented, {
-			componentProps: { feature: "Account settings", issue: 47 },
+			componentProps: {
+				message: "settings.account.unimplemented",
+				issue: 47,
+			},
 		});
 	}
 </script>

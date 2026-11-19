@@ -2,6 +2,7 @@
 	import MicrophoneIcon from "phosphor-svelte/lib/MicrophoneIcon";
 
 	import PrimaryComposerButton from "#lib/components/shared/PrimaryComposerButton.svelte";
+	import { t } from "#lib/i18n/index.ts";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
 
 	const { disabled, voice } = $derived(getMessageComposerContext()());
@@ -54,7 +55,7 @@
 </script>
 
 <PrimaryComposerButton
-	aria-label="Record voice message"
+	aria-label={t("chat.composer.voiceMessage.a11y.record")}
 	class={[
 		// The mic is a drag handle for the length of a recording, so the webview
 		// must not claim the gesture for panning.

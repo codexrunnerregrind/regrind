@@ -15,6 +15,7 @@ import {
 	refreshProfile,
 } from "#lib/api/users/profiles.ts";
 import { getPreferences } from "#lib/app-data/preferences.svelte.ts";
+import { t } from "#lib/i18n/index.ts";
 import { TapType } from "#lib/model/interest/taps.ts";
 import { Generation } from "#lib/util/generation.ts";
 import type { Profile } from "#lib/model/users/profiles.ts";
@@ -50,6 +51,7 @@ export class ProfileState {
 	profile: Profile | null = $state(null);
 	loading = $state(true);
 	refreshing = $state(false);
+	refreshFailed = $state(false);
 	error: Error | null = $state(null);
 	changingViewability = $state(false);
 	/** The preference held the view back or sending it failed. */
@@ -203,6 +205,7 @@ export class ProfileState {
 	}
 
 	async #load({ refresh }: { refresh: boolean }): Promise<void> {
+		this.refreshFailed = false;
 		if (refresh) {
 			this.refreshing = true;
 			invalidateProfile(this.profileId);
@@ -225,10 +228,11 @@ export class ProfileState {
 			}
 		} catch (error) {
 			if (this.#superseded(generation)) return;
+			this.refreshFailed = true;
 			if (refresh && !isUnviewableProfileError(error)) {
 				console.error(error);
 				showErrorToast({
-					label: "Failed to refresh profile",
+					label: t("profile.page.errors.refreshFailed"),
 					error,
 					onRetry: () => void this.refresh(),
 				});

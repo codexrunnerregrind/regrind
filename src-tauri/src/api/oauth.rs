@@ -1,29 +1,37 @@
 use std::marker::PhantomData;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
+use std::time::Duration;
 
 use base64::Engine;
-use tauri::{AppHandle, Manager, Url};
+use tauri::{AppHandle, Manager, Url, WebviewWindow, WindowEvent};
 use tokio::sync::oneshot;
 
 use crate::app_origin::is_served_locally;
 use crate::error::AppError;
 
-/// Matched verbatim by the frontend, which stays silent for it.
+#[cfg(any(target_os = "ios", desktop))]
+pub mod user_agent;
+
 pub const CANCELED: &str = "Sign-in canceled";
 
 /// The mobile sign-in window has no chrome, so the injected close button asks
 /// for the cancel by navigating here; no page of the flow ever uses this path.
 pub const CANCEL_PATH: &str = "/__regrind_oauth_cancel__";
+
+const FLOW_TIMEOUT: Duration = Duration::from_secs(10 * 60);
+
 pub const COMPANION_UNAVAILABLE: &str = "companion-unavailable";
 pub const COMPANION_UNTRUSTED: &str = "companion-untrusted";
 pub const COMPANION_REFUSED: &str = "companion-refused";
 pub const COMPANION_DISABLED: &str = "companion-disabled";
+pub const COMPANION_FAILED: &str = "companion-failed";
 const COMPANION_CANCELLED: &str = "cancelled";
-const COMPANION_FAILED: &str = "Google sign-in failed";
 
-pub trait OauthProvider: Send + Sync + 'static {
-	const NAME: &'static str;
-}
+pub const IN_PROGRESS: &str = "sign-in-in-progress";
+pub const FLOW_ENDED: &str = "sign-in-flow-ended";
+pub const TIMED_OUT: &str = "sign-in-timed-out";
+
+pub trait OauthProvider: Send + Sync + 'static {}
 
 /// The type parameter gives each provider its own Tauri state key.
 pub struct OauthBridge<P: OauthProvider> {
@@ -50,10 +58,7 @@ impl<P: OauthProvider> OauthBridge<P> {
 	) -> Result<oneshot::Receiver<Result<String, String>>, AppError> {
 		let mut pending = self.pending.lock().unwrap();
 		if pending.is_some() {
-			return Err(AppError::Auth(format!(
-				"{} sign-in already in progress",
-				P::NAME
-			)));
+			return Err(AppError::Auth(IN_PROGRESS.into()));
 		}
 		let (tx, rx) = oneshot::channel();
 		*pending = Some(tx);
@@ -69,6 +74,28 @@ impl<P: OauthProvider> OauthBridge<P> {
 	pub(crate) fn abort(&self) {
 		let _ = self.pending.lock().unwrap().take();
 	}
+}
+
+pub struct SignInWait<'a, P: OauthProvider> {
+	pub window: &'a WebviewWindow,
+	pub bridge: &'a Arc<OauthBridge<P>>,
+	pub answer: oneshot::Receiver<Result<String, String>>,
+}
+
+pub async fn await_sign_in<P: OauthProvider>(
+	wait: SignInWait<'_, P>,
+) -> Result<String, String> {
+	let bridge_for_close = wait.bridge.clone();
+	wait.window.on_window_event(move |event| {
+		if matches!(
+			event,
+			WindowEvent::CloseRequested { .. } | WindowEvent::Destroyed
+		) {
+			bridge_for_close.fulfill(Err(CANCELED.to_owned()));
+		}
+	});
+
+	answer_in_time(wait.answer).await
 }
 
 pub fn is_cancel_url(url: &Url) -> bool {
@@ -100,6 +127,20 @@ pub fn close_windows(app: &AppHandle, prefix: &str) {
 		let _ = window.clear_all_browsing_data();
 		let _ = window.destroy();
 	}
+}
+
+async fn delivered(
+	rx: oneshot::Receiver<Result<String, String>>,
+) -> Result<String, String> {
+	rx.await.unwrap_or_else(|_| Err(FLOW_ENDED.to_owned()))
+}
+
+async fn answer_in_time(
+	rx: oneshot::Receiver<Result<String, String>>,
+) -> Result<String, String> {
+	tokio::time::timeout(FLOW_TIMEOUT, delivered(rx))
+		.await
+		.unwrap_or_else(|_| Err(TIMED_OUT.to_owned()))
 }
 
 pub fn companion_failure(rejection: Option<&str>) -> AppError {
@@ -185,9 +226,7 @@ mod tests {
 
 	struct TestProvider;
 
-	impl OauthProvider for TestProvider {
-		const NAME: &'static str = "Test";
-	}
+	impl OauthProvider for TestProvider {}
 
 	fn bridge() -> OauthBridge<TestProvider> {
 		OauthBridge::new()
@@ -262,6 +301,11 @@ mod tests {
 			)),
 			"sign-in.ts companionRefused is not {COMPANION_REFUSED}"
 		);
+		assert!(
+			frontend
+				.contains(&format!("companionFailed = \"{COMPANION_FAILED}\"")),
+			"sign-in.ts companionFailed is not {COMPANION_FAILED}"
+		);
 		let squashed =
 			|source: &str| source.split_whitespace().collect::<String>();
 		assert!(
@@ -286,6 +330,30 @@ mod tests {
 			)),
 			"GoogleOauthPlugin.kt ERROR_CANCELLED is not {COMPANION_CANCELLED}"
 		);
+	}
+
+	#[test]
+	fn the_cancel_message_matches_the_frontend() {
+		let frontend = include_str!("../../../src/lib/api/sign-in.ts");
+		assert!(
+			frontend.contains(&format!("appError.message === \"{CANCELED}\"")),
+			"sign-in.ts no longer stays silent for {CANCELED}"
+		);
+	}
+
+	#[test]
+	fn flow_markers_match_the_frontend() {
+		let frontend = include_str!("../../../src/lib/api/sign-in.ts");
+		for (typescript, marker) in [
+			("signInInProgress", IN_PROGRESS),
+			("signInFlowEnded", FLOW_ENDED),
+			("signInTimedOut", TIMED_OUT),
+		] {
+			assert!(
+				frontend.contains(&format!("{typescript} = \"{marker}\"")),
+				"sign-in.ts {typescript} is not {marker}"
+			);
+		}
 	}
 
 	#[test]
@@ -342,13 +410,49 @@ mod tests {
 	}
 
 	#[test]
-	fn the_refusal_names_the_provider() {
+	fn the_refusal_reaches_the_frontend_as_its_marker() {
 		let bridge = bridge();
 		let _rx = bridge.begin().expect("first flow starts");
 		let Err(AppError::Auth(message)) = bridge.begin() else {
 			panic!("a second flow must be refused");
 		};
-		assert_eq!(message, "Test sign-in already in progress");
+		assert_eq!(message, IN_PROGRESS);
+	}
+
+	#[tokio::test]
+	async fn a_delivered_result_is_the_verdict() {
+		let bridge = bridge();
+		let rx = bridge.begin().expect("first flow starts");
+		bridge.fulfill(Ok("token".into()));
+		assert_eq!(delivered(rx).await, Ok("token".into()));
+	}
+
+	#[tokio::test]
+	async fn a_flow_aborted_before_its_result_ends_as_its_marker() {
+		let bridge = bridge();
+		let rx = bridge.begin().expect("first flow starts");
+		bridge.abort();
+		assert_eq!(delivered(rx).await, Err(FLOW_ENDED.into()));
+	}
+
+	#[tokio::test]
+	async fn a_result_delivered_in_time_is_the_answer() {
+		let (tx, rx) = oneshot::channel();
+		tx.send(Ok("token".to_owned())).unwrap();
+		assert_eq!(answer_in_time(rx).await, Ok("token".into()));
+	}
+
+	#[tokio::test(start_paused = true)]
+	async fn a_sign_in_page_left_open_past_the_limit_times_out() {
+		let (_tx, rx) = oneshot::channel();
+		assert_eq!(answer_in_time(rx).await, Err(TIMED_OUT.into()));
+	}
+
+	#[tokio::test]
+	async fn a_flow_whose_answer_can_never_arrive_ends_unexpectedly() {
+		let (tx, rx) = oneshot::channel::<Result<String, String>>();
+		drop(tx);
+		assert_eq!(answer_in_time(rx).await, Err(FLOW_ENDED.into()));
 	}
 
 	#[test]

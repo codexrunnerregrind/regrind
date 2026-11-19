@@ -1,9 +1,9 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 
 import {
-	ensureGridLocation,
 	FIRST_ROUTE_COMPILE_MS,
 	installTauriShim,
+	openGrid,
 	TrustedTouch,
 } from "./support/app";
 
@@ -34,13 +34,8 @@ interface Surface {
 
 async function openBrowse(page: Page) {
 	await page.setViewportSize(VIEWPORT);
-	await installTauriShim(page);
-	await page.goto("/");
-	await page
-		.locator("nav a")
-		.first()
-		.waitFor({ timeout: FIRST_ROUTE_COMPILE_MS });
-	await ensureGridLocation(page);
+	await installTauriShim(page, { platform: "macos" });
+	await openGrid(page);
 }
 
 async function settledDialog(page: Page, name: string) {
@@ -59,7 +54,7 @@ async function settledDialog(page: Page, name: string) {
 
 const AGE_QUICK_FILTER: Surface = {
 	name: "age quick filter",
-	thumb: "Minimum age",
+	thumb: "Minimum Age",
 	open: async (page) => {
 		await openBrowse(page);
 		await page.getByRole("button", { name: "Age", exact: true }).click();
@@ -69,10 +64,10 @@ const AGE_QUICK_FILTER: Surface = {
 
 const DISTANCE_QUICK_FILTER: Surface = {
 	name: "inbox distance filter",
-	thumb: "Maximum distance",
+	thumb: "Maximum Distance",
 	open: async (page) => {
 		await page.setViewportSize(VIEWPORT);
-		await installTauriShim(page);
+		await installTauriShim(page, { platform: "macos" });
 		await page.goto("/chat");
 		const pill = page.getByRole("button", {
 			name: "Distance",
@@ -86,7 +81,7 @@ const DISTANCE_QUICK_FILTER: Surface = {
 
 const FULL_FILTERS: Surface = {
 	name: "full filters",
-	thumb: "Minimum age",
+	thumb: "Minimum Age",
 	open: async (page) => {
 		await openBrowse(page);
 		await page.getByRole("button", { name: "All filters" }).click();

@@ -19,22 +19,23 @@
 	import SettingsGroup from "#lib/components/settings/SettingsGroup.svelte";
 	import SettingsRow from "#lib/components/settings/SettingsRow.svelte";
 	import { appIconAvailable } from "#lib/platform/app-icon.ts";
-	import { desktopEntryAvailable } from "#lib/platform/desktop-entry.svelte";
+	import { desktopEntryAvailable } from "#lib/platform/desktop-entry.svelte.ts";
 	import { hapticsAvailable } from "#lib/platform/haptics.ts";
 	import { keepScreenOnAvailable } from "#lib/platform/keep-screen-on.ts";
-	import { addonInstallerAvailable } from "#lib/updates/addon.svelte";
+	import { addonInstallerAvailable } from "#lib/updates/addon.svelte.ts";
 	import {
 		updatesSelfManaged,
 		updatesUnsupportedReason,
-	} from "#lib/updates/capability.svelte";
+	} from "#lib/updates/capability.svelte.ts";
+	import type { UnimplementedMessageKey } from "#lib/components/feedback/unimplemented.ts";
 	import AppsMenuEntrySetting from "./AppsMenuEntrySetting.svelte";
 	import AutomaticUpdatesSetting from "./AutomaticUpdatesSetting.svelte";
 	import NotificationSettings from "./NotificationSettings.svelte";
 	import UnitsSetting from "./UnitsSetting.svelte";
 
-	function unimplemented(feature: string, issue: number) {
+	function unimplemented(message: UnimplementedMessageKey, issue: number) {
 		return () => {
-			toast(ToastUnimplemented, { componentProps: { feature, issue } });
+			toast(ToastUnimplemented, { componentProps: { message, issue } });
 		};
 	}
 </script>
@@ -161,7 +162,7 @@
 	<SettingsRow
 		title="PIN"
 		description="Require a passcode to open the app."
-		onclick={unimplemented("PIN", 50)}
+		onclick={unimplemented("settings.app.pin.unimplemented", 50)}
 	>
 		{#snippet icon()}
 			<LockKeyIcon weight="fill" />

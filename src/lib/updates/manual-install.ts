@@ -1,10 +1,21 @@
 import { isPlayBuild } from "#lib/platform/store.ts";
-import { COMPONENT_REPO, GOOGLE_OAUTH_COMPONENT } from "./components";
+import {
+	COMPONENT_REPO,
+	GOOGLE_OAUTH_COMPONENT,
+	RECAPTCHA_COMPONENT,
+} from "./components";
+
+export const RECAPTCHA_HELPER_GUIDE =
+	"https://opengrind.org/guides/recaptcha-helper";
 
 const MANUAL_INSTALL = {
 	[GOOGLE_OAUTH_COMPONENT]: {
 		releases: `${COMPONENT_REPO[GOOGLE_OAUTH_COMPONENT]}/releases#install`,
 		guide: "https://opengrind.org/guides/sign-in-with-google#installed-from-google-play",
+	},
+	[RECAPTCHA_COMPONENT]: {
+		releases: `${COMPONENT_REPO[RECAPTCHA_COMPONENT]}/releases`,
+		guide: `${RECAPTCHA_HELPER_GUIDE}#installed-from-google-play`,
 	},
 } as const;
 

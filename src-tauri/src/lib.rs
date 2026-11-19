@@ -1,11 +1,22 @@
 pub mod api;
 mod app_icon;
+mod app_language;
 mod app_origin;
+#[cfg(mobile)]
 mod app_settings;
 mod appearance;
+#[cfg(target_os = "linux")]
 mod appimage;
+#[cfg(any(target_os = "ios", test))]
+mod background_task;
+#[cfg(any(target_os = "ios", test))]
+mod backup_exclusion;
 mod capabilities;
+#[cfg(target_os = "ios")]
+mod child_scroller;
+#[cfg(target_os = "windows")]
 mod context_menu;
+#[cfg(target_os = "linux")]
 mod desktop_entry;
 mod error;
 mod flip_privacy;
@@ -17,16 +28,35 @@ mod keyboard_media;
 pub mod media;
 #[cfg(target_os = "android")]
 mod media_drag;
+#[cfg(mobile)]
 mod media_picker;
+#[cfg(any(desktop, target_os = "ios"))]
+mod native_strings;
+#[cfg(any(target_os = "ios", test))]
+mod page_point;
 mod photo;
 #[cfg(test)]
 mod pin_support;
 mod plugin_rejection;
+#[cfg(target_os = "ios")]
+mod presenting;
+mod regional;
+#[cfg(test)]
+mod scratch_dir;
 mod scroll_phase;
+#[cfg(any(target_os = "ios", test))]
+mod soft_keyboard;
 mod state;
 mod storage;
+#[cfg(any(target_os = "ios", test))]
+mod system_gestures;
+mod transfer;
+#[cfg(target_os = "ios")]
+mod uikit;
 mod upload;
 mod video;
+#[cfg(any(target_os = "ios", test))]
+mod voice_over;
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 mod webview_recovery;
 
@@ -42,6 +72,8 @@ compile_error!(
 
 use tauri::Manager;
 
+#[cfg(any(target_os = "windows", target_os = "linux"))]
+use crate::native_strings::NativeText;
 use crate::state::AppState;
 
 #[cfg(target_os = "windows")]
@@ -75,41 +107,67 @@ fn regrind_platform_plugin<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R>
 }
 
 // macOS reports a WebKit build number that doesn't track Safari versions
-#[cfg(desktop)]
-fn outdated_webview_notice() -> Option<String> {
-	#[cfg(target_os = "windows")]
-	{
-		let version = tauri::webview_version().ok()?;
-		if version.split('.').next()?.parse::<u32>().ok()? < MIN_CHROMIUM_MAJOR
-		{
-			return Some(format!(
-                "ReGrind needs Microsoft Edge WebView2 {MIN_CHROMIUM_MAJOR} or newer to \
-                 display correctly (found {version}).\n\nUpdate the WebView2 Runtime, then \
-                 restart the app."
-            ));
-		}
-	}
+#[cfg(any(target_os = "windows", target_os = "linux"))]
+struct OutdatedWebView {
+	description: NativeText,
+	update: NativeText,
+	minimum: String,
+	found: String,
+}
 
-	#[cfg(target_os = "linux")]
-	{
-		let version = tauri::webview_version().ok()?;
-		let mut parts = version.split('.');
-		let major = parts.next()?.parse::<u32>().ok()?;
-		let minor = parts
-			.next()
-			.and_then(|p| p.parse::<u32>().ok())
-			.unwrap_or(0);
-		if (major, minor) < MIN_WEBKITGTK {
-			let (min_major, min_minor) = MIN_WEBKITGTK;
-			return Some(format!(
-                "ReGrind needs WebKitGTK {min_major}.{min_minor} or newer to display \
-                 correctly (found {version}).\n\nUpdate webkit2gtk / your distribution, \
-                 then restart the app."
-            ));
-		}
-	}
+#[cfg(target_os = "windows")]
+fn outdated_webview() -> Option<OutdatedWebView> {
+	let version = tauri::webview_version().ok()?;
+	let major = version.split('.').next()?.parse::<u32>().ok()?;
+	(major < MIN_CHROMIUM_MAJOR).then(|| OutdatedWebView {
+		description: NativeText::WebView2Description,
+		update: NativeText::WebView2Update,
+		minimum: MIN_CHROMIUM_MAJOR.to_string(),
+		found: version,
+	})
+}
 
-	None
+#[cfg(target_os = "linux")]
+fn outdated_webview() -> Option<OutdatedWebView> {
+	let version = tauri::webview_version().ok()?;
+	let mut parts = version.split('.');
+	let major = parts.next()?.parse::<u32>().ok()?;
+	let minor = parts
+		.next()
+		.and_then(|p| p.parse::<u32>().ok())
+		.unwrap_or(0);
+	let (min_major, min_minor) = MIN_WEBKITGTK;
+	((major, minor) < MIN_WEBKITGTK).then(|| OutdatedWebView {
+		description: NativeText::WebKitGtkDescription,
+		update: NativeText::WebKitGtkUpdate,
+		minimum: format!("{min_major}.{min_minor}"),
+		found: version,
+	})
+}
+
+#[cfg(any(target_os = "windows", target_os = "linux"))]
+fn warn_about_outdated_webview(app: &tauri::AppHandle) {
+	use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
+
+	let Some(outdated) = outdated_webview() else {
+		return;
+	};
+	let strings = app_language::native_strings(app);
+	let description = strings.fill(
+		outdated.description,
+		&[
+			("minimumVersion", &outdated.minimum),
+			("version", &outdated.found),
+		],
+	);
+	app.dialog()
+		.message(format!(
+			"{description}\n\n{}",
+			strings.text(outdated.update)
+		))
+		.title(strings.text(NativeText::WebViewWarningTitle))
+		.kind(MessageDialogKind::Warning)
+		.show(|_| {});
 }
 
 #[cfg(desktop)]
@@ -135,11 +193,28 @@ fn quit_when_closed(window: &tauri::WebviewWindow) {
 	});
 }
 
+#[cfg(target_os = "ios")]
+fn reseed_ios_page(
+	window: tauri::WebviewWindow,
+	payload: tauri::webview::PageLoadPayload<'_>,
+) {
+	match payload.event() {
+		tauri::webview::PageLoadEvent::Started => {
+			system_gestures::back_swipe::disarm(&window);
+			soft_keyboard::ios::forget_page(&window);
+		}
+		tauri::webview::PageLoadEvent::Finished => {
+			soft_keyboard::ios::resend_insets(&window);
+		}
+	}
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
 	#[cfg(target_os = "linux")]
 	appearance::apply_environment_defaults();
 
+	#[cfg(target_os = "macos")]
 	api::update::enforce_home();
 
 	#[cfg(feature = "devtools")]
@@ -169,7 +244,9 @@ pub fn run() {
 		.plugin(keyboard_media::plugin())
 		.plugin(media_drag::plugin())
 		.plugin(api::recaptcha::plugin())
-		.plugin(app_origin::android::plugin());
+		.plugin(app_origin::android::plugin())
+		.plugin(app_settings::android::plugin())
+		.plugin(media_picker::android::plugin());
 
 	#[cfg(mobile)]
 	let builder = builder.plugin(tauri_plugin_haptics::init());
@@ -185,22 +262,26 @@ pub fn run() {
 		)
 		.on_page_load(|_webview, _payload| webview_recovery::on_page_load());
 
+	let builder = builder
+		.plugin(regrind_platform_plugin())
+		.plugin(tauri_plugin_dialog::init())
+		.plugin(tauri_plugin_clipboard_manager::init())
+		.plugin(tauri_plugin_os::init())
+		.plugin(tauri_plugin_geolocation::init())
+		.plugin(tauri_plugin_fs::init())
+		.plugin(tauri_plugin_opener::init())
+		.plugin(tauri_plugin_notification::init())
+		.plugin(api::google_oauth::plugin())
+		.plugin(api::facebook_oauth::plugin());
+
+	#[cfg(any(target_os = "android", desktop))]
+	let builder = builder.plugin(api::update::plugin());
+
 	builder
-        .plugin(regrind_platform_plugin())
-        .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_clipboard_manager::init())
-        .plugin(tauri_plugin_os::init())
-        .plugin(tauri_plugin_geolocation::init())
-        .plugin(tauri_plugin_fs::init())
-        .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_notification::init())
-        .plugin(api::google_oauth::plugin())
-        .plugin(api::facebook_oauth::plugin())
-        .plugin(api::update::plugin())
-        .plugin(app_settings::plugin())
         .plugin(app_icon::plugin())
         .plugin(video::transcode::plugin())
-        .plugin(media_picker::plugin())
+        .plugin(regional::plugin())
+        .plugin(app_language::plugin())
         .manage(AppState::default())
         .manage(upload::UploadLock::default())
         .manage(media::MediaProxy::default())
@@ -247,43 +328,89 @@ pub fn run() {
             upload::staged::stage_media,
             upload::staged::append_staged_media,
             upload::staged::discard_staged_media,
+            upload::staged::read_staged_media,
+            upload::staged::stage_proxied_photo,
             upload::linked::stage_linked_media,
             api::ws::ws_connect,
             api::ws::ws_send,
             api::client::rotate_api_params,
             api::session_recovery::set_app_active,
             api::session_recovery::current_session,
+            #[cfg(target_os = "ios")]
+            api::session_recovery::allow_suspension,
             haptics::play_haptic,
             keep_screen_on::set_keep_screen_on,
             flip_privacy::set_flip_privacy,
             scroll_phase::set_scroll_gesture_capture,
+            #[cfg(target_os = "linux")]
             desktop_entry::desktop_entry_state,
+            #[cfg(target_os = "linux")]
             desktop_entry::desktop_entry_install,
+            #[cfg(target_os = "linux")]
             desktop_entry::desktop_entry_remove,
             api::grindr_version::refresh_grindr_version,
+            #[cfg(any(target_os = "android", desktop))]
             api::update::commands::updater_capability,
+            #[cfg(any(target_os = "android", desktop))]
             api::update::commands::updater_settings,
+            #[cfg(any(target_os = "android", desktop))]
             api::update::commands::updater_set_auto_check,
+            #[cfg(any(target_os = "android", desktop))]
             api::update::commands::updater_check,
+            #[cfg(any(target_os = "android", desktop))]
             api::update::commands::updater_download,
+            #[cfg(any(target_os = "android", desktop))]
             api::update::commands::updater_cancel_download,
+            #[cfg(any(target_os = "android", desktop))]
             api::update::commands::updater_progress,
+            #[cfg(any(target_os = "android", desktop))]
             api::update::commands::updater_readiness,
+            #[cfg(any(target_os = "android", desktop))]
             api::update::commands::updater_install,
+            #[cfg(any(target_os = "android", desktop))]
             api::update::commands::updater_install_pending,
+            #[cfg(any(target_os = "android", desktop))]
             api::update::commands::updater_installed_version,
+            #[cfg(any(target_os = "android", desktop))]
             api::update::commands::updater_take_install_outcome,
+            #[cfg(any(target_os = "android", desktop))]
             api::update::commands::updater_open_install_permission_settings,
+            #[cfg(any(target_os = "android", desktop))]
             api::update::commands::updater_discard,
-            app_settings::open_app_settings,
+            #[cfg(target_os = "android")]
+            app_settings::android::open_app_settings,
+            #[cfg(target_os = "ios")]
+            app_settings::ios::open_app_settings,
             app_icon::get_app_icon,
             app_icon::set_app_icon,
-            media_picker::pick_android_media,
+            #[cfg(target_os = "android")]
+            media_picker::android::pick_android_media,
+            #[cfg(target_os = "ios")]
+            media_picker::ios::pick_ios_media,
+            #[cfg(target_os = "ios")]
+            soft_keyboard::ios::set_keyboard_follow,
+            #[cfg(target_os = "ios")]
+            soft_keyboard::ios::set_keyboard_drag_dismiss,
+            #[cfg(target_os = "ios")]
+            system_gestures::back_swipe::set_back_swipe_armed,
+            #[cfg(target_os = "ios")]
+            system_gestures::scroll_to_top::stop_scroll_momentum,
+            #[cfg(target_os = "ios")]
+            voice_over::ios::voice_over_running,
             appearance::backdrop_filter_renders,
             appearance::webview_engine,
+            regional::regional_settings,
+            app_language::app_languages,
+            app_language::set_app_language,
+            app_language::set_native_language,
         ])
         .setup(|app| {
-            scroll_phase::install_scroll_gesture_bridge(app.handle());
+            #[cfg(target_os = "ios")]
+            backup_exclusion::exclude_from_backups(app.handle());
+            #[cfg(target_os = "ios")]
+            background_task::install(app.handle());
+            #[cfg(target_os = "macos")]
+            scroll_phase::macos::install(app.handle().clone());
             #[cfg(target_os = "android")]
             app_origin::android::prepare_served_origin(app.handle());
             upload::staged::discard_all(app.handle());
@@ -300,6 +427,12 @@ pub fn run() {
                 .cloned()
                 .collect();
             for window in deferred {
+                #[cfg(target_os = "ios")]
+                let window = tauri::utils::config::WindowConfig {
+                    allow_link_preview: false,
+                    disable_input_accessory_view: true,
+                    ..window
+                };
                 let builder =
                     tauri::WebviewWindowBuilder::from_config(app.handle(), &window)?
                         .user_agent(&user_agent)
@@ -308,30 +441,40 @@ pub fn run() {
                         });
                 #[cfg(any(target_os = "macos", target_os = "windows"))]
                 let builder = builder.disable_drag_drop_handler();
+                #[cfg(target_os = "ios")]
+                let builder = builder.on_page_load(reseed_ios_page);
                 #[cfg(target_os = "linux")]
                 let builder = builder.extensions_path(
                     app.path().resource_dir()?.join(media::WEBKIT_EXTENSIONS),
                 );
+                #[cfg_attr(target_os = "android", allow(unused_variables))]
                 let window = builder.build()?;
+                #[cfg(target_os = "ios")]
+                soft_keyboard::ios::install(&window);
+                #[cfg(target_os = "ios")]
+                system_gestures::back_swipe::install(&window);
+                #[cfg(target_os = "ios")]
+                system_gestures::scroll_to_top::install(&window);
+                #[cfg(target_os = "ios")]
+                voice_over::ios::install(&window);
                 #[cfg(target_os = "linux")]
                 media::serve_element_opens(&window);
                 #[cfg(target_os = "linux")]
                 scroll_phase::follow_touchpad(&window);
+                #[cfg(all(target_os = "macos", feature = "private-api"))]
                 appearance::unlock_visual_effects(&window);
+                #[cfg(target_os = "windows")]
                 context_menu::trim_native_menu(&window);
                 #[cfg(desktop)]
                 quit_when_closed(&window);
+                #[cfg(desktop)]
+                regional::refresh_on_focus(&window);
+                #[cfg(desktop)]
+                app_language::refresh_on_focus(&window);
             }
 
-            #[cfg(desktop)]
-            if let Some(message) = outdated_webview_notice() {
-                use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
-                app.dialog()
-                    .message(message)
-                    .title("WebView may be too old")
-                    .kind(MessageDialogKind::Warning)
-                    .show(|_| {});
-            }
+            #[cfg(any(target_os = "windows", target_os = "linux"))]
+            warn_about_outdated_webview(app.handle());
 
             #[cfg(any(
                 target_os = "linux",
@@ -434,6 +577,22 @@ mod frontend_method_pins {
 	const THIS: &str = include_str!("lib.rs");
 	const METHODS: &str = include_str!("../../src/lib/api/methods.ts");
 	const TRANSPORT: &str = include_str!("../../src/lib/api/transport.ts");
+	const KEYBOARD_FOLLOW: &str =
+		include_str!("../../src/lib/platform/keyboard-follow.ts");
+	const KEYBOARD_DRAG_DISMISS: &str =
+		include_str!("../../src/lib/platform/keyboard-drag-dismiss.ts");
+	const IOS_SYSTEM_BACK: &str =
+		include_str!("../../src/lib/platform/ios-system-back.ts");
+	const SCROLL_MOMENTUM: &str =
+		include_str!("../../src/lib/platform/scroll-momentum.ts");
+	const VOICE_OVER: &str =
+		include_str!("../../src/lib/platform/voice-over.svelte.ts");
+	const APP_LIFECYCLE: &str =
+		include_str!("../../src/lib/api/app-lifecycle.svelte.ts");
+	const APP_SETTINGS: &str =
+		include_str!("../../src/lib/platform/app-settings.ts");
+	const MEDIA_PICKER: &str =
+		include_str!("../../src/lib/platform/media-picker.ts");
 
 	fn between<'a>(haystack: &'a str, open: &str, close: &str) -> &'a str {
 		let start = haystack.find(open).expect(open) + open.len();
@@ -445,6 +604,20 @@ mod frontend_method_pins {
 		between(THIS, "tauri::generate_handler![", "])")
 			.split(',')
 			.filter_map(|entry| entry.trim().rsplit("::").next())
+			.collect()
+	}
+
+	fn invoked_commands(source: &str) -> Vec<&str> {
+		source
+			.split("invoke")
+			.skip(1)
+			.filter_map(|rest| {
+				let arguments = match rest.strip_prefix('<') {
+					Some(generic) => generic.split_once(">(")?.1,
+					None => rest.strip_prefix('(')?,
+				};
+				Some(arguments.strip_prefix('"')?.split_once('"')?.0)
+			})
 			.collect()
 	}
 
@@ -463,6 +636,30 @@ mod frontend_method_pins {
 				registered.contains(&command),
 				"{command} is invoked by transport.ts but not registered"
 			);
+		}
+	}
+
+	#[test]
+	fn every_command_the_native_bridges_invoke_is_registered() {
+		let registered = registered_commands();
+		let bridges: &[(&str, &[&str])] = &[
+			(KEYBOARD_FOLLOW, &["set_keyboard_follow"]),
+			(KEYBOARD_DRAG_DISMISS, &["set_keyboard_drag_dismiss"]),
+			(IOS_SYSTEM_BACK, &["set_back_swipe_armed"]),
+			(VOICE_OVER, &["voice_over_running"]),
+			(SCROLL_MOMENTUM, &["stop_scroll_momentum"]),
+			(APP_LIFECYCLE, &["allow_suspension"]),
+			(APP_SETTINGS, &["open_app_settings"]),
+			(MEDIA_PICKER, &["pick_ios_media", "pick_android_media"]),
+		];
+		for (source, expected) in bridges {
+			assert_eq!(&invoked_commands(source), expected);
+			for command in *expected {
+				assert!(
+					registered.contains(command),
+					"{command} is invoked by a native bridge but not registered"
+				);
+			}
 		}
 	}
 

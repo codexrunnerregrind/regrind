@@ -46,7 +46,9 @@ vi.mock("#lib/app-data/preferences.svelte.ts", () => ({
 	getActiveGeohashSnapshot: () => storedPreferences.geohash,
 	setPreferences: vi.fn(() => Promise.resolve()),
 }));
-vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast: showErrorToastMock }));
+vi.mock("#lib/api/error-toast.ts", () => ({
+	showErrorToast: showErrorToastMock,
+}));
 
 import { clearAccountCaches } from "#lib/api/account-caches.ts";
 import {
@@ -433,6 +435,21 @@ describe("fetch races", () => {
 
 		await gridState.refresh();
 		expect(showErrorToastMock).toHaveBeenCalledTimes(1);
+	});
+
+	it("remembers that its latest refresh failed, heartbeat or pull, until the next one lands", async () => {
+		expect(gridState.refreshFailed).toBe(false);
+
+		getGridMock.mockRejectedValueOnce(new Error("offline"));
+		await gridState.refresh({ background: true });
+		expect(gridState.refreshFailed).toBe(true);
+
+		getGridMock.mockRejectedValueOnce(new Error("offline"));
+		await gridState.refresh();
+		expect(gridState.refreshFailed).toBe(true);
+
+		await gridState.refresh();
+		expect(gridState.refreshFailed).toBe(false);
 	});
 });
 

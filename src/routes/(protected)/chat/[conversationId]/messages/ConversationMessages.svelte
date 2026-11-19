@@ -1,11 +1,19 @@
 <script lang="ts">
 	import { tick, untrack } from "svelte";
 	import { SvelteSet } from "svelte/reactivity";
+	import type { Attachment } from "svelte/attachments";
 
 	import { getChatWallpaperSnapshot } from "#lib/app-data/preferences.svelte.ts";
 	import DataRefreshControl from "#lib/components/feedback/DataRefreshControl.svelte";
 	import { Spinner } from "#lib/components/ui/spinner/index.ts";
 	import { hapticImpact } from "#lib/platform/haptics.ts";
+	import { keyboardDragDismiss } from "#lib/platform/keyboard-drag-dismiss.ts";
+	import { answerStatusBarTaps } from "#lib/platform/status-bar-tap.ts";
+	import { preferredScrollBehavior } from "#lib/util/reduced-motion.ts";
+	import {
+		followInsertionsAbove,
+		jumpThenGlideToTop,
+	} from "#lib/util/scroll.ts";
 	import { getConversationState } from "../conversation-state.svelte";
 	import ConversationError from "./ConversationError.svelte";
 	import ConversationPaginationSentinel from "./ConversationPaginationSentinel.svelte";
@@ -84,6 +92,25 @@
 		atFloor = floorDistance() <= FLOOR_SLOP_PX || (atFloor && !movedUp);
 	}
 
+	function scrollToOldestLoaded(scroller: HTMLElement): void {
+		endScrollingToRest();
+		const oldest = scroller.querySelector<HTMLElement>(
+			'[data-slot="message"]',
+		);
+		jumpThenGlideToTop({
+			element: scroller,
+			landing: oldest
+				? followInsertionsAbove({ scroller, anchor: oldest })
+				: undefined,
+		});
+	}
+
+	const scrollsToOldestOnStatusBarTap: Attachment<HTMLElement> = (scroller) =>
+		answerStatusBarTaps({
+			scroller,
+			scrollToTop: () => scrollToOldestLoaded(scroller),
+		});
+
 	function onContainerScroll() {
 		if (scrollingToRest) {
 			lastScrollTop = container?.scrollTop ?? 0;
@@ -155,7 +182,7 @@
 				firstMessage.senderId === conversationState.ourProfileId ||
 				untrack(() => atFloor)
 			) {
-				void scrollToRest("smooth");
+				void scrollToRest(preferredScrollBehavior());
 			}
 		}
 		lastFirstId = firstId;
@@ -204,6 +231,8 @@
 		style:overflow-anchor="none"
 		onscroll={onContainerScroll}
 		onscrollend={onContainerScrollEnd}
+		{@attach keyboardDragDismiss}
+		{@attach scrollsToOldestOnStatusBarTap}
 	>
 		{#if conversationState.loading}
 			{#key conversationState.conversationId}
@@ -237,6 +266,7 @@
 			{container}
 			updating={conversationState.refreshing}
 			containerClass="bottom-0"
+			failed={conversationState.refreshFailed}
 			hintOffset={8}
 			position="bottom"
 			onrefresh={() => {
@@ -247,7 +277,7 @@
 		{#if !atFloor}
 			<ScrollToBottomButton
 				{seenMessageIds}
-				onclick={() => void scrollToRest("smooth")}
+				onclick={() => void scrollToRest(preferredScrollBehavior())}
 			/>
 		{/if}
 	{/if}

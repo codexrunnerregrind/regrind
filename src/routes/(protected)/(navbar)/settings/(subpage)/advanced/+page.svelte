@@ -14,7 +14,7 @@
 	import SectionHeader from "#lib/components/settings/SectionHeader.svelte";
 	import SettingsGroup from "#lib/components/settings/SettingsGroup.svelte";
 	import SettingsRow from "#lib/components/settings/SettingsRow.svelte";
-	import { privacyFeatureOn } from "#lib/privacy/image-privacy.svelte";
+	import { privacyFeatureOn } from "#lib/privacy/image-privacy.svelte.ts";
 	import PrivacyModeSetting from "#lib/privacy/PrivacyModeSetting.svelte";
 </script>
 

@@ -2,7 +2,8 @@
 	import DropIcon from "phosphor-svelte/lib/DropIcon";
 	import HouseIcon from "phosphor-svelte/lib/HouseIcon";
 
-	import type { RightNowStatus } from "#lib/model/right-now.ts";
+	import { t } from "#lib/i18n/index.ts";
+	import type { RightNowStatus } from "#lib/model/right-now/index.ts";
 
 	let {
 		rightNow,
@@ -17,8 +18,13 @@
 	<div class={["flex shrink-0 text-fuchsia-600", className]}>
 		{#if rightNow === "HOSTING"}
 			<HouseIcon weight="fill" class="size-3" />
+			<span class="sr-only"
+				>{t("profile.rightNow.indicator.hosting")}</span
+			>
 		{:else}
 			<DropIcon weight="fill" class="size-3" />
+			<span class="sr-only">{t("profile.rightNow.indicator.active")}</span
+			>
 		{/if}
 	</div>
 {/if}

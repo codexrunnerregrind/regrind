@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { conversationIdFor } from "#lib/chat/conversation-id.ts";
 	import Button from "#lib/components/ui/button/button.svelte";
+	import { t } from "#lib/i18n/index.ts";
 
 	let {
 		profileId,
@@ -21,5 +22,7 @@
 	class="h-11 flex-1 justify-start rounded-composer bg-muted px-4.5 hover:bg-muted"
 	href="/chat/{conversationId}"
 >
-	<span class="text-sm font-normal text-ink3">Write a message...</span>
+	<span class="text-sm font-normal text-ink3"
+		>{t("common.chat.writeMessage")}</span
+	>
 </Button>

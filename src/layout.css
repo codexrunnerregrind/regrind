@@ -73,6 +73,8 @@
 	   drawn on top of it. */
 	--media-placeholder: #e1dfda;
 	--media-placeholder-foreground: #847f77;
+	--mature-cover: oklch(0.36 0.12 295);
+	--mature-cover-foreground: oklch(0.95 0.03 295);
 	/* Chat's list pane width. Read back by +layout@(protected).svelte to size
 	   the resizable pane, so it has to stay a plain length. */
 	--stack-scrim: 0.8;
@@ -242,6 +244,8 @@
 	--color-viewer-ink: var(--viewer-ink);
 	--color-viewer-ink2: var(--viewer-ink2);
 	--color-viewer-ink3: var(--viewer-ink3);
+	--color-mature-cover: var(--mature-cover);
+	--color-mature-cover-foreground: var(--mature-cover-foreground);
 	/* Ladder tuned to native container radii: 6 / 8 / 12 / 16 / 20 / 24 / 28px at
 	   the 0.75rem base. Small controls sit at sm–md, list rows and cards at
 	   lg–xl, and only genuinely large surfaces (sheets, media tiles) reach 2xl+. */
@@ -369,6 +373,9 @@
 
 	--spacing-count-badge: 5.5px;
 
+	--shadow-refresh-disc:
+		0 1.75px 3.5px rgb(0 0 0 / 0.12), 0 1px 4px rgb(0 0 0 / 0.24);
+
 	/* elbow that joins a quoted reply to the message replying to it */
 	--radius-quote-connector: 8px;
 
@@ -448,6 +455,7 @@ body {
 	overscroll-behavior: none;
 	user-select: none;
 	-webkit-user-select: none;
+	-webkit-touch-callout: none;
 	--nav-height: 4rem;
 	--slider-thumb-size: 1.5rem;
 	--selection-bar-height: 4.75rem;
@@ -463,8 +471,20 @@ body {
 	shape-rendering: geometricPrecision;
 }
 
+:root[data-keyboard-shrinks-page],
+:root[data-keyboard-shrinks-page] body {
+	--nav-height: 0px;
+}
+
 a {
 	-webkit-user-drag: none;
+}
+
+input,
+textarea,
+[contenteditable],
+.select-text {
+	-webkit-touch-callout: default;
 }
 
 [class^="scroll-lock-"] {
@@ -882,6 +902,34 @@ a {
 @utility pb-fixed-nav {
 	padding-bottom: calc(0.5rem + var(--safe-area-bottom));
 }
+@utility p-safe {
+	padding-top: var(--safe-area-top);
+	padding-right: var(--safe-area-right);
+	padding-bottom: var(--safe-area-bottom);
+	padding-left: var(--safe-area-left);
+}
+@utility p-safe-* {
+	padding-top: calc(--spacing(--value(integer)) + var(--safe-area-top));
+	padding-right: calc(--spacing(--value(integer)) + var(--safe-area-right));
+	padding-bottom: calc(--spacing(--value(integer)) + var(--safe-area-bottom));
+	padding-left: calc(--spacing(--value(integer)) + var(--safe-area-left));
+}
+@utility px-safe {
+	padding-left: var(--safe-area-left);
+	padding-right: var(--safe-area-right);
+}
+@utility px-safe-* {
+	padding-left: calc(--spacing(--value(integer)) + var(--safe-area-left));
+	padding-right: calc(--spacing(--value(integer)) + var(--safe-area-right));
+}
+@utility inset-x-safe {
+	left: var(--safe-area-left);
+	right: var(--safe-area-right);
+}
+@utility inset-x-safe-* {
+	left: calc(--spacing(--value(integer)) + var(--safe-area-left));
+	right: calc(--spacing(--value(integer)) + var(--safe-area-right));
+}
 @utility pb-nav-clear {
 	padding-bottom: calc(0.5rem + var(--content-pb) + var(--bar-content-gap));
 }
@@ -964,6 +1012,9 @@ a {
 }
 
 .toast[data-styled="true"] {
+	--toast-close-button-start: auto;
+	--toast-close-button-end: 0;
+	--toast-close-button-transform: translate(35%, -35%);
 	background-color: var(--color-accent) !important;
 	color: var(--popover) !important;
 	border-radius: 1.25rem !important;
@@ -993,15 +1044,20 @@ a {
 	pointer-events: auto;
 }
 
+.toast[data-styled="true"]:dir(rtl) {
+	--toast-close-button-start: 0;
+	--toast-close-button-end: auto;
+	--toast-close-button-transform: translate(-35%, -35%);
+}
+
 .toast[data-styled="true"] [data-close-button] {
-	background-color: var(--color-accent) !important;
-	color: var(--popover) !important;
+	background-color: var(--color-popover) !important;
+	color: var(--color-popover-foreground) !important;
 	border-color: var(--color-border) !important;
 }
 
 .toast[data-styled="true"] [data-close-button]:hover {
-	background-color: var(--popover) !important;
-	color: var(--color-accent) !important;
+	background-color: var(--color-secondary) !important;
 }
 
 :root:not([data-hover-pointer]) .toast [data-close-button] {
@@ -1016,6 +1072,14 @@ a {
 @media not (max-width: 600px) {
 	[data-sonner-toast][data-styled="false"] {
 		width: var(--width);
+	}
+}
+
+@media (max-width: 600px) {
+	[data-sonner-toaster][data-x-position] [data-sonner-toast] {
+		width: calc(
+			100% - var(--mobile-offset-left) - var(--mobile-offset-right)
+		);
 	}
 }
 
@@ -1120,7 +1184,7 @@ a {
 }
 
 @utility media-pill {
-	@apply bg-popover/20 scrim;
+	@apply bg-black/50 scrim;
 }
 
 @utility media-disc {
@@ -1128,6 +1192,14 @@ a {
 
 	@variant hover {
 		@apply bg-black/75;
+	}
+}
+
+@utility floating-chip {
+	@apply rounded-4xl scrim backdrop-filter-(--bd-chip);
+
+	@variant dark {
+		@apply bg-background/60;
 	}
 }
 

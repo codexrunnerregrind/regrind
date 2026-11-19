@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { t } from "#lib/i18n/index.ts";
 	import { isFloatingNav } from "#lib/platform/nav-style.svelte.ts";
 	import { bottomChrome } from "#lib/util/screen-chrome.svelte.ts";
 	import type { TapType } from "#lib/model/interest/taps.ts";
@@ -51,7 +52,7 @@
 		{@attach bottomChrome}
 	>
 		<nav
-			aria-label="Chat and tap"
+			aria-label={t("profile.bottomNav.a11y.navigation")}
 			class="flex w-full flex-row items-center gap-2.5"
 		>
 			<OpenConversationButton {profileId} {ourProfileId} />

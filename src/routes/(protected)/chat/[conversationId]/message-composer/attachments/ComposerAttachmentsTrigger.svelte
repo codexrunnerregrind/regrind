@@ -3,6 +3,7 @@
 	import { expoOut } from "svelte/easing";
 
 	import ComposerButton from "#lib/components/shared/ComposerButton.svelte";
+	import { t } from "#lib/i18n/index.ts";
 	import { scale } from "#lib/util/reduced-motion.ts";
 	import { dropKeyboard, keepKeyboard } from "../keep-keyboard";
 	import { getMessageComposerContext } from "../message-composer-context.svelte";
@@ -27,7 +28,7 @@
 	     wanted anyway. -->
 	<ComposerButton
 		bind:ref
-		aria-label="Add attachment"
+		aria-label={t("chat.composer.attachments.a11y.add")}
 		onclick={() => {
 			dropKeyboard();
 			onClick?.();

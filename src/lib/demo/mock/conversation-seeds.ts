@@ -38,6 +38,11 @@ export type DemoConversation = {
 	messages: DemoMessage[];
 };
 
+export type DemoInbox = {
+	conversations: DemoConversation[];
+	nextPage: number | null;
+};
+
 export const demoConversationSeeds: DemoConversation[] = [
 	{
 		withId: 100001,

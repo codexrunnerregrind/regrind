@@ -53,6 +53,7 @@
 	     instead of setting the bubble's minimum width to the whole URL. -->
 		<span
 			class="wrap-anywhere whitespace-pre-wrap"
+			translate="no"
 			bind:this={textEl}
 			data-slot="bubble-text">{message.text}</span
 		>

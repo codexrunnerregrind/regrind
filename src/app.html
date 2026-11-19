@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-US">
 	<head>
 		<meta charset="utf-8" />
 		<meta
@@ -59,7 +59,6 @@
 				font-size: 1.4rem;
 			}
 
-			/* Show only the running platform's instruction; web/unknown shows all. */
 			.wv-plat {
 				display: none;
 			}
@@ -69,7 +68,6 @@
 			.plat-windows .wv-plat[data-platform="windows"],
 			.plat-android .wv-plat[data-platform="android"],
 			.plat-ios .wv-plat[data-platform="ios"],
-			.plat-web .wv-plat,
 			.plat-unknown .wv-plat {
 				display: block;
 			}
@@ -106,7 +104,7 @@
 				var root = document.documentElement;
 				root.classList.add("webview-unsupported");
 				root.classList.add(
-					"plat-" + (window.__OPEN_GRIND_PLATFORM || "web"),
+					"plat-" + (window.__OPEN_GRIND_PLATFORM || "unknown"),
 				);
 			})();
 		</script>
@@ -134,7 +132,7 @@
 
 	<body data-sveltekit-preload-data="hover">
 		<div style="display: contents">%sveltekit.body%</div>
-		<div id="webview-too-old">
+		<div id="webview-too-old" lang="en-US">
 			<div class="wv-inner">
 				<h1>Your system WebView is too old</h1>
 				<p>
@@ -161,6 +159,7 @@
 		</div>
 		<noscript>
 			<div
+				lang="en-US"
 				style="
 					max-width: 32rem;
 					margin: 2rem auto;

@@ -49,10 +49,12 @@ export const SURFACES: Surface[] = [
 		},
 	},
 	{
-		name: "Right Now",
+		name: "Right Now location chooser",
 		path: "/right-now",
 		bars: { bottom: "nothing" },
-		ready: shows(mainNavigation),
+		ready: shows((page) =>
+			page.getByRole("button", { name: "Choose on map" }),
+		),
 	},
 	{
 		name: "Interest views",
@@ -152,7 +154,7 @@ export const SURFACES: Surface[] = [
 		name: "App settings",
 		path: "/settings/app",
 		bars: BARS_OVER_CONTENT,
-		ready: shows((page) => page.getByRole("slider")),
+		ready: shows((page) => subpage(page).getByRole("link")),
 	},
 	{
 		name: "Credits",
@@ -162,16 +164,6 @@ export const SURFACES: Surface[] = [
 			await shows(suggestAnEdit)(page);
 			await keepFirstCreditRows(page);
 		},
-	},
-	{
-		name: "Notifications",
-		path: "/settings/app/notifications",
-		bars: BARS_OVER_CONTENT,
-		ready: shows((page) =>
-			subpage(page)
-				.getByRole("switch")
-				.or(subpage(page).getByRole("paragraph")),
-		),
 	},
 	{
 		name: "Edit profile",

@@ -5,7 +5,7 @@ use image::{ImageFormat, ImageReader};
 use serde::{Deserialize, Serialize};
 
 use crate::api::rest::{encode_response, RawResponse};
-use crate::error::AppError;
+use crate::error::{AppError, MediaError};
 use crate::photo;
 use crate::state::AppState;
 use crate::upload::file::{
@@ -13,8 +13,12 @@ use crate::upload::file::{
 };
 use crate::upload::picked::PickedFile;
 
-const NOT_A_PHOTO: &str = "Only photos can be sent here";
-const UNREADABLE_SIZE: &str = "That photo's size can't be read";
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum PhotoCrop {
+	ThumbCoords,
+	CropAndThumb,
+}
 
 const MAX_AUDIO_BYTES: usize = 32 * 1024 * 1024;
 
@@ -62,16 +66,32 @@ fn parsed_upload(
 	parsed_json(client, response)
 }
 
-fn with_square_thumb(path: &str, jpeg: &[u8]) -> Result<String, AppError> {
+fn with_crop(
+	path: &str,
+	jpeg: &[u8],
+	crop: PhotoCrop,
+) -> Result<String, AppError> {
 	let (width, height) =
 		ImageReader::with_format(Cursor::new(jpeg), ImageFormat::Jpeg)
 			.into_dimensions()
-			.map_err(|_| AppError::Media(UNREADABLE_SIZE.to_owned()))?;
+			.map_err(|_| MediaError::PhotoSizeUnreadable)?;
+	let side = width.min(height);
+	let left = (width - side) / 2;
+	let top = (height - side) / 2;
+	let (right, bottom) = (left + side, top + side);
+	let query = match crop {
+		PhotoCrop::ThumbCoords => {
+			format!("thumbCoords={bottom},{left},{right},{top}")
+		}
+		PhotoCrop::CropAndThumb => format!(
+			"crop_top=0&crop_bottom={height}&crop_left=0&crop_right={width}\
+			&img_1_top={top}&img_1_bottom={bottom}\
+			&img_1_left={left}&img_1_right={right}\
+			&rotate=0&flip_vertical=false"
+		),
+	};
 	let separator = if path.contains('?') { '&' } else { '?' };
-	Ok(format!(
-		"{path}{separator}thumbCoords={}",
-		centre_square_thumb_coords(width, height)
-	))
+	Ok(format!("{path}{separator}{query}"))
 }
 
 /// Takes either a picked `file` or base64 `data` with its `content_type`.
@@ -83,7 +103,7 @@ pub async fn upload_media(
 	path: String,
 	signed: bool,
 	file: Option<PickedFile>,
-	square_thumb: Option<bool>,
+	crop: Option<PhotoCrop>,
 	content_type: Option<String>,
 	// Base64, because raw byte arrays over the Tauri IPC are unreliable.
 	// https://github.com/tauri-apps/tauri/issues/10573
@@ -99,7 +119,7 @@ pub async fn upload_media(
 	let photo = match (file, data) {
 		(Some(file), _) => {
 			let Some(bytes) = open_photo(app.clone(), file).await? else {
-				return Err(AppError::Media(NOT_A_PHOTO.to_owned()));
+				return Err(MediaError::NotAPhoto.into());
 			};
 			photo::normalize(&app, bytes, photo::JPEG.to_owned()).await?
 		}
@@ -110,12 +130,11 @@ pub async fn upload_media(
 			let content_type = content_type.unwrap_or_default();
 			photo::normalize(&app, bytes, content_type).await?
 		}
-		(None, None) => return Err(AppError::Media(NOT_A_PHOTO.to_owned())),
+		(None, None) => return Err(MediaError::NotAPhoto.into()),
 	};
-	let path = if square_thumb.unwrap_or(false) {
-		with_square_thumb(&path, &photo.bytes)?
-	} else {
-		path
+	let path = match crop {
+		Some(crop) => with_crop(&path, &photo.bytes, crop)?,
+		None => path,
 	};
 
 	if !signed_in_as(&sessions.borrow(), &profile_id) {
@@ -220,10 +239,13 @@ pub async fn upload_chat_video(
 		return Err(AppError::Http("Refusing to upload empty video".into()));
 	}
 	if bytes.len() > MAX_VIDEO_BYTES {
-		return Err(AppError::Media(format!(
-			"That video is too large to send ({} MB)",
-			bytes.len() / (1024 * 1024)
-		)));
+		return Err(MediaError::Io {
+			detail: format!(
+				"That video is too large to send ({} MB)",
+				bytes.len() / (1024 * 1024)
+			),
+		}
+		.into());
 	}
 
 	send_video(&state, bytes, &content_type, length_seconds, looping, false)
@@ -262,7 +284,7 @@ async fn send_video(
 	// `internal_error` body, so the status is the only readable part of it.
 	if response.status == 413 {
 		let megabytes = bytes_len / (1024 * 1024);
-		return Err(AppError::Media(if converted {
+		let detail = if converted {
 			format!(
 				"The server refused this video: {megabytes} MB even after \
 				 converting it. It is too long to send — trim it first."
@@ -272,7 +294,8 @@ async fn send_video(
 				"The server refused this video as too large ({megabytes} MB). \
 				 Record a shorter clip, or lower the camera's video quality."
 			)
-		}));
+		};
+		return Err(MediaError::Io { detail }.into());
 	}
 
 	if !(200..300).contains(&response.status) {
@@ -308,11 +331,22 @@ pub async fn upload_chat_video_file(
 	length_seconds: Option<i64>,
 	looping: bool,
 ) -> Result<MediaUploadResponse, AppError> {
+	let source = match source.strip_prefix("staged:") {
+		Some(id) => crate::upload::staged::StagedMedia::of(&app)
+			.and_then(|staged| staged.path(id))
+			.map_err(|error| MediaError::Io {
+				detail: error.to_string(),
+			})?
+			.to_string_lossy()
+			.into_owned(),
+		None => source,
+	};
 	let bytes = crate::video::transcode::shrink(&app, &source).await?;
 	if bytes.is_empty() {
-		return Err(AppError::Media(
-			"That video came back empty from conversion".into(),
-		));
+		return Err(MediaError::Io {
+			detail: "That video came back empty from conversion".into(),
+		}
+		.into());
 	}
 	send_video(&state, bytes, "video/mp4", length_seconds, looping, true).await
 }
@@ -484,13 +518,13 @@ pub async fn upload_right_now_media(
 	})?;
 	let photo = photo::normalize(&app, bytes, content_type).await?;
 	if photo.content_type != "image/jpeg" {
-		return Err(AppError::Media(
-			"A Right Now photo has to be a still image".to_owned(),
-		));
+		return Err(MediaError::Io {
+			detail: "A Right Now photo has to be a still image".to_owned(),
+		}
+		.into());
 	}
-	let (width, height) = photo::dimensions(&photo.bytes).ok_or_else(|| {
-		AppError::Media("Unreadable or damaged photo".to_owned())
-	})?;
+	let (width, height) = photo::dimensions(&photo.bytes)
+		.ok_or(AppError::Media(MediaError::PhotoDamaged))?;
 	let (top, left, right, bottom) = centre_square(width, height);
 
 	let client = state.client()?;
@@ -541,13 +575,13 @@ pub async fn upload_profile_image(
 	})?;
 	let photo = photo::normalize(&app, bytes, content_type).await?;
 	if photo.content_type != "image/jpeg" {
-		return Err(AppError::Media(
-			"A profile photo has to be a still image".to_owned(),
-		));
+		return Err(MediaError::Io {
+			detail: "A profile photo has to be a still image".to_owned(),
+		}
+		.into());
 	}
-	let (width, height) = photo::dimensions(&photo.bytes).ok_or_else(|| {
-		AppError::Media("Unreadable or damaged photo".to_owned())
-	})?;
+	let (width, height) = photo::dimensions(&photo.bytes)
+		.ok_or(AppError::Media(MediaError::PhotoDamaged))?;
 
 	let thumb_coords = centre_square_thumb_coords(width, height);
 
@@ -615,24 +649,93 @@ mod tests {
 		bytes
 	}
 
+	fn thumb_coords(path: &str, jpeg: &[u8]) -> String {
+		with_crop(path, jpeg, PhotoCrop::ThumbCoords).expect("path")
+	}
+
+	fn crop_and_thumb(jpeg: &[u8]) -> String {
+		with_crop("/v2/media/upload", jpeg, PhotoCrop::CropAndThumb)
+			.expect("path")
+	}
+
 	#[test]
 	fn centers_a_square_thumb_on_a_portrait_photo() {
 		assert_eq!(
-			with_square_thumb(
+			thumb_coords(
 				"/v4/media/upload?takenOnGrindr=false",
 				&jpeg(768, 1024)
-			)
-			.expect("path"),
+			),
 			"/v4/media/upload?takenOnGrindr=false&thumbCoords=896,0,768,128"
 		);
 	}
 
 	#[test]
-	fn a_photo_whose_size_cannot_be_read_is_refused() {
-		let refused = with_square_thumb("/v4/media/upload", b"not a jpeg")
-			.expect_err("refused");
+	fn centers_a_square_thumb_on_a_landscape_photo() {
+		assert_eq!(
+			thumb_coords("/v4/media/upload", &jpeg(1024, 576)),
+			"/v4/media/upload?thumbCoords=576,224,800,0"
+		);
+	}
 
-		assert!(matches!(refused, AppError::Media(_)));
+	#[test]
+	fn a_square_photo_is_its_own_thumb() {
+		assert_eq!(
+			thumb_coords("/v4/media/upload", &jpeg(640, 640)),
+			"/v4/media/upload?thumbCoords=640,0,640,0"
+		);
+	}
+
+	#[test]
+	fn crops_a_portrait_photo_whole_with_a_centered_square_thumb() {
+		assert_eq!(
+			crop_and_thumb(&jpeg(768, 1024)),
+			"/v2/media/upload?crop_top=0&crop_bottom=1024&crop_left=0\
+			&crop_right=768&img_1_top=128&img_1_bottom=896&img_1_left=0\
+			&img_1_right=768&rotate=0&flip_vertical=false"
+		);
+	}
+
+	#[test]
+	fn crops_a_landscape_photo_whole_with_a_centered_square_thumb() {
+		assert_eq!(
+			crop_and_thumb(&jpeg(1024, 576)),
+			"/v2/media/upload?crop_top=0&crop_bottom=576&crop_left=0\
+			&crop_right=1024&img_1_top=0&img_1_bottom=576&img_1_left=224\
+			&img_1_right=800&rotate=0&flip_vertical=false"
+		);
+	}
+
+	#[test]
+	fn crops_a_square_photo_whole_and_thumbs_all_of_it() {
+		assert_eq!(
+			crop_and_thumb(&jpeg(640, 640)),
+			"/v2/media/upload?crop_top=0&crop_bottom=640&crop_left=0\
+			&crop_right=640&img_1_top=0&img_1_bottom=640&img_1_left=0\
+			&img_1_right=640&rotate=0&flip_vertical=false"
+		);
+	}
+
+	fn crop_named(name: &str) -> PhotoCrop {
+		serde_json::from_value(serde_json::json!(name)).expect("crop")
+	}
+
+	#[test]
+	fn the_crop_is_named_as_the_frontend_sends_it() {
+		assert_eq!(crop_named("thumbCoords"), PhotoCrop::ThumbCoords);
+		assert_eq!(crop_named("cropAndThumb"), PhotoCrop::CropAndThumb);
+	}
+
+	#[test]
+	fn a_photo_whose_size_cannot_be_read_is_refused() {
+		for crop in [PhotoCrop::ThumbCoords, PhotoCrop::CropAndThumb] {
+			let refused = with_crop("/v4/media/upload", b"not a jpeg", crop)
+				.expect_err("refused");
+
+			assert!(matches!(
+				refused,
+				AppError::Media(MediaError::PhotoSizeUnreadable)
+			));
+		}
 	}
 
 	#[test]

@@ -119,3 +119,10 @@ if (typeof Element !== "undefined" && !Element.prototype.setPointerCapture) {
 	Element.prototype.releasePointerCapture = () => {};
 	Element.prototype.hasPointerCapture = () => false;
 }
+
+Object.assign(globalThis, {
+	__TAURI_INTERNALS__: {
+		convertFileSrc: (filePath: string, protocol = "asset") =>
+			`${protocol}://localhost/${encodeURIComponent(filePath)}`,
+	},
+});
