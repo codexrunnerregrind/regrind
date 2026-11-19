@@ -15,7 +15,6 @@
 	import ScrollToTopButton from "#lib/components/shared/ScrollToTopButton.svelte";
 	import { FavoriteSearch } from "#lib/favorites/favorite-search.svelte.ts";
 	import { gridState } from "#lib/grid/grid-state.svelte.ts";
-	import { t } from "#lib/i18n/index.ts";
 	import { registerGhostFixup } from "#lib/platform/swipe-back-ghost.ts";
 	import { restoreScrollOnce } from "#lib/util/scroll-restore.svelte.ts";
 	import { revealedGridScrollTop, revealInGhostGrid } from "./grid-reveal.ts";
@@ -166,11 +165,6 @@
 			</div>
 			<ScrollToTopButton
 				container={gridContainer}
-				text={gridState.closerCount > 0
-					? t("browse.grid.closerProfiles", {
-							count: gridState.closerCount,
-						})
-					: undefined}
 				onjump={() => gridState.resortByDistance()}
 				class="bottom-nav-clear"
 			/>

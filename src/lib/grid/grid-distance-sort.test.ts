@@ -26,7 +26,7 @@ function sort(
 		outOfOrder: new Set(outOfOrder),
 		shuffled,
 	});
-	return { ids: result.profiles.map((p) => p.id), closer: result.closer };
+	return { ids: result.map((p) => p.id) };
 }
 
 describe("sortByDistance", () => {
@@ -60,12 +60,12 @@ describe("sortByDistance", () => {
 		).toEqual([1, 2, 3, 9]);
 	});
 
-	it("keeps the seen prefix and counts closer arrivals", () => {
-		const result = sort([at(1, 100), at(2, 200), at(3, 300), at(4, 50)], {
-			seen: [1, 2, 3],
-		});
-		expect(result.ids).toEqual([1, 2, 3, 4]);
-		expect(result.closer).toBe(1);
+	it("keeps the seen prefix", () => {
+		expect(
+			sort([at(1, 100), at(2, 200), at(3, 300), at(4, 50)], {
+				seen: [1, 2, 3],
+			}).ids,
+		).toEqual([1, 2, 3, 4]);
 	});
 
 	it("skips seen ids that are gone", () => {

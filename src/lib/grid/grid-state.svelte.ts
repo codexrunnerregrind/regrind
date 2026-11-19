@@ -52,7 +52,7 @@ class GridState {
 	#outOfOrder: ReadonlySet<number> = $state.raw(new Set());
 	#ordered = $derived.by(() => {
 		const profiles = dedupeGridProfiles(this.items);
-		if (!this.sortsByDistance) return { profiles, closer: 0 };
+		if (!this.sortsByDistance) return profiles;
 		return sortByDistance({
 			profiles,
 			seen: this.#seen,
@@ -60,9 +60,7 @@ class GridState {
 			shuffled: this.#shuffled,
 		});
 	});
-	readonly profiles: GridProfile[] = $derived(this.#ordered.profiles);
-	/** Profiles sorted below the seen tiles that belong above them. */
-	readonly closerCount: number = $derived(this.#ordered.closer);
+	readonly profiles: GridProfile[] = $derived(this.#ordered);
 	/** The "For You" row; only the first cascade page carries it. */
 	topPicks: GridProfile[] = $state.raw([]);
 	topPicksRefreshAt: number | null = $state(null);

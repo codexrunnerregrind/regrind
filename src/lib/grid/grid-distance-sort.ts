@@ -31,8 +31,7 @@ function distanceKeys({
 
 /**
  * Nearest first, except the `seen` prefix, which keeps its order so tiles
- * never move under the user. `closer` counts profiles sorted below it that
- * belong above.
+ * never move under the user.
  */
 export function sortByDistance({
 	profiles,
@@ -44,7 +43,7 @@ export function sortByDistance({
 	seen: readonly number[];
 	outOfOrder: ReadonlySet<number>;
 	shuffled: boolean;
-}): { profiles: GridProfile[]; closer: number } {
+}): GridProfile[] {
 	const keys = distanceKeys({ profiles, outOfOrder, shuffled });
 	const key = (profile: GridProfile) => keys.get(profile.id) ?? Infinity;
 	const byId = new Map(profiles.map((profile) => [profile.id, profile]));
@@ -57,12 +56,5 @@ export function sortByDistance({
 			const kb = key(b);
 			return ka < kb ? -1 : ka > kb ? 1 : 0;
 		});
-	const limit = Math.max(
-		-Infinity,
-		...head.map(key).filter((value) => Number.isFinite(value)),
-	);
-	return {
-		profiles: [...head, ...tail],
-		closer: tail.filter((profile) => key(profile) < limit).length,
-	};
+	return [...head, ...tail];
 }
