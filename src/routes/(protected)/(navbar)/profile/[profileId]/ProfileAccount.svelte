@@ -80,7 +80,7 @@
 		</div>
 	</div>
 	{#if !self}
-		<div class="mt-4.5 flex flex-col items-start gap-1">
+		<div class="mt-4 flex flex-col">
 			{#if canSendView}
 				<button
 					type="button"
@@ -95,6 +95,9 @@
 						<circle cx="10" cy="10" r="2.2" />
 					</svg>
 					Send profile view
+					<svg viewBox="0 0 20 20" class="chevron">
+						<path d="m8 5 5 5-5 5" />
+					</svg>
 				</button>
 			{/if}
 			<button
@@ -114,16 +117,22 @@
 					/>
 				</svg>
 				Hide profile
+				<svg viewBox="0 0 20 20" class="chevron">
+					<path d="m8 5 5 5-5 5" />
+				</svg>
 			</button>
 			<button
 				type="button"
-				class="action"
+				class="action text-destructive!"
 				onclick={() => (reportOpen = true)}
 			>
 				<svg viewBox="0 0 20 20">
 					<path d="M4 18V3M4 3.5h10.5l-2 3.8 2 3.7H4" />
 				</svg>
 				Report profile
+				<svg viewBox="0 0 20 20" class="chevron">
+					<path d="m8 5 5 5-5 5" />
+				</svg>
 			</button>
 		</div>
 		<ReportSheet
@@ -138,7 +147,10 @@
 	@reference "$layout";
 
 	.action {
-		@apply flex items-center gap-2.5 py-1.5 text-caption font-medium text-ink3 disabled:opacity-50;
+		@apply flex min-h-12 w-full items-center gap-3 border-t border-border/60 text-caption font-medium text-ink3 disabled:opacity-50;
+	}
+	.action .chevron {
+		@apply ml-auto size-3.5 text-muted-foreground;
 	}
 	.action svg {
 		@apply size-3.75 shrink-0 fill-none stroke-current;
