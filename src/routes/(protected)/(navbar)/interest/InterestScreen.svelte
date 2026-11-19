@@ -13,7 +13,9 @@
 		getInterestTab,
 		interestTabIndex,
 		interestTabs,
+		MATCHES_TAB,
 		rememberInterestTab,
+		shownInterestTabs,
 	} from "./interest-tab";
 	import InterestPager from "./InterestPager.svelte";
 	import { matchesState } from "./matches/matches-state.svelte";
@@ -44,9 +46,17 @@
 		matchesState.load();
 	});
 
+	// Once on Matches it stays, even emptied: the page has its own empty state.
+	const showMatches = $derived(
+		matchesState.matches.length > 0 ||
+			matchesState.serverTotal > 0 ||
+			(active ? page.url.pathname : getInterestTab()) === MATCHES_TAB,
+	);
+	const shown = $derived(shownInterestTabs(showMatches));
+
 	// No count while a list is still loading: a 0 that turns into 34 reads as an
 	// empty tab for as long as the request takes.
-	const tabs = $derived([
+	const allTabs = $derived([
 		{
 			value: interestTabs[0],
 			label: t("interest.tabs.views"),
@@ -68,6 +78,7 @@
 			count: sentTaps.loading ? null : sentTaps.total,
 		},
 	]);
+	const tabs = $derived(allTabs.filter((tab) => shown.includes(tab.value)));
 
 	// So the tab bar's /interest link comes back here rather than resetting.
 	$effect(() => {
@@ -85,7 +96,7 @@
 	});
 
 	const activeIndex = $derived(
-		interestTabIndex(active ? page.url.pathname : getInterestTab()),
+		interestTabIndex(active ? page.url.pathname : getInterestTab(), shown),
 	);
 
 	function select(value: string) {
@@ -124,6 +135,7 @@
 	{ourProfileId}
 	{active}
 	{headerHeight}
+	tabs={shown}
 	bind:position
 	bind:gliding
 />

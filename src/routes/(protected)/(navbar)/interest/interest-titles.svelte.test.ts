@@ -24,7 +24,13 @@ vi.mock("./views/views-state.svelte", () => ({
 	getViewsState: () => ({ loading: true, total: 0 }),
 }));
 vi.mock("./matches/matches-state.svelte", () => ({
-	matchesState: { load: vi.fn(), loaded: false, serverTotal: 0 },
+	matchesState: {
+		load: vi.fn(),
+		matches: [],
+		loaded: false,
+		error: null,
+		serverTotal: 0,
+	},
 }));
 
 import { PSEUDO_TITLE } from "#lib/i18n/fixtures/pseudo-message.ts";

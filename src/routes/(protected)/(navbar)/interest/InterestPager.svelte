@@ -6,6 +6,7 @@
 	import { hapticSelection } from "#lib/platform/haptics.ts";
 	import {
 		getInterestTab,
+		type InterestTab,
 		interestTabIndex,
 		interestTabs,
 	} from "./interest-tab";
@@ -20,6 +21,7 @@
 		headerHeight,
 		position = $bindable(0),
 		gliding = $bindable(false),
+		tabs = interestTabs,
 	}: {
 		ourProfileId: number;
 		/** False while the tab shell has Interest off-screen: then the route belongs to another tab. */
@@ -27,14 +29,15 @@
 		headerHeight: number;
 		position?: number;
 		gliding?: boolean;
+		tabs?: readonly InterestTab[];
 	} = $props();
 
 	const routed = $derived(
-		interestTabIndex(active ? page.url.pathname : getInterestTab()),
+		interestTabIndex(active ? page.url.pathname : getInterestTab(), tabs),
 	);
 
 	function swipedTo(target: number) {
-		const path = interestTabs[target];
+		const path = tabs[target];
 		if (!active || !path) return;
 		hapticSelection();
 		void goto(path, { replace: true, reset: false });
@@ -53,30 +56,28 @@
 	role="main"
 	class="screen-nav-host"
 	style="--interest-header: calc({headerHeight}px - var(--safe-area-top))"
-	count={interestTabs.length}
+	count={tabs.length}
 	index={routed}
 	enabled={active}
 	onswipe={swipedTo}
-	paneSlots={[
-		"interest-pane-views",
-		"interest-pane-taps",
-		"interest-pane-matches",
-		"interest-pane-sent",
-	]}
+	paneSlots={tabs.map(
+		(tab) => `interest-pane-${tab.slice("/interest/".length)}`,
+	)}
 	bind:position
 	bind:gliding
 >
 	{#snippet pane(index, { near })}
 		{#if mounts(index, near)}
-			{#if index === 0}
+			{@const tab = tabs[index]}
+			{#if tab === "/interest/views"}
 				<ViewsGrid {ourProfileId} />
-			{:else if index === 1}
+			{:else if tab === "/interest/taps"}
 				<TapsReceivedList
 					{ourProfileId}
-					active={active && routed === 1}
+					active={active && routed === index}
 				/>
-			{:else if index === 2}
-				<MatchesGrid active={active && routed === 2} />
+			{:else if tab === "/interest/matches"}
+				<MatchesGrid active={active && routed === index} />
 			{:else}
 				<SentTapsList {ourProfileId} />
 			{/if}

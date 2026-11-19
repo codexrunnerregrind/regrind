@@ -28,9 +28,23 @@ export function rememberInterestTab(pathname: string): void {
 	if (match) lastTab = match;
 }
 
-export function interestTabIndex(pathname: string): number {
+export const MATCHES_TAB: InterestTab = "/interest/matches";
+
+/** Matches is hidden unless the account has any: the feature is not offered everywhere. */
+export function shownInterestTabs(
+	showMatches: boolean,
+): readonly InterestTab[] {
+	return showMatches
+		? interestTabs
+		: interestTabs.filter((tab) => tab !== MATCHES_TAB);
+}
+
+export function interestTabIndex(
+	pathname: string,
+	tabs: readonly InterestTab[] = interestTabs,
+): number {
 	return Math.max(
 		0,
-		interestTabs.findIndex((tab) => tab === pathname),
+		tabs.findIndex((tab) => tab === pathname),
 	);
 }
