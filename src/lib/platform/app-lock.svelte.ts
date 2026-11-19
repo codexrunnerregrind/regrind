@@ -11,6 +11,7 @@ import { isMobilePlatform } from "#lib/platform/os.ts";
 
 // Codes meaning the device has no screen lock at all, so nothing can unlock.
 const NO_SCREEN_LOCK = ["passcodeNotSet", "noDeviceCredential"];
+const PAINT_SETTLE_MS = 150;
 
 let locked = $state(true);
 let away = $state(false);
@@ -85,17 +86,30 @@ export async function unlockApp(): Promise<void> {
 	}
 }
 
-/** Unlocks on its own once per lock, when the app is in front. */
-export function promptWhenLocked(): void {
-	if (
+function canPrompt(): boolean {
+	return (
 		appLocked() &&
 		!away &&
 		!authenticating &&
 		!promptedThisLock &&
 		document.visibilityState === "visible"
-	) {
-		void unlockApp();
-	}
+	);
+}
+
+/**
+ * Unlocks on its own once per lock, when the app is in front. Waits for the
+ * cover to paint: Android pauses the WebView behind the prompt, and one that
+ * never drew stays white.
+ */
+export function promptWhenLocked(): void {
+	if (!canPrompt()) return;
+	requestAnimationFrame(() => {
+		requestAnimationFrame(() => {
+			setTimeout(() => {
+				if (canPrompt()) void unlockApp();
+			}, PAINT_SETTLE_MS);
+		});
+	});
 }
 
 /** Asks for the screen lock first, so it can't be turned on unusable. */

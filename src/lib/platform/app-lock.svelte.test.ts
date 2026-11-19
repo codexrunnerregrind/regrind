@@ -104,6 +104,9 @@ describe("app lock", () => {
 		vi.advanceTimersByTime(60_000);
 		setVisibility("visible");
 		expect(appLocked()).toBe(true);
+		// Not before the cover has painted.
+		expect(mocks.authenticate).toHaveBeenCalledTimes(1);
+		await vi.advanceTimersByTimeAsync(500);
 		expect(mocks.authenticate).toHaveBeenCalledTimes(2);
 	});
 
