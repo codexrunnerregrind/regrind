@@ -421,6 +421,8 @@ export function demoRoute({
 	) {
 		return ok(demoAlbumsSharedByProfile(Number(segments[3])));
 	}
+	if (method === "GET" && /^\/v3\/albums\/\d+\/view$/.test(rawPath))
+		return ok({});
 	if (method === "GET" && segments[0] === "v2" && segments[1] === "albums") {
 		return ok(demoAlbumContent(Number(segments[2])));
 	}

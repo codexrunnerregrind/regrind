@@ -11,6 +11,7 @@ import {
 	type AlbumContentResponse,
 	getAlbumContent,
 	getAlbumsPaywallContent,
+	markAlbumViewed,
 } from "#lib/api/messaging/albums.ts";
 import {
 	sendAlbumContentReaction,
@@ -285,8 +286,10 @@ export async function resolveAlbumForViewing({
 				throw error;
 			})
 		: null;
-	if (album !== null && album.content.length > 0)
+	if (album !== null && album.content.length > 0) {
+		if (!ours) void markAlbumViewed(albumId).catch(console.error);
 		return { album, fromPaywall: false };
+	}
 
 	// Our own album, refused by the viewer endpoint because the share is off:
 	// our album list still has it, in full and with nothing blurred.

@@ -105,10 +105,9 @@
 			<LockIcon class="size-3.5" />
 		</span>
 	{/if}
-	{#if unseen}
-		<!-- Drawn *inside* the tile: `.photo-grid` clips to its own rounded box, so
-		     an outward ring loses the side that sits on the grid's edge, and what
-		     survives bleeds across the 2px gap into the neighbouring tile. -->
+	{#if unseen && !locked}
+		<!-- Inside the tile so the grid's clip can't cut it. A locked album can't
+		     be opened to clear it, so it never gets one. -->
 		<span
 			class="pointer-events-none absolute inset-0 rounded-[inherit] border-2 border-accent"
 		></span>
@@ -122,7 +121,9 @@
 		"relative aspect-album cursor-pointer rounded-lg [-webkit-touch-callout:none] **:[-webkit-touch-callout:none]",
 		{ "opacity-50": loading },
 	]}
-	aria-label={unseen ? `Open ${title}, new content` : `Open ${title}`}
+	aria-label={unseen && !locked
+		? `Open ${title}, new content`
+		: `Open ${title}`}
 	{disabled}
 	{onclick}
 	{...longPress}

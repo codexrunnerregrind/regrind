@@ -57,6 +57,11 @@ export async function getAlbumContent(albumId: number) {
 	);
 }
 
+/** Tells the server we opened a shared album; this is what clears its unseen flag. */
+export async function markAlbumViewed(albumId: number) {
+	await fetchRest(`/v3/albums/${albumId}/view`).then((res) => res.assertOk());
+}
+
 export type AlbumContentResponse = Awaited<ReturnType<typeof getAlbumContent>>;
 
 export async function getMyAlbums() {
