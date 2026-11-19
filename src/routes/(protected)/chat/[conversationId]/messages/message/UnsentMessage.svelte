@@ -13,9 +13,10 @@
 
 <div
 	class={[
-		"relative w-fit max-w-[74%] shrink-0 overflow-visible rounded-bubble bg-muted px-3.5 py-2.75 text-bubble/[1.45] text-muted-foreground italic select-text",
+		"relative w-fit shrink-0 overflow-visible rounded-bubble bg-muted px-3.5 py-2.75 text-bubble/[1.45] text-muted-foreground italic select-text",
 		{
 			"pointer-coarse:select-none": !clone,
+			"max-w-[74%]": !clone,
 			"rounded-es-bubble-tail": lastInStack && !isOut,
 			"rounded-ee-bubble-tail": lastInStack && isOut,
 		},

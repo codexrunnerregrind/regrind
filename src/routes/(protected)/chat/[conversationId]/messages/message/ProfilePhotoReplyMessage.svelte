@@ -23,7 +23,12 @@
      photo in the conversation is: the picture quoted above the reply's own
      text, inside one bubble. The quote is inert here — a profile photo is not a
      message in this conversation, so there is nothing to jump to. -->
-<div class={["flex max-w-[74%] flex-col", { "items-end": isOut }]}>
+<div
+	class={[
+		"flex flex-col",
+		{ "max-w-[74%]": !clone, "max-w-full": clone, "items-end": isOut },
+	]}
+>
 	<div
 		class={[
 			"relative w-fit max-w-full shrink-0 overflow-visible rounded-bubble px-3.5 py-2.75 text-bubble/[1.45] select-text",

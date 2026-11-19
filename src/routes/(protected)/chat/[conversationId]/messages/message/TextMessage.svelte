@@ -29,7 +29,12 @@
 	});
 </script>
 
-<div class={["flex max-w-[74%] flex-col", { "items-end": isOut }]}>
+<div
+	class={[
+		"flex flex-col",
+		{ "max-w-[74%]": !clone, "max-w-full": clone, "items-end": isOut },
+	]}
+>
 	<!-- No drawn tail: the last bubble in a stack tightens its inner bottom
 	     corner instead, which points the stack at its sender on its own. -->
 	<div

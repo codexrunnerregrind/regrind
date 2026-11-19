@@ -197,7 +197,16 @@
 	     inside one bubble. The quote points into the album rather than at a
 	     message in this conversation, so tapping it opens the album on that
 	     photo. -->
-	<div class={["flex max-w-[74%] flex-col", { "items-end": media.isOut }]}>
+	<div
+		class={[
+			"flex flex-col",
+			{
+				"max-w-[74%]": !media.clone,
+				"max-w-full": media.clone,
+				"items-end": media.isOut,
+			},
+		]}
+	>
 		<div
 			class={[
 				"relative w-fit max-w-full shrink-0 overflow-visible rounded-bubble px-3.5 py-2.75 text-bubble/[1.45] select-text",
