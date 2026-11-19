@@ -45,7 +45,10 @@ function startTracking() {
 	}) => {
 		for (const [registeredType, listener] of registrations) {
 			if (registeredType === type) {
-				(listener as EventListener)(event as unknown as Event);
+				(listener as EventListener)({
+					...event,
+					type,
+				} as unknown as Event);
 			}
 		}
 	};

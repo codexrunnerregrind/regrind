@@ -88,11 +88,11 @@
 	$effect(() => {
 		const shown = index;
 		if (settling) return;
-		let retry: ReturnType<typeof setTimeout> | undefined;
+		let timer: ReturnType<typeof setTimeout> | undefined;
 		const fit = () => {
 			// A screen of links mounting under a tap costs the tap its click.
 			if (tapPending()) {
-				retry = setTimeout(fit, TAP_CLICK_WINDOW_MS);
+				timer = setTimeout(fit, TAP_CLICK_WINDOW_MS);
 				return;
 			}
 			for (const [pane, live] of mounted.entries()) {
@@ -100,17 +100,14 @@
 				if (live !== wanted) mounted[pane] = wanted;
 			}
 		};
-		if ("requestIdleCallback" in window) {
-			const handle = requestIdleCallback(fit, { timeout: 1500 });
-			return () => {
-				cancelIdleCallback(handle);
-				clearTimeout(retry);
-			};
-		}
-		const handle = setTimeout(fit, 300);
+		const idle =
+			"requestIdleCallback" in window
+				? requestIdleCallback(fit, { timeout: 1500 })
+				: undefined;
+		if (idle === undefined) timer = setTimeout(fit, 300);
 		return () => {
-			clearTimeout(handle);
-			clearTimeout(retry);
+			if (idle !== undefined) cancelIdleCallback(idle);
+			clearTimeout(timer);
 		};
 	});
 

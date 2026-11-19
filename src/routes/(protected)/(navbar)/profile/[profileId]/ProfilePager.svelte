@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { afterNavigate } from "$app/navigation";
-	import { navigating } from "$app/state";
 	import { onDestroy, tick, untrack } from "svelte";
 	import { on } from "svelte/events";
 	import { SvelteMap } from "svelte/reactivity";
@@ -131,22 +130,14 @@
 	// Coming back to a profile through history lands where it was scrolled to.
 	const scrollMemory = new ProfileScrollMemory();
 	let entered = $state(0);
-	function enter(traversal: boolean) {
-		scrollMemory.enter({ traversal });
+	// Also runs on mount, with the navigation that brought the pager in.
+	afterNavigate(({ type }) => {
+		scrollMemory.enter({ traversal: type === "popstate" });
 		entered++;
-	}
-	untrack(() => enter(navigating.type === "popstate"));
+	});
 	// A back swipe landing here waits for the scroll to come back.
 	const releaseLanding = holdSwipeLanding();
 	onDestroy(() => releaseLanding());
-	let mounted = false;
-	afterNavigate(({ type }) => {
-		if (!mounted) {
-			mounted = true;
-			return;
-		}
-		enter(type === "popstate");
-	});
 
 	let pagerNode: HTMLElement | null = null;
 	function activeScroller(profileId: number): HTMLElement | null {
@@ -158,7 +149,7 @@
 	}
 
 	$effect(() => {
-		void entered;
+		if (entered === 0) return;
 		const profileId = currentId;
 		if (profileId === undefined || !activeState?.profile) return;
 		if (activeState.loading) return;

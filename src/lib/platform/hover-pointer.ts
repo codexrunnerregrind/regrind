@@ -23,25 +23,14 @@ export function trackHoverPointer(): () => void {
 		},
 		options,
 	);
-	window.addEventListener(
-		"pointerdown",
-		(event) => {
-			if (event.isTrusted && event.pointerType === "touch") {
-				lastTouch = event.timeStamp;
-				root.toggleAttribute(HOVER_POINTER_ROOT_ATTRIBUTE, false);
-			}
-		},
-		options,
-	);
-	window.addEventListener(
-		"pointerup",
-		(event) => {
-			if (event.isTrusted && event.pointerType === "touch") {
-				lastTouch = event.timeStamp;
-			}
-		},
-		options,
-	);
+	const noteTouch = (event: PointerEvent) => {
+		if (!event.isTrusted || event.pointerType !== "touch") return;
+		lastTouch = event.timeStamp;
+		if (event.type === "pointerdown")
+			root.toggleAttribute(HOVER_POINTER_ROOT_ATTRIBUTE, false);
+	};
+	window.addEventListener("pointerdown", noteTouch, options);
+	window.addEventListener("pointerup", noteTouch, options);
 	return () => {
 		listening.abort();
 		root.removeAttribute(HOVER_POINTER_ROOT_ATTRIBUTE);
