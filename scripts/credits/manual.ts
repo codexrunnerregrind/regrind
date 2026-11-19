@@ -41,6 +41,7 @@ export const universalReleaseApk: Record<string, string> = {
 	"androidx.appcompat:appcompat-resources": "1.7.1",
 	"androidx.arch.core:core-common": "2.2.0",
 	"androidx.arch.core:core-runtime": "2.2.0",
+	"androidx.biometric:biometric": "1.1.0",
 	"androidx.browser:browser": "1.8.0",
 	"androidx.cardview:cardview": "1.0.0",
 	"androidx.collection:collection": "1.2.0",

@@ -20,6 +20,8 @@
 	<string>0.1.0.19</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>ReGrind uses Face ID to unlock the app when App lock is on.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>ReGrind uses your location to show where you are on the map and to share your location in chats.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

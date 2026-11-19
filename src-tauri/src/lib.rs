@@ -249,7 +249,9 @@ pub fn run() {
 		.plugin(media_picker::android::plugin());
 
 	#[cfg(mobile)]
-	let builder = builder.plugin(tauri_plugin_haptics::init());
+	let builder = builder
+		.plugin(tauri_plugin_haptics::init())
+		.plugin(tauri_plugin_biometric::init());
 
 	// Recover a WKWebView whose web content process iOS jettisoned while we were
 	// backgrounded. Reloading here (we're still in the background) can't bring

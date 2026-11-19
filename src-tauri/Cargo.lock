@@ -4721,6 +4721,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-android-fs",
+ "tauri-plugin-biometric",
  "tauri-plugin-clipboard-manager",
  "tauri-plugin-devtools",
  "tauri-plugin-dialog",
@@ -5836,6 +5837,21 @@ dependencies = [
  "tauri",
  "tauri-plugin",
  "tauri-plugin-fs",
+ "thiserror 2.0.18",
+]
+
+[[package]]
+name = "tauri-plugin-biometric"
+version = "2.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b9da80a13cea8a9e7d81af3e6347c04e28d109ec0a33ac5460950fbe72f3f4b"
+dependencies = [
+ "log",
+ "serde",
+ "serde_json",
+ "serde_repr",
+ "tauri",
+ "tauri-plugin",
  "thiserror 2.0.18",
 ]
 

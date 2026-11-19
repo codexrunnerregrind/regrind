@@ -111,7 +111,6 @@ expectTypeOf<RichKeyWith<{ issueLink: "placeholder" }>>().toEqualTypeOf<
 	| "chat.composer.voiceMessage.unimplemented"
 	| "settings.account.unimplemented"
 	| "settings.app.discreetAppIcon.unimplemented"
-	| "settings.app.pin.unimplemented"
 >();
 expectTypeOf<"interest.views.preview.viewCount">().not.toExtend<
 	RichKeyWith<{ srOnly: "tag" }>

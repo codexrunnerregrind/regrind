@@ -182,9 +182,23 @@
 				"renameNeedsAdmin": "The icon changed, but renaming the app needs an administrator account"
 			}
 		},
-		"pin": {
-			"title": "PIN",
-			"unimplemented": "The PIN lock isn’t implemented yet. Follow the progress in {{issueLink}}."
+		"appLock": {
+			"title": "App lock",
+			"description": "Ask for Face ID, fingerprint or your device passcode to open ReGrind.",
+			"after": {
+				"label": "Lock after leaving the app",
+				"now": "Now",
+				"oneMinute": "1 min",
+				"fiveMinutes": "5 min",
+				"fifteenMinutes": "15 min"
+			},
+			"locked": "ReGrind is locked",
+			"unlock": "Unlock",
+			"reason": {
+				"unlock": "Unlock ReGrind",
+				"turnOn": "Turn on App lock"
+			},
+			"turnedOff": "App lock was turned off: this device has no screen lock."
 		},
 		"privacyPolicy": "Privacy policy"
 	},

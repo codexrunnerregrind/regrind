@@ -13,6 +13,8 @@
 		"geolocation:allow-request-permissions",
 		"geolocation:allow-get-current-position",
 		"geolocation:allow-watch-position",
+		"biometric:allow-status",
+		"biometric:allow-authenticate",
 		"haptics:allow-vibrate",
 		"haptics:allow-impact-feedback",
 		"haptics:allow-notification-feedback",

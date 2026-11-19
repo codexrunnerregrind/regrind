@@ -23,6 +23,7 @@
 	import { tabShellShowing } from "#lib/components/tab-shell/tab-shell-state.svelte.ts";
 	import { takeDemoAnnouncement } from "#lib/demo/config.ts";
 	import { t } from "#lib/i18n/index.ts";
+	import { installAppLock } from "#lib/platform/app-lock.svelte.ts";
 	import { blockNativeMenu } from "#lib/platform/block-native-menu.ts";
 	import { blockZoom } from "#lib/platform/block-zoom.ts";
 	import { trackHoverPointer } from "#lib/platform/hover-pointer.ts";
@@ -84,6 +85,7 @@
 		const releaseNativeMenuBlock = blockNativeMenu();
 		const releaseHoverPointer = trackHoverPointer();
 		const releaseInAppLinks = keepLinksInApp();
+		const releaseAppLock = installAppLock();
 		installSystemBack();
 		installVoiceOverWatch();
 		void hydratePreferences().catch((error: unknown) => {
@@ -105,6 +107,7 @@
 			releaseNativeMenuBlock();
 			releaseHoverPointer();
 			releaseInAppLinks();
+			releaseAppLock();
 		};
 	});
 
@@ -112,6 +115,7 @@
 
 	import faviconPng from "#lib/assets/favicon.png";
 	import AccountStatusAlert from "#lib/components/feedback/AccountStatusAlert.svelte";
+	import AppLockScreen from "#lib/components/feedback/AppLockScreen.svelte";
 	import CopyErrorConfirmAlert from "#lib/components/feedback/CopyErrorConfirmAlert.svelte";
 	import GoogleHandoffConfirmAlert from "#lib/components/feedback/GoogleHandoffConfirmAlert.svelte";
 	import RequestBlockedAlert from "#lib/components/feedback/RequestBlockedAlert.svelte";
@@ -254,4 +258,5 @@
 	<AccountStatusAlert />
 	<CopyErrorConfirmAlert />
 	<GoogleHandoffConfirmAlert />
+	<AppLockScreen />
 </IconContext>

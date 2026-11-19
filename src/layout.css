@@ -370,6 +370,7 @@
 	--z-index-toast: 140000;
 	--z-index-popover: 145000;
 	--z-index-safe-area: 150000;
+	--z-index-app-lock: 160000;
 
 	--spacing-count-badge: 5.5px;
 

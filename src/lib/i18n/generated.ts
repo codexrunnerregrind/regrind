@@ -901,6 +901,18 @@ export interface Messages {
 	"settings.account.email": undefined;
 	"settings.account.password": undefined;
 	"settings.account.unimplemented": { issueLink: string };
+	"settings.app.appLock.after.fifteenMinutes": undefined;
+	"settings.app.appLock.after.fiveMinutes": undefined;
+	"settings.app.appLock.after.label": undefined;
+	"settings.app.appLock.after.now": undefined;
+	"settings.app.appLock.after.oneMinute": undefined;
+	"settings.app.appLock.description": undefined;
+	"settings.app.appLock.locked": undefined;
+	"settings.app.appLock.reason.turnOn": undefined;
+	"settings.app.appLock.reason.unlock": undefined;
+	"settings.app.appLock.title": undefined;
+	"settings.app.appLock.turnedOff": undefined;
+	"settings.app.appLock.unlock": undefined;
 	"settings.app.appsMenuEntry.description": undefined;
 	"settings.app.appsMenuEntry.title": undefined;
 	"settings.app.backdropBlur.automatic": undefined;
@@ -935,8 +947,6 @@ export interface Messages {
 	"settings.app.hapticFeedback.description": undefined;
 	"settings.app.hapticFeedback.title": undefined;
 	"settings.app.language.helpTranslate": undefined;
-	"settings.app.pin.title": undefined;
-	"settings.app.pin.unimplemented": { issueLink: string };
 	"settings.app.privacyPolicy": undefined;
 	"settings.app.revealMessageRead.description": undefined;
 	"settings.app.revealMessageRead.title": undefined;
@@ -1430,7 +1440,6 @@ export interface RichMessages {
 	"settings.app.discreetAppIcon.restart.android": { appName: "placeholder" };
 	"settings.app.discreetAppIcon.restart.macos": { appName: "placeholder" };
 	"settings.app.discreetAppIcon.unimplemented": { issueLink: "placeholder" };
-	"settings.app.pin.unimplemented": { issueLink: "placeholder" };
 	"settings.credits.highlights.bitsUi": { projectLink: "placeholder" };
 	"settings.credits.highlights.emblaCarouselSvelte": { projectLink: "placeholder" };
 	"settings.credits.highlights.phosphorSvelte": { projectLink: "placeholder" };

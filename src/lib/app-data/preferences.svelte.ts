@@ -58,6 +58,14 @@ export const bubbleColorSchema = z.enum(bubbleColors);
 export const matchesCardStyleSchema = z.enum(["full", "compact"]);
 export type MatchesCardStyle = z.infer<typeof matchesCardStyleSchema>;
 
+export const appLockAfterSchema = z.union([
+	z.literal(0),
+	z.literal(60),
+	z.literal(300),
+	z.literal(900),
+]);
+export type AppLockAfter = z.infer<typeof appLockAfterSchema>;
+
 const preferencesSchema = z.object({
 	// Defaults mirror the official app: yellow for the accent and your own
 	// messages, pale sky blue for theirs. `.catch` keeps a color that has since
@@ -95,6 +103,9 @@ const preferencesSchema = z.object({
 	giphyConsent: z.boolean().default(false),
 	hapticFeedback: z.boolean().default(true),
 	keepScreenOn: z.boolean().default(false),
+	appLock: z.boolean().default(false),
+	// Seconds away before App lock asks again.
+	appLockAfter: appLockAfterSchema.default(60).catch(60),
 	showAccountCreated: z.boolean().default(false),
 	// Grid extras. Double-tap stays opt-in: it holds every tap back ~300 ms.
 	gridChatFrame: z.boolean().default(true),
@@ -210,6 +221,9 @@ const portablePreferencesSchema = preferencesSchema.omit({
 	savedLocations: true,
 	onboardingComplete: true,
 	mediaSends: true,
+	// Tied to this device's screen lock.
+	appLock: true,
+	appLockAfter: true,
 });
 
 export type PortablePreferences = z.infer<typeof portablePreferencesSchema>;

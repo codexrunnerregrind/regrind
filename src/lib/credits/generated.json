@@ -113,6 +113,20 @@
 			]
 		},
 		{
+			"id": "androidx.biometric:biometric",
+			"name": "androidx.biometric:biometric",
+			"ecosystem": "android",
+			"platform": "android",
+			"versions": [
+				"1.1.0"
+			],
+			"spdx": "Apache-2.0",
+			"url": "https://developer.android.com/jetpack/androidx",
+			"textHashes": [
+				"283ea6cc2997a1a7"
+			]
+		},
+		{
 			"id": "androidx.browser:browser",
 			"name": "androidx.browser:browser",
 			"ecosystem": "android",
@@ -1775,6 +1789,20 @@
 			"url": "https://github.com/tauri-apps/tauri",
 			"textHashes": [
 				"4bf96504d6e83ce5",
+				"89ff9689dcf9dd53"
+			]
+		},
+		{
+			"id": "@tauri-apps/plugin-biometric",
+			"name": "@tauri-apps/plugin-biometric",
+			"ecosystem": "npm",
+			"versions": [
+				"2.3.3"
+			],
+			"spdx": "MIT OR Apache-2.0",
+			"url": "https://github.com/tauri-apps/plugins-workspace",
+			"textHashes": [
+				"283ea6cc2997a1a7",
 				"89ff9689dcf9dd53"
 			]
 		},
@@ -8317,6 +8345,21 @@
 			"textHashes": [
 				"043dc21d7a79b8de",
 				"901b23e9a6794797"
+			]
+		},
+		{
+			"id": "tauri-plugin-biometric",
+			"name": "tauri-plugin-biometric",
+			"ecosystem": "rust",
+			"platform": "android",
+			"versions": [
+				"2.3.3"
+			],
+			"spdx": "Apache-2.0 OR MIT",
+			"shipped": "MIT",
+			"url": "https://github.com/tauri-apps/plugins-workspace",
+			"textHashes": [
+				"07c7993a082dd284"
 			]
 		},
 		{

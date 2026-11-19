@@ -6,19 +6,17 @@
 	import EyeIcon from "phosphor-svelte/lib/EyeIcon";
 	import GifIcon from "phosphor-svelte/lib/GifIcon";
 	import HeartIcon from "phosphor-svelte/lib/HeartIcon";
-	import LockKeyIcon from "phosphor-svelte/lib/LockKeyIcon";
 	import ProhibitIcon from "phosphor-svelte/lib/ProhibitIcon";
 	import SparkleIcon from "phosphor-svelte/lib/SparkleIcon";
 	import SunIcon from "phosphor-svelte/lib/SunIcon";
 	import VibrateIcon from "phosphor-svelte/lib/VibrateIcon";
-	import { toast } from "svelte-sonner";
 
-	import ToastUnimplemented from "#lib/components/feedback/ToastUnimplemented.svelte";
 	import PreferenceSwitchSetting from "#lib/components/settings/PreferenceSwitchSetting.svelte";
 	import SectionHeader from "#lib/components/settings/SectionHeader.svelte";
 	import SettingsGroup from "#lib/components/settings/SettingsGroup.svelte";
 	import SettingsRow from "#lib/components/settings/SettingsRow.svelte";
 	import { appIconAvailable } from "#lib/platform/app-icon.ts";
+	import { appLockAvailable } from "#lib/platform/app-lock.svelte.ts";
 	import { desktopEntryAvailable } from "#lib/platform/desktop-entry.svelte.ts";
 	import { hapticsAvailable } from "#lib/platform/haptics.ts";
 	import { keepScreenOnAvailable } from "#lib/platform/keep-screen-on.ts";
@@ -27,17 +25,11 @@
 		updatesSelfManaged,
 		updatesUnsupportedReason,
 	} from "#lib/updates/capability.svelte.ts";
-	import type { UnimplementedMessageKey } from "#lib/components/feedback/unimplemented.ts";
+	import AppLockSetting from "./AppLockSetting.svelte";
 	import AppsMenuEntrySetting from "./AppsMenuEntrySetting.svelte";
 	import AutomaticUpdatesSetting from "./AutomaticUpdatesSetting.svelte";
 	import NotificationSettings from "./NotificationSettings.svelte";
 	import UnitsSetting from "./UnitsSetting.svelte";
-
-	function unimplemented(message: UnimplementedMessageKey, issue: number) {
-		return () => {
-			toast(ToastUnimplemented, { componentProps: { message, issue } });
-		};
-	}
 </script>
 
 <SectionHeader>Display</SectionHeader>
@@ -159,15 +151,9 @@
 			{/snippet}
 		</SettingsRow>
 	{/if}
-	<SettingsRow
-		title="PIN"
-		description="Require a passcode to open the app."
-		onclick={unimplemented("settings.app.pin.unimplemented", 50)}
-	>
-		{#snippet icon()}
-			<LockKeyIcon weight="fill" />
-		{/snippet}
-	</SettingsRow>
+	{#if appLockAvailable()}
+		<AppLockSetting />
+	{/if}
 </SettingsGroup>
 
 {#if updatesSelfManaged() || updatesUnsupportedReason() !== null || addonInstallerAvailable()}
