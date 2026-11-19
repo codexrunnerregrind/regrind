@@ -12,6 +12,7 @@ import {
 	formatNumber,
 	formatRange,
 	formatRelativeTime,
+	formatUnitName,
 	isolate,
 	type NumberPresetName,
 } from "./format";
@@ -360,6 +361,18 @@ describe("regional formats", () => {
 	});
 });
 
+describe("formatUnitName", () => {
+	it("names the unit as the language abbreviates it", async () => {
+		expect(formatUnitName("heightCentimeters")).toBe("cm");
+		expect(formatUnitName("weightKilograms")).toBe("kg");
+		expect(formatUnitName("weightPounds")).toBe("lb");
+
+		await setLocale({ locale: "ru" });
+		expect(formatUnitName("heightCentimeters")).toBe("см");
+		expect(formatUnitName("weightKilograms")).toBe("кг");
+	});
+});
+
 describe("formatRelativeTime", () => {
 	it.each(relativeTimeCases)(
 		"prints an offset of %d ms as %s, as date-fns does",
@@ -409,12 +422,22 @@ describe("formatListParts", () => {
 	});
 
 	it("takes the separators of the active locale", async () => {
-		await setLocale({ locale: "fr" });
-		expect(
+		const separators = () =>
 			formatListParts(["Top", "Bottom", "Versatile"])
 				.filter(({ type }) => type === "literal")
-				.map(({ value }) => value),
-		).toEqual([", ", " et "]);
+				.map(({ value }) => value);
+		await setLocale({ locale: "ja" });
+		expect(separators()).toEqual(["、", "、"]);
+		await setLocale({ locale: "de" });
+		expect(separators()).toEqual([", ", " und "]);
+	});
+
+	it("separates two items the way it separates three", async () => {
+		await setLocale({ locale: "ru" });
+		expect(formatList(["Top", "Bottom"])).toBe("Top, Bottom");
+		expect(formatList(["Top", "Bottom", "Versatile"])).toBe(
+			"Top, Bottom, Versatile",
+		);
 	});
 });
 
