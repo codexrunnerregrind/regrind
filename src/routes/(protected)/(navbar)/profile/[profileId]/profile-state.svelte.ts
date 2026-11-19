@@ -65,6 +65,7 @@ export class ProfileState {
 	#viewabilityChanges = new Generation();
 	#destroyed = false;
 	#viewed = false;
+	#viewSentToast: string | number | undefined;
 
 	constructor({
 		profileId,
@@ -109,7 +110,8 @@ export class ProfileState {
 		try {
 			await recordProfileView({ profileId: this.profileId });
 			this.canSendView = false;
-			toast.success("Profile view sent");
+			if (!this.#destroyed)
+				this.#viewSentToast = toast.success("Profile view sent");
 		} catch (error) {
 			console.error(error);
 			showErrorToast({ label: "Failed to send profile view", error });
@@ -120,6 +122,9 @@ export class ProfileState {
 
 	destroy(): void {
 		this.#destroyed = true;
+		// The toast belongs to this profile; left up, it slides with the chrome.
+		if (this.#viewSentToast !== undefined)
+			toast.dismiss(this.#viewSentToast);
 	}
 
 	retry(): void {

@@ -7,6 +7,7 @@ const {
 	recordProfileViewMock,
 	getPreferencesMock,
 	showErrorToastMock,
+	toastMock,
 } = vi.hoisted(() => ({
 	getProfileMock: vi.fn(),
 	refreshProfileMock: vi.fn(),
@@ -14,12 +15,13 @@ const {
 	recordProfileViewMock: vi.fn(() => Promise.resolve()),
 	getPreferencesMock: vi.fn(),
 	showErrorToastMock: vi.fn(),
+	toastMock: { success: vi.fn(() => "view-toast"), dismiss: vi.fn() },
 }));
 
 vi.mock("#lib/api/error-toast.ts", () => ({
 	showErrorToast: showErrorToastMock,
 }));
-vi.mock("svelte-sonner", () => ({ toast: { success: vi.fn() } }));
+vi.mock("svelte-sonner", () => ({ toast: toastMock }));
 vi.mock("#lib/api/interest/views.ts", () => ({
 	recordProfileView: recordProfileViewMock,
 }));
@@ -364,6 +366,26 @@ describe("ProfileState manual view", () => {
 		expect(recordProfileViewMock).toHaveBeenCalledExactlyOnceWith({
 			profileId: PROFILE_ID,
 		});
+	});
+
+	it("dismisses its sent toast when the profile closes", async () => {
+		const state = create();
+		await flush();
+		await state.sendView();
+		expect(toastMock.success).toHaveBeenCalledOnce();
+
+		state.destroy();
+		expect(toastMock.dismiss).toHaveBeenCalledExactlyOnceWith("view-toast");
+	});
+
+	it("skips the sent toast once the profile closed", async () => {
+		const state = create();
+		await flush();
+		const sending = state.sendView();
+		state.destroy();
+		await sending;
+
+		expect(toastMock.success).not.toHaveBeenCalled();
 	});
 
 	it("ignores a send while one is in flight", async () => {
