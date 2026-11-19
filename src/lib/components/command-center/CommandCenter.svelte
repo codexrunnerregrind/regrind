@@ -60,7 +60,7 @@
 		}
 	}
 >
-	<Dialog.Content class="top-1/3 translate-y-0 rounded-2xl! sm:max-w-100">
+	<Dialog.Content class="rounded-2xl! sm:max-w-100">
 		<Dialog.Header>
 			<Dialog.Title>Open profile</Dialog.Title>
 			<Dialog.Description>
