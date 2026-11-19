@@ -1,5 +1,7 @@
 import { flushSync } from "svelte";
 
+import { tapPending } from "#lib/platform/tap-quiet.ts";
+
 const FRAME_BUDGET_MS = 4;
 
 const OFFSCREEN = 0;
@@ -19,6 +21,8 @@ type MountQueueOptions = {
 	now?: () => number;
 	flush?: () => void;
 	budgetMs?: number;
+	/** Holds mounting back while true; see `tapPending`. */
+	holdOff?: () => boolean;
 	onDrained?: () => void;
 };
 
@@ -39,6 +43,7 @@ export class MountQueue {
 	#now: () => number;
 	#flush: () => void;
 	#budgetMs: number;
+	#holdOff: () => boolean;
 	#onDrained: (() => void) | undefined;
 
 	constructor({
@@ -47,6 +52,7 @@ export class MountQueue {
 		now = () => performance.now(),
 		flush = () => flushSync(),
 		budgetMs = FRAME_BUDGET_MS,
+		holdOff = tapPending,
 		onDrained,
 	}: MountQueueOptions = {}) {
 		this.#requestFrame = requestFrame;
@@ -54,6 +60,7 @@ export class MountQueue {
 		this.#now = now;
 		this.#flush = flush;
 		this.#budgetMs = budgetMs;
+		this.#holdOff = holdOff;
 		this.#onDrained = onDrained;
 	}
 
@@ -85,6 +92,10 @@ export class MountQueue {
 
 	#drain() {
 		this.#frame = null;
+		if (this.#holdOff()) {
+			this.#schedule();
+			return;
+		}
 		const start = this.#now();
 		const ordered = [...this.#tasks]
 			.filter((task) => task.node.isConnected)

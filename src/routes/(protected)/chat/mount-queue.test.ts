@@ -9,7 +9,12 @@ const BUDGET_MS = 4;
 function harness({
 	mountCostMs = 0,
 	onDrained,
-}: { mountCostMs?: number; onDrained?: () => void } = {}) {
+	holdOff = () => false,
+}: {
+	mountCostMs?: number;
+	onDrained?: () => void;
+	holdOff?: () => boolean;
+} = {}) {
 	let clock = 0;
 	let lastHandle = 0;
 	const frames = new Map<number, () => void>();
@@ -25,6 +30,7 @@ function harness({
 		now: () => clock,
 		flush: () => (clock += mountCostMs),
 		budgetMs: BUDGET_MS,
+		holdOff,
 		onDrained,
 	});
 
@@ -68,6 +74,20 @@ afterEach(() => {
 });
 
 describe("MountQueue", () => {
+	it("holds mounting while a tap may be in flight, then carries on", () => {
+		let tapping = true;
+		const { add, runFrame, pendingFrames } = harness({
+			holdOff: () => tapping,
+		});
+		add({ name: "row" });
+
+		expect(runFrame()).toEqual([]);
+		expect(pendingFrames()).toBe(1);
+
+		tapping = false;
+		expect(runFrame()).toEqual(["row"]);
+	});
+
 	it("mounts offscreen rows top to bottom whatever order they registered in", () => {
 		const { placeholder, add, runFrame } = harness();
 		const [first, second, third] = ["first", "second", "third"].map(

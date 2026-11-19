@@ -11,6 +11,10 @@
 		tabShellRoot,
 	} from "#lib/components/tab-shell/tab-shell-state.svelte.ts";
 	import { hapticSelection } from "#lib/platform/haptics.ts";
+	import {
+		TAP_CLICK_WINDOW_MS,
+		tapPending,
+	} from "#lib/platform/tap-quiet.ts";
 	import { type PanDirection, panPager } from "#lib/util/pan-pager.ts";
 	import { reducedMotion } from "#lib/util/reduced-motion.ts";
 	import { remeasureScreenChrome } from "#lib/util/screen-chrome.svelte.ts";
@@ -84,7 +88,13 @@
 	$effect(() => {
 		const shown = index;
 		if (settling) return;
+		let retry: ReturnType<typeof setTimeout> | undefined;
 		const fit = () => {
+			// A screen of links mounting under a tap costs the tap its click.
+			if (tapPending()) {
+				retry = setTimeout(fit, TAP_CLICK_WINDOW_MS);
+				return;
+			}
 			for (const [pane, live] of mounted.entries()) {
 				const wanted = Math.abs(pane - shown) <= 1;
 				if (live !== wanted) mounted[pane] = wanted;
@@ -92,10 +102,16 @@
 		};
 		if ("requestIdleCallback" in window) {
 			const handle = requestIdleCallback(fit, { timeout: 1500 });
-			return () => cancelIdleCallback(handle);
+			return () => {
+				cancelIdleCallback(handle);
+				clearTimeout(retry);
+			};
 		}
 		const handle = setTimeout(fit, 300);
-		return () => clearTimeout(handle);
+		return () => {
+			clearTimeout(handle);
+			clearTimeout(retry);
+		};
 	});
 
 	// Interest's link goes through a redirect to its last sub-tab; going there

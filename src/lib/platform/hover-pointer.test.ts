@@ -2,16 +2,26 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
 	HOVER_POINTER_ROOT_ATTRIBUTE,
+	TAP_ECHO_MS,
 	trackHoverPointer,
 } from "./hover-pointer";
 
-type PointerState = Pick<PointerEvent, "isTrusted" | "buttons" | "pointerType">;
+type PointerState = Pick<
+	PointerEvent,
+	"isTrusted" | "buttons" | "pointerType" | "timeStamp"
+>;
 
 const root = document.documentElement;
 const releases: (() => void)[] = [];
 
 function pointer(state: Partial<PointerState>): PointerState {
-	return { isTrusted: true, buttons: 0, pointerType: "mouse", ...state };
+	return {
+		isTrusted: true,
+		buttons: 0,
+		pointerType: "mouse",
+		timeStamp: 0,
+		...state,
+	};
 }
 
 function primaryInputHovers(hovers: boolean) {
@@ -64,6 +74,39 @@ describe("trackHoverPointer", () => {
 			primaryInputHovers(false);
 			const { deliver } = startTracking();
 			deliver({ type: "pointermove", event: pointer({ pointerType }) });
+			expect(root.hasAttribute(HOVER_POINTER_ROOT_ATTRIBUTE)).toBe(true);
+		},
+	);
+
+	it("ignores a finger's buttonless moves", () => {
+		primaryInputHovers(false);
+		const { deliver } = startTracking();
+		deliver({
+			type: "pointermove",
+			event: pointer({ pointerType: "touch" }),
+		});
+		expect(root.hasAttribute(HOVER_POINTER_ROOT_ATTRIBUTE)).toBe(false);
+	});
+
+	it.each(["pointerdown", "pointerup"])(
+		"ignores the hover moves iOS sends right after a tap's %s",
+		(type) => {
+			primaryInputHovers(false);
+			const { deliver } = startTracking();
+			deliver({
+				type,
+				event: pointer({ pointerType: "touch", timeStamp: 5000 }),
+			});
+			deliver({
+				type: "pointermove",
+				event: pointer({ timeStamp: 5000 + TAP_ECHO_MS - 1 }),
+			});
+			expect(root.hasAttribute(HOVER_POINTER_ROOT_ATTRIBUTE)).toBe(false);
+
+			deliver({
+				type: "pointermove",
+				event: pointer({ timeStamp: 5000 + TAP_ECHO_MS }),
+			});
 			expect(root.hasAttribute(HOVER_POINTER_ROOT_ATTRIBUTE)).toBe(true);
 		},
 	);
@@ -121,6 +164,7 @@ describe("trackHoverPointer", () => {
 		expect(registrations).toEqual([
 			["pointermove", expect.any(Function), capturing],
 			["pointerdown", expect.any(Function), capturing],
+			["pointerup", expect.any(Function), capturing],
 		]);
 	});
 
