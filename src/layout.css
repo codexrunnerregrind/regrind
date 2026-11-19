@@ -612,6 +612,9 @@ textarea,
 		-webkit-mask-size: 300px 300px;
 		mask-size: 300px 300px;
 		mask-repeat: repeat;
+		/* Bottom edge follows the keyboard, so the doodles don't jump. */
+		-webkit-mask-position: left bottom;
+		mask-position: left bottom;
 	}
 
 	/* A media placeholder inside a transcript. The usual translucent tint would

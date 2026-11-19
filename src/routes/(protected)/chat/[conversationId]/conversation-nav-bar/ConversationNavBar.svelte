@@ -12,9 +12,10 @@
 	const conversationState = $derived(getConversationState()());
 </script>
 
+<!-- Own layer, or WebKit paints keyboard-sliding messages over it. -->
 <ProgressiveBlur
 	direction="topToBottom"
-	class="absolute z-10 h-19 w-full shrink-0"
+	class="absolute z-10 h-19 w-full shrink-0 transform-gpu"
 	bgClass="bg-linear-to-b max-split:from-background split:from-card to-transparent split:[--pblur-flat:var(--color-card)]"
 	contentClass="flex items-center h-full"
 	tag="nav"
