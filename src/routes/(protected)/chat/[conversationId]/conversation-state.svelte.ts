@@ -357,7 +357,9 @@ export class ConversationState {
 
 	async loadMore({
 		commit = (apply) => apply(),
-	}: { commit?: (apply: () => void) => void } = {}): Promise<void> {
+	}: {
+		commit?: (apply: () => void) => void | Promise<void>;
+	} = {}): Promise<void> {
 		if (this.loadingMore || this.pageKey === null) return;
 		this.loadingMore = true;
 		try {
@@ -366,7 +368,8 @@ export class ConversationState {
 				pageKey: this.pageKey,
 			});
 			if (this.#destroyed) return;
-			commit(() => {
+			await commit(() => {
+				if (this.#destroyed) return;
 				this.messages = removeDuplicateMessages([
 					...this.messages,
 					...result.messages.map(asSent),

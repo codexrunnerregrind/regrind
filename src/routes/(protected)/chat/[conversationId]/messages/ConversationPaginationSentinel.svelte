@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { flushSync } from "svelte";
 
+	import { stopScrollMomentum } from "#lib/platform/scroll-momentum.ts";
 	import { observeIntersection } from "#lib/util/observe-intersection.ts";
 	import { getConversationState } from "../conversation-state.svelte";
+	import { holdReadingAnchor, readingAnchor } from "./reading-anchor";
 
 	let { container }: { container: HTMLElement } = $props();
 
@@ -12,10 +14,12 @@
 		const state = conversationState;
 		if (!container || state.loadingMore || state.pageKey === null) return;
 		await state.loadMore({
-			commit: (apply) => {
-				if (conversationState === state && container)
-					keepReadingPosition({ scroller: container, apply });
-				else apply();
+			commit: async (apply) => {
+				const scroller = container;
+				if (conversationState !== state || !scroller) return apply();
+				// iOS momentum overwrites the correction below.
+				await stopScrollMomentum(scroller);
+				keepReadingPosition({ scroller, apply });
 			},
 		});
 	}
@@ -27,22 +31,10 @@
 		scroller: HTMLElement;
 		apply: () => void;
 	}): void {
-		const anchor = firstMessageInView(scroller);
-		const anchorTop = anchor?.getBoundingClientRect().top;
+		const anchor = readingAnchor(scroller);
 		apply();
 		flushSync();
-		if (!anchor?.isConnected || anchorTop === undefined) return;
-		const shift = anchor.getBoundingClientRect().top - anchorTop;
-		if (shift !== 0) scroller.scrollBy({ top: shift, behavior: "instant" });
-	}
-
-	function firstMessageInView(
-		scroller: HTMLElement,
-	): HTMLElement | undefined {
-		const viewTop = scroller.getBoundingClientRect().top;
-		return Array.from(
-			scroller.querySelectorAll<HTMLElement>('[data-slot="message"]'),
-		).find((message) => message.getBoundingClientRect().bottom > viewTop);
+		holdReadingAnchor(scroller, anchor);
 	}
 </script>
 

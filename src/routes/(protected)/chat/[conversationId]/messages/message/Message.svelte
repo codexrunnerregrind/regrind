@@ -316,6 +316,7 @@
 	{/if}
 
 	<div
+		data-slot="message"
 		class="relative"
 		{...swipe?.handlers}
 		onpointercancel={() => swipe?.cancel()}

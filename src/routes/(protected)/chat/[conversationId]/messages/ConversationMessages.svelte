@@ -19,6 +19,7 @@
 	import ConversationPaginationSentinel from "./ConversationPaginationSentinel.svelte";
 	import MessagesList from "./MessagesList.svelte";
 	import MessagesListSkeleton from "./MessagesListSkeleton.svelte";
+	import { holdReadingAnchor, readingAnchor } from "./reading-anchor";
 	import ScrollToBottomButton from "./ScrollToBottomButton.svelte";
 
 	const conversationState = $derived(getConversationState()());
@@ -204,16 +205,29 @@
 	function keepRestingOnResizeEffect() {
 		const el = container;
 		if (!el) return;
+		let anchor = readingAnchor(el);
+		const remember = () => {
+			anchor = readingAnchor(el);
+		};
+		el.addEventListener("scroll", remember, { passive: true });
 		const observer = new ResizeObserver(() => {
 			untrack(() => {
-				if (!atFloor) return;
-				el.scrollTop = el.scrollHeight;
-				lastScrollTop = el.scrollTop;
+				if (atFloor) {
+					el.scrollTop = el.scrollHeight;
+					lastScrollTop = el.scrollTop;
+				} else {
+					// Media bubbles take their real size only once decoded.
+					holdReadingAnchor(el, anchor);
+				}
+				anchor = readingAnchor(el);
 			});
 		});
 		observer.observe(el);
 		if (content) observer.observe(content);
-		return () => observer.disconnect();
+		return () => {
+			observer.disconnect();
+			el.removeEventListener("scroll", remember);
+		};
 	}
 </script>
 
