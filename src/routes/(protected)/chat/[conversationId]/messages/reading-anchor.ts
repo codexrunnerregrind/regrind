@@ -22,3 +22,8 @@ export function holdReadingAnchor(
 	if (Math.abs(shift) >= 1)
 		scroller.scrollBy({ top: shift, behavior: "instant" });
 }
+
+// Within half a screen of the oldest loaded message.
+export function nearTop(scroller: HTMLElement): boolean {
+	return scroller.scrollTop < scroller.clientHeight / 2;
+}

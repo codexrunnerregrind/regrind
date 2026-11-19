@@ -19,7 +19,11 @@
 	import ConversationPaginationSentinel from "./ConversationPaginationSentinel.svelte";
 	import MessagesList from "./MessagesList.svelte";
 	import MessagesListSkeleton from "./MessagesListSkeleton.svelte";
-	import { holdReadingAnchor, readingAnchor } from "./reading-anchor";
+	import {
+		holdReadingAnchor,
+		readingAnchor,
+		nearTop as scrolledNearTop,
+	} from "./reading-anchor";
 	import ScrollToBottomButton from "./ScrollToBottomButton.svelte";
 
 	const conversationState = $derived(getConversationState()());
@@ -31,6 +35,8 @@
 	const FLOOR_SLOP_PX = 16;
 
 	let atFloor = $state(true);
+	// Paging runs ahead of the reader; the spinner is for when they catch up.
+	let nearTop = $state(true);
 	let lastScrollTop = 0;
 	// Seen-ness is tracked by message identity, never by comparing timestamps:
 	// merges adopt server timestamps for messages already on screen, and a
@@ -113,6 +119,7 @@
 		});
 
 	function onContainerScroll() {
+		if (container) nearTop = scrolledNearTop(container);
 		if (scrollingToRest) {
 			lastScrollTop = container?.scrollTop ?? 0;
 			if (floorDistance() <= 1) endScrollingToRest();
@@ -152,6 +159,7 @@
 			scrollDone = false;
 			lastFirstId = "";
 			atFloor = true;
+			nearTop = true;
 			lastScrollTop = 0;
 			seenMessageIds.clear();
 			endScrollingToRest();
@@ -269,7 +277,7 @@
 	     flow it took ~124px the moment a fetch started and gave them back when it
 	     finished, shoving the messages the reader is looking at down and up again
 	     on every page. -->
-	{#if conversationState.loadingMore}
+	{#if conversationState.loadingMore && nearTop}
 		<Spinner
 			class="absolute top-22 left-1/2 z-10 shrink-0 -translate-x-1/2"
 		/>
