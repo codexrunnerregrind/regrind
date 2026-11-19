@@ -16,8 +16,7 @@ import app.tauri.plugin.JSArray
 import app.tauri.plugin.JSObject
 import app.tauri.plugin.Plugin
 import org.json.JSONObject
-import org.opengrind.push.PushNotifier
-import org.opengrind.update.TransferService
+import org.regrind.update.TransferService
 
 @InvokeArg
 internal class WatchArgs {
@@ -119,7 +118,6 @@ class AppLanguagePlugin(private val activity: Activity) : Plugin(activity) {
 	}
 
 	private fun renameChannels(source: Context) {
-		PushNotifier.renameChannels(source)
 		TransferService.renameChannel(source)
 	}
 
