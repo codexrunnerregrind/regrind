@@ -24,7 +24,9 @@ vi.mock("#lib/app-data/preferences.svelte.ts", () => ({
 	preferencesAccount: () => null,
 	setPreferences: () => Promise.resolve(),
 }));
-vi.mock("#lib/api/error-toast.ts", () => ({ showErrorToast: showErrorToastMock }));
+vi.mock("#lib/api/error-toast.ts", () => ({
+	showErrorToast: showErrorToastMock,
+}));
 
 import { gridState } from "./grid-state.svelte";
 
@@ -34,6 +36,8 @@ const page = (
 ) => ({
 	items: ids.map((id) => ({ id, type: "lazy" })),
 	topPicks: [],
+	shuffled: false,
+	outOfOrderIds: [],
 	nextPage,
 });
 

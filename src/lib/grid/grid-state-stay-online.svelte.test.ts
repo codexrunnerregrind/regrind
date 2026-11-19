@@ -76,6 +76,8 @@ const GEOHASH = "9q8yyk8ytpxr";
 const page = (ids: number[]) => ({
 	items: ids.map((id) => ({ id, type: "lazy" })),
 	topPicks: [],
+	shuffled: false,
+	outOfOrderIds: [],
 	nextPage: null,
 });
 

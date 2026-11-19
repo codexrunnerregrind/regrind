@@ -35,6 +35,8 @@ const page = (
 ) => ({
 	items: ids.map((id) => ({ id, type: "lazy" })),
 	topPicks: [],
+	shuffled: false,
+	outOfOrderIds: [],
 	nextPage,
 });
 

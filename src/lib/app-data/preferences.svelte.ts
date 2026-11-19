@@ -101,6 +101,8 @@ const preferencesSchema = z.object({
 	gridRecentTaps: z.boolean().default(false),
 	gridDoubleTapToTap: z.boolean().default(false),
 	gridLongPressMenu: z.boolean().default(true),
+	// Experimental: nearest first, sorted on the device.
+	gridSortByDistance: z.boolean().default(true),
 	// The last detected live GPS location, used while `usingCurrentLocation` is
 	// true. Kept separate from `geohash` so switching modes never clobbers the
 	// user's mock pick.

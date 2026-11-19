@@ -152,6 +152,13 @@
 		gridState.load(geohash);
 	});
 
+	// Distance sort leaves the tiles rendered so far where they are.
+	$effect(() => {
+		if (search.active) return;
+		const last = visibleProfiles.at(-1) ?? gridProfiles.at(leadCount - 1);
+		if (last) gridState.noteSeenThrough(last.id);
+	});
+
 	$effect(() => {
 		if (preferencesSnapshot().gridRecentTaps) ensureSentTapsLoaded();
 	});

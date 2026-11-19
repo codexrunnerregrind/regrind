@@ -3,6 +3,8 @@
 		"a11y": {
 			"loadingMore": "Loading more profiles"
 		},
+		"closerProfiles_one": "{{count}} closer profile",
+		"closerProfiles_other": "{{count}} closer profiles",
 		"empty": {
 			"noProfiles": {
 				"title": "No Profiles Found",

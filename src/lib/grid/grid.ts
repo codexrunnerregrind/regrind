@@ -103,6 +103,7 @@ export async function getGrid(query: Parameters<typeof getCascadeV4>[0]) {
 	const response = await getCascadeV4(query);
 	if (!query.favorites) recordStoredLocation(query.nearbyGeoHash);
 	const items: GridProfile[] = [];
+	const outOfOrderIds: number[] = [];
 	const topPicks: GridProfile[] = [];
 	let topPicksRefreshAt: number | null = null;
 
@@ -122,6 +123,8 @@ export async function getGrid(query: Parameters<typeof getCascadeV4>[0]) {
 			item.type === "partial_profile_v1" ||
 			item.type === "smart_boost_profile_v1"
 		) {
+			if (item.type === "smart_boost_profile_v1")
+				outOfOrderIds.push(item.data.profileId);
 			items.push(
 				gridProfile({
 					profile: item.data,
@@ -129,6 +132,7 @@ export async function getGrid(query: Parameters<typeof getCascadeV4>[0]) {
 				}),
 			);
 		} else if (item.type === "sponsored_profile_v1") {
+			outOfOrderIds.push(item.data.alternativeProfile.profileId);
 			items.push(
 				gridProfile({
 					profile: item.data.alternativeProfile,
@@ -179,6 +183,8 @@ export async function getGrid(query: Parameters<typeof getCascadeV4>[0]) {
 		topPicksRefreshAt,
 		nextPage: response.nextPage,
 		shuffled: response.shuffled,
+		// Boosts Grindr slots in out of distance order.
+		outOfOrderIds,
 	};
 }
 

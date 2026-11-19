@@ -8,6 +8,7 @@
 	import FrameCornersIcon from "phosphor-svelte/lib/FrameCornersIcon";
 	import HandTapIcon from "phosphor-svelte/lib/HandTapIcon";
 	import ListBulletsIcon from "phosphor-svelte/lib/ListBulletsIcon";
+	import SortAscendingIcon from "phosphor-svelte/lib/SortAscendingIcon";
 	import TrayArrowDownIcon from "phosphor-svelte/lib/TrayArrowDownIcon";
 
 	import PreferenceSwitchSetting from "#lib/components/settings/PreferenceSwitchSetting.svelte";
@@ -122,6 +123,19 @@
 	>
 		{#snippet icon()}
 			<ListBulletsIcon weight="fill" />
+		{/snippet}
+	</PreferenceSwitchSetting>
+</SettingsGroup>
+
+<SectionHeader>Experimental</SectionHeader>
+<SettingsGroup divider="full">
+	<PreferenceSwitchSetting
+		preference="gridSortByDistance"
+		title="Sort grid by distance"
+		description="Show the nearest profiles first."
+	>
+		{#snippet icon()}
+			<SortAscendingIcon weight="fill" />
 		{/snippet}
 	</PreferenceSwitchSetting>
 </SettingsGroup>

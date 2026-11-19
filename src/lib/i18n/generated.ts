@@ -78,6 +78,7 @@ export interface Messages {
 	"browse.filters.weight.a11y.minimum": undefined;
 	"browse.filters.withinDistance": { distance: string };
 	"browse.grid.a11y.loadingMore": undefined;
+	"browse.grid.closerProfiles": { count: number };
 	"browse.grid.empty.noFavorites.description": undefined;
 	"browse.grid.empty.noFavorites.title": undefined;
 	"browse.grid.empty.noMatchingFavorites.description": undefined;

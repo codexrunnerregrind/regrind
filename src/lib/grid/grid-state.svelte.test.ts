@@ -66,6 +66,8 @@ const page = (
 ) => ({
 	items: ids.map((id) => ({ id, type: "lazy" })),
 	topPicks: [],
+	shuffled: false,
+	outOfOrderIds: [],
 	nextPage,
 });
 
@@ -409,6 +411,8 @@ describe("fetch races", () => {
 		getGridMock.mockResolvedValueOnce({
 			items: [{ id: 1, type: "lazy" }],
 			topPicks: [],
+			shuffled: false,
+			outOfOrderIds: [],
 			nextPage: 2,
 		});
 		gridState.retry();

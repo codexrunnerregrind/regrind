@@ -12,7 +12,10 @@ import {
 	onProfileViewabilityChange,
 } from "#lib/api/users/profile-viewability.ts";
 import { onProfileEdit } from "#lib/api/users/profiles.ts";
-import { getActiveGeohashSnapshot } from "#lib/app-data/preferences.svelte.ts";
+import {
+	getActiveGeohashSnapshot,
+	preferencesSnapshot,
+} from "#lib/app-data/preferences.svelte.ts";
 import { t } from "#lib/i18n/index.ts";
 import { showsOnReturn, staysOnline } from "#lib/presence/presence-gate.ts";
 import {
@@ -31,6 +34,7 @@ import {
 	resolveLazyProfile,
 	setCachedProfile,
 } from "./grid";
+import { sortByDistance } from "./grid-distance-sort";
 import { dedupeGridProfiles, indexProfilesById } from "./grid-profiles";
 import { buildCascadeQuery } from "./grid-query";
 import { GridSearchFiltersState } from "./grid-search-filters-state.svelte";
@@ -40,7 +44,25 @@ const PUSH_DEEPLINK_WAIT_MS = 5000;
 class GridState {
 	filters = new GridSearchFiltersState({ onQueryChange: () => this.retry() });
 	items: GridProfile[] = $state.raw([]);
-	readonly profiles: GridProfile[] = $derived(dedupeGridProfiles(this.items));
+	readonly sortsByDistance = $derived(
+		preferencesSnapshot().gridSortByDistance === true,
+	);
+	#seen: readonly number[] = $state.raw([]);
+	#shuffled = $state(false);
+	#outOfOrder: ReadonlySet<number> = $state.raw(new Set());
+	#ordered = $derived.by(() => {
+		const profiles = dedupeGridProfiles(this.items);
+		if (!this.sortsByDistance) return { profiles, closer: 0 };
+		return sortByDistance({
+			profiles,
+			seen: this.#seen,
+			outOfOrder: this.#outOfOrder,
+			shuffled: this.#shuffled,
+		});
+	});
+	readonly profiles: GridProfile[] = $derived(this.#ordered.profiles);
+	/** Profiles sorted below the seen tiles that belong above them. */
+	readonly closerCount: number = $derived(this.#ordered.closer);
 	/** The "For You" row; only the first cascade page carries it. */
 	topPicks: GridProfile[] = $state.raw([]);
 	topPicksRefreshAt: number | null = $state(null);
@@ -78,6 +100,18 @@ class GridState {
 
 	profileById(profileId: number): GridProfile | null {
 		return this.profiles[this.indexInProfiles(profileId)] ?? null;
+	}
+
+	/** Freezes the tiles through this one, so later pages never move them. */
+	noteSeenThrough(profileId: number): void {
+		if (!this.sortsByDistance) return;
+		const index = this.indexInProfiles(profileId);
+		if (index < untrack(() => this.#seen.length)) return;
+		this.#seen = this.profiles.slice(0, index + 1).map((p) => p.id);
+	}
+
+	resortByDistance(): void {
+		this.#seen = [];
 	}
 
 	consumeReveal(): number | null {
@@ -262,6 +296,21 @@ class GridState {
 			),
 		];
 		this.nextPage = result.nextPage;
+		this.#noteOrder({ result, keep: true });
+	}
+
+	#noteOrder({
+		result,
+		keep,
+	}: {
+		result: { shuffled: boolean; outOfOrderIds: number[] };
+		keep: boolean;
+	}): void {
+		this.#shuffled = result.shuffled || (keep && this.#shuffled);
+		this.#outOfOrder = new Set([
+			...(keep ? this.#outOfOrder : []),
+			...result.outOfOrderIds,
+		]);
 	}
 
 	async resolveProfile(id: number): Promise<void> {
@@ -337,6 +386,8 @@ class GridState {
 					)
 				: [];
 			this.#firstPageIds = firstPageIds;
+			if (!opts?.automatic) this.#seen = [];
+			this.#noteOrder({ result, keep: laterPages.length > 0 });
 			this.items = [...result.items, ...laterPages].filter((item) =>
 				isProfileViewable(item.id),
 			);
