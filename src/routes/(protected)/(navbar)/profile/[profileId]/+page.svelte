@@ -54,6 +54,7 @@
 	function onactive(profileId: number) {
 		activeId = profileId;
 		ownUrlId = profileId;
+		deck.reveal?.(profileId);
 		// A real navigation rather than shallow routing. `replaceState` rewrites
 		// the address bar but leaves `page.params` — and the entry the router
 		// restores on the way back — pointing at the profile the screen was
@@ -61,10 +62,9 @@
 		// the wrong person. This route has no load of its own and the page
 		// component is reused across the param change, so the navigation costs
 		// nothing beyond keeping the history entry honest.
-		goto(`/profile/${profileId}`, {
-			replace: true,
-			reset: false,
-		}).catch((error) => console.error(error));
+		goto(`/profile/${profileId}`, { replace: true, reset: false }).catch(
+			(error) => console.error(error),
+		);
 	}
 
 	async function extend(): Promise<void> {

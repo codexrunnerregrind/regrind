@@ -7,13 +7,29 @@ import {
 	snapshotPane,
 	trackScrolled,
 } from "#lib/components/navigation/stack/snapshot.ts";
+import { getLocale } from "#lib/i18n/index.ts";
 
 // SvelteKit numbers its history entries under this key (HISTORY_INDEX).
 const HISTORY_INDEX = "sveltekit:history";
 // Only a back swipe reads these, and it only ever wants the entry just behind.
 const KEPT = 3;
 
-const snapshots = new Map<number, PaneSnapshot>();
+// The locale is kept so a copy taken before a language change is never shown.
+const snapshots = new Map<number, { snapshot: PaneSnapshot; locale: string }>();
+
+export type GhostFixup = (ghost: HTMLElement) => void;
+const fixups = new Map<string, GhostFixup>();
+
+/** Adjusts copies of `path` before they are shown, e.g. to scroll them. */
+export function registerGhostFixup(path: string, fixup: GhostFixup): void {
+	fixups.set(path, fixup);
+}
+
+/** Drops every copy of `path`, for when what it shows has changed. */
+export function forgetScreens(path: string): void {
+	for (const [index, kept] of [...snapshots])
+		if (kept.snapshot.path === path) snapshots.delete(index);
+}
 
 function historyIndex(): number | null {
 	const state: unknown = history.state;
@@ -37,7 +53,7 @@ export function rememberScreen(screen: HTMLElement): void {
 	const snapshot = snapshotPane(screen, location.pathname);
 	// The clone carries the live screen's inline styles, a drag's among them.
 	snapshot.node.style.cssText = "";
-	snapshots.set(index, snapshot);
+	snapshots.set(index, { snapshot, locale: getLocale() });
 	for (const kept of [...snapshots.keys()].sort((a, b) => b - a).slice(KEPT))
 		snapshots.delete(kept);
 }
@@ -47,14 +63,17 @@ export type SwipeBackGhost = {
 	track(progress: number): void;
 	/** Eases to `progress` over `transition`, a CSS duration and easing. */
 	settle(progress: number, transition: string): void;
+	/** Lifts the copy over the page, which can then land beneath it unseen. */
+	raise(): void;
 	remove(): void;
 };
 
 /** Shows the screen a back swipe would land on beneath `screen`, if kept. */
 export function showSwipeBackGhost(screen: HTMLElement): SwipeBackGhost | null {
 	const index = historyIndex();
-	const snapshot = index === null ? undefined : snapshots.get(index - 1);
-	if (!snapshot) return null;
+	const kept = index === null ? undefined : snapshots.get(index - 1);
+	if (!kept || kept.locale !== getLocale()) return null;
+	const { snapshot } = kept;
 
 	const host = document.createElement("div");
 	host.setAttribute("aria-hidden", "true");
@@ -69,6 +88,7 @@ export function showSwipeBackGhost(screen: HTMLElement): SwipeBackGhost | null {
 	host.append(snapshot.node, dim);
 	screen.before(host);
 	snapshot.restore();
+	fixups.get(snapshot.path)?.(snapshot.node);
 
 	const motion = stackMotion();
 	const apply = (progress: number) => {
@@ -88,6 +108,9 @@ export function showSwipeBackGhost(screen: HTMLElement): SwipeBackGhost | null {
 			host.style.transition = `transform ${transition}`;
 			dim.style.transition = `opacity ${transition}`;
 			apply(progress);
+		},
+		raise: () => {
+			host.style.zIndex = "2147483647";
 		},
 		remove: () => host.remove(),
 	};

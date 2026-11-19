@@ -1,0 +1,210 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import { revealedGridScrollTop, revealInGhostGrid } from "./grid-reveal";
+
+const { revealRowScrollTop } = vi.hoisted(() => ({
+	revealRowScrollTop:
+		vi.fn<typeof import("#lib/util/grid-window.ts").revealRowScrollTop>(),
+}));
+
+vi.mock("#lib/util/grid-window.ts", async (importOriginal) => ({
+	...(await importOriginal<typeof import("#lib/util/grid-window.ts")>()),
+	revealRowScrollTop,
+}));
+
+const COLUMNS = 3;
+const CELL_PX = 128;
+const ROW_STRIDE = 130;
+const HEADER_CLEAR = 76;
+const NAV_CLEAR = 88;
+const GRID_OFFSET = HEADER_CLEAR + 40;
+const VIEWPORT = 800;
+const SCROLL_HEIGHT = 20_000;
+const SCROLLER_TOP = 40;
+const SAVED_TOP = 1000;
+const REVEALED_TOP = 4321;
+
+revealRowScrollTop.mockReturnValue(REVEALED_TOP);
+
+function mountGrid({
+	scrollTop = 0,
+	measured = true,
+	cells = [],
+}: {
+	scrollTop?: number;
+	measured?: boolean;
+	cells?: number[];
+} = {}): HTMLElement {
+	const scroller = document.createElement("div");
+	const content = document.createElement("div");
+	const grid = document.createElement("div");
+	scroller.dataset.slot = "grid-scroller";
+	for (const profileId of cells) {
+		const cell = document.createElement("a");
+		cell.setAttribute("href", `/profile/${profileId}`);
+		grid.append(cell);
+	}
+	content.dataset.slot = "grid-content";
+	content.style.paddingTop = `${HEADER_CLEAR}px`;
+	content.style.paddingBottom = `${NAV_CLEAR}px`;
+	grid.dataset.slot = "grid-cells";
+	if (measured) {
+		grid.style.gridTemplateColumns = Array(COLUMNS)
+			.fill(`${CELL_PX}px`)
+			.join(" ");
+		grid.style.rowGap = `${ROW_STRIDE - CELL_PX}px`;
+	}
+	content.append(grid);
+	scroller.append(document.createElement("div"), content);
+	document.body.append(scroller);
+
+	Object.defineProperties(scroller, {
+		clientHeight: { value: VIEWPORT },
+		scrollHeight: { value: SCROLL_HEIGHT },
+		scrollTop: { value: scrollTop, writable: true },
+	});
+	vi.spyOn(scroller, "getBoundingClientRect").mockReturnValue({
+		top: SCROLLER_TOP,
+	} as DOMRect);
+	vi.spyOn(grid, "getBoundingClientRect").mockReturnValue({
+		top: SCROLLER_TOP + GRID_OFFSET - scrollTop,
+	} as DOMRect);
+	return scroller;
+}
+
+afterEach(() => {
+	document.body.replaceChildren();
+	vi.clearAllMocks();
+});
+
+describe("revealedGridScrollTop", () => {
+	it("keeps the saved offset for a profile the grid no longer lists", () => {
+		expect(
+			revealedGridScrollTop({
+				scroller: mountGrid(),
+				savedTop: SAVED_TOP,
+				index: -1,
+			}),
+		).toBe(SAVED_TOP);
+		expect(revealRowScrollTop).not.toHaveBeenCalled();
+	});
+
+	it("keeps the saved offset while the grid is unmeasured", () => {
+		expect(
+			revealedGridScrollTop({
+				scroller: mountGrid({ measured: false }),
+				savedTop: SAVED_TOP,
+				index: 90,
+			}),
+		).toBe(SAVED_TOP);
+		expect(revealRowScrollTop).not.toHaveBeenCalled();
+	});
+
+	it("reveals the profile's row, measured from the grid rather than the scroller's current offset", () => {
+		expect(
+			revealedGridScrollTop({
+				scroller: mountGrid({ scrollTop: 500 }),
+				savedTop: SAVED_TOP,
+				index: 61,
+			}),
+		).toBe(REVEALED_TOP);
+		expect(revealRowScrollTop).toHaveBeenCalledExactlyOnceWith({
+			savedTop: SAVED_TOP,
+			rowTopPx: GRID_OFFSET + 20 * ROW_STRIDE,
+			rowHeightPx: CELL_PX,
+			viewportPx: VIEWPORT,
+			insetTopPx: HEADER_CLEAR,
+			insetBottomPx: NAV_CLEAR,
+			maxScrollTop: SCROLL_HEIGHT - VIEWPORT,
+		});
+	});
+});
+
+describe("revealedGridScrollTop with the lead rows ahead of For you", () => {
+	const LEAD = 18;
+	const LEAD_TOP = 60;
+
+	function withLead(scroller: HTMLElement): void {
+		const content = scroller.querySelector('[data-slot="grid-content"]')!;
+		const lead = document.createElement("div");
+		lead.dataset.slot = "grid-cells";
+		lead.style.gridTemplateColumns = Array(COLUMNS)
+			.fill(`${CELL_PX}px`)
+			.join(" ");
+		lead.style.rowGap = `${ROW_STRIDE - CELL_PX}px`;
+		for (let i = 0; i < LEAD; i++) lead.append(document.createElement("a"));
+		content.prepend(lead);
+		vi.spyOn(lead, "getBoundingClientRect").mockReturnValue({
+			top: SCROLLER_TOP + LEAD_TOP,
+		} as DOMRect);
+	}
+
+	it("measures a lead profile from the lead grid", () => {
+		const scroller = mountGrid();
+		withLead(scroller);
+
+		revealedGridScrollTop({ scroller, savedTop: SAVED_TOP, index: 7 });
+
+		expect(revealRowScrollTop).toHaveBeenCalledWith(
+			expect.objectContaining({ rowTopPx: LEAD_TOP + 2 * ROW_STRIDE }),
+		);
+	});
+
+	it("counts later profiles from the start of the virtualized grid", () => {
+		const scroller = mountGrid();
+		withLead(scroller);
+
+		revealedGridScrollTop({
+			scroller,
+			savedTop: SAVED_TOP,
+			index: LEAD + 7,
+		});
+
+		expect(revealRowScrollTop).toHaveBeenCalledWith(
+			expect.objectContaining({ rowTopPx: GRID_OFFSET + 2 * ROW_STRIDE }),
+		);
+	});
+});
+
+describe("revealInGhostGrid", () => {
+	function pictured(scroller: HTMLElement): HTMLElement {
+		const ghost = document.createElement("div");
+		ghost.append(scroller);
+		document.body.append(ghost);
+		return ghost;
+	}
+
+	it("scrolls a pictured grid to the row of the profile paged to when the picture rendered that row", () => {
+		const scroller = mountGrid({
+			scrollTop: SAVED_TOP,
+			cells: [60, 61, 62],
+		});
+
+		revealInGhostGrid({
+			ghost: pictured(scroller),
+			profileId: 61,
+			index: 61,
+		});
+
+		expect(scroller.scrollTop).toBe(REVEALED_TOP);
+		expect(revealRowScrollTop).toHaveBeenCalledExactlyOnceWith(
+			expect.objectContaining({ savedTop: SAVED_TOP }),
+		);
+	});
+
+	it("leaves a pictured grid where it was left when the profile paged to lies beyond the rows it rendered", () => {
+		const scroller = mountGrid({
+			scrollTop: SAVED_TOP,
+			cells: [60, 61, 62],
+		});
+
+		revealInGhostGrid({
+			ghost: pictured(scroller),
+			profileId: 400,
+			index: 400,
+		});
+
+		expect(scroller.scrollTop).toBe(SAVED_TOP);
+		expect(revealRowScrollTop).not.toHaveBeenCalled();
+	});
+});

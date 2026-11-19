@@ -1,10 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { setLocale, SOURCE_LOCALE } from "#lib/i18n/index.ts";
 import { resetPlatform, runningOn } from "#lib/test/platform.ts";
-import { rememberScreen, showSwipeBackGhost } from "./swipe-back-ghost";
+import {
+	forgetScreens,
+	registerGhostFixup,
+	rememberScreen,
+	showSwipeBackGhost,
+} from "./swipe-back-ghost";
 
-function atIndex(index: number) {
-	history.replaceState({ "sveltekit:history": index }, "");
+function atIndex(index: number, path?: string) {
+	history.replaceState({ "sveltekit:history": index }, "", path);
 }
 
 function screenShowing(text: string): HTMLElement {
@@ -17,10 +23,11 @@ function screenShowing(text: string): HTMLElement {
 
 beforeEach(() => runningOn("ios"));
 
-afterEach(() => {
+afterEach(async () => {
 	resetPlatform();
 	document.body.replaceChildren();
-	history.replaceState(null, "");
+	history.replaceState(null, "", "/");
+	await setLocale({ locale: SOURCE_LOCALE });
 });
 
 describe("showSwipeBackGhost", () => {
@@ -86,5 +93,69 @@ describe("showSwipeBackGhost", () => {
 		atIndex(2);
 
 		expect(showSwipeBackGhost(screen)).toBeNull();
+	});
+
+	it("forgets the copies of a path whose content changed", () => {
+		const screen = screenShowing("profile 9");
+		atIndex(101, "/profile/9");
+		rememberScreen(screen);
+		atIndex(102, "/settings/profile");
+
+		forgetScreens("/profile/9");
+
+		expect(showSwipeBackGhost(screen)).toBeNull();
+	});
+
+	it("keeps the copies of other paths", () => {
+		const screen = screenShowing("profile 8");
+		atIndex(111, "/profile/8");
+		rememberScreen(screen);
+		atIndex(112, "/settings/profile");
+
+		forgetScreens("/profile/9");
+
+		expect(showSwipeBackGhost(screen)).not.toBeNull();
+	});
+
+	it("shows no copy taken in another language", async () => {
+		const screen = screenShowing("settings");
+		atIndex(121);
+		rememberScreen(screen);
+		atIndex(122);
+
+		await setLocale({ locale: "en-XA" });
+
+		expect(showSwipeBackGhost(screen)).toBeNull();
+	});
+
+	it("lets the screen's path adjust its copy before it shows", () => {
+		const screen = screenShowing("grid");
+		atIndex(131, "/fixup-test");
+		rememberScreen(screen);
+		atIndex(132, "/profile/1");
+		registerGhostFixup("/fixup-test", (ghost) => {
+			ghost.textContent = "grid, revealed";
+		});
+
+		showSwipeBackGhost(screen);
+
+		expect(
+			document.querySelector('[data-slot="swipe-back-ghost"]')
+				?.textContent,
+		).toBe("grid, revealed");
+	});
+
+	it("rises over the page for the landing", () => {
+		const screen = screenShowing("profile");
+		atIndex(141);
+		rememberScreen(screen);
+		atIndex(142);
+
+		showSwipeBackGhost(screen)?.raise();
+
+		const host = document.querySelector<HTMLElement>(
+			'[data-slot="swipe-back-ghost"]',
+		);
+		expect(Number(host?.style.zIndex)).toBeGreaterThan(0);
 	});
 });

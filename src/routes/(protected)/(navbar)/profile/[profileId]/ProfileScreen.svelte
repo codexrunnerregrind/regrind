@@ -77,6 +77,11 @@
 	} = $props();
 
 	let profileContainer = $state<HTMLElement | null>(null);
+	// Found by the pager's scroll memory. Set here: the markup is at its limit.
+	$effect(() => {
+		if (profileContainer)
+			profileContainer.dataset.slot = "profile-scroller";
+	});
 
 	let profileState = $state(
 		untrack(

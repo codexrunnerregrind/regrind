@@ -18,6 +18,8 @@ export type ProfileDeck = {
 	 * Omitted when the list is not paged.
 	 */
 	extend?: () => Promise<number[]>;
+	/** Told which profile paging landed on, so the list can show it on return. */
+	reveal?: (profileId: number) => void;
 };
 
 let armed: { profileId: number; deck: ProfileDeck } | null = null;

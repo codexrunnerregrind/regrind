@@ -110,12 +110,14 @@
 	// can swipe between them in the order they are shown here. Armed per tap
 	// rather than kept as ambient state — see `armProfileDeck`.
 	function armCascade(profileId: number) {
+		gridState.revealProfileId = null;
 		armProfileDeck(profileId, {
 			ids: gridProfiles.map((item) => item.id),
 			extend: async () => {
 				await gridState.paging.run();
 				return matchUsername(gridState.profiles).map((item) => item.id);
 			},
+			reveal: (id) => (gridState.revealProfileId = id),
 		});
 	}
 

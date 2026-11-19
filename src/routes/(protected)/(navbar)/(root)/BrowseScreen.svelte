@@ -16,7 +16,9 @@
 	import { FavoriteSearch } from "#lib/favorites/favorite-search.svelte.ts";
 	import { gridState } from "#lib/grid/grid-state.svelte.ts";
 	import { t } from "#lib/i18n/index.ts";
+	import { registerGhostFixup } from "#lib/platform/swipe-back-ghost.ts";
 	import { restoreScrollOnce } from "#lib/util/scroll-restore.svelte.ts";
+	import { revealedGridScrollTop, revealInGhostGrid } from "./grid-reveal.ts";
 	import Grid from "./Grid.svelte";
 	import TopBar from "./top-bar/TopBar.svelte";
 
@@ -92,7 +94,35 @@
 		else scrolledPastSearch = delta > 0;
 	}
 
-	restoreScrollOnce({ container: () => gridContainer, state: gridState });
+	// Where the profile paged to sits in the grid. A username filter leaves
+	// gaps the cascade's own order does not know about, so it reveals nothing.
+	function revealIndex(profileId: number): number {
+		const filters = gridState.filters.value;
+		if (filters?.usernameEnabled && filters.username.trim() !== "")
+			return -1;
+		return gridState.indexInProfiles(profileId);
+	}
+
+	restoreScrollOnce({
+		container: () => gridContainer,
+		state: gridState,
+		resolveTop: ({ scroller, savedTop }) => {
+			const profileId = gridState.consumeReveal();
+			if (profileId === null) return savedTop;
+			return revealedGridScrollTop({
+				scroller,
+				savedTop,
+				index: revealIndex(profileId),
+			});
+		},
+	});
+
+	// Kept past unmount: a back swipe shows the grid's copy while it is gone.
+	registerGhostFixup("/", (ghost) => {
+		const profileId = gridState.revealProfileId;
+		if (profileId === null) return;
+		revealInGhostGrid({ ghost, profileId, index: revealIndex(profileId) });
+	});
 
 	$effect(() =>
 		gridState.onStartOver(() => {
@@ -119,6 +149,7 @@
 			{/if}
 			<div
 				class="pull-scroller"
+				data-slot="grid-scroller"
 				bind:this={gridContainer}
 				onscroll={onGridScroll}
 			>

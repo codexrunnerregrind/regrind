@@ -4,6 +4,12 @@ import {
 	type SwipeBackGhost,
 } from "#lib/platform/swipe-back-ghost.ts";
 import {
+	closeSwipeLanding,
+	landed,
+	openSwipeLanding,
+	type SwipeLanding,
+} from "#lib/platform/swipe-back-landing.ts";
+import {
 	backGestureOverlayOpen,
 	beginEdgeSwipeBack,
 	type EdgeSwipe,
@@ -102,8 +108,11 @@ export function applySwipeBackGesture(): () => void {
 	let active = false;
 	let driven: EdgeSwipe | null = null;
 	let ghost: SwipeBackGhost | null = null;
+	let landing: SwipeLanding | null = null;
 
 	function reset() {
+		if (landing) closeSwipeLanding(landing);
+		landing = null;
 		driven = null;
 		ghost?.remove();
 		ghost = null;
@@ -139,10 +148,19 @@ export function applySwipeBackGesture(): () => void {
 		screen!.style.transform = `translateX(${window.innerWidth}px)`;
 		afterTransition(() => {
 			const watchdog = setTimeout(reset, NAVIGATION_WATCHDOG_MS);
+			const settling = openSwipeLanding();
+			landing = settling;
 			settleAfterNavigation = () => {
+				settleAfterNavigation = null;
 				clearTimeout(watchdog);
+				// The page lands in place beneath the copy, which leaves once the
+				// page has painted.
 				screen!.style.transition = "none";
-				reset();
+				screen!.style.transform = "";
+				ghost?.raise();
+				void landed({ landing: settling, root: screen! }).then(() => {
+					if (landing === settling) reset();
+				});
 			};
 			navigateBack();
 		});

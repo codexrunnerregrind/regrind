@@ -1,10 +1,16 @@
 <script lang="ts">
-	import { untrack } from "svelte";
+	import { afterNavigate } from "$app/navigation";
+	import { navigating } from "$app/state";
+	import { onDestroy, tick, untrack } from "svelte";
+	import { on } from "svelte/events";
 	import { SvelteMap } from "svelte/reactivity";
+	import type { Attachment } from "svelte/attachments";
 
 	import { hapticSelection } from "#lib/platform/haptics.ts";
+	import { holdSwipeLanding } from "#lib/platform/swipe-back-landing.ts";
 	import { type PanDirection, panPager } from "#lib/util/pan-pager.ts";
 	import ProfileBottomNavBar from "./bottom-nav/ProfileBottomNavBar.svelte";
+	import { ProfileScrollMemory } from "./profile-scroll-memory";
 	import type { ProfileState } from "./profile-state.svelte";
 	import ProfileScreen from "./ProfileScreen.svelte";
 
@@ -121,9 +127,79 @@
 	const activeState = $derived(
 		currentId === undefined ? null : (states.get(currentId) ?? null),
 	);
+
+	// Coming back to a profile through history lands where it was scrolled to.
+	const scrollMemory = new ProfileScrollMemory();
+	let entered = $state(0);
+	function enter(traversal: boolean) {
+		scrollMemory.enter({ traversal });
+		entered++;
+	}
+	untrack(() => enter(navigating.type === "popstate"));
+	// A back swipe landing here waits for the scroll to come back.
+	const releaseLanding = holdSwipeLanding();
+	onDestroy(() => releaseLanding());
+	let mounted = false;
+	afterNavigate(({ type }) => {
+		if (!mounted) {
+			mounted = true;
+			return;
+		}
+		enter(type === "popstate");
+	});
+
+	let pagerNode: HTMLElement | null = null;
+	function activeScroller(profileId: number): HTMLElement | null {
+		return (
+			pagerNode?.querySelector<HTMLElement>(
+				`[data-profile-pane="${profileId}"] [data-slot="profile-scroller"]`,
+			) ?? null
+		);
+	}
+
+	$effect(() => {
+		void entered;
+		const profileId = currentId;
+		if (profileId === undefined || !activeState?.profile) return;
+		if (activeState.loading) return;
+		const release = releaseLanding;
+		void tick().then(() => {
+			scrollMemory.restore({
+				profileId,
+				scroller: activeScroller(profileId),
+			});
+			release();
+		});
+	});
+
+	const rememberScroll: Attachment<HTMLElement> = (node) => {
+		pagerNode = node;
+		const stop = on(
+			node,
+			"scroll",
+			({ target }) => {
+				const profileId = currentId;
+				if (
+					profileId === undefined ||
+					!(target instanceof HTMLElement) ||
+					target !== activeScroller(profileId)
+				)
+					return;
+				scrollMemory.remember({
+					profileId,
+					scrollTop: target.scrollTop,
+				});
+			},
+			{ capture: true, passive: true },
+		);
+		return () => {
+			stop();
+			if (pagerNode === node) pagerNode = null;
+		};
+	};
 </script>
 
-<div class="relative -mb-(--nav-height) h-screen-safe">
+<div class="relative -mb-(--nav-height) h-screen-safe" {@attach rememberScroll}>
 	<div
 		class="absolute inset-0 touch-pan-y overflow-hidden"
 		use:panPager={{
@@ -149,6 +225,7 @@
 			{#each panes as pane (pane.id)}
 				<div
 					class="absolute inset-y-0 flex w-full flex-col"
+					data-profile-pane={pane.id}
 					style:left="{pane.index * 100}%"
 					inert={pane.index !== index}
 				>

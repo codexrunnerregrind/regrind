@@ -10,6 +10,7 @@
 	import { toast, Toaster } from "svelte-sonner";
 
 	import { startGoogleHandoffWatch } from "#lib/api/google-handoff.ts";
+	import { onProfileEdit } from "#lib/api/users/profiles.ts";
 	import {
 		hydratePreferences,
 		preferencesLoaded,
@@ -42,6 +43,7 @@
 		settleSwipeBack,
 	} from "#lib/platform/swipe-back-gesture.ts";
 	import {
+		forgetScreens,
 		rememberScreen,
 		trackScreenScroll,
 	} from "#lib/platform/swipe-back-ghost.ts";
@@ -158,6 +160,12 @@
 		if (shown) rememberScreen(shown);
 	});
 	afterNavigate(() => settleSwipeBack());
+	// A back swipe onto an edited profile would show it as it was before.
+	onMount(() =>
+		onProfileEdit(({ profileId }) =>
+			forgetScreens(`/profile/${profileId}`),
+		),
+	);
 
 	$effect(() => {
 		applyBackdropBlurQuality();
