@@ -1,5 +1,6 @@
 <script lang="ts">
 	import LockKeyIcon from "phosphor-svelte/lib/LockKeyIcon";
+	import TimerIcon from "phosphor-svelte/lib/TimerIcon";
 
 	import { showErrorToast } from "#lib/api/error-toast.ts";
 	import {
@@ -8,6 +9,7 @@
 		preferencesSnapshot,
 		setPreferences,
 	} from "#lib/app-data/preferences.svelte.ts";
+	import IconTile from "#lib/components/settings/IconTile.svelte";
 	import SettingsSegmented from "#lib/components/settings/SettingsSegmented.svelte";
 	import SettingsSwitchRow from "#lib/components/settings/SettingsSwitchRow.svelte";
 	import { t } from "#lib/i18n/index.ts";
@@ -54,10 +56,20 @@
 	{/snippet}
 </SettingsSwitchRow>
 {#if on}
-	<div class="flex flex-col gap-2 px-4 pb-4">
-		<span class="text-caption text-muted-foreground">
-			{t("settings.app.appLock.after.label")}
-		</span>
+	<div class="flex flex-col gap-3 p-4">
+		<div class="flex items-center gap-3.5">
+			<IconTile>
+				<TimerIcon weight="fill" />
+			</IconTile>
+			<div class="flex min-w-0 flex-1 flex-col gap-0.5">
+				<span class="truncate font-heading text-body font-medium">
+					{t("settings.app.appLock.after.title")}
+				</span>
+				<span class="text-caption leading-snug text-muted-foreground">
+					{t("settings.app.appLock.after.description")}
+				</span>
+			</div>
+		</div>
 		<SettingsSegmented
 			{options}
 			bind:value={

@@ -186,7 +186,8 @@
 			"title": "App lock",
 			"description": "Ask for Face ID, fingerprint or your device passcode to open ReGrind.",
 			"after": {
-				"label": "Lock after leaving the app",
+				"title": "Auto-lock",
+				"description": "How long ReGrind can stay in the background before it locks.",
 				"now": "Now",
 				"oneMinute": "1 min",
 				"fiveMinutes": "5 min",

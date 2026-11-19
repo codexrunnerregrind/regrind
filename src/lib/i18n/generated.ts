@@ -901,11 +901,12 @@ export interface Messages {
 	"settings.account.email": undefined;
 	"settings.account.password": undefined;
 	"settings.account.unimplemented": { issueLink: string };
+	"settings.app.appLock.after.description": undefined;
 	"settings.app.appLock.after.fifteenMinutes": undefined;
 	"settings.app.appLock.after.fiveMinutes": undefined;
-	"settings.app.appLock.after.label": undefined;
 	"settings.app.appLock.after.now": undefined;
 	"settings.app.appLock.after.oneMinute": undefined;
+	"settings.app.appLock.after.title": undefined;
 	"settings.app.appLock.description": undefined;
 	"settings.app.appLock.locked": undefined;
 	"settings.app.appLock.reason.turnOn": undefined;
