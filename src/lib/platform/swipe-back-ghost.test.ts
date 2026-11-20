@@ -157,5 +157,6 @@ describe("showSwipeBackGhost", () => {
 			'[data-slot="swipe-back-ghost"]',
 		);
 		expect(Number(host?.style.zIndex)).toBeGreaterThan(0);
+		expect(host?.style.pointerEvents).toBe("auto");
 	});
 });

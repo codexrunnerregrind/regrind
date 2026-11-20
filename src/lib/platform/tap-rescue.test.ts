@@ -18,10 +18,13 @@ function tap(target: Element) {
 	pointer(target, "pointerup");
 }
 
+// jsdom cannot mark an event trusted, so WebKit's clicks are tracked here.
+const NATIVE = new WeakSet<Event>();
+
 function webkitClick(target: Element) {
-	target.dispatchEvent(
-		new MouseEvent("click", { bubbles: true, cancelable: true }),
-	);
+	const click = new MouseEvent("click", { bubbles: true, cancelable: true });
+	NATIVE.add(click);
+	target.dispatchEvent(click);
 }
 
 let release: () => void;
@@ -30,7 +33,7 @@ let clicks: number;
 
 beforeEach(() => {
 	vi.useFakeTimers({ toFake: ["performance", "requestAnimationFrame"] });
-	release = installTapRescue();
+	release = installTapRescue({ isNative: (event) => NATIVE.has(event) });
 	button = document.createElement("button");
 	button.innerHTML = "<span>Go</span>";
 	document.body.append(button);
@@ -107,12 +110,23 @@ describe("installTapRescue", () => {
 		expect(clicks).toBe(0);
 	});
 
-	it("focuses a text field even when the tap stops a glide", () => {
+	it("focuses a field when a scroller elsewhere was gliding", () => {
+		const list = document.createElement("div");
 		const field = document.createElement("textarea");
-		document.body.append(field);
-		document.dispatchEvent(new Event("scroll"));
+		document.body.append(list, field);
+		list.dispatchEvent(new Event("scroll", { bubbles: false }));
 		tap(field);
 		expect(document.activeElement).toBe(field);
+	});
+
+	it("does not focus a field whose own scroller the tap stopped", () => {
+		const form = document.createElement("div");
+		const field = document.createElement("input");
+		form.append(field);
+		document.body.append(form);
+		form.dispatchEvent(new Event("scroll", { bubbles: false }));
+		tap(field);
+		expect(document.activeElement).not.toBe(field);
 	});
 
 	it("sends a tap's click, not a keyboard one", async () => {
@@ -130,6 +144,26 @@ describe("installTapRescue", () => {
 		pointer(button, "pointerup");
 		await vi.advanceTimersByTimeAsync(RESCUE_AFTER_MS * 2);
 		expect(clicks).toBe(0);
+	});
+
+	it("keeps a quick second tap that WebKit did click", async () => {
+		tap(button);
+		await vi.advanceTimersByTimeAsync(RESCUE_AFTER_MS + 20);
+		tap(button);
+		webkitClick(button);
+		expect(clicks).toBe(2);
+	});
+
+	it("lets the clicks a rescue sets off through", async () => {
+		const label = document.createElement("label");
+		const box = document.createElement("input");
+		box.type = "checkbox";
+		label.append(box, "Show");
+		document.body.append(label);
+		pointer(label, "pointerdown");
+		pointer(label, "pointerup");
+		await vi.advanceTimersByTimeAsync(RESCUE_AFTER_MS + 20);
+		expect(box.checked).toBe(true);
 	});
 
 	it("skips a disabled control", async () => {

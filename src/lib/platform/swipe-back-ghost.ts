@@ -63,7 +63,10 @@ export type SwipeBackGhost = {
 	track(progress: number): void;
 	/** Eases to `progress` over `transition`, a CSS duration and easing. */
 	settle(progress: number, transition: string): void;
-	/** Lifts the copy over the page, which can then land beneath it unseen. */
+	/**
+	 * Lifts the copy over the page, which can then land beneath it unseen. It
+	 * takes taps meanwhile, which would land on a page not yet as pictured.
+	 */
 	raise(): void;
 	remove(): void;
 };
@@ -111,6 +114,7 @@ export function showSwipeBackGhost(screen: HTMLElement): SwipeBackGhost | null {
 		},
 		raise: () => {
 			host.style.zIndex = "2147483647";
+			host.style.pointerEvents = "auto";
 		},
 		remove: () => host.remove(),
 	};

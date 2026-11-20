@@ -70,17 +70,31 @@ function openState(control: Element): string {
 	return `${control.getAttribute("aria-expanded")}|${control.getAttribute("data-state")}`;
 }
 
-export function installTapRescue(): () => void {
+export function installTapRescue({
+	isNative = (event: Event) => event.isTrusted,
+}: { isNative?: (event: Event) => boolean } = {}): () => void {
 	let tap: Tap | null = null;
-	let lastScrollAt = Number.NEGATIVE_INFINITY;
+	let lastScroll: { scroller: Node; at: number } | null = null;
 	let rescued: { control: Element; at: number } | null = null;
 
-	const onScroll = () => {
-		lastScrollAt = performance.now();
+	const onScroll = (event: Event) => {
+		const scroller =
+			event.target instanceof Document
+				? event.target.documentElement
+				: event.target;
+		if (scroller instanceof Node)
+			lastScroll = { scroller, at: performance.now() };
 	};
+
+	// Only a glide in a scroller holding the control is stopped by the tap.
+	const stopsGlide = (control: Element) =>
+		lastScroll !== null &&
+		performance.now() - lastScroll.at < AFTER_SCROLL_MS &&
+		lastScroll.scroller.contains(control);
 
 	const onPointerDown = (event: PointerEvent) => {
 		tap = null;
+		rescued = null;
 		if (event.pointerType !== "touch" || !event.isPrimary) return;
 		const target = event.target;
 		const control =
@@ -91,7 +105,7 @@ export function installTapRescue(): () => void {
 			x: event.clientX,
 			y: event.clientY,
 			startedAt: performance.now(),
-			afterScroll: performance.now() - lastScrollAt < AFTER_SCROLL_MS,
+			afterScroll: stopsGlide(control),
 			state: openState(control),
 			clicked: false,
 		};
@@ -120,14 +134,14 @@ export function installTapRescue(): () => void {
 			return;
 		}
 		const { control } = ended;
-		if (takesText(control)) {
-			// Focus has to happen inside the touch for iOS to raise the keyboard.
-			if (document.activeElement !== control) control.focus();
+		// That tap stopped a glide; it is not meant to do anything else.
+		if (ended.afterScroll) {
 			tap = null;
 			return;
 		}
-		// That tap stopped a glide; it is not meant to click anything.
-		if (ended.afterScroll) {
+		if (takesText(control)) {
+			// Focus has to happen inside the touch for iOS to raise the keyboard.
+			if (document.activeElement !== control) control.focus();
 			tap = null;
 			return;
 		}
@@ -160,8 +174,11 @@ export function installTapRescue(): () => void {
 	const onClick = (event: MouseEvent) => {
 		if (RESCUE_CLICKS.has(event)) return;
 		if (tap) tap.clicked = true;
+		// A click the rescue set off (a label's for its input, a replayed tap)
+		// is not WebKit's late one.
 		const late = rescued;
-		if (!late || !(event.target instanceof Node)) return;
+		if (!late || !isNative(event) || !(event.target instanceof Node))
+			return;
 		rescued = null;
 		if (performance.now() - late.at > LATE_CLICK_MS) return;
 		if (!late.control.contains(event.target)) return;
