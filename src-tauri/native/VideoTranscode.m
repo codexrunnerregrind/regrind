@@ -78,8 +78,22 @@ int32_t regrind_transcode_video(
 		// apply, which is why the result is not treated as a failure.
 		BOOL scoped = [input startAccessingSecurityScopedResource];
 
+		// Staged files are bare UUIDs; AVFoundation picks the container by
+		// extension and finds no tracks without one.
+		NSURL *alias = nil;
+		if (input.isFileURL && input.pathExtension.length == 0) {
+			alias = [NSURL fileURLWithPath:[NSTemporaryDirectory()
+				stringByAppendingPathComponent:
+					[NSUUID.UUID.UUIDString stringByAppendingPathExtension:@"mov"]]];
+			NSFileManager *files = [NSFileManager defaultManager];
+			if (![files linkItemAtURL:input toURL:alias error:nil]
+				&& ![files copyItemAtURL:input toURL:alias error:nil]) {
+				alias = nil;
+			}
+		}
+
 		int32_t status = RegrindTranscodeFailed;
-		AVURLAsset *asset = [AVURLAsset URLAssetWithURL:input options:nil];
+		AVURLAsset *asset = [AVURLAsset URLAssetWithURL:alias ?: input options:nil];
 		if ([[asset tracksWithMediaType:AVMediaTypeVideo] count] == 0) {
 			regrind_report(
 				[NSString
@@ -151,6 +165,8 @@ int32_t regrind_transcode_video(
 			}
 		}
 
+		asset = nil;
+		if (alias) [[NSFileManager defaultManager] removeItemAtURL:alias error:nil];
 		if (scoped) [input stopAccessingSecurityScopedResource];
 		return status;
 	}
