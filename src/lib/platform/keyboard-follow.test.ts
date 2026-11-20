@@ -492,6 +492,58 @@ describe("on ios", () => {
 		expect(softKeyboardShrinksPage()).toBe(false);
 	});
 
+	describe("the caret", () => {
+		function caret(element: HTMLElement): string {
+			return element.style.caretColor;
+		}
+
+		it("hides from focus until the ride up lands", async () => {
+			const element = follower();
+			await follow(element);
+			const composer = element.querySelector("textarea") as HTMLElement;
+
+			focus(composer);
+			expect(caret(element)).toBe("transparent");
+
+			move(showing());
+			expect(caret(element)).toBe("transparent");
+
+			last().animation.finish();
+			expect(caret(element)).toBe("");
+		});
+
+		it("stays visible when the keyboard is already up", async () => {
+			const element = follower();
+			await follow(element);
+			move(showing({ duration: 0 }));
+
+			focus(element.querySelector("textarea") as HTMLElement);
+
+			expect(caret(element)).toBe("");
+		});
+
+		it("comes back when no ride follows the focus", async () => {
+			const element = follower();
+			await follow(element);
+			focus(element.querySelector("textarea") as HTMLElement);
+
+			vi.advanceTimersByTime(1000);
+
+			expect(caret(element)).toBe("");
+		});
+
+		it("comes back when the field loses focus", async () => {
+			const element = follower();
+			await follow(element);
+			const composer = element.querySelector("textarea") as HTMLElement;
+			focus(composer);
+
+			blur(composer);
+
+			expect(caret(element)).toBe("");
+		});
+	});
+
 	it("ignores focus on controls that raise no keyboard", async () => {
 		await follow(follower());
 		const button = document.createElement("button");

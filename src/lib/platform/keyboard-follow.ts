@@ -9,6 +9,7 @@ import { typesText } from "#lib/util/text-entry.ts";
 const KEYFRAMES = 32;
 const SETTLED_PX = 0.5;
 const CURVE_PRECISION = 1e-6;
+const CARET_HIDDEN_MAX_MS = 1000;
 
 export type KeyboardCurve = [x1: number, y1: number, x2: number, y2: number];
 
@@ -117,6 +118,7 @@ class KeyboardFollower {
 	readonly #element: HTMLElement;
 	#animation: Animation | undefined;
 	#lift = 0;
+	#caretTimeout: ReturnType<typeof setTimeout> | undefined;
 
 	constructor({ element }: { element: HTMLElement }) {
 		this.#element = element;
@@ -125,6 +127,24 @@ class KeyboardFollower {
 	rest() {
 		this.#stopRide();
 		this.#settle(0);
+		this.showCaret();
+	}
+
+	// iOS draws the caret natively from layout, so the ride's transform strands
+	// it mid-screen until the lift lands; keep it invisible until then.
+	hideCaret() {
+		clearTimeout(this.#caretTimeout);
+		this.#element.style.caretColor = "transparent";
+		this.#caretTimeout = setTimeout(
+			() => this.showCaret(),
+			CARET_HIDDEN_MAX_MS,
+		);
+	}
+
+	showCaret() {
+		clearTimeout(this.#caretTimeout);
+		this.#caretTimeout = undefined;
+		this.#element.style.removeProperty("caret-color");
 	}
 
 	ride(journey: Travel) {
@@ -173,6 +193,7 @@ class KeyboardFollower {
 	#land({ lift, journey }: { lift: number; journey: Travel }) {
 		this.#settle(lift);
 		this.#stopRide();
+		this.showCaret();
 		remeasureScreenChrome();
 		rideEnded(journey);
 	}
@@ -213,13 +234,26 @@ function insideFollower(target: Node): boolean {
 	return false;
 }
 
+function keyboardDown(): boolean {
+	return !travel || travel.to <= 0;
+}
+
 function followFocus(event: FocusEvent) {
 	if (!typesText(event.target)) return;
-	letPageFollow(insideFollower(event.target));
+	const inside = insideFollower(event.target);
+	if (inside && following && keyboardDown()) {
+		for (const [element, follower] of followers)
+			if (element.contains(event.target)) follower.hideCaret();
+	}
+	letPageFollow(inside);
 }
 
 function followBlur(event: FocusEvent) {
-	if (!typesText(event.target) || insideFollower(event.target)) return;
+	if (!typesText(event.target)) return;
+	if (insideFollower(event.target)) {
+		for (const follower of followers.values()) follower.showCaret();
+		return;
+	}
 	if (typesText(event.relatedTarget)) return;
 	letPageFollow(true);
 }
