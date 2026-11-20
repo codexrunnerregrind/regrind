@@ -621,6 +621,36 @@ describe("MessageComposer voice messages", () => {
 		expect(container.querySelector("textarea")).toBeTruthy();
 	});
 
+	it("hides the caret and refuses typing while recording", async () => {
+		const { container } = await hold();
+		const textarea = container.querySelector("textarea")!;
+
+		expect(textarea.style.caretColor).toBe("transparent");
+		expect(textarea.style.boxShadow).toBe("none");
+		const typed = new InputEvent("beforeinput", {
+			bubbles: true,
+			cancelable: true,
+			inputType: "insertText",
+			data: "a",
+		});
+		textarea.dispatchEvent(typed);
+		expect(typed.defaultPrevented).toBe(true);
+	});
+
+	it("gives the caret back without touching the field's own inline height", async () => {
+		const { container, getByLabelText } = await hold();
+		const textarea = container.querySelector("textarea")!;
+		textarea.style.setProperty("height", "40px", "important");
+
+		vi.advanceTimersByTime(1_200);
+		await fireEvent.click(getByLabelText("Discard recording"));
+		await tick();
+
+		expect(textarea.style.caretColor).toBe("");
+		expect(textarea.style.boxShadow).toBe("");
+		expect(textarea.style.height).toBe("40px");
+	});
+
 	it("sends on release, and plays it back from the upload", async () => {
 		const { mic, onSend } = await hold();
 

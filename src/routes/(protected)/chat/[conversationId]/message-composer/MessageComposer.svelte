@@ -128,6 +128,22 @@
 	// Leaving the conversation mid-hold must not leave the microphone open.
 	$effect(() => () => voice.abandon());
 
+	// The voice row only covers the field, which keeps focus; iOS draws the
+	// caret above the page and the focus ring spills past the row.
+	const voiceOverField = $derived(voice.active || voice.reviewing);
+
+	// Per property: the field-sizing fallback keeps its height inline too.
+	$effect(() => {
+		const field = textInput;
+		if (!field || !voiceOverField) return;
+		field.style.setProperty("caret-color", "transparent");
+		field.style.setProperty("box-shadow", "none");
+		return () => {
+			field.style.removeProperty("caret-color");
+			field.style.removeProperty("box-shadow");
+		};
+	});
+
 	// Tapping the composer's own padding shouldn't dismiss the keyboard — a
 	// near-miss on a chip or a button lands here. Both events, because WebKit
 	// ignores preventDefault on a touch-derived pointerdown and only honours the
@@ -219,6 +235,9 @@
 			bind:value={textContent}
 			bind:ref={textInput}
 			onEscape={onCancelReply}
+			onbeforeinput={(event: InputEvent) => {
+				if (voiceOverField) event.preventDefault();
+			}}
 		>
 			{#snippet trailing()}
 				<ComposerStickersTrigger
