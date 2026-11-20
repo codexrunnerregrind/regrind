@@ -81,11 +81,19 @@ impl MediaKind {
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Picked {
-	ids: Vec<String>,
+	picks: Vec<Pick>,
 	failed: usize,
 }
 
-type Loading = oneshot::Receiver<Result<String, String>>;
+/// `name` is the picked file's own name, whose extension stands in for the
+/// content type the staged copy no longer carries.
+#[derive(Debug, Serialize)]
+pub struct Pick {
+	id: String,
+	name: Option<String>,
+}
+
+type Loading = oneshot::Receiver<Result<Pick, String>>;
 
 type Answer = Result<Vec<Loading>, &'static str>;
 
@@ -225,9 +233,13 @@ impl Picking {
 	}
 }
 
-fn stage(staged: &StagedMedia, url: &NSURL) -> Result<String, String> {
+fn stage(staged: &StagedMedia, url: &NSURL) -> Result<Pick, String> {
 	let path = url.to_file_path().ok_or_else(|| NOT_MEDIA.to_owned())?;
-	staged.adopt(&path).map_err(|error| error.to_string())
+	let name = path
+		.file_name()
+		.map(|name| name.to_string_lossy().into_owned());
+	let id = staged.adopt(&path).map_err(|error| error.to_string())?;
+	Ok(Pick { id, name })
 }
 
 fn present(
@@ -290,11 +302,11 @@ fn present(
 }
 
 async fn collect(loading: Vec<Loading>) -> Picked {
-	let mut ids = Vec::with_capacity(loading.len());
+	let mut picks = Vec::with_capacity(loading.len());
 	let mut failed = 0;
 	for load in loading {
 		match load.await.unwrap_or_else(|_| Err(NEVER_LOADED.to_owned())) {
-			Ok(id) => ids.push(id),
+			Ok(pick) => picks.push(pick),
 			Err(message) => {
 				tracing::warn!(
 					"[picker] a pick could not be loaded: {message}"
@@ -303,7 +315,7 @@ async fn collect(loading: Vec<Loading>) -> Picked {
 			}
 		}
 	}
-	Picked { ids, failed }
+	Picked { picks, failed }
 }
 
 #[tauri::command]

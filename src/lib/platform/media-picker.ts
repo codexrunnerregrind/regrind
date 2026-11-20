@@ -61,7 +61,7 @@ const galleryPicker =
 	"Gallery" satisfies AndroidOpenFilePickerOptions["pickerType"];
 
 const iosPicksSchema = z.object({
-	ids: z.array(z.string()),
+	picks: z.array(z.object({ id: z.string(), name: z.string().nullable() })),
 	failed: z.number().int().nonnegative(),
 });
 
@@ -150,7 +150,7 @@ async function pickIosMedia({
 	kind: MediaKind;
 	multiple: boolean;
 }): Promise<PickedMedia[]> {
-	const { ids, failed } = iosPicksSchema.parse(
+	const { picks, failed } = iosPicksSchema.parse(
 		await invoke("pick_ios_media", { kind, multiple }),
 	);
 	if (failed > 0) {
@@ -158,11 +158,11 @@ async function pickIosMedia({
 			t("common.media.errors.pickedItemsLoadFailed", { count: failed }),
 		);
 	}
-	return ids.map(
-		(id): PickedMedia => ({
+	return picks.map(
+		({ id, name }): PickedMedia => ({
 			source: "staged",
 			key: crypto.randomUUID(),
-			mimeType: null,
+			mimeType: name === null ? null : mimeTypeFromPath(name),
 			id,
 		}),
 	);
