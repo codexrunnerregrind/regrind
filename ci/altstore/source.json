@@ -35,13 +35,13 @@
 			],
 			"versions": [
 				{
-					"version": "0.1.0.20",
-					"buildVersion": "0.1.0.20",
-					"date": "2026-11-09",
-					"localizedDescription": "- Reduce animations setting\n- Text size setting under Appearance\n- Long-press a profile to peek at chat, stats and actions\n- Grid tiles show a frame when you have a recent chat\n- Privacy mode blurs photos, under Settings > Advanced > Privacy\n- The Filters button shows the active preset name\n- Fixed For You distances and blocked profiles coming back after a refresh\n- A removed Right Now post stays hidden\n- Smoother tab switching",
-					"downloadURL": "https://github.com/codexrunnerregrind/regrind/releases/download/v0.1.0-beta.20/regrind-v0.1.0-beta.20.ipa",
-					"size": 44537713,
-					"sha256": "28039233770f96d4e2dbbae338eb1391544993ec983e903673d20cfb406cc411",
+					"version": "0.1.0.21",
+					"buildVersion": "0.1.0.21",
+					"date": "2026-11-20",
+					"localizedDescription": "- App lock with Face ID, Touch ID, fingerprint or passcode\n- Sort the grid by distance\n- Long-press the Me tab to switch accounts\n- Facebook sign-ins survive a restart\n- Map labels in right-to-left languages display correctly\n- Fixed opening a photo from the quick preview\n- Double-tap like works with the keyboard open\n- Keyboard no longer closes after an auto-correction\n- Chats keep your place while older messages load",
+					"downloadURL": "https://github.com/codexrunnerregrind/regrind/releases/download/v0.1.0-beta.21/regrind-v0.1.0-beta.21.ipa",
+					"size": 44816887,
+					"sha256": "6da1dad7ada828b2cca0d6a980ec0c530989905df0a7a077b391d16519050bc8",
 					"minOSVersion": "14.0"
 				}
 			]
