@@ -20,7 +20,9 @@ vi.mock("#lib/api/messaging/conversations.ts", () => ({
 	markConversationAsRead: vi.fn(() => Promise.resolve()),
 }));
 vi.mock("#lib/api/messaging/messages.ts", async (importOriginal) => ({
-	...(await importOriginal<typeof import("#lib/api/messaging/messages.ts")>()),
+	...(await importOriginal<
+		typeof import("#lib/api/messaging/messages.ts")
+	>()),
 	reactToMessage: vi.fn(),
 	sendMessage: vi.fn(),
 }));
@@ -159,6 +161,35 @@ describe("ConversationState deletes and album refreshes", () => {
 		await flush();
 
 		expect(getConversationMock).toHaveBeenCalled();
+	});
+
+	// A reaction comes back as a realtime event; its refetch must not spin.
+	it("refetches quietly on a realtime event, loudly on a pull", async () => {
+		const state = await loaded();
+		let resolve!: (value: unknown) => void;
+		getConversationMock
+			.mockReturnValueOnce(
+				new Promise((r) => {
+					resolve = r;
+				}),
+			)
+			.mockReturnValueOnce(new Promise(() => {}));
+		refreshDynamicHandlers[0]?.({
+			payload: { conversationId: CONVERSATION_ID, messageType: "Album" },
+		});
+		expect(state.refreshing).toBe(true);
+		expect(state.quietRefresh).toBe(true);
+
+		void state.refresh();
+		resolve({
+			messages: [],
+			profile,
+			pageKey: null,
+			lastReadTimestamp: null,
+		});
+		await flush();
+		expect(state.refreshing).toBe(true);
+		expect(state.quietRefresh).toBe(false);
 	});
 
 	it("ignores an album change in another conversation", async () => {

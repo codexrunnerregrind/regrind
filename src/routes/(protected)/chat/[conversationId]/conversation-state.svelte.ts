@@ -68,6 +68,8 @@ export class ConversationState {
 	loading = $state(true);
 	loadingMore = $state(false);
 	refreshing = $state(false);
+	/** The running refresh came from a realtime event, so shows no spinner. */
+	quietRefresh = $state(false);
 	refreshFailed = $state(false);
 	error: Error | null = $state(null);
 	lastReadTimestamp: number | null = $state(null);
@@ -130,7 +132,7 @@ export class ConversationState {
 					if (this.#advanceLastRead(timestamp)) this.#syncCache();
 				},
 				onStale: () => {
-					void this.#reconcileMessages();
+					void this.#reconcileMessages({ quiet: true });
 				},
 				onMessagesDeleted: (payload) =>
 					this.#handleMessageDeleted(payload),
@@ -149,6 +151,7 @@ export class ConversationState {
 
 	#destroyed = false;
 	#refreshRequestedSinceFetchStart = false;
+	#requestedRefreshQuiet = true;
 	get destroyed(): boolean {
 		return this.#destroyed;
 	}
@@ -235,13 +238,18 @@ export class ConversationState {
 		if (removed.length === 0) void this.#reconcileMessages();
 	}
 
-	async #reconcileMessages(): Promise<void> {
+	async #reconcileMessages({ quiet = false } = {}): Promise<void> {
 		if (this.#destroyed) return;
 		if (this.loading || this.refreshing) {
+			this.#requestedRefreshQuiet =
+				quiet &&
+				(!this.#refreshRequestedSinceFetchStart ||
+					this.#requestedRefreshQuiet);
 			this.#refreshRequestedSinceFetchStart = true;
 			return;
 		}
 		this.refreshing = true;
+		this.quietRefresh = quiet;
 		this.refreshFailed = false;
 		this.#refreshRequestedSinceFetchStart = false;
 		const localIdsAtFetchStart = this.messages.map((m) => m.messageId);
@@ -304,7 +312,7 @@ export class ConversationState {
 	#runRequestedRefresh(): void {
 		if (!this.#refreshRequestedSinceFetchStart) return;
 		this.#refreshRequestedSinceFetchStart = false;
-		void this.refresh();
+		void this.#reconcileMessages({ quiet: this.#requestedRefreshQuiet });
 	}
 
 	refresh(): Promise<void> {

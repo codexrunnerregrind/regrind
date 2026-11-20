@@ -286,7 +286,8 @@
 		<DataRefreshControl
 			bind:this={refreshControl}
 			{container}
-			updating={conversationState.refreshing}
+			updating={conversationState.refreshing &&
+				!conversationState.quietRefresh}
 			containerClass="bottom-0"
 			failed={conversationState.refreshFailed}
 			hintOffset={8}
