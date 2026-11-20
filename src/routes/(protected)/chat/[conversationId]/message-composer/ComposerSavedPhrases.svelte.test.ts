@@ -4,6 +4,8 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
 import { tick } from "svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { pointerEvent } from "#lib/test/pointer.ts";
+
 const api = vi.hoisted(() => ({
 	getSavedPhrases: vi.fn(),
 	createSavedPhrase: vi.fn(),
@@ -73,6 +75,20 @@ describe("ComposerSavedPhrases", () => {
 
 		expect(onSelect).toHaveBeenCalledExactlyOnceWith("Hey");
 		expect(api.trackSavedPhraseUsage).toHaveBeenCalledWith("1");
+	});
+
+	it("picks on a touch's lift, once, whether or not a click follows", async () => {
+		const onSelect = vi.fn();
+		renderBar({ onSelect });
+		await settle();
+		const chip = screen.getByRole("button", { name: "Hey" });
+
+		await fireEvent(chip, pointerEvent("pointerdown"));
+		await fireEvent(chip, pointerEvent("pointerup"));
+		expect(onSelect).toHaveBeenCalledExactlyOnceWith("Hey");
+
+		await fireEvent.click(chip);
+		expect(onSelect).toHaveBeenCalledOnce();
 	});
 
 	it("offers to save the line already typed", async () => {

@@ -2,6 +2,7 @@
 	import EyeIcon from "phosphor-svelte/lib/EyeIcon";
 	import EyeSlashIcon from "phosphor-svelte/lib/EyeSlashIcon";
 
+	import { mouseDoubleClick } from "#lib/util/mouse-double-click.ts";
 	import { revealedImages } from "./image-privacy.svelte";
 
 	// A sibling of the image, centred on it through their shared offset parent,
@@ -48,7 +49,7 @@
 		ontouchstart={stop}
 		ontouchend={stop}
 		oncontextmenu={stop}
-		ondblclick={stop}
+		{@attach mouseDoubleClick(stop)}
 		onclick={(event) => {
 			event.preventDefault();
 			event.stopPropagation();

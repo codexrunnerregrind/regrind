@@ -5,7 +5,7 @@
 // Past this the finger is scrolling, and no click will follow.
 export const TAP_SLOP_PX = 10;
 // From the lift to the click, with room for WebKit's hover events.
-export const TAP_CLICK_WINDOW_MS = 350;
+export const TAP_CLICK_WINDOW_MS = 500;
 
 export class TapQuiet {
 	#start: { x: number; y: number } | null = null;
@@ -75,4 +75,18 @@ export function tapPending(): boolean {
 	if (typeof window === "undefined") return false;
 	shared ??= install();
 	return shared.pending(performance.now());
+}
+
+/**
+ * Resolves once no tap is pending. Polls on frames, not a timer: WebKit holds a
+ * tap's click until timers started during the tap have run.
+ */
+export function whenTapQuiet(): Promise<void> {
+	return new Promise((resolve) => {
+		const check = () => {
+			if (tapPending()) requestAnimationFrame(check);
+			else resolve();
+		};
+		check();
+	});
 }

@@ -2,6 +2,7 @@
 	import { flushSync } from "svelte";
 
 	import { stopScrollMomentum } from "#lib/platform/scroll-momentum.ts";
+	import { whenTapQuiet } from "#lib/platform/tap-quiet.ts";
 	import { SETTLE_MS } from "#lib/util/load-when-visible.ts";
 	import { observeIntersection } from "#lib/util/observe-intersection.ts";
 	import { getConversationState } from "../conversation-state.svelte";
@@ -27,6 +28,9 @@
 				const reachedTop = await restOrNearTop(scroller);
 				if (conversationState !== state) return apply();
 				if (reachedTop) await stopScrollMomentum(scroller);
+				// A page of messages landing under a tap costs it its click.
+				await whenTapQuiet();
+				if (conversationState !== state) return apply();
 				keepReadingPosition({ scroller, apply });
 			},
 		});

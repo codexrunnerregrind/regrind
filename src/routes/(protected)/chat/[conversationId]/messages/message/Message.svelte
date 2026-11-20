@@ -13,6 +13,7 @@
 	import { t } from "#lib/i18n/index.ts";
 	import { hapticImpact } from "#lib/platform/haptics.ts";
 	import { longPressHandlers } from "#lib/util/long-press.ts";
+	import { mouseDoubleClick } from "#lib/util/mouse-double-click.ts";
 	import { observeIntersection } from "#lib/util/observe-intersection.ts";
 	import { SwipeToReply } from "#lib/util/swipe-to-reply.svelte.ts";
 	import type { ApiResponseMessage } from "#lib/model/messaging/messages.ts";
@@ -365,11 +366,10 @@
 					return;
 				pendingDrop = setTimeout(dropKeyboard, 300);
 			}}
-			ondblclick={(event) => {
-				// Mouse double-click; touch double-tap is synthesized in longPress.
+			{@attach mouseDoubleClick((event) => {
 				if (!isOut && onReact) event.preventDefault();
 				reactOnDoubleTap();
-			}}
+			})}
 			onkeydown={(event) => {
 				if (event.key === "Enter" || event.key === " ") {
 					if (event.key === " ") event.preventDefault();

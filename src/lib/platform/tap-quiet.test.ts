@@ -1,6 +1,20 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { TAP_CLICK_WINDOW_MS, TAP_SLOP_PX, TapQuiet } from "./tap-quiet";
+import {
+	TAP_CLICK_WINDOW_MS,
+	TAP_SLOP_PX,
+	tapPending,
+	TapQuiet,
+	whenTapQuiet,
+} from "./tap-quiet";
+
+function touch(type: string, at = { clientX: 10, clientY: 10 }) {
+	const event = new Event(type);
+	Object.defineProperty(event, "touches", {
+		value: type === "touchend" ? [] : [at],
+	});
+	window.dispatchEvent(event);
+}
 
 describe("TapQuiet", () => {
 	it("is quiet with no finger down", () => {
@@ -37,5 +51,28 @@ describe("TapQuiet", () => {
 		quiet.touchStart({ x: 10, y: 10, touches: 1 });
 		quiet.touchCancel();
 		expect(quiet.pending(0)).toBe(false);
+	});
+});
+
+describe("whenTapQuiet", () => {
+	afterEach(() => vi.useRealTimers());
+
+	it("resolves once the tap's click window has passed", async () => {
+		vi.useFakeTimers({ toFake: ["performance", "requestAnimationFrame"] });
+		tapPending();
+		touch("touchstart");
+		touch("touchend");
+		let quiet = false;
+		void whenTapQuiet().then(() => (quiet = true));
+
+		await vi.advanceTimersByTimeAsync(TAP_CLICK_WINDOW_MS - 20);
+		expect(quiet).toBe(false);
+
+		await vi.advanceTimersByTimeAsync(40);
+		expect(quiet).toBe(true);
+	});
+
+	it("resolves at once with no tap", async () => {
+		await expect(whenTapQuiet()).resolves.toBeUndefined();
 	});
 });

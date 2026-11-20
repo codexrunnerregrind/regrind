@@ -11,10 +11,7 @@
 		tabShellRoot,
 	} from "#lib/components/tab-shell/tab-shell-state.svelte.ts";
 	import { hapticSelection } from "#lib/platform/haptics.ts";
-	import {
-		TAP_CLICK_WINDOW_MS,
-		tapPending,
-	} from "#lib/platform/tap-quiet.ts";
+	import { tapPending, whenTapQuiet } from "#lib/platform/tap-quiet.ts";
 	import { type PanDirection, panPager } from "#lib/util/pan-pager.ts";
 	import { reducedMotion } from "#lib/util/reduced-motion.ts";
 	import { remeasureScreenChrome } from "#lib/util/screen-chrome.svelte.ts";
@@ -88,11 +85,12 @@
 	$effect(() => {
 		const shown = index;
 		if (settling) return;
-		let timer: ReturnType<typeof setTimeout> | undefined;
+		let stopped = false;
 		const fit = () => {
+			if (stopped) return;
 			// A screen of links mounting under a tap costs the tap its click.
 			if (tapPending()) {
-				timer = setTimeout(fit, TAP_CLICK_WINDOW_MS);
+				void whenTapQuiet().then(fit);
 				return;
 			}
 			for (const [pane, live] of mounted.entries()) {
@@ -104,8 +102,9 @@
 			"requestIdleCallback" in window
 				? requestIdleCallback(fit, { timeout: 1500 })
 				: undefined;
-		if (idle === undefined) timer = setTimeout(fit, 300);
+		const timer = idle === undefined ? setTimeout(fit, 300) : undefined;
 		return () => {
+			stopped = true;
 			if (idle !== undefined) cancelIdleCallback(idle);
 			clearTimeout(timer);
 		};
