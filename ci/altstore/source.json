@@ -40,8 +40,8 @@
 					"date": "2026-11-20",
 					"localizedDescription": "- App lock with Face ID, Touch ID, fingerprint or passcode\n- Sort the grid by distance\n- Long-press the Me tab to switch accounts\n- Facebook sign-ins survive a restart\n- Map labels in right-to-left languages display correctly\n- Fixed opening a photo from the quick preview\n- Double-tap like works with the keyboard open\n- Keyboard no longer closes after an auto-correction\n- Chats keep your place while older messages load",
 					"downloadURL": "https://github.com/codexrunnerregrind/regrind/releases/download/v0.1.0-beta.21/regrind-v0.1.0-beta.21.ipa",
-					"size": 44816887,
-					"sha256": "6da1dad7ada828b2cca0d6a980ec0c530989905df0a7a077b391d16519050bc8",
+					"size": 44828210,
+					"sha256": "3fde8a8281485b72d3640b4e86564902257cfc87e01cad4e768620faa6eb2196",
 					"minOSVersion": "14.0"
 				}
 			]
