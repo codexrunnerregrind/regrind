@@ -56,23 +56,7 @@
 		else void savedPhrases.rename({ id: pending.id, text: pending.value });
 	}
 
-	// iOS sometimes withholds the click from a tap on a chip, for reasons the page
-	// never sees. A touch picks on the lift instead, and drops the click after it.
-	const LIFT_CLICK_MS = 800;
-	let held = false;
-	let liftedAt = Number.NEGATIVE_INFINITY;
-
-	function pickOnLift(
-		event: PointerEvent,
-		phrase: { id: string; text: string },
-	) {
-		if (event.pointerType !== "touch" || held || disabled) return;
-		liftedAt = event.timeStamp;
-		pick(phrase);
-	}
-
 	function enterEditMode() {
-		held = true;
 		if (disabled) return;
 		hapticImpact("medium");
 		editing = true;
@@ -132,21 +116,12 @@
 						type="button"
 						class="max-w-52 truncate rounded-full px-2.5 py-1 text-left text-meta text-foreground active:bg-foreground/10 disabled:opacity-50"
 						{disabled}
-						onclick={(event) => {
-							if (event.timeStamp - liftedAt > LIFT_CLICK_MS)
-								pick(phrase);
-						}}
+						onclick={() => pick(phrase)}
 						onmousedown={keepKeyboard}
 						oncontextmenu={longPress.oncontextmenu}
-						onpointerdown={(event) => {
-							held = false;
-							longPress.onpointerdown?.(event);
-						}}
+						onpointerdown={longPress.onpointerdown}
 						onpointermove={longPress.onpointermove}
-						onpointerup={(event) => {
-							longPress.onpointerup?.(event);
-							pickOnLift(event, phrase);
-						}}
+						onpointerup={longPress.onpointerup}
 						onpointercancel={longPress.onpointercancel}
 					>
 						{phrase.text}

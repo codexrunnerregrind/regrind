@@ -35,7 +35,7 @@
 		installNativeInsets,
 		type NativeInsets,
 	} from "#lib/platform/native-insets.ts";
-	import { isMobilePlatform } from "#lib/platform/os.ts";
+	import { isIosPlatform, isMobilePlatform } from "#lib/platform/os.ts";
 	import { installScrollGestureBridge } from "#lib/platform/scroll-gesture.ts";
 	import { applySoftKeyboardLayout } from "#lib/platform/soft-keyboard.svelte.ts";
 	import {
@@ -48,6 +48,7 @@
 		trackScreenScroll,
 	} from "#lib/platform/swipe-back-ghost.ts";
 	import { installSystemBack } from "#lib/platform/system-back-gesture.svelte.ts";
+	import { installTapRescue } from "#lib/platform/tap-rescue.ts";
 	import { installVoiceOverWatch } from "#lib/platform/voice-over.svelte.ts";
 	import { imagesHidden } from "#lib/privacy/image-privacy.svelte.ts";
 	import { startAddonUpdateWatch } from "#lib/updates/addon.svelte.ts";
@@ -88,6 +89,9 @@
 		const releaseHoverPointer = trackHoverPointer();
 		const releaseInAppLinks = keepLinksInApp();
 		const releaseAppLock = installAppLock();
+		const releaseTapRescue = isIosPlatform()
+			? installTapRescue()
+			: () => {};
 		installSystemBack();
 		installVoiceOverWatch();
 		void hydratePreferences().catch((error: unknown) => {
@@ -110,6 +114,7 @@
 			releaseHoverPointer();
 			releaseInAppLinks();
 			releaseAppLock();
+			releaseTapRescue();
 		};
 	});
 
