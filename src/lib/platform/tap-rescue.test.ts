@@ -115,6 +115,23 @@ describe("installTapRescue", () => {
 		expect(document.activeElement).toBe(field);
 	});
 
+	it("sends a tap's click, not a keyboard one", async () => {
+		let detail = -1;
+		button.addEventListener("click", (event) => (detail = event.detail));
+		tap(button);
+		await vi.advanceTimersByTimeAsync(RESCUE_AFTER_MS + 20);
+		expect(detail).toBe(1);
+	});
+
+	it("leaves a control that acted on the press itself", async () => {
+		button.setAttribute("aria-expanded", "false");
+		pointer(button, "pointerdown");
+		button.setAttribute("aria-expanded", "true");
+		pointer(button, "pointerup");
+		await vi.advanceTimersByTimeAsync(RESCUE_AFTER_MS * 2);
+		expect(clicks).toBe(0);
+	});
+
 	it("skips a disabled control", async () => {
 		button.disabled = true;
 		tap(button);

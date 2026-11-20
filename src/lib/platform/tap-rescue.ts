@@ -60,8 +60,15 @@ type Tap = {
 	y: number;
 	startedAt: number;
 	afterScroll: boolean;
+	state: string;
 	clicked: boolean;
 };
+
+// A control that acted on the press itself (a menu trigger opening on pointerup,
+// say) has had its tap; a click on top would undo it.
+function openState(control: Element): string {
+	return `${control.getAttribute("aria-expanded")}|${control.getAttribute("data-state")}`;
+}
 
 export function installTapRescue(): () => void {
 	let tap: Tap | null = null;
@@ -85,6 +92,7 @@ export function installTapRescue(): () => void {
 			y: event.clientY,
 			startedAt: performance.now(),
 			afterScroll: performance.now() - lastScrollAt < AFTER_SCROLL_MS,
+			state: openState(control),
 			clicked: false,
 		};
 	};
@@ -133,10 +141,13 @@ export function installTapRescue(): () => void {
 			}
 			tap = null;
 			if (!control.isConnected || disabled(control)) return;
+			if (openState(control) !== ended.state) return;
 			rescued = { control, at: performance.now() };
 			const click = new MouseEvent("click", {
 				bubbles: true,
 				cancelable: true,
+				// A tap's click; 0 reads as a keyboard click to some libraries.
+				detail: 1,
 				clientX: ended.x,
 				clientY: ended.y,
 			});
