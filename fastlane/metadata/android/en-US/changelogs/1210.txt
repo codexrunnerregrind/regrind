@@ -1,0 +1,9 @@
+- App lock with Face ID, Touch ID, fingerprint or passcode
+- Sort the grid by distance
+- Long-press the Me tab to switch accounts
+- Facebook sign-ins survive a restart
+- Map labels in right-to-left languages display correctly
+- Fixed opening a photo from the quick preview
+- Double-tap like works with the keyboard open
+- Keyboard no longer closes after an auto-correction
+- Chats keep your place while older messages load
