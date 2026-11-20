@@ -26,11 +26,10 @@
 				// iOS momentum overwrites the correction below, so a page
 				// waits for the flick to end, or stops it near the top.
 				const reachedTop = await restOrNearTop(scroller);
-				if (conversationState !== state) return apply();
-				if (reachedTop) await stopScrollMomentum(scroller);
 				// A page of messages landing under a tap costs it its click.
 				await whenTapQuiet();
 				if (conversationState !== state) return apply();
+				if (reachedTop) await stopScrollMomentum(scroller);
 				keepReadingPosition({ scroller, apply });
 			},
 		});
