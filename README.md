@@ -6,6 +6,8 @@ This fork started because I wanted to try the app on my iPhone. The original bui
 
 I build this for myself and sideload it onto my own phone. If you want to try it, see [Install on iOS](#install-on-ios) or [Install on Android](#install-on-android).
 
+[Download the latest release](https://github.com/codexrunnerregrind/regrind/releases/latest)
+
 <img src="./contrib/screenshots/browse-grid.webp" alt="Browse grid" width="220">
 <img src="./contrib/screenshots/right-now.webp" alt="Right Now" width="220">
 <img src="./contrib/screenshots/inbox.webp" alt="Inbox" width="220">
