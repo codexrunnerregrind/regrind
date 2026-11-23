@@ -593,8 +593,14 @@ textarea,
 }
 
 @layer components {
+	/* A mouse brings classic scrollbars, taller than the rows they sit under. */
 	.scrollbar-thin {
 		scrollbar-width: thin;
+		overflow-y: hidden;
+
+		@media (pointer: fine) {
+			scrollbar-width: none;
+		}
 	}
 
 	/* The doodle wallpaper behind a transcript. One asset for both themes: the
@@ -1532,6 +1538,11 @@ textarea,
 		background-color: var(--glass-capsule-fallback-bg);
 		backdrop-filter: var(--bd-rail) saturate(1.8);
 	}
+}
+.glass-capsule:not(.glass-normal) {
+	@apply ring-1 ring-border/60;
+	background-color: var(--glass-capsule-fallback-bg);
+	backdrop-filter: var(--bd-rail) saturate(1.8);
 }
 
 /* A blur is the one part with no substitute: without it the tint alone is a flat

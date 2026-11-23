@@ -188,7 +188,7 @@
 				{/each}
 			</div>
 		{:else}
-			<div class="flex gap-2 overflow-x-auto pb-1">
+			<div data-scroll-intent="x" class="flex gap-2 overflow-x-auto pb-1">
 				{#each albums as album (album.albumId)}
 					{#if self}
 						<a

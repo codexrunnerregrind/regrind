@@ -67,6 +67,7 @@
 
 <div
 	class="-mx-4 flex gap-2 overflow-x-auto px-4 pt-3 [scrollbar-width:none]"
+	data-scroll-intent="x"
 	role="group"
 	aria-label="Filter presets"
 >

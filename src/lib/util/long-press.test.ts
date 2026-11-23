@@ -346,3 +346,55 @@ describe("longPressHandlers double-tap", () => {
 		expect(onClick).not.toHaveBeenCalled();
 	});
 });
+
+function mouseAt(button = 0) {
+	return { pointerType: "mouse", button, clientX: 10, clientY: 10 } as never;
+}
+
+describe("longPressHandlers with the mouse", () => {
+	beforeEach(() => {
+		vi.useFakeTimers();
+		vi.advanceTimersByTime(1000);
+	});
+
+	it("ignores a held or double click unless the target opts in", () => {
+		const onLongPress = vi.fn();
+		const onDoubleTap = vi.fn();
+		const handlers = longPressHandlers(onLongPress, onDoubleTap);
+		handlers.onpointerdown?.(mouseAt());
+		vi.advanceTimersByTime(450);
+		handlers.onpointerup?.(mouseAt());
+		handlers.onpointerdown?.(mouseAt());
+		handlers.onpointerup?.(mouseAt());
+		expect(onLongPress).not.toHaveBeenCalled();
+		expect(onDoubleTap).not.toHaveBeenCalled();
+	});
+
+	it("fires on a held and a double primary click when opted in", () => {
+		const onLongPress = vi.fn();
+		const onDoubleTap = vi.fn();
+		const handlers = longPressHandlers(onLongPress, onDoubleTap, {
+			mouse: true,
+		});
+		handlers.onpointerdown?.(mouseAt());
+		vi.advanceTimersByTime(450);
+		expect(onLongPress).toHaveBeenCalledTimes(1);
+		handlers.onpointerup?.(mouseAt());
+		vi.advanceTimersByTime(1000);
+		handlers.onpointerdown?.(mouseAt());
+		handlers.onpointerup?.(mouseAt());
+		handlers.onpointerdown?.(mouseAt());
+		handlers.onpointerup?.(mouseAt());
+		expect(onDoubleTap).toHaveBeenCalledTimes(1);
+	});
+
+	it("leaves a held secondary button to the context menu", () => {
+		const onLongPress = vi.fn();
+		const handlers = longPressHandlers(onLongPress, vi.fn(), {
+			mouse: true,
+		});
+		handlers.onpointerdown?.(mouseAt(2));
+		vi.advanceTimersByTime(450);
+		expect(onLongPress).not.toHaveBeenCalled();
+	});
+});

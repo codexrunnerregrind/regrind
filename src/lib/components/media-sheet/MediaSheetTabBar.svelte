@@ -3,6 +3,7 @@
 
 	import ProgressiveBlur from "#lib/components/shared/ProgressiveBlur.svelte";
 	import * as Tabs from "#lib/components/ui/tabs/index.ts";
+	import { hasSystemGlass } from "#lib/platform/os.ts";
 
 	let {
 		children,
@@ -28,7 +29,9 @@
 	<!-- The attachments sheet's capsule: glass, one sliding pill, equal-width
 	     tabs. -->
 	<Tabs.List
-		class="glass-capsule relative col-start-2 bg-transparent p-1.5 ring-0 glass-normal"
+		class="glass-capsule relative col-start-2 bg-transparent p-1.5 ring-0 {hasSystemGlass()
+			? 'glass-normal'
+			: ''}"
 	>
 		<span
 			aria-hidden="true"

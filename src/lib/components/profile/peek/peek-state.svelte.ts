@@ -184,6 +184,6 @@ export function profileGestures(
 					if (element) void doubleTap(element, profile());
 				}
 			: undefined,
-		{ deferTapAction: true },
+		{ deferTapAction: true, mouse: true },
 	);
 }

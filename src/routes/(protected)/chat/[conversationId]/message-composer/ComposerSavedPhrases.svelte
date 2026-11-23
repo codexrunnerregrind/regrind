@@ -103,7 +103,11 @@
 		     corner: a sideways scroller clips vertically too, which cut the badge
 		     in half. `pb-2` is the scrollbar's lane — it draws at the bottom of
 		     the padding box, and against the chips it read as an underline. -->
-		<div class="-mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-2">
+		<!-- A mouse brings classic scrollbars, which are taller than the lane. -->
+		<div
+			class="-mx-1 flex items-center gap-1.5 overflow-x-auto overflow-y-hidden px-1 pb-2 pointer-fine:[scrollbar-width:none]"
+			data-scroll-intent="x"
+		>
 			{#each phrases as phrase (phrase.id)}
 				{@const longPress = longPressHandlers(enterEditMode)}
 				<div

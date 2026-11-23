@@ -12,6 +12,7 @@
 	import { getViewActivityState } from "#lib/interest/view-activity.svelte.ts";
 	import { hapticSelection } from "#lib/platform/haptics.ts";
 	import { isFloatingNav } from "#lib/platform/nav-style.svelte.ts";
+	import { hasSystemGlass } from "#lib/platform/os.ts";
 	import { softKeyboardShrinksPage } from "#lib/platform/soft-keyboard.svelte.ts";
 	import { longPressHandlers } from "#lib/util/long-press.ts";
 	import { bottomChrome } from "#lib/util/screen-chrome.svelte.ts";
@@ -20,6 +21,7 @@
 	let { ourProfileId }: { ourProfileId: number } = $props();
 
 	const glass = $derived(isFloatingNav());
+	const systemMaterial = hasSystemGlass();
 
 	// Holding the profile tab opens the account switcher, as on other social apps.
 	let accountsOpen = $state(false);
@@ -114,8 +116,9 @@
 		class={[
 			"relative flex w-full items-stretch",
 			{
-				"glass-capsule pointer-events-auto h-14 max-w-104 rounded-full px-1.5 glass-normal":
+				"glass-capsule pointer-events-auto h-14 max-w-104 rounded-full px-1.5":
 					glass,
+				"glass-normal": glass && systemMaterial,
 			},
 		]}
 	>

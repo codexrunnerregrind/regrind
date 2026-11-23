@@ -105,7 +105,9 @@ export function longPressHandlers(
 	onDoubleTap?: () => void,
 	// Media messages open a lightbox on the first tap, which swallows the second
 	// one — so their tap action waits out the double-tap window before it runs.
-	options?: { deferTapAction?: boolean },
+	// `mouse`: a held or double click counts too, for targets with no
+	// right-click or dblclick of their own.
+	options?: { deferTapAction?: boolean; mouse?: boolean },
 ): LongPressHandlers {
 	let timer: ReturnType<typeof setTimeout> | null = null;
 	let originX = 0;
@@ -119,6 +121,9 @@ export function longPressHandlers(
 	let replayTimer: ReturnType<typeof setTimeout> | null = null;
 
 	const deferring = () => Boolean(options?.deferTapAction && onDoubleTap);
+	const skipsMouse = (event: PointerEvent) =>
+		event.pointerType === "mouse" &&
+		(!options?.mouse || event.button !== 0);
 
 	const cancelReplay = () => {
 		awaitingSecondTap = false;
@@ -139,7 +144,7 @@ export function longPressHandlers(
 		onpointerdown(event) {
 			pressConsumed = false;
 			cancel();
-			if (event.pointerType === "mouse") return;
+			if (skipsMouse(event)) return;
 			pressing = true;
 			originX = event.clientX;
 			originY = event.clientY;
@@ -168,7 +173,7 @@ export function longPressHandlers(
 		onpointerup(event) {
 			pressing = false;
 			cancel();
-			if (event.pointerType === "mouse") return;
+			if (skipsMouse(event)) return;
 			if (pressConsumed) {
 				suppressNextClick();
 				cancelReplay();

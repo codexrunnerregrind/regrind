@@ -1,4 +1,6 @@
 <script lang="ts">
+	import CaretLeftIcon from "phosphor-svelte/lib/CaretLeftIcon";
+	import CaretRightIcon from "phosphor-svelte/lib/CaretRightIcon";
 	import EyeSlashIcon from "phosphor-svelte/lib/EyeSlashIcon";
 	import SparkleIcon from "phosphor-svelte/lib/SparkleIcon";
 	import { untrack } from "svelte";
@@ -24,10 +26,36 @@
 		onScrollX?: (x: number) => void;
 	} = $props();
 
+	let row = $state<HTMLElement>();
+	let canBack = $state(false);
+	let canForward = $state(false);
+
+	function measure() {
+		if (!row) return;
+		canBack = row.scrollLeft > 1;
+		canForward = row.scrollLeft + row.clientWidth < row.scrollWidth - 1;
+	}
+
 	// Restored once on mount: coming back from a profile remounts the row.
 	function restoreScroll(el: HTMLElement) {
 		const x = untrack(() => scrollX);
 		if (x > 0) el.scrollLeft = x;
+		row = el;
+		const resize = new ResizeObserver(measure);
+		resize.observe(el);
+		return () => resize.disconnect();
+	}
+
+	$effect(() => {
+		void profiles.length;
+		measure();
+	});
+
+	function page(direction: 1 | -1) {
+		row?.scrollBy({
+			left: direction * row.clientWidth * 0.8,
+			behavior: "smooth",
+		});
 	}
 
 	function hide() {
@@ -51,7 +79,10 @@
 	});
 </script>
 
-<section aria-labelledby="for-you-heading" class="pt-4 pb-4">
+<section
+	aria-labelledby="for-you-heading"
+	class="mx-auto w-full max-w-400 pt-4 pb-4"
+>
 	<div class="mx-4 mb-2.5 flex items-center justify-between gap-3">
 		<div class="flex min-w-0 items-baseline gap-2">
 			<h2
@@ -74,28 +105,54 @@
 			Hide
 		</button>
 	</div>
-	<div
-		class="flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]"
-		{@attach restoreScroll}
-		onscroll={(event) => onScrollX?.(event.currentTarget.scrollLeft)}
-	>
-		{#each profiles as item (item.id)}
-			<ProfileMiniCard
-				portrait
-				profileId={item.id}
-				class="w-2/5 max-w-48 shrink-0 rounded-pick"
-				mediaHash={item.profilePhotosHashes?.[0] ?? null}
-				displayName={item.displayName}
-				distance={item.distance}
-				onlineUntil={item.onlineUntil}
-				isFavorite={item.isFavorite}
-				rightNow={item.rightNow}
-				href="/profile/{item.id}"
-				onclick={() =>
-					armProfileDeck(item.id, {
-						ids: profiles.map((profile) => profile.id),
-					})}
-			/>
-		{/each}
+	<div class="group relative">
+		<div
+			class="flex gap-2 overflow-x-auto px-4 [scrollbar-width:none]"
+			{@attach restoreScroll}
+			onscroll={(event) => {
+				measure();
+				onScrollX?.(event.currentTarget.scrollLeft);
+			}}
+		>
+			{#each profiles as item (item.id)}
+				<ProfileMiniCard
+					portrait
+					profileId={item.id}
+					class="w-2/5 max-w-48 shrink-0 rounded-pick"
+					mediaHash={item.profilePhotosHashes?.[0] ?? null}
+					displayName={item.displayName}
+					distance={item.distance}
+					onlineUntil={item.onlineUntil}
+					isFavorite={item.isFavorite}
+					rightNow={item.rightNow}
+					href="/profile/{item.id}"
+					onclick={() =>
+						armProfileDeck(item.id, {
+							ids: profiles.map((profile) => profile.id),
+						})}
+				/>
+			{/each}
+		</div>
+		<!-- A mouse has no horizontal scroll, so pointer devices get arrows. -->
+		{#if canBack}
+			<button
+				type="button"
+				aria-label="Scroll back"
+				class="absolute top-1/2 left-2 z-1 hidden size-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white opacity-80 transition-opacity hover:opacity-100 pointer-fine:flex"
+				onclick={() => page(-1)}
+			>
+				<CaretLeftIcon class="size-4" weight="bold" />
+			</button>
+		{/if}
+		{#if canForward}
+			<button
+				type="button"
+				aria-label="Scroll forward"
+				class="absolute top-1/2 right-2 z-1 hidden size-9 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white opacity-80 transition-opacity hover:opacity-100 pointer-fine:flex"
+				onclick={() => page(1)}
+			>
+				<CaretRightIcon class="size-4" weight="bold" />
+			</button>
+		{/if}
 	</div>
 </section>

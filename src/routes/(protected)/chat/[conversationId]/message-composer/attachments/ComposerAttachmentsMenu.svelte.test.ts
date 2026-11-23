@@ -6,6 +6,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 // The real tabs fetch albums and media; these stand in for them, exposing the
 // same instance contract the sheet reads.
+vi.mock("#lib/platform/os.ts", async (importOriginal) => ({
+	...(await importOriginal<typeof import("#lib/platform/os.ts")>()),
+	hasSystemGlass: () => true,
+}));
 vi.mock("./ComposerMediaTab.svelte", async () => ({
 	default: (await import("./stubs/StubTab.svelte")).default,
 }));

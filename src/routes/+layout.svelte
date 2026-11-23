@@ -37,6 +37,7 @@
 	} from "#lib/platform/native-insets.ts";
 	import { isIosPlatform, isMobilePlatform } from "#lib/platform/os.ts";
 	import { installScrollGestureBridge } from "#lib/platform/scroll-gesture.ts";
+	import { installSidewaysWheel } from "#lib/platform/sideways-wheel.ts";
 	import { applySoftKeyboardLayout } from "#lib/platform/soft-keyboard.svelte.ts";
 	import {
 		applySwipeBackGesture,
@@ -87,6 +88,7 @@
 		const releaseTheme = initTheme();
 		const releaseNativeMenuBlock = blockNativeMenu();
 		const releaseHoverPointer = trackHoverPointer();
+		const releaseSidewaysWheel = installSidewaysWheel();
 		const releaseInAppLinks = keepLinksInApp();
 		const releaseAppLock = installAppLock();
 		const releaseTapRescue = isIosPlatform()
@@ -112,6 +114,7 @@
 			releaseTheme();
 			releaseNativeMenuBlock();
 			releaseHoverPointer();
+			releaseSidewaysWheel();
 			releaseInAppLinks();
 			releaseAppLock();
 			releaseTapRescue();

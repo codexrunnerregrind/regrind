@@ -81,3 +81,8 @@ export function isLinuxPlatform(): boolean {
 export function isMacosPlatform(): boolean {
 	return runningOnHost("macos");
 }
+
+// macOS draws the system glass material taller than the element it is on.
+export function hasSystemGlass(): boolean {
+	return currentPlatform() !== "macos";
+}

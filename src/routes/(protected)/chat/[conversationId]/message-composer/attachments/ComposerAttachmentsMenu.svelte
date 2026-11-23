@@ -14,6 +14,7 @@
 	import { Toggle } from "#lib/components/ui/toggle/index.ts";
 	import { t } from "#lib/i18n/index.ts";
 	import { dismissOnBackGesture } from "#lib/platform/back-gesture-event.svelte.ts";
+	import { hasSystemGlass } from "#lib/platform/os.ts";
 	import ComposerAlbumsTab from "./ComposerAlbumsTab.svelte";
 	import ComposerLocationTab from "./ComposerLocationTab.svelte";
 	import ComposerMediaSort from "./ComposerMediaSort.svelte";
@@ -366,7 +367,9 @@
 				     opaque plate and hairline come off so the material is the
 				     surface. -->
 				<Tabs.List
-					class="glass-capsule relative bg-transparent p-1.5 ring-0 glass-normal"
+					class="glass-capsule relative bg-transparent p-1.5 ring-0 {hasSystemGlass()
+						? 'glass-normal'
+						: ''}"
 				>
 					<!-- One pill, moved, rather than a fill per tab. Width is an
 					     exact third because every trigger below is the same
