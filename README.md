@@ -4,7 +4,7 @@ A fork of [Open Grind](https://git.opengrind.org/open-grind/open-grind), an unof
 
 This fork started because I wanted to try the app on my iPhone. The original builds for Android and desktop, so I got it running on iOS, then kept going and filled in the things I missed while using it every day.
 
-I build this for myself and sideload it onto my own phone. If you want to try it, see [Install on iOS](#install-on-ios) or [Install on Android](#install-on-android).
+I build this for myself and sideload it onto my own phone. If you want to try it, see [Install on iOS](#install-on-ios), [Install on Android](#install-on-android) or [Install on macOS](#install-on-macos).
 
 [Download the latest release](https://github.com/codexrunnerregrind/regrind/releases/latest)
 
@@ -33,6 +33,14 @@ Needs iOS 15 or later. Apps installed this way stop working after 7 days — tur
 - **Open it** on your phone and allow installing from your browser or file manager when Android asks.
 
 Needs Android 9 or later. The package is `org.regrind`, so it installs alongside the original Open Grind rather than over it. It is signed with this fork's own key. The app checks this fork's releases for updates and can download and install them itself — Settings → App turns the automatic check off.
+
+## Install on macOS
+
+- **Download the zip** from the [latest release](https://github.com/codexrunnerregrind/regrind/releases/latest) — `regrind-v<version>-macos.zip` — and unzip it.
+- **Move ReGrind.app** to your Applications folder.
+- **Allow it to open**, either:
+    - in Terminal, run `xattr -dr com.apple.quarantine /Applications/ReGrind.app`, or
+    - open ReGrind once, click **Done**, then go to System Settings → Privacy & Security and click **Open Anyway**.
 
 ## What's different
 
