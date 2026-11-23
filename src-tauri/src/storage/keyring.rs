@@ -4,6 +4,10 @@ use keyring_core::CredentialStore;
 
 use crate::error::AppError;
 
+// macOS shipped first as ReGrind; elsewhere the inherited name keeps saved logins.
+#[cfg(target_os = "macos")]
+pub(crate) const SERVICE: &str = "regrind";
+#[cfg(not(target_os = "macos"))]
 pub(crate) const SERVICE: &str = "open-grind";
 
 static KEYRING_LOCK: Mutex<()> = Mutex::new(());

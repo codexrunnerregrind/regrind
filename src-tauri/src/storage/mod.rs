@@ -214,7 +214,7 @@ mod tests {
 		["device-info", "device-signing-key", "session"];
 
 	fn entry(user: &str) -> keyring_core::Entry {
-		keyring_core::Entry::new("open-grind", user).unwrap()
+		keyring_core::Entry::new(keyring::SERVICE, user).unwrap()
 	}
 
 	fn credentials_for(
@@ -396,7 +396,9 @@ mod tests {
 
 			assert_ne!(backend, StorageBackend::Unavailable);
 			assert!(keyring_core::get_default_store().is_some());
-			assert!(keyring_core::Entry::new("open-grind", "session:1").is_ok());
+			assert!(
+				keyring_core::Entry::new(keyring::SERVICE, "session:1").is_ok()
+			);
 		});
 	}
 
