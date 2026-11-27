@@ -119,19 +119,11 @@ class KeyboardFollower {
 	#animation: Animation | undefined;
 	#lift = 0;
 	#caretTimeout: ReturnType<typeof setTimeout> | undefined;
-	#dragLift: number | undefined;
+	#dragOverlap = 0;
 	#dragFrame: number | undefined;
 
-	// Composited up front: a layer first made for a ride rebuilds WebKit's
-	// scroll views, which drops a drag and jumps the list.
 	constructor({ element }: { element: HTMLElement }) {
 		this.#element = element;
-		element.style.willChange = "transform";
-	}
-
-	release() {
-		this.rest();
-		this.#element.style.removeProperty("will-change");
 	}
 
 	rest() {
@@ -158,14 +150,15 @@ class KeyboardFollower {
 		this.#element.style.removeProperty("caret-color");
 	}
 
-	// A drag reports more often than frames are drawn; lay out once per frame.
-	// A transform would slide the whole chat and strand the native caret.
+	// A drag reports more often than frames are drawn: measure and lay out once
+	// per frame. A transform would slide the whole chat and strand the caret.
 	drag(overlap: number) {
 		this.#stopRide();
-		this.#dragLift = Math.max(overlap - restClearance(this.#element), 0);
+		this.#dragOverlap = overlap;
 		this.#dragFrame ??= requestAnimationFrame(() => {
 			this.#dragFrame = undefined;
-			if (this.#dragLift !== undefined) this.#settle(this.#dragLift);
+			const clearance = restClearance(this.#element);
+			this.#settle(Math.max(this.#dragOverlap - clearance, 0));
 		});
 	}
 
@@ -209,11 +202,9 @@ class KeyboardFollower {
 	}
 
 	#endDrag() {
-		if (this.#dragFrame !== undefined)
-			cancelAnimationFrame(this.#dragFrame);
+		if (this.#dragFrame === undefined) return;
+		cancelAnimationFrame(this.#dragFrame);
 		this.#dragFrame = undefined;
-		if (this.#dragLift !== undefined) this.#settle(this.#dragLift);
-		this.#dragLift = undefined;
 	}
 
 	#stopRide() {
@@ -310,7 +301,7 @@ function followIosKeyboard(element: HTMLElement): () => void {
 	if (following && travel) follower.ride(travel);
 	else if (followers.size === 1) letPageFollow(true);
 	return () => {
-		follower.release();
+		follower.rest();
 		followers.delete(element);
 		if (followers.size > 0) return;
 		delete window.__iosKeyboardMotion;

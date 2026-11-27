@@ -233,6 +233,12 @@ mod tests {
 	}
 
 	#[test]
+	fn the_drag_script_calls_the_page_drag_hook() {
+		assert_eq!(drag_script(228.0), "window.__iosKeyboardDrag?.(228)");
+		assert!(KEYBOARD_FOLLOW.contains("window.__iosKeyboardDrag = "));
+	}
+
+	#[test]
 	fn a_keyboard_below_the_view_covers_nothing() {
 		let hidden = Rect {
 			y: PORTRAIT.height,

@@ -61,6 +61,7 @@ struct Placement {
 	drag_target: Cell<Option<CGPoint>>,
 	drag_scroller: RefCell<Option<Weak<UIScrollView>>>,
 	dragging: Cell<bool>,
+	drag_rest: Cell<Option<CGRect>>,
 }
 
 struct KeyboardChange {
@@ -117,6 +118,7 @@ define_class!(
 			{
 				return;
 			}
+			self.ivars().drag_rest.set(None);
 			if self.keyboard_overlap() != self.ivars().travelled.get() {
 				self.ride(SNAP_BACK, 0.0);
 			}
@@ -140,6 +142,7 @@ impl KeyboardFrame {
 			drag_target: Cell::new(None),
 			drag_scroller: RefCell::new(None),
 			dragging: Cell::new(false),
+			drag_rest: Cell::new(None),
 		});
 		unsafe { msg_send![super(this), initWithFrame: frame] }
 	}
@@ -177,6 +180,10 @@ impl KeyboardFrame {
 	}
 
 	fn keyboard_overlap(&self) -> f64 {
+		self.overlap_of(self.ivars().keyboard.get())
+	}
+
+	fn overlap_of(&self, screen_rect: CGRect) -> f64 {
 		let Some(window) = self.window() else {
 			return 0.0;
 		};
@@ -184,13 +191,22 @@ impl KeyboardFrame {
 			return 0.0;
 		}
 		let keyboard = self.convertRect_fromCoordinateSpace(
-			self.ivars().keyboard.get(),
+			screen_rect,
 			&window.screen().coordinateSpace(),
 		);
 		geometry::keyboard_overlap(self.bounds().into(), keyboard.into())
 	}
 
-	fn keyboard_will_change(&self, change: KeyboardChange) {
+	// A keyboard springing back from a drag can announce an end frame shorter
+	// than the one it returns to (seen with SwiftKey), and the layout guide
+	// believes it too; it lands where the drag started.
+	fn keyboard_will_change(&self, mut change: KeyboardChange) {
+		if let Some(rest) = self.ivars().drag_rest.take() {
+			if self.overlap_of(change.end) > 0.0 && self.overlap_of(rest) > 0.0
+			{
+				change.end = rest;
+			}
+		}
 		self.ivars().keyboard.set(change.end);
 		if !self.ivars().page_follows.get() {
 			self.setNeedsLayout();
@@ -330,17 +346,17 @@ impl KeyboardFrame {
 		if resting <= 0.0 {
 			return;
 		}
-		let keyboard: CGRect = unsafe {
-			let guide: Retained<NSObject> =
-				msg_send![self, keyboardLayoutGuide];
-			msg_send![&guide, layoutFrame]
-		};
 		let overlap = geometry::dragged_overlap(
 			self.bounds().into(),
-			keyboard.into(),
+			self.keyboard_guide().into(),
 			resting,
 		);
 		self.ivars().dragging.set(true);
+		if self.ivars().drag_rest.get().is_none() {
+			self.ivars()
+				.drag_rest
+				.set(Some(self.ivars().keyboard.get()));
+		}
 		if self.ivars().opening.get().is_some()
 			|| self.ivars().travelled.replace(overlap) == overlap
 		{
@@ -362,6 +378,14 @@ impl KeyboardFrame {
 	fn resend_insets(&self) {
 		self.ivars().sent.set(None);
 		self.setNeedsLayout();
+	}
+
+	fn keyboard_guide(&self) -> CGRect {
+		unsafe {
+			let guide: Retained<NSObject> =
+				msg_send![self, keyboardLayoutGuide];
+			msg_send![&guide, layoutFrame]
+		}
 	}
 
 	fn after_this_turn(&self, selector: Sel) {
