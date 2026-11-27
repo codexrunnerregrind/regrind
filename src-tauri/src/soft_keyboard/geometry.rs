@@ -116,6 +116,15 @@ pub fn keyboard_overlap(bounds: Rect, keyboard: Rect) -> f64 {
 	(bounds.max_y() - keyboard.y).clamp(0.0, bounds.height)
 }
 
+/// A keyboard dragged down by a scroller slides below the view, so it is not
+/// docked; it covers whatever of the resting overlap it has not left yet.
+pub fn dragged_overlap(bounds: Rect, keyboard: Rect, resting: f64) -> f64 {
+	if keyboard.is_empty() {
+		return 0.0;
+	}
+	(bounds.max_y() - keyboard.y).clamp(0.0, resting)
+}
+
 pub fn insets_script(insets: &NativeInsets) -> String {
 	let insets =
 		serde_json::to_string(insets).expect("plain numbers always serialize");
@@ -138,6 +147,10 @@ pub fn motion_script(motion: &KeyboardMotion) -> String {
 	let motion =
 		serde_json::to_string(motion).expect("plain numbers always serialize");
 	format!("window.__iosKeyboardMotion?.({motion})")
+}
+
+pub fn drag_script(overlap: f64) -> String {
+	format!("window.__iosKeyboardDrag?.({overlap})")
 }
 
 #[cfg(test)]
@@ -202,6 +215,21 @@ mod tests {
 	#[test]
 	fn a_keyboard_rect_from_the_other_orientation_covers_nothing() {
 		assert_eq!(keyboard_overlap(LANDSCAPE, PORTRAIT_KEYBOARD), 0.0);
+	}
+
+	#[test]
+	fn a_dragged_keyboard_covers_what_is_left_of_its_rest() {
+		let dragged = Rect {
+			y: PORTRAIT_KEYBOARD.y + 100.0,
+			..PORTRAIT_KEYBOARD
+		};
+		assert_eq!(dragged_overlap(PORTRAIT, dragged, 328.0), 228.0);
+		let below = Rect {
+			y: PORTRAIT.height + 10.0,
+			..PORTRAIT_KEYBOARD
+		};
+		assert_eq!(dragged_overlap(PORTRAIT, below, 328.0), 0.0);
+		assert_eq!(dragged_overlap(PORTRAIT, PORTRAIT_KEYBOARD, 300.0), 300.0);
 	}
 
 	#[test]

@@ -205,6 +205,29 @@ describe("on ios", () => {
 		expect(lifted(element)).toBe("");
 	});
 
+	it("lowers the follower with a dragged keyboard once per frame and hands off to the ride", async () => {
+		const frames: FrameRequestCallback[] = [];
+		vi.stubGlobal(
+			"requestAnimationFrame",
+			(callback: FrameRequestCallback) => frames.push(callback),
+		);
+		const element = follower();
+		await follow(element);
+		move(showing({ duration: 0 }));
+
+		window.__iosKeyboardDrag?.(KEYBOARD - 50);
+		window.__iosKeyboardDrag?.(KEYBOARD - 100);
+
+		expect(lifted(element)).toBe(`${LIFT}px`);
+		expect(frames).toHaveLength(1);
+		frames[0]?.(0);
+		expect(lifted(element)).toBe(`${LIFT - 100}px`);
+
+		move(hiding({ from: KEYBOARD - 100 }));
+
+		expect(last().offsets[0]).toBeCloseTo(-(LIFT - 100));
+	});
+
 	it("follows the keyboard's own timing curve", async () => {
 		await follow(follower());
 

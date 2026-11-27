@@ -26,6 +26,7 @@ declare global {
 		};
 		__iosInsets?: NativeInsets;
 		__iosKeyboardMotion?: (motion: KeyboardMotion) => void;
+		__iosKeyboardDrag?: (overlap: number) => void;
 		__AndroidOnBackGesture?: () => boolean;
 		__AndroidBack?: { moveTaskToBack(): void; gestureProgress(): number };
 		__RegrindPush?: {

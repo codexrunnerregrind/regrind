@@ -14,6 +14,7 @@ use objc2_foundation::{
 };
 use objc2_ui_kit::{
 	NSValueUIGeometryExtensions, UICoordinateSpace, UIEdgeInsets,
+	UIGestureRecognizer, UIGestureRecognizerState,
 	UIKeyboardAnimationCurveUserInfoKey,
 	UIKeyboardAnimationDurationUserInfoKey,
 	UIKeyboardDidChangeFrameNotification, UIKeyboardDidShowNotification,
@@ -36,6 +37,10 @@ use crate::uikit::{self, evaluate, on_main_thread, with_webview, Observer};
 const OPEN_LEAD_MS: f64 = 20.0;
 const CLOSE_LEAD_MS: f64 = 3.0;
 const SHORTEST_CLOSE_SECONDS: f64 = 0.35;
+const SNAP_BACK: Timing = Timing {
+	seconds: 0.25,
+	curve: 7,
+};
 
 thread_local! {
 	static DRIVER: RefCell<Option<Driver>> = const { RefCell::new(None) };
@@ -55,6 +60,7 @@ struct Placement {
 	sent: Cell<Option<NativeInsets>>,
 	drag_target: Cell<Option<CGPoint>>,
 	drag_scroller: RefCell<Option<Weak<UIScrollView>>>,
+	dragging: Cell<bool>,
 }
 
 struct KeyboardChange {
@@ -89,6 +95,32 @@ define_class!(
 				self.ride(timing, OPEN_LEAD_MS);
 			}
 		}
+
+		#[unsafe(method(keyboardDragged:))]
+		fn keyboard_dragged(&self, pan: &UIGestureRecognizer) {
+			match pan.state() {
+				UIGestureRecognizerState::Began
+				| UIGestureRecognizerState::Changed => self.track_drag(),
+				_ => {
+					if self.ivars().dragging.replace(false) {
+						self.after_this_turn(sel!(keyboardDragSettled));
+					}
+				}
+			}
+		}
+
+		#[unsafe(method(keyboardDragSettled))]
+		fn keyboard_drag_settled(&self) {
+			if self.ivars().dragging.get()
+				|| !self.ivars().page_follows.get()
+				|| self.ivars().opening.get().is_some()
+			{
+				return;
+			}
+			if self.keyboard_overlap() != self.ivars().travelled.get() {
+				self.ride(SNAP_BACK, 0.0);
+			}
+		}
 	}
 );
 
@@ -107,6 +139,7 @@ impl KeyboardFrame {
 			sent: Cell::new(None),
 			drag_target: Cell::new(None),
 			drag_scroller: RefCell::new(None),
+			dragging: Cell::new(false),
 		});
 		unsafe { msg_send![super(this), initWithFrame: frame] }
 	}
@@ -196,7 +229,8 @@ impl KeyboardFrame {
 	}
 
 	fn catch_up(&self, overlap: f64) {
-		if self.ivars().opening.get().is_none()
+		if !self.ivars().dragging.get()
+			&& self.ivars().opening.get().is_none()
 			&& overlap != self.ivars().travelled.get()
 		{
 			self.jump(overlap);
@@ -262,16 +296,58 @@ impl KeyboardFrame {
 			let kept = scroller
 				.as_deref()
 				.is_some_and(|scroller| std::ptr::eq(scroller, &*previous));
-			if !kept {
-				previous.setKeyboardDismissMode(
-					UIScrollViewKeyboardDismissMode::None,
-				);
+			if kept {
+				return;
 			}
+			previous
+				.setKeyboardDismissMode(UIScrollViewKeyboardDismissMode::None);
+			unsafe {
+				previous.panGestureRecognizer().removeTarget_action(
+					Some(self),
+					Some(sel!(keyboardDragged:)),
+				)
+			};
 		}
 		if let Some(scroller) = scroller {
 			scroller.setKeyboardDismissMode(
 				UIScrollViewKeyboardDismissMode::Interactive,
 			);
+			unsafe {
+				scroller
+					.panGestureRecognizer()
+					.addTarget_action(self, sel!(keyboardDragged:))
+			};
+		}
+	}
+
+	// UIKit posts nothing while a scroller drags the keyboard down, but its
+	// layout guide follows the keys, so read it on every pan step.
+	fn track_drag(&self) {
+		if !self.ivars().page_follows.get() {
+			return;
+		}
+		let resting = self.keyboard_overlap();
+		if resting <= 0.0 {
+			return;
+		}
+		let keyboard: CGRect = unsafe {
+			let guide: Retained<NSObject> =
+				msg_send![self, keyboardLayoutGuide];
+			msg_send![&guide, layoutFrame]
+		};
+		let overlap = geometry::dragged_overlap(
+			self.bounds().into(),
+			keyboard.into(),
+			resting,
+		);
+		self.ivars().dragging.set(true);
+		if self.ivars().opening.get().is_some()
+			|| self.ivars().travelled.replace(overlap) == overlap
+		{
+			return;
+		}
+		if let Some(webview) = self.ivars().webview.load() {
+			evaluate(&webview, &geometry::drag_script(overlap));
 		}
 	}
 

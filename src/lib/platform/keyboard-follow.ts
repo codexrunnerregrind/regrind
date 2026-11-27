@@ -119,13 +119,24 @@ class KeyboardFollower {
 	#animation: Animation | undefined;
 	#lift = 0;
 	#caretTimeout: ReturnType<typeof setTimeout> | undefined;
+	#dragLift: number | undefined;
+	#dragFrame: number | undefined;
 
+	// Composited up front: a layer first made for a ride rebuilds WebKit's
+	// scroll views, which drops a drag and jumps the list.
 	constructor({ element }: { element: HTMLElement }) {
 		this.#element = element;
+		element.style.willChange = "transform";
+	}
+
+	release() {
+		this.rest();
+		this.#element.style.removeProperty("will-change");
 	}
 
 	rest() {
 		this.#stopRide();
+		this.#endDrag();
 		this.#settle(0);
 		this.showCaret();
 	}
@@ -147,8 +158,20 @@ class KeyboardFollower {
 		this.#element.style.removeProperty("caret-color");
 	}
 
+	// A drag reports more often than frames are drawn; lay out once per frame.
+	// A transform would slide the whole chat and strand the native caret.
+	drag(overlap: number) {
+		this.#stopRide();
+		this.#dragLift = Math.max(overlap - restClearance(this.#element), 0);
+		this.#dragFrame ??= requestAnimationFrame(() => {
+			this.#dragFrame = undefined;
+			if (this.#dragLift !== undefined) this.#settle(this.#dragLift);
+		});
+	}
+
 	ride(journey: Travel) {
 		this.#stopRide();
+		this.#endDrag();
 		const clearance = restClearance(this.#element);
 		const liftAbove = (overlap: number) => Math.max(overlap - clearance, 0);
 		const target = liftAbove(journey.to);
@@ -185,6 +208,14 @@ class KeyboardFollower {
 		else this.#element.style.removeProperty("margin-bottom");
 	}
 
+	#endDrag() {
+		if (this.#dragFrame !== undefined)
+			cancelAnimationFrame(this.#dragFrame);
+		this.#dragFrame = undefined;
+		if (this.#dragLift !== undefined) this.#settle(this.#dragLift);
+		this.#dragLift = undefined;
+	}
+
 	#stopRide() {
 		this.#animation?.cancel();
 		this.#animation = undefined;
@@ -212,6 +243,11 @@ function followMotion(motion: KeyboardMotion) {
 	travel = journey;
 	if (journey.to <= 0) for (const wait of closeWaits) armCloseWait(wait);
 	for (const follower of followers.values()) follower.ride(journey);
+}
+
+function followDrag(overlap: number) {
+	if (!following) return;
+	for (const follower of followers.values()) follower.drag(overlap);
 }
 
 function letPageFollow(follow: boolean) {
@@ -267,16 +303,18 @@ function followIosKeyboard(element: HTMLElement): () => void {
 	followers.set(element, follower);
 	if (followers.size === 1) {
 		window.__iosKeyboardMotion = followMotion;
+		window.__iosKeyboardDrag = followDrag;
 		document.addEventListener("focusin", followFocus);
 		document.addEventListener("focusout", followBlur);
 	}
 	if (following && travel) follower.ride(travel);
 	else if (followers.size === 1) letPageFollow(true);
 	return () => {
-		follower.rest();
+		follower.release();
 		followers.delete(element);
 		if (followers.size > 0) return;
 		delete window.__iosKeyboardMotion;
+		delete window.__iosKeyboardDrag;
 		document.removeEventListener("focusin", followFocus);
 		document.removeEventListener("focusout", followBlur);
 		queueMicrotask(stopFollowingWithoutFollowers);
