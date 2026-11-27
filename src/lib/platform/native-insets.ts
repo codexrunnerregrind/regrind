@@ -3,7 +3,10 @@ import {
 	noteKeyboardOpenForReveal,
 } from "#lib/platform/focused-field-reveal.ts";
 import { currentPlatform } from "#lib/platform/os.ts";
-import { noteSoftKeyboardOpen } from "#lib/platform/soft-keyboard.svelte.ts";
+import {
+	noteSoftKeyboardOpen,
+	pageFollowsSoftKeyboard,
+} from "#lib/platform/soft-keyboard.svelte.ts";
 import {
 	announceSafeAreaChange,
 	SAFE_AREA_SIDES,
@@ -112,7 +115,9 @@ export function installNativeInsets({
 		}
 		const imeFlipped =
 			appliedImeVisible !== undefined && insets.ime !== appliedImeVisible;
-		if (imeFlipped) {
+		// A page that follows the keyboard is never resized, so waiting for one
+		// only lands the flip mid-ride.
+		if (imeFlipped && !pageFollowsSoftKeyboard()) {
 			if (insets.ime && shrinksPageBeforeResize())
 				noteSoftKeyboardOpen(true);
 			deferInsetsUntilResize(insets);

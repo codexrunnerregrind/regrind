@@ -19,14 +19,36 @@ interface FakeConversationState {
 
 // The list keeps the newest message resting on the floor by watching its own
 // box, which jsdom does not implement.
+const resized = vi.hoisted(() => ({ callbacks: new Set<() => void>() }));
+
 vi.stubGlobal(
 	"ResizeObserver",
 	class {
-		observe() {}
+		readonly #callback: () => void;
+		constructor(callback: () => void) {
+			this.#callback = callback;
+		}
+		observe() {
+			resized.callbacks.add(this.#callback);
+		}
 		unobserve() {}
-		disconnect() {}
+		disconnect() {
+			resized.callbacks.delete(this.#callback);
+		}
 	},
 );
+
+function setClientHeight(scroller: HTMLElement, clientHeight: number) {
+	Object.defineProperty(scroller, "clientHeight", {
+		value: clientHeight,
+		configurable: true,
+	});
+}
+
+function resizeScroller(scroller: HTMLElement, clientHeight: number) {
+	setClientHeight(scroller, clientHeight);
+	for (const callback of resized.callbacks) callback();
+}
 
 const box = vi.hoisted<{ current: unknown }>(() => ({ current: null }));
 
@@ -262,6 +284,40 @@ describe("resting on the floor", () => {
 		await tick();
 
 		expect(conversation.scrollDownButton()).toBeNull();
+	});
+
+	it("keeps the bottom of the view still when the keyboard takes or gives back room", async () => {
+		const conversation = await mountConversation({
+			messages: [message({ timestamp: 1000 })],
+		});
+		await conversation.scrollAwayFromFloor();
+		const { scroller } = conversation;
+		resizeScroller(scroller, 400);
+
+		resizeScroller(scroller, 80);
+		expect(scroller.scrollTop).toBe(420);
+
+		resizeScroller(scroller, 400);
+		expect(scroller.scrollTop).toBe(100);
+	});
+
+	it("ignores the scroll a growing box clamps near the floor", async () => {
+		const conversation = await mountConversation({
+			messages: [message({ timestamp: 1000 })],
+		});
+		await conversation.scrollAwayFromFloor();
+		const { scroller } = conversation;
+		resizeScroller(scroller, 400);
+		resizeScroller(scroller, 80);
+		scroller.scrollTop = 820;
+		scroller.dispatchEvent(new Event("scroll"));
+
+		setClientHeight(scroller, 400);
+		scroller.scrollTop = 600;
+		scroller.dispatchEvent(new Event("scroll"));
+		resizeScroller(scroller, 400);
+
+		expect(scroller.scrollTop).toBe(500);
 	});
 
 	it("unpins once the reader scrolls up", async () => {

@@ -1,4 +1,5 @@
 import { currentPlatform } from "#lib/platform/os.ts";
+import { pageFollowsSoftKeyboard } from "#lib/platform/soft-keyboard.svelte.ts";
 import { topChromeClearance } from "#lib/util/screen-chrome.svelte.ts";
 import { nearestScrollableAncestor } from "#lib/util/scroll.ts";
 import { typesText } from "#lib/util/text-entry.ts";
@@ -85,8 +86,10 @@ function revealFocusedField() {
 	if (shift > 0) container.scrollBy({ top: shift });
 }
 
+// A page that follows the keyboard already lifts its field above the keys.
 function revealFocusedFieldUnderKeyboard() {
-	if (!keyboardOpen || !keyboardCoversFocusedField()) return;
+	if (!keyboardOpen || pageFollowsSoftKeyboard()) return;
+	if (!keyboardCoversFocusedField()) return;
 	if (focusedFieldRevealFrame !== undefined) return;
 	focusedFieldRevealFrame = requestAnimationFrame(revealFocusedField);
 }

@@ -14,6 +14,10 @@ export function notePageFollowsSoftKeyboard(follows: boolean): void {
 	pageFollowsKeyboard = follows;
 }
 
+export function pageFollowsSoftKeyboard(): boolean {
+	return pageFollowsKeyboard;
+}
+
 export function softKeyboardShrinksPage(): boolean {
 	switch (currentPlatform()) {
 		case "android":

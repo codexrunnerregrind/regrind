@@ -184,6 +184,20 @@ describe("installNativeInsets on Android", () => {
 		expect(safeArea("bottom")).toBe("24px");
 	});
 
+	it("applies a flip at once while the page follows the keyboard", async () => {
+		runningOn("ios");
+		window.__iosInsets = IOS_INSETS;
+		const { installNativeInsets } = await loadNativeInsets();
+		const { notePageFollowsSoftKeyboard } =
+			await import("./soft-keyboard.svelte");
+		installNativeInsets();
+		notePageFollowsSoftKeyboard(true);
+
+		window.__reapplyInsets({ ...IOS_INSETS, ime: true, bottom: 0 });
+
+		expect(safeArea("bottom")).toBe("0px");
+	});
+
 	it("applies only the newest of several held dispatches", async () => {
 		const { installNativeInsets } = await loadNativeInsets();
 		window.__AndroidInsets = androidBridge(KEYBOARD_HIDDEN);

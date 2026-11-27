@@ -148,6 +148,18 @@ describe("revealing the focused field under the keyboard", () => {
 			});
 		});
 
+		it("leaves a field the page lifts with the keyboard where it is", async () => {
+			const { notePageFollowsSoftKeyboard } =
+				await import("./soft-keyboard.svelte");
+			notePageFollowsSoftKeyboard(true);
+			focusField(field, { bottom: 700 });
+
+			openKeyboard();
+			vi.advanceTimersToNextFrame();
+
+			expect(scrollIntoView).not.toHaveBeenCalled();
+		});
+
 		it("reveals the field when the keyboard flip lands without a resize", () => {
 			focusField(field, { bottom: 700 });
 			vi.stubGlobal("innerHeight", SCREEN_HEIGHT - KEYBOARD_HEIGHT);

@@ -118,7 +118,19 @@
 			scrollToTop: () => scrollToOldestLoaded(scroller),
 		});
 
+	// A box resize can clamp the scroll before the observer runs; that scroll
+	// belongs to the resize, not the reader.
+	let observedHeight: number | undefined;
+
+	function resizePending(): boolean {
+		return (
+			observedHeight !== undefined &&
+			container?.clientHeight !== observedHeight
+		);
+	}
+
 	function onContainerScroll() {
+		if (resizePending()) return;
 		if (container) nearTop = scrolledNearTop(container);
 		if (scrollingToRest) {
 			lastScrollTop = container?.scrollTop ?? 0;
@@ -129,6 +141,7 @@
 	}
 
 	function onContainerScrollEnd() {
+		if (resizePending()) return;
 		endScrollingToRest();
 		updateAtFloor();
 	}
@@ -213,21 +226,32 @@
 	function keepRestingOnResizeEffect() {
 		const el = container;
 		if (!el) return;
+		observedHeight = undefined;
 		let anchor = readingAnchor(el);
+		let gap = 0;
 		const remember = () => {
+			if (resizePending()) return;
 			anchor = readingAnchor(el);
+			gap = floorDistance();
 		};
 		el.addEventListener("scroll", remember, { passive: true });
 		const observer = new ResizeObserver(() => {
 			untrack(() => {
+				const resized = resizePending();
+				observedHeight = el.clientHeight;
 				if (atFloor) {
 					el.scrollTop = el.scrollHeight;
-					lastScrollTop = el.scrollTop;
+				} else if (resized) {
+					// The keyboard or composer moved the bottom edge, where the
+					// reader's eyes are.
+					el.scrollTop = el.scrollHeight - el.clientHeight - gap;
 				} else {
 					// Media bubbles take their real size only once decoded.
 					holdReadingAnchor(el, anchor);
 				}
+				lastScrollTop = el.scrollTop;
 				anchor = readingAnchor(el);
+				gap = floorDistance();
 			});
 		});
 		observer.observe(el);
