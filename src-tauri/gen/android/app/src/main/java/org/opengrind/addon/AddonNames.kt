@@ -19,10 +19,6 @@ object AddonNames {
 			install = R.string.addon_install_transfer_title_google_oauth,
 			update = R.string.addon_update_transfer_title_google_oauth,
 		)
-		"org.opengrind.recaptcha" -> AddonTitles(
-			install = R.string.addon_install_transfer_title_recaptcha,
-			update = R.string.addon_update_transfer_title_recaptcha,
-		)
 		"org.opengrind.fcm" -> AddonTitles(
 			install = R.string.addon_install_transfer_title_fcm,
 			update = R.string.addon_update_transfer_title_fcm,

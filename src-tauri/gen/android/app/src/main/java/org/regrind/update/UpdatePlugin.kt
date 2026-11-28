@@ -51,7 +51,6 @@ class UpdatePlugin(private val activity: Activity) : Plugin(activity) {
 	private fun isInstallableTarget(packageName: String): Boolean =
 		packageName == activity.packageName ||
 			packageName == GOOGLE_OAUTH ||
-			packageName == RECAPTCHA ||
 			packageName == FCM
 
 	@Command
@@ -231,7 +230,6 @@ class UpdatePlugin(private val activity: Activity) : Plugin(activity) {
 
 	private companion object {
 		const val GOOGLE_OAUTH = "org.opengrind.google_oauth"
-		const val RECAPTCHA = "org.opengrind.recaptcha"
 		const val FCM = "org.opengrind.fcm"
 	}
 }

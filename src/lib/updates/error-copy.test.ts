@@ -8,7 +8,6 @@ import {
 	APP_COMPONENT,
 	FCM_COMPONENT,
 	GOOGLE_OAUTH_COMPONENT,
-	RECAPTCHA_COMPONENT,
 } from "./components";
 import {
 	downloadFailedKey,
@@ -72,10 +71,6 @@ describe("copy for an Open Grind build signed by someone else", () => {
 		[
 			GOOGLE_OAUTH_COMPONENT,
 			"This build isn’t signed by Open Grind, so it can’t install the Open Grind Google OAuth app",
-		],
-		[
-			RECAPTCHA_COMPONENT,
-			"This build isn’t signed by Open Grind, so it can’t install the Open Grind reCAPTCHA helper",
 		],
 		[
 			FCM_COMPONENT,
@@ -252,10 +247,6 @@ describe("copy for a download that fails for no known reason", () => {
 			GOOGLE_OAUTH_COMPONENT,
 			"Couldn’t download the Open Grind Google OAuth app",
 		],
-		[
-			RECAPTCHA_COMPONENT,
-			"Couldn’t download the Open Grind reCAPTCHA helper",
-		],
 		[FCM_COMPONENT, "Couldn’t download the Open Grind FCM service"],
 	] as const)("names what the %s flow was downloading", (component, text) => {
 		expect(
@@ -394,17 +385,6 @@ describe("the subject line under a problem", () => {
 				),
 		],
 		[
-			"the reCAPTCHA helper's running download",
-			() =>
-				updateErrorText(
-					{
-						kind: "busy",
-						detail: { component: RECAPTCHA_COMPONENT },
-					},
-					{ fallback, component },
-				),
-		],
-		[
 			"a release replaced twice",
 			() =>
 				updateErrorText(
@@ -469,65 +449,6 @@ describe("the subject line in another language", () => {
 		expect(body).toBe(t(ADDON_NAME[component]));
 	});
 });
-
-describe("copy for the reCAPTCHA helper", () => {
-	const component = RECAPTCHA_COMPONENT;
-
-	it("names the helper wherever an add-on is named", () => {
-		expect(
-			unsupportedText({ reason: "foreignTarget" }, { component }),
-		).toBe(
-			"The installed Open Grind reCAPTCHA helper isn’t signed by Open Grind. Uninstall it to install the official one.",
-		);
-		expect(
-			updateErrorText({ kind: "signature" }, { fallback, component }),
-		).toBe("Couldn’t verify the Open Grind reCAPTCHA helper");
-		expect(
-			updateErrorText(
-				{ kind: "install" },
-				{ fallback, component, kind: "update" },
-			),
-		).toBe("Couldn’t update the Open Grind reCAPTCHA helper");
-		expect(noReleaseText({ component })).toBe(
-			"No Open Grind reCAPTCHA helper release is published yet",
-		);
-		expect(installFailedText({ code: -4, component, kind: "update" })).toBe(
-			"Not enough storage to update the Open Grind reCAPTCHA helper",
-		);
-	});
-
-	it("never mentions the Google OAuth app", () => {
-		const texts = [
-			...(
-				[
-					"externallyManaged",
-					"foreignSigner",
-					"foreignTarget",
-					"noReleaseArtifacts",
-					"undetermined",
-				] as const
-			).map((reason) => unsupportedText({ reason }, { component })),
-			...(["unsigned", "signature", "storage", "install"] as const).map(
-				(kind) => updateErrorText({ kind }, { fallback, component }),
-			),
-			installFailedText({ code: -4, component, kind: "install" }),
-		];
-		for (const text of texts) expect(text).not.toMatch(/Google/);
-	});
-
-	it("puts the helper's name under a problem title that lacks it", () => {
-		const titleFor = (kind: "network" | "signature") =>
-			updateErrorText({ kind }, { fallback, component });
-
-		expect(problemBody({ component, title: titleFor("network") })).toBe(
-			addonNames[component],
-		);
-		expect(
-			problemBody({ component, title: titleFor("signature") }),
-		).toBeUndefined();
-	});
-});
-
 describe("copy for the FCM service", () => {
 	const component = FCM_COMPONENT;
 

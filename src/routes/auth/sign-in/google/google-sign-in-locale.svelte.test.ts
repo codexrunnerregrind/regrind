@@ -14,7 +14,6 @@ import { PSEUDO_MESSAGE } from "#lib/i18n/fixtures/pseudo-message.ts";
 import { SOURCE_LOCALE } from "#lib/i18n/index.ts";
 import { resetPlatform, runningOn } from "#lib/test/platform.ts";
 import {
-	installedBy,
 	offer,
 	settled,
 	toastsFake,
@@ -142,105 +141,5 @@ describe("GoogleSignInForm in the active locale", () => {
 		expect(textOf(steps[2])).toContain(`“${textOf(signIn)}”`);
 		expect(token.getAttribute("placeholder")).toMatch(PSEUDO_MESSAGE);
 		expect(textOf(link)).not.toMatch(ASCII_LETTER);
-	});
-
-	it("translates the install offer and its F-Droid notice", async () => {
-		getUpdateCapability.mockResolvedValue(installedBy("org.fdroid.fdroid"));
-		const { container, screen } = await opened();
-		const install = screen.getByRole("button", { name: "Install" });
-		const toPaste = screen.getByRole("button", {
-			name: "paste the OAuth token manually",
-		});
-		const link = companionLink();
-
-		await switchLocale("en-XA");
-
-		const description = slot(container, "card-description");
-		const notice = description?.querySelector("span");
-		const offerText = [...(description?.childNodes ?? [])]
-			.filter((node) => node !== notice)
-			.map((node) => node.textContent)
-			.join("");
-		expect(offerText.trim()).toMatch(PSEUDO_MESSAGE);
-		expectPseudo([
-			slot(container, "card-title"),
-			notice,
-			install,
-			toPaste.closest("p"),
-		]);
-		expect(textOf(toPaste)).not.toMatch(ASCII_LETTER);
-		expect(textOf(link)).not.toMatch(ASCII_LETTER);
-	});
-
-	it("translates the install offer of a Play build", async () => {
-		store.isPlayBuild.mockReturnValue(true);
-		const { container } = await opened();
-		const link = companionLink();
-
-		await switchLocale("en-XA");
-
-		expectPseudo([slot(container, "card-description")]);
-		expect(textOf(link)).not.toMatch(ASCII_LETTER);
-	});
-
-	it("translates the offer to continue in the Google OAuth app", async () => {
-		api.getInstalledVersion.mockResolvedValue("1.1.0");
-		const { container, screen } = await opened();
-		const continueButton = screen.getByRole("button", { name: "Continue" });
-		const link = companionLink();
-
-		await switchLocale("en-XA");
-
-		expectPseudo([slot(container, "card-description"), continueButton]);
-		expect(textOf(link)).not.toMatch(ASCII_LETTER);
-	});
-
-	it("translates the way back to the Google OAuth app", async () => {
-		pageMock.url.search = "?paste";
-		const { screen } = await opened();
-		const toCompanion = screen.getByRole("button", {
-			name: "use the Open Grind Google OAuth app",
-		});
-
-		await switchLocale("en-XA");
-
-		expectPseudo([toCompanion.closest("p")]);
-		expect(textOf(toCompanion)).not.toMatch(ASCII_LETTER);
-	});
-
-	it("translates the signing-in card", async () => {
-		const { googleHandoffState } =
-			await import("#lib/api/google-handoff-state.svelte.ts");
-		googleHandoffState.phase = "signingIn";
-		try {
-			const { container } = await opened();
-
-			await switchLocale("en-XA");
-
-			expectPseudo([
-				slot(container, "card-title"),
-				slot(container, "card-description"),
-			]);
-		} finally {
-			googleHandoffState.phase = "idle";
-		}
-	});
-
-	it("explains a missing Google OAuth app in the active locale", async () => {
-		api.getInstalledVersion.mockResolvedValue("1.1.0");
-		callMethodMock.mockRejectedValue({
-			kind: "Auth",
-			message: "companion-unavailable",
-		});
-		const { screen } = await opened();
-		const continueButton = screen.getByRole("button", { name: "Continue" });
-		await switchLocale("en-XA");
-
-		await testing.fireEvent.click(continueButton);
-		await settled();
-
-		expect(toastMock.error).toHaveBeenCalledExactlyOnceWith(
-			expect.stringMatching(PSEUDO_MESSAGE),
-		);
 	});
 });

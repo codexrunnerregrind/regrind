@@ -13,7 +13,7 @@ pub fn plugin() -> TauriPlugin<Wry> {
 	Builder::new("recaptcha")
 		.setup(|app, api| {
 			let handle = api.register_android_plugin(
-				"org.opengrind.recaptcha",
+				"org.regrind.recaptcha",
 				"RecaptchaPlugin",
 			)?;
 			app.manage(AndroidRecaptcha { handle });

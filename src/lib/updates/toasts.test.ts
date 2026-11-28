@@ -47,14 +47,14 @@ describe("the add-on installed toast", () => {
 
 	it("says updated when an installed add-on updates", () => {
 		showAddonInstalled({
-			component: "recaptcha",
+			component: "google-oauth",
 			tag: TAG,
 			kind: "update",
 		});
 
 		expect(shownCard()).toStrictEqual({
 			icon: CheckCircleIcon,
-			title: "Open Grind reCAPTCHA helper updated: v1.2.0",
+			title: "Open Grind Google OAuth app updated: v1.2.0",
 			body: "Tap to see changelog",
 			onActivate: expect.any(Function),
 		});

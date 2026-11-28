@@ -24,7 +24,6 @@ const PUBLISHED_TAG = "v1.2.0";
 
 export const addonNames = {
 	"google-oauth": "Open Grind Google OAuth app",
-	recaptcha: "Open Grind reCAPTCHA helper",
 	fcm: "Open Grind FCM service",
 } satisfies Record<AddonKey, string>;
 

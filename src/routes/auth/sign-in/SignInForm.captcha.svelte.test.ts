@@ -1,22 +1,13 @@
 // @vitest-environment jsdom
 
-import {
-	cleanup,
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-	within,
-} from "@testing-library/svelte";
+import { cleanup, render, waitFor } from "@testing-library/svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
-	addonMock,
 	callMethodMock,
 	expectReady,
 	gotoMock,
 	invalidCredentials,
-	openExternalLinkMock,
 	resetSignInMocks,
 	submitSignIn,
 	toastMock,
@@ -37,22 +28,6 @@ vi.mock("#lib/api/accounts.svelte.ts", async (importOriginal) => ({
 vi.mock("svelte-sonner", async () => ({
 	toast: (await import("./sign-in-form-test-helpers")).toastMock,
 }));
-vi.mock("#lib/platform/link-opener.ts", async () => ({
-	openExternalLink: (await import("./sign-in-form-test-helpers"))
-		.openExternalLinkMock,
-}));
-vi.mock("#lib/updates/addon.svelte.ts", async (importOriginal) => {
-	const { addonMock } = await import("./sign-in-form-test-helpers");
-	return {
-		...(await importOriginal<
-			typeof import("#lib/updates/addon.svelte.ts")
-		>()),
-		addonInstallerAvailable: addonMock.addonInstallerAvailable,
-		addonPublishedHere: addonMock.addonPublishedHere,
-		recaptchaUpdates: { installNow: addonMock.installNow },
-	};
-});
-
 async function rejectMint(reason: string) {
 	callMethodMock
 		.mockRejectedValueOnce(invalidCredentials)
@@ -70,25 +45,6 @@ async function retryWithCaptcha(failure: unknown) {
 		.mockRejectedValueOnce(failure);
 	render(SignInForm);
 	await submitSignIn();
-}
-
-function helperDialog() {
-	return screen.findByRole("alertdialog", {
-		name: "Install reCAPTCHA helper",
-	});
-}
-
-function expectGuideToast(message: string) {
-	expect(toastMock.error).toHaveBeenCalledExactlyOnceWith(message, {
-		action: { label: "Learn more", onClick: expect.any(Function) },
-	});
-	const [[, options]] = toastMock.error.mock.calls as [
-		[string, { action: { onClick: () => void } }],
-	];
-	options.action.onClick();
-	expect(openExternalLinkMock).toHaveBeenCalledExactlyOnceWith(
-		"https://opengrind.org/guides/recaptcha-helper",
-	);
 }
 
 describe("SignInForm CAPTCHA retry", () => {
@@ -152,154 +108,47 @@ describe("SignInForm CAPTCHA retry", () => {
 	});
 
 	it.each([
+		["mintFailed", "Couldn’t complete the captcha check. Try again."],
+		["failed", "Couldn’t complete the captcha check. Try again."],
 		[
-			"addonDisabled",
-			"The Open Grind reCAPTCHA helper is turned off. Turn it on in Android settings, then try again.",
+			"grindrMissing",
+			"Grindr’s captcha check needs the official Grindr app installed.",
 		],
 		[
-			"addonUntrusted",
-			"The installed Open Grind reCAPTCHA helper isn’t an official build.",
+			"unsupportedPlatform",
+			"Wrong email or password, or Grindr wants a captcha check, which only works on Android.",
 		],
-		["failed", "Couldn’t complete reCAPTCHA verification. Try again."],
-		["cancelled", null],
 	])(
-		"handles the CAPTCHA helper's %s result without retrying",
+		"reports a %s captcha without retrying or prompting",
 		async (reason, message) => {
-			callMethodMock
-				.mockRejectedValueOnce(invalidCredentials)
-				.mockResolvedValueOnce(true)
-				.mockRejectedValueOnce({
-					kind: "Recaptcha",
-					message: { reason },
-				});
-			render(SignInForm);
-
-			await submitSignIn();
+			await rejectMint(reason);
 
 			expect(callMethodMock).toHaveBeenCalledTimes(3);
 			expect(callMethodMock).toHaveBeenLastCalledWith(
 				"mint_recaptcha_token",
 				{ action: "login" },
 			);
-			if (message === null)
-				expect(toastMock.error).not.toHaveBeenCalled();
-			else
-				expect(toastMock.error).toHaveBeenCalledExactlyOnceWith(
-					message,
-				);
+			expect(toastMock.error).toHaveBeenCalledExactlyOnceWith(message);
 			expect(gotoMock).not.toHaveBeenCalled();
 			expectReady();
 		},
 	);
-
-	it.each([
-		[
-			"unsupportedPlatform",
-			"Wrong email or password, or Grindr wants a captcha check, which needs the reCAPTCHA helper on Android.",
-		],
-		[
-			"grindrMissing",
-			"The Open Grind reCAPTCHA helper needs the official Grindr app installed to verify this sign-in.",
-		],
-	])(
-		"points the CAPTCHA helper's %s result to the helper guide",
-		async (reason, message) => {
-			await rejectMint(reason);
-
-			expect(callMethodMock).toHaveBeenCalledTimes(3);
-			expectGuideToast(message);
-			expect(gotoMock).not.toHaveBeenCalled();
-			expectReady();
-		},
-	);
-
-	it("offers to install a missing CAPTCHA helper", async () => {
-		await rejectMint("addonUnavailable");
-		const dialog = await helperDialog();
-
-		expect(dialog.textContent.replace(/\s+/g, " ")).toContain(
-			"Wrong email or password, or Grindr wants a captcha check. The check needs the reCAPTCHA helper add-on for ReGrind and the official Grindr app installed.",
-		);
-		expect(toastMock.error).not.toHaveBeenCalled();
-		await fireEvent.click(
-			within(dialog).getByRole("button", { name: "Continue" }),
-		);
-
-		await waitFor(() =>
-			expect(addonMock.installNow).toHaveBeenCalledOnce(),
-		);
-		expect(addonMock.addonPublishedHere).toHaveBeenCalledExactlyOnceWith(
-			"recaptcha",
-		);
-		expect(openExternalLinkMock).not.toHaveBeenCalled();
-		await waitFor(() =>
-			expect(screen.queryByRole("alertdialog")).toBeNull(),
-		);
-		expectReady();
-	});
-
-	it.each([
-		[
-			"the add-on installer is unavailable",
-			() => addonMock.addonInstallerAvailable.mockReturnValue(false),
-		],
-		[
-			"no helper build is published for this device",
-			() => addonMock.addonPublishedHere.mockResolvedValue(false),
-		],
-	])(
-		"sends a missing CAPTCHA helper to its releases when %s",
-		async (_name, arrange) => {
-			arrange();
-			await rejectMint("addonUnavailable");
-
-			await fireEvent.click(
-				within(await helperDialog()).getByRole("button", {
-					name: "Continue",
-				}),
-			);
-
-			await waitFor(() =>
-				expect(openExternalLinkMock).toHaveBeenCalledExactlyOnceWith(
-					"https://git.opengrind.org/open-grind/recaptcha-helper/releases",
-				),
-			);
-			expect(addonMock.installNow).not.toHaveBeenCalled();
-		},
-	);
-
-	it("leaves a missing CAPTCHA helper alone when the install is cancelled", async () => {
-		await rejectMint("addonUnavailable");
-
-		await fireEvent.click(
-			within(await helperDialog()).getByRole("button", {
-				name: "Cancel",
-			}),
-		);
-
-		await waitFor(() =>
-			expect(screen.queryByRole("alertdialog")).toBeNull(),
-		);
-		expect(addonMock.installNow).not.toHaveBeenCalled();
-		expect(openExternalLinkMock).not.toHaveBeenCalled();
-		expect(toastMock.error).not.toHaveBeenCalled();
-	});
 
 	it.each([
 		[
 			invalidCredentials,
-			"Wrong email or password, or Grindr rejected the reCAPTCHA helper’s check.",
+			"Wrong email or password, or Grindr rejected the captcha check.",
 		],
 		[
 			{ kind: "Unauthorized" },
-			"Wrong email or password, or Grindr rejected the reCAPTCHA helper’s check.",
+			"Wrong email or password, or Grindr rejected the captcha check.",
 		],
 		[
 			{
 				kind: "Api",
 				message: { code: 18, message: "Invalid captcha token" },
 			},
-			"Grindr rejected the reCAPTCHA helper’s check.",
+			"Grindr rejected the captcha check.",
 		],
 	])(
 		"explains a refused CAPTCHA retry exactly once (%j)",
@@ -307,7 +156,7 @@ describe("SignInForm CAPTCHA retry", () => {
 			await retryWithCaptcha(failure);
 
 			expect(callMethodMock).toHaveBeenCalledTimes(4);
-			expectGuideToast(message);
+			expect(toastMock.error).toHaveBeenCalledExactlyOnceWith(message);
 			expect(gotoMock).not.toHaveBeenCalled();
 			expectReady();
 		},

@@ -29,7 +29,7 @@ To install the APK, use your system's APK installer and optionally enable auto u
 - **Smaller APKs** for one processor type: [arm64-v8a](https://git.opengrind.org/open-grind/open-grind/releases/download/v0.1.0-rc.1.1/open-grind-v0.1.0-rc.1.1-android-arm64-v8a.apk) (most phones), [armeabi-v7a](https://git.opengrind.org/open-grind/open-grind/releases/download/v0.1.0-rc.1.1/open-grind-v0.1.0-rc.1.1-android-armeabi-v7a.apk), [x86_64](https://git.opengrind.org/open-grind/open-grind/releases/download/v0.1.0-rc.1.1/open-grind-v0.1.0-rc.1.1-android-x86_64.apk), [x86](https://git.opengrind.org/open-grind/open-grind/releases/download/v0.1.0-rc.1.1/open-grind-v0.1.0-rc.1.1-android-x86.apk).
 - **F-Droid** builds the same APK from source and ships it with the official signature, so you can switch from the APK to F-Droid without uninstalling. F-Droid updates it, usually 2-5 days after each release.
 - **Switching to or from Google Play** requires uninstalling first, because Google signs its version with its own key. Uninstalling signs you out and resets app settings.
-- **Add-ons** (Google sign-in, reCAPTCHA helper) can't be installed by the Google Play version. Install them from their pages: [Sign in with Google](/guides/sign-in-with-google#installed-from-google-play), [reCAPTCHA helper](/guides/recaptcha-helper#installed-from-google-play).
+- **Sign in with Google** needs the Open Grind Google OAuth app; see [Sign in with Google](/guides/sign-in-with-google#android).
 - **To verify the Google Play version**, follow [Verify Google Play install](https://git.opengrind.org/open-grind/open-grind/src/branch/main/BUILDING.md#verify-google-play-install).
 
 ## Windows

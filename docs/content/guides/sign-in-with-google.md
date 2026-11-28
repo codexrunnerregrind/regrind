@@ -14,33 +14,12 @@ Just download the app and select “Sign in with Google” on the sign-in screen
 
 ## Android
 
-Due to security checks by Google, you must [install the Open Grind Google OAuth app (recommended)](#open-grind-google-oauth-app-recommended) or [paste the sign-in token manually](#manually-paste-google-oauth-token).
+Google blocks its sign-in page inside apps, so you sign in with Google in the Open Grind Google OAuth app and paste the token into ReGrind.
 
-### Open Grind Google OAuth app (recommended)
-
-1. Tap “Sign in with Google”
-2. On the sign-in screen, tap “Install” and confirm Android's install prompt; alternatively, install the [Open Grind Google OAuth app manually](https://git.opengrind.org/open-grind/google-oauth-app/releases)
-3. Tap “Continue”, then follow the instructions
-
-### Installed from Google Play
-
-Open Grind from Google Play can't install other apps, so install the Open Grind Google OAuth app yourself:
-
-1. Open [Open Grind Google OAuth app releases](https://git.opengrind.org/open-grind/google-oauth-app/releases) in your browser
-2. Download the APK for your device and open it; Android asks your browser for permission to install apps once
-3. Return to Open Grind, tap “Sign in with Google”, then “Continue”
-
-Or skip the app and [paste the sign-in token manually](#manually-paste-google-oauth-token).
-
-### Manually paste Google OAuth token
-
-**If you already have Open Grind Google OAuth app installed,** try these steps to retrieve Google OAuth token and put it into Open Grind manually:
-
-1. Launch **Open Grind Google OAuth** app from your Android launcher or home
-2. Tap the “Sign in with Google” button, then follow the instructions to sign in
-3. You land on a page with your token masked. Tap “Copy token”
-4. Go to the “Sign In with Google” screen in Open Grind and tap “paste the OAuth token manually”
-5. Paste the copied token and tap “Sign in”
+1. Install the [Open Grind Google OAuth app](https://git.opengrind.org/open-grind/google-oauth-app/releases)
+2. Open it, tap “Sign in with Google” and sign in
+3. Tap “Copy token”
+4. In ReGrind, tap “Continue with Google”, paste the token and tap “Sign in”
 
 **If you have Firefox or Librewolf installed (Desktop/Android), Google Chrome or Chromium-based browsers (Desktop only, there are no extensions in Google Chrome for Android),** you have an option to avoid using the Google OAuth app altogether.
 
@@ -48,8 +27,7 @@ Or skip the app and [paste the sign-in token manually](#manually-paste-google-oa
 2. In the extensions list in the browser toolbar, click on the **extension's icon**
 3. A new page should open with the “Sign in with Google” button — tap it, then follow the instructions to sign in
 4. You land on a page with your token masked. Tap “Copy token”
-5. Go to the “Sign In with Google” screen in Open Grind and tap “paste the OAuth token manually”
-6. Paste the copied token and tap “Sign in”
+5. In ReGrind, tap “Continue with Google”, paste the token and tap “Sign in”
 
 ### Why a separate app? (technical in-depth explanation)
 

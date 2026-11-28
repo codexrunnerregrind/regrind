@@ -21,7 +21,7 @@ For the features you use, the app sends data straight to these services over enc
   - **Meta**: what you enter in Facebook's sign-in window. [Policy](https://www.facebook.com/privacy/policy/)
 - Only if you have **enabled GIPHY**:
   - **GIPHY**: your GIF searches and language, the GIFs you load, and that you use Grindr. [Policy](https://support.giphy.com/hc/en-us/articles/360032872931-GIPHY-Privacy-Policy)
-- Only when using the **reCAPTCHA helper add-on**:
+- Only when Grindr asks for a **captcha** at sign-in (Android):
   - **Google**: device information, whenever Grindr asks for a captcha. [Policy](https://policies.google.com/privacy)
 - Only in **Fast Mode** for notifications (the **FCM service add-on**):
   - **Google**: this device's Firebase installation ID and push token, and every notification Grindr sends through Firebase, including sender names and message text. [Policy](https://policies.google.com/privacy)

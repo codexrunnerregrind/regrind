@@ -4,7 +4,6 @@ import {
 	ADDON_KEYS,
 	type AddonKey,
 	GOOGLE_OAUTH_COMPONENT,
-	RECAPTCHA_COMPONENT,
 } from "./components";
 import { UpdateFlow } from "./flow";
 import { getUpdateReadiness, updatesAvailableHere } from "./index";
@@ -142,7 +141,6 @@ export const addonUpdates = addonFlow(GOOGLE_OAUTH_COMPONENT);
 export const addonActivity: AddonActivity = runtimeOf(
 	GOOGLE_OAUTH_COMPONENT,
 ).activity;
-export const recaptchaUpdates = addonFlow(RECAPTCHA_COMPONENT);
 
 export const addonFlows: readonly UpdateFlow[] = ADDON_KEYS.map(addonFlow);
 

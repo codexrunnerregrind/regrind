@@ -18,11 +18,10 @@ const { flows, addonFlow, updatesManager, updatesApi, toasts } = vi.hoisted(
 			checkNow: vi.fn<(options: unknown) => Promise<CheckReport>>(),
 			withdrawUpdate: vi.fn<() => Promise<void>>(),
 		});
-		const flows = {
-			"google-oauth": flow(),
-			recaptcha: flow(),
-			fcm: flow(),
-		} satisfies Record<AddonKey, ReturnType<typeof flow>>;
+		const flows = { "google-oauth": flow(), fcm: flow() } satisfies Record<
+			AddonKey,
+			ReturnType<typeof flow>
+		>;
 		return {
 			flows,
 			addonFlow: (component: AddonKey) => flows[component],

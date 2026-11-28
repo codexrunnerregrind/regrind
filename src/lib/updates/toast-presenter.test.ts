@@ -38,7 +38,7 @@ describe("a Google OAuth app problem toast", () => {
 		["a generic title", t("updates.errors.network")],
 		[
 			"another add-on's title",
-			t("updates.addons.recaptcha.errors.installFailed"),
+			t("updates.addons.fcm.errors.installFailed"),
 		],
 	])("names the Google OAuth app under %s", (_, title) => {
 		toastPresenter("google-oauth").problem(title);
@@ -62,12 +62,10 @@ describe("a Google OAuth app problem toast", () => {
 
 describe("the up-to-date toast", () => {
 	it("names the add-on that is up to date", () => {
-		toastPresenter("recaptcha").upToDate();
 		toastPresenter("google-oauth").upToDate();
 		toastPresenter("fcm").upToDate();
 
 		expect(toasts.showUpToDate.mock.calls).toStrictEqual([
-			["The Open Grind reCAPTCHA helper is up to date"],
 			["The Open Grind Google OAuth app is up to date"],
 			["The Open Grind FCM service is up to date"],
 		]);
@@ -100,14 +98,11 @@ describe("the up-to-date toast", () => {
 });
 
 describe("the installed toast", () => {
-	it("hands the reCAPTCHA helper's install to the add-on toast", () => {
-		toastPresenter("recaptcha").installed({
-			tag: "v1.1.0",
-			kind: "update",
-		});
+	it("hands the FCM service's install to the add-on toast", () => {
+		toastPresenter("fcm").installed({ tag: "v1.1.0", kind: "update" });
 
 		expect(toasts.showAddonInstalled).toHaveBeenCalledExactlyOnceWith({
-			component: "recaptcha",
+			component: "fcm",
 			tag: "v1.1.0",
 			kind: "update",
 		});

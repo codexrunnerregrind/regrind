@@ -12,7 +12,7 @@ class AddonGateTest {
 	private val someoneElsesCert = "0F".repeat(32)
 	private val host = "org.opengrind"
 	private val addon = "org.opengrind.google_oauth"
-	private val otherAddon = "org.opengrind.recaptcha"
+	private val otherAddon = "org.opengrind.fcm"
 
 	private fun device(
 		hostCert: String = releaseCert,

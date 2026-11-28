@@ -3,7 +3,6 @@ import {
 	type AddonKey,
 	FCM_COMPONENT,
 	GOOGLE_OAUTH_COMPONENT,
-	RECAPTCHA_COMPONENT,
 } from "./components";
 import type { UpdateStage } from "./stage";
 import type { Release } from "./types";
@@ -87,54 +86,6 @@ export const ADDON_MESSAGES = {
 				"updates.addons.googleOauth.errors.noStorageToUpdate",
 			busy: "updates.addons.googleOauth.errors.busy",
 			noRelease: "updates.addons.googleOauth.errors.noRelease",
-		},
-	},
-	[RECAPTCHA_COMPONENT]: {
-		stage: {
-			install: {
-				available: "updates.addons.recaptcha.stage.install.available",
-				downloading:
-					"updates.addons.recaptcha.stage.install.downloading",
-				verifying: "updates.addons.recaptcha.stage.install.verifying",
-				paused: "updates.addons.recaptcha.stage.install.paused",
-				ready: "updates.addons.recaptcha.stage.install.ready",
-				installing: "updates.addons.recaptcha.stage.install.installing",
-			},
-			update: {
-				available: "updates.addons.recaptcha.stage.update.available",
-				downloading:
-					"updates.addons.recaptcha.stage.update.downloading",
-				verifying: "updates.addons.recaptcha.stage.update.verifying",
-				paused: "updates.addons.recaptcha.stage.update.paused",
-				ready: "updates.addons.recaptcha.stage.update.ready",
-				installing: "updates.addons.recaptcha.stage.update.installing",
-			},
-		},
-		installed: "updates.addons.recaptcha.installed",
-		installedVersion: "updates.addons.recaptcha.installedVersion",
-		updated: "updates.addons.recaptcha.updated",
-		updatedVersion: "updates.addons.recaptcha.updatedVersion",
-		upToDate: "updates.addons.recaptcha.upToDate",
-		errors: {
-			externallyManaged:
-				"updates.addons.recaptcha.errors.externallyManaged",
-			foreignSigner: "updates.addons.recaptcha.errors.foreignSigner",
-			foreignTarget: "updates.addons.recaptcha.errors.foreignTarget",
-			noReleaseArtifacts:
-				"updates.addons.recaptcha.errors.noReleaseArtifacts",
-			undetermined: "updates.addons.recaptcha.errors.undetermined",
-			downloadFailed: "updates.addons.recaptcha.errors.downloadFailed",
-			verifyFailed: "updates.addons.recaptcha.errors.verifyFailed",
-			saveDownloadFailed:
-				"updates.addons.recaptcha.errors.saveDownloadFailed",
-			installFailed: "updates.addons.recaptcha.errors.installFailed",
-			updateFailed: "updates.addons.recaptcha.errors.updateFailed",
-			noStorageToInstall:
-				"updates.addons.recaptcha.errors.noStorageToInstall",
-			noStorageToUpdate:
-				"updates.addons.recaptcha.errors.noStorageToUpdate",
-			busy: "updates.addons.recaptcha.errors.busy",
-			noRelease: "updates.addons.recaptcha.errors.noRelease",
 		},
 	},
 	[FCM_COMPONENT]: {

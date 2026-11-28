@@ -154,7 +154,6 @@ describe("a failure the updater gives no reason for", () => {
 	it.each<[ComponentKey, string]>([
 		["app", "Couldn’t download the update"],
 		["google-oauth", "Couldn’t download the Open Grind Google OAuth app"],
-		["recaptcha", "Couldn’t download the Open Grind reCAPTCHA helper"],
 		["fcm", "Couldn’t download the Open Grind FCM service"],
 	])("says the %s download did not finish", async (component, problem) => {
 		api.checkForUpdate.mockResolvedValue(offer("update", { component }));

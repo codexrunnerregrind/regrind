@@ -10,7 +10,7 @@ import org.junit.Test
 class TransferHoldsTest {
 	private val upload = Transfer(TransferTitle.MediaUpload)
 	private val appUpdate = Transfer(TransferTitle.AppUpdate)
-	private val recaptchaUpdate = Transfer(TransferTitle.AddonUpdate, "org.opengrind.recaptcha")
+	private val googleOauthUpdate = Transfer(TransferTitle.AddonUpdate, "org.opengrind.google_oauth")
 	private val fcmInstall = Transfer(TransferTitle.AddonInstall, "org.opengrind.fcm")
 
 	@Test
@@ -52,12 +52,12 @@ class TransferHoldsTest {
 		val holds = TransferHolds()
 		holds.begin(upload)
 		holds.begin(appUpdate)
-		holds.begin(recaptchaUpdate)
+		holds.begin(googleOauthUpdate)
 
-		assertEquals(recaptchaUpdate, holds.newest())
+		assertEquals(googleOauthUpdate, holds.newest())
 		holds.end(appUpdate)
-		assertEquals(recaptchaUpdate, holds.newest())
-		holds.end(recaptchaUpdate)
+		assertEquals(googleOauthUpdate, holds.newest())
+		holds.end(googleOauthUpdate)
 		assertEquals(upload, holds.newest())
 	}
 
@@ -65,9 +65,9 @@ class TransferHoldsTest {
 	fun `an add-on still downloading keeps its own name when another add-on ends`() {
 		val holds = TransferHolds()
 		holds.begin(fcmInstall)
-		holds.begin(recaptchaUpdate)
+		holds.begin(googleOauthUpdate)
 
-		holds.end(recaptchaUpdate)
+		holds.end(googleOauthUpdate)
 		assertEquals(fcmInstall, holds.newest())
 		holds.end(fcmInstall)
 		assertNull(holds.newest())

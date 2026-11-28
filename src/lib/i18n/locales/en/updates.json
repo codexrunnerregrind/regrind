@@ -42,48 +42,6 @@
 				"noRelease": "No Open Grind Google OAuth app release is published yet"
 			}
 		},
-		"recaptcha": {
-			"name": "Open Grind reCAPTCHA helper",
-			"stage": {
-				"install": {
-					"available": "Open Grind reCAPTCHA helper is available",
-					"downloading": "Downloading the Open Grind reCAPTCHA helper…",
-					"verifying": "Verifying the Open Grind reCAPTCHA helper…",
-					"paused": "Open Grind reCAPTCHA helper is ready to download",
-					"ready": "Open Grind reCAPTCHA helper is downloaded",
-					"installing": "Installing the Open Grind reCAPTCHA helper…"
-				},
-				"update": {
-					"available": "Open Grind reCAPTCHA helper update available",
-					"downloading": "Downloading the Open Grind reCAPTCHA helper update…",
-					"verifying": "Verifying the Open Grind reCAPTCHA helper update…",
-					"paused": "Open Grind reCAPTCHA helper update is available",
-					"ready": "Open Grind reCAPTCHA helper update is downloaded",
-					"installing": "Updating the Open Grind reCAPTCHA helper…"
-				}
-			},
-			"installed": "Open Grind reCAPTCHA helper installed",
-			"installedVersion": "Open Grind reCAPTCHA helper installed: {{tag}}",
-			"updated": "Open Grind reCAPTCHA helper updated",
-			"updatedVersion": "Open Grind reCAPTCHA helper updated: {{tag}}",
-			"upToDate": "The Open Grind reCAPTCHA helper is up to date",
-			"errors": {
-				"externallyManaged": "The store that installed the Open Grind reCAPTCHA helper manages its updates",
-				"foreignSigner": "This build isn’t signed by Open Grind, so it can’t install the Open Grind reCAPTCHA helper",
-				"foreignTarget": "The installed Open Grind reCAPTCHA helper isn’t signed by Open Grind. Uninstall it to install the official one.",
-				"noReleaseArtifacts": "The Open Grind reCAPTCHA helper isn’t published for this device",
-				"undetermined": "ReGrind can’t tell whether it may install the Open Grind reCAPTCHA helper",
-				"downloadFailed": "Couldn’t download the Open Grind reCAPTCHA helper",
-				"verifyFailed": "Couldn’t verify the Open Grind reCAPTCHA helper",
-				"saveDownloadFailed": "Couldn’t save the Open Grind reCAPTCHA helper download",
-				"installFailed": "Couldn’t install the Open Grind reCAPTCHA helper",
-				"updateFailed": "Couldn’t update the Open Grind reCAPTCHA helper",
-				"noStorageToInstall": "Not enough storage to install the Open Grind reCAPTCHA helper",
-				"noStorageToUpdate": "Not enough storage to update the Open Grind reCAPTCHA helper",
-				"busy": "Wait for the Open Grind reCAPTCHA helper to finish downloading",
-				"noRelease": "No Open Grind reCAPTCHA helper release is published yet"
-			}
-		},
 		"fcm": {
 			"name": "Open Grind FCM service",
 			"stage": {

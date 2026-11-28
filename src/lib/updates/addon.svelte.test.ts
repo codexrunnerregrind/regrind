@@ -152,7 +152,7 @@ describe("the add-on activity the sign-in screen observes", () => {
 	});
 });
 
-describe("the reCAPTCHA helper's update flow", () => {
+describe("the add-on update watch", () => {
 	beforeEach(() => {
 		vi.resetModules();
 		vi.clearAllMocks();
@@ -174,36 +174,9 @@ describe("the reCAPTCHA helper's update flow", () => {
 			([{ component }]) => component,
 		);
 		expect(checked).toEqual(
-			expect.arrayContaining(["google-oauth", "recaptcha", "fcm"]),
+			expect.arrayContaining(["google-oauth", "fcm"]),
 		);
-		expect(checked).toHaveLength(3);
-	});
-
-	it("offers its update without touching the sign-in screen's activity", async () => {
-		const { addonActivity, recaptchaUpdates } =
-			await import("./addon.svelte");
-		api.checkForUpdate.mockResolvedValue(
-			offer("update", { component: "recaptcha" }),
-		);
-
-		await expect(recaptchaUpdates.checkNow()).resolves.toBe("offered");
-
-		expect(lastShownToast()).toMatchObject({
-			component: "recaptcha",
-			view: { stage: "available" },
-		});
-		expect(addonActivity.stage).toBeNull();
-	});
-
-	it("says the reCAPTCHA helper is up to date when a tap finds nothing newer", async () => {
-		const { recaptchaUpdates } = await import("./addon.svelte");
-		api.checkForUpdate.mockResolvedValue(upToDate);
-
-		await recaptchaUpdates.installNow();
-
-		expect(toasts.showUpToDate).toHaveBeenCalledExactlyOnceWith(
-			"The Open Grind reCAPTCHA helper is up to date",
-		);
+		expect(checked).toHaveLength(2);
 	});
 });
 

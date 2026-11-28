@@ -9,13 +9,7 @@ use crate::plugin_rejection::error_name;
 #[serde(rename_all = "camelCase", tag = "reason", content = "detail")]
 pub enum RecaptchaError {
 	UnsupportedPlatform,
-	AddonUnavailable,
-	AddonDisabled,
-	AddonUntrusted,
-	Cancelled,
 	NoToken,
-	UntrustedCaller,
-	UnsupportedAction,
 	GrindrMissing,
 	MintFailed(Option<String>),
 	MalformedToken,
@@ -25,13 +19,7 @@ pub enum RecaptchaError {
 impl RecaptchaError {
 	pub fn from_rejection(marker: Option<&str>, detail: Option<&str>) -> Self {
 		match marker {
-			Some("recaptcha-unavailable") => Self::AddonUnavailable,
-			Some("recaptcha-disabled") => Self::AddonDisabled,
-			Some("recaptcha-untrusted") => Self::AddonUntrusted,
-			Some("cancelled") => Self::Cancelled,
 			Some("no-token") => Self::NoToken,
-			Some("untrusted-caller") => Self::UntrustedCaller,
-			Some("unsupported-action") => Self::UnsupportedAction,
 			Some("grindr-missing") => Self::GrindrMissing,
 			Some("mint-failed") => Self::MintFailed(error_name(detail)),
 			_ => Self::Failed,
@@ -61,29 +49,25 @@ mod tests {
 	use super::*;
 
 	#[test]
-	fn every_marker_the_plugin_or_the_addon_sends_has_its_own_reason() {
-		for (marker, expected) in [
-			("recaptcha-unavailable", RecaptchaError::AddonUnavailable),
-			("recaptcha-disabled", RecaptchaError::AddonDisabled),
-			("recaptcha-untrusted", RecaptchaError::AddonUntrusted),
-			("cancelled", RecaptchaError::Cancelled),
-			("no-token", RecaptchaError::NoToken),
-			("untrusted-caller", RecaptchaError::UntrustedCaller),
-			("unsupported-action", RecaptchaError::UnsupportedAction),
-			("grindr-missing", RecaptchaError::GrindrMissing),
-			("mint-failed", RecaptchaError::MintFailed(None)),
-		] {
-			assert_eq!(
-				RecaptchaError::from_rejection(Some(marker), None),
-				expected
-			);
-		}
+	fn every_marker_the_plugin_sends_has_its_own_reason() {
+		assert_eq!(
+			RecaptchaError::from_rejection(Some("no-token"), None),
+			RecaptchaError::NoToken
+		);
+		assert_eq!(
+			RecaptchaError::from_rejection(Some("mint-failed"), None),
+			RecaptchaError::MintFailed(None)
+		);
+		assert_eq!(
+			RecaptchaError::from_rejection(Some("grindr-missing"), None),
+			RecaptchaError::GrindrMissing
+		);
 	}
 
 	#[test]
 	fn an_unknown_or_missing_marker_is_a_generic_failure() {
 		for marker in [
-			Some("companion-unavailable"),
+			Some("recaptcha-unavailable"),
 			Some(""),
 			Some("MINT-FAILED"),
 			None,
@@ -118,17 +102,6 @@ mod tests {
 	}
 
 	#[test]
-	fn the_detail_only_travels_with_a_mint_failure() {
-		assert_eq!(
-			RecaptchaError::from_rejection(
-				Some("grindr-missing"),
-				Some("NETWORK_ERROR")
-			),
-			RecaptchaError::GrindrMissing
-		);
-	}
-
-	#[test]
 	fn a_failure_reaches_the_frontend_as_a_recaptcha_error_with_its_reason() {
 		let app = AppError::from(RecaptchaError::MintFailed(Some(
 			"NETWORK_ERROR".into(),
@@ -137,10 +110,5 @@ mod tests {
 		assert_eq!(json["kind"], "Recaptcha");
 		assert_eq!(json["message"]["reason"], "mintFailed");
 		assert_eq!(json["message"]["detail"], "NETWORK_ERROR");
-
-		let json =
-			serde_json::to_value(AppError::from(RecaptchaError::GrindrMissing))
-				.unwrap();
-		assert_eq!(json["message"]["reason"], "grindrMissing");
 	}
 }

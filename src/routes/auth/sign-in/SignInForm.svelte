@@ -23,18 +23,7 @@
 	import { Label } from "#lib/components/ui/label/index.ts";
 	import { Spinner } from "#lib/components/ui/spinner/index.ts";
 	import { type PlainMessageKey, t } from "#lib/i18n/index.ts";
-	import { openExternalLink } from "#lib/platform/link-opener.ts";
-	import {
-		addonInstallerAvailable,
-		addonPublishedHere,
-		recaptchaUpdates,
-	} from "#lib/updates/addon.svelte.ts";
-	import { RECAPTCHA_COMPONENT } from "#lib/updates/components.ts";
-	import {
-		manualInstallHref,
-		RECAPTCHA_HELPER_GUIDE,
-	} from "#lib/updates/manual-install.ts";
-	import RecaptchaHelperDialog from "./RecaptchaHelperDialog.svelte";
+	import { isAndroidPlatform } from "#lib/platform/os.ts";
 
 	type OauthProvider = "google" | "facebook";
 
@@ -114,27 +103,11 @@
 		message: z.object({ reason: z.string() }),
 	});
 
-	const captchaGuideMessageKeys = {
+	const captchaMessageKeys = {
 		unsupportedPlatform:
 			"auth.signIn.captcha.errors.credentialsOrUnsupportedPlatform",
 		grindrMissing: "auth.signIn.captcha.errors.grindrMissing",
 	} as const satisfies Record<string, PlainMessageKey>;
-
-	const captchaSignInMessageKeys = {
-		addonDisabled: "auth.signIn.captcha.errors.addonDisabled",
-		addonUntrusted: "auth.signIn.captcha.errors.addonUntrusted",
-	} as const satisfies Record<string, PlainMessageKey>;
-
-	function captchaMessageKey(
-		keys: Readonly<Record<string, PlainMessageKey>>,
-		reason: string | undefined,
-	): PlainMessageKey | undefined {
-		return reason !== undefined && Object.hasOwn(keys, reason)
-			? keys[reason]
-			: undefined;
-	}
-
-	let helperDialog: "install" | "manual" | null = $state(null);
 
 	async function signIn(event: SubmitEvent) {
 		event.preventDefault();
@@ -176,7 +149,7 @@
 			const refusal = refusalOf(error);
 			reportSignInFailure({ error, onFailure: () => refusal !== null });
 			if (refusal === null || captchaToken === undefined) return refusal;
-			showCaptchaGuideToast(refusalAfterCaptchaMessageKeys[refusal]);
+			toast.error(t(refusalAfterCaptchaMessageKeys[refusal]));
 			return null;
 		}
 	}
@@ -211,45 +184,19 @@
 	function reportCaptchaFailure(error: unknown) {
 		const parsed = recaptchaErrorSchema.safeParse(error);
 		const reason = parsed.success ? parsed.data.message.reason : undefined;
-		if (reason === "cancelled") return;
-		if (reason === "addonUnavailable") {
-			helperDialog = addonInstallerAvailable() ? "install" : "manual";
-			return;
-		}
-		const guided = captchaMessageKey(captchaGuideMessageKeys, reason);
-		if (guided) {
-			showCaptchaGuideToast(guided);
-			return;
-		}
-		toast.error(
-			t(
-				captchaMessageKey(captchaSignInMessageKeys, reason) ??
-					"auth.signIn.captcha.errors.verifyFailed",
-			),
-		);
-	}
-
-	function showCaptchaGuideToast(message: PlainMessageKey) {
-		toast.error(t(message), {
-			action: {
-				label: t("common.actions.learnMore"),
-				onClick: () => openExternalLink(RECAPTCHA_HELPER_GUIDE),
-			},
-		});
-	}
-
-	async function continueToHelper() {
-		const installable = helperDialog === "install";
-		helperDialog = null;
-		if (installable && (await addonPublishedHere(RECAPTCHA_COMPONENT))) {
-			await recaptchaUpdates.installNow();
-			return;
-		}
-		openExternalLink(manualInstallHref(RECAPTCHA_COMPONENT));
+		const key =
+			reason !== undefined && Object.hasOwn(captchaMessageKeys, reason)
+				? captchaMessageKeys[reason as keyof typeof captchaMessageKeys]
+				: "auth.signIn.captcha.errors.verifyFailed";
+		toast.error(t(key));
 	}
 
 	async function signInWith(provider: OauthProvider) {
 		if (submitting) return;
+		if (provider === "google" && isAndroidPlatform()) {
+			await goto("/auth/sign-in/google");
+			return;
+		}
 		submitting = provider;
 		const { method, label, failures } = oauthProviders[provider];
 		try {
@@ -420,12 +367,3 @@
 		</a>
 	</p>
 </form>
-<RecaptchaHelperDialog
-	bind:open={
-		() => helperDialog !== null,
-		(next) => {
-			if (!next) helperDialog = null;
-		}
-	}
-	onContinue={() => void continueToHelper()}
-/>

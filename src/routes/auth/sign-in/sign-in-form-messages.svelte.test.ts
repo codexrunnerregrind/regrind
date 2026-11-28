@@ -1,12 +1,6 @@
 // @vitest-environment jsdom
 
-import {
-	cleanup,
-	fireEvent,
-	render,
-	screen,
-	within,
-} from "@testing-library/svelte";
+import { cleanup, fireEvent, render, screen } from "@testing-library/svelte";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -38,17 +32,11 @@ const invalidCredentials = {
 };
 
 const captchaFailures = [
-	{ failure: "a missing Grindr app", reason: "grindrMissing", guide: true },
 	{
-		failure: "a turned-off reCAPTCHA helper",
-		reason: "addonDisabled",
-		guide: false,
+		failure: "a captcha this platform can't pass",
+		reason: "unsupportedPlatform",
 	},
-	{
-		failure: "an unexplained captcha failure",
-		reason: "mintFailed",
-		guide: false,
-	},
+	{ failure: "an unexplained captcha failure", reason: "mintFailed" },
 ];
 
 function refuseCaptcha(reason: string) {
@@ -205,7 +193,6 @@ const localizedFailures = [
 		button: "Sign in",
 		rejects: { sign_in_with_email: invalidCredentials },
 		resolves: { recaptcha_first_party_enabled: false },
-		guide: false,
 	},
 	{
 		failure: "wrong credentials after a captcha",
@@ -215,20 +202,17 @@ const localizedFailures = [
 			recaptcha_first_party_enabled: true,
 			mint_recaptcha_token: "token",
 		},
-		guide: true,
 	},
-	...captchaFailures.map(({ failure, reason, guide }) => ({
+	...captchaFailures.map(({ failure, reason }) => ({
 		failure,
 		button: "Sign in",
 		...refuseCaptcha(reason),
-		guide,
 	})),
 	...facebookFailures.map(({ failure, marker }) => ({
 		failure,
 		button: "Continue with Facebook",
 		rejects: { sign_in_with_facebook: { kind: "Auth", message: marker } },
 		resolves: {},
-		guide: false,
 	})),
 	{
 		failure: "a sign-in flow that ended unexpectedly",
@@ -237,7 +221,6 @@ const localizedFailures = [
 			sign_in_with_google: { kind: "Auth", message: signInFlowEnded },
 		},
 		resolves: {},
-		guide: false,
 	},
 ];
 
@@ -255,7 +238,7 @@ describe("SignInForm in the active locale", () => {
 
 	it.each(localizedFailures)(
 		"explains $failure in the active locale",
-		async ({ button, rejects, resolves, guide }) => {
+		async ({ button, rejects, resolves }) => {
 			answer({ rejects, resolves });
 			render(SignInForm);
 			const email = screen.getByLabelText("Email");
@@ -274,52 +257,9 @@ describe("SignInForm in the active locale", () => {
 
 			expect(toastMock.error).toHaveBeenCalledWith(
 				expect.stringMatching(PSEUDO_MESSAGE),
-				...(guide
-					? [
-							{
-								action: {
-									label: expect.stringMatching(
-										PSEUDO_MESSAGE,
-									),
-									onClick: expect.any(Function),
-								},
-							},
-						]
-					: []),
 			);
 		},
 	);
-
-	it("asks to install the reCAPTCHA helper in the active locale", async () => {
-		answer(refuseCaptcha("addonUnavailable"));
-		render(SignInForm);
-		await fireEvent.input(screen.getByLabelText("Email"), {
-			target: { value: "someone@example.com" },
-		});
-		await fireEvent.input(screen.getByLabelText("Password"), {
-			target: { value: "hunter2" },
-		});
-		const target = screen.getByRole("button", { name: "Sign in" });
-		await setLocale({ locale: "en-XA" });
-
-		await fireEvent.click(target);
-		const dialog = await screen.findByRole("alertdialog", {
-			name: PSEUDO_MESSAGE,
-		});
-
-		expect(toastMock.error).not.toHaveBeenCalled();
-		expect(
-			within(dialog).getByRole("link", { name: PSEUDO_MESSAGE }),
-		).toBeTruthy();
-		expect(
-			within(dialog)
-				.getAllByRole("button")
-				.map((button) => button.textContent.trim()),
-		).toEqual([
-			expect.stringMatching(PSEUDO_MESSAGE),
-			expect.stringMatching(PSEUDO_MESSAGE),
-		]);
-	});
 
 	it("names the provider whose sign-in failed in the active locale", async () => {
 		callMethodMock.mockRejectedValue(new Error("boom"));

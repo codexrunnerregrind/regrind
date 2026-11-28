@@ -257,7 +257,7 @@ describe("with OPEN_GRIND_SCREENSHOTS=1", FRESH_IMPORTS, () => {
 		const hooks = await startHookedApp();
 		const { t } = await import("#lib/i18n/index.ts");
 		hooks
-			.updateToasts("recaptcha")
+			.updateToasts("google-oauth")
 			.installed({ tag: "v1.2.0", kind: "install" });
 		hooks.updateToasts("fcm").installed({ tag: null, kind: "update" });
 		hooks.updateToasts("google-oauth").upToDate();
@@ -269,7 +269,7 @@ describe("with OPEN_GRIND_SCREENSHOTS=1", FRESH_IMPORTS, () => {
 			})),
 		).toEqual([
 			{
-				title: t("updates.addons.recaptcha.installedVersion", {
+				title: t("updates.addons.googleOauth.installedVersion", {
 					tag: "v1.2.0",
 				}),
 				body: t("updates.toasts.changelog"),

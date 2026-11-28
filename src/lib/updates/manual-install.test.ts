@@ -13,7 +13,7 @@ describe("manualInstallHref", () => {
 		vi.stubEnv("OPEN_GRIND_STORE", "play");
 
 		expect(manualInstallHref(GOOGLE_OAUTH_COMPONENT)).toBe(
-			"https://opengrind.org/guides/sign-in-with-google#installed-from-google-play",
+			"https://opengrind.org/guides/sign-in-with-google#android",
 		);
 	});
 

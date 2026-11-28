@@ -2,10 +2,8 @@
 <resources>
 	<string name="addon_install_transfer_title_fcm">Downloading the Open Grind FCM service…</string>
 	<string name="addon_install_transfer_title_google_oauth">Downloading the Open Grind Google OAuth app…</string>
-	<string name="addon_install_transfer_title_recaptcha">Downloading the Open Grind reCAPTCHA helper…</string>
 	<string name="addon_update_transfer_title_fcm">Downloading the Open Grind FCM service update…</string>
 	<string name="addon_update_transfer_title_google_oauth">Downloading the Open Grind Google OAuth app update…</string>
-	<string name="addon_update_transfer_title_recaptcha">Downloading the Open Grind reCAPTCHA helper update…</string>
 	<string name="media_upload_transfer_title">Uploading media…</string>
 	<string name="transfer_channel_name">Transfers</string>
 	<string name="update_transfer_title">Downloading update…</string>

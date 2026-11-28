@@ -2,14 +2,9 @@ import type { PlainMessageKey } from "#lib/i18n/index.ts";
 
 export const APP_COMPONENT = "app";
 export const GOOGLE_OAUTH_COMPONENT = "google-oauth";
-export const RECAPTCHA_COMPONENT = "recaptcha";
 export const FCM_COMPONENT = "fcm";
 
-export const ADDON_KEYS = [
-	GOOGLE_OAUTH_COMPONENT,
-	RECAPTCHA_COMPONENT,
-	FCM_COMPONENT,
-] as const;
+export const ADDON_KEYS = [GOOGLE_OAUTH_COMPONENT, FCM_COMPONENT] as const;
 
 export const COMPONENT_KEYS = [APP_COMPONENT, ...ADDON_KEYS] as const;
 
@@ -19,7 +14,6 @@ export type ComponentKey = (typeof COMPONENT_KEYS)[number];
 export const COMPONENT_PACKAGE = {
 	[APP_COMPONENT]: "org.regrind",
 	[GOOGLE_OAUTH_COMPONENT]: "org.opengrind.google_oauth",
-	[RECAPTCHA_COMPONENT]: "org.opengrind.recaptcha",
 	[FCM_COMPONENT]: "org.opengrind.fcm",
 } as const satisfies Record<ComponentKey, string>;
 
@@ -28,13 +22,10 @@ export const COMPONENT_REPO = {
 	[APP_COMPONENT]: "https://github.com/codexrunnerregrind/regrind",
 	[GOOGLE_OAUTH_COMPONENT]:
 		"https://git.opengrind.org/open-grind/google-oauth-app",
-	[RECAPTCHA_COMPONENT]:
-		"https://git.opengrind.org/open-grind/recaptcha-helper",
 	[FCM_COMPONENT]: "https://git.opengrind.org/open-grind/fcm-service",
 } as const satisfies Record<ComponentKey, string>;
 
 export const ADDON_NAME = {
 	[GOOGLE_OAUTH_COMPONENT]: "updates.addons.googleOauth.name",
-	[RECAPTCHA_COMPONENT]: "updates.addons.recaptcha.name",
 	[FCM_COMPONENT]: "updates.addons.fcm.name",
 } as const satisfies Record<AddonKey, PlainMessageKey>;

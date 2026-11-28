@@ -211,13 +211,14 @@ mod pins {
 	const TRANSFER_BRIDGE: &str = include_str!("../../../transfer/android.rs");
 
 	const RECAPTCHA_PLUGIN: &str = include_str!(
-		"../../../../gen/android/app/src/main/java/org/opengrind/recaptcha/RecaptchaPlugin.kt"
+		"../../../../gen/android/app/src/main/java/org/regrind/recaptcha/RecaptchaPlugin.kt"
 	);
 
 	const RECAPTCHA_BRIDGE: &str = include_str!("../../recaptcha/android.rs");
 
-	const MINT_TOKEN_PERMISSION: &str =
-		"org.opengrind.recaptcha.permission.MINT_TOKEN";
+	const RECAPTCHA_MINT: &str = include_str!(
+		"../../../../gen/android/app/src/main/java/org/regrind/recaptcha/MintTokenActivity.kt"
+	);
 
 	const SIGNING_CERTIFICATES: &str = include_str!(
 		"../../../../gen/android/app/src/main/java/org/opengrind/addon/PackageSigningCertificates.kt"
@@ -929,17 +930,12 @@ mod pins {
 			.is_some(),
 			"AddonGate.kt no longer pins the add-on signer to InstallGate.RELEASE_CERT_SHA256"
 		);
-		for (file, plugin, package) in [
-			("GoogleOauthPlugin.kt", SIGN_IN_PLUGIN, "COMPANION_PACKAGE"),
-			("RecaptchaPlugin.kt", RECAPTCHA_PLUGIN, "ADDON_PACKAGE"),
-		] {
-			assert!(
-				squashed(plugin).contains(&squashed(&format!(
-					"when (AddonLaunchCheck.decide(activity, intent, {package}))"
-				))),
-				"{file} no longer checks {package} through AddonLaunchCheck before sending it the request"
-			);
-		}
+		assert!(
+			squashed(SIGN_IN_PLUGIN).contains(&squashed(
+				"when (AddonLaunchCheck.decide(activity, intent, COMPANION_PACKAGE))"
+			)),
+			"GoogleOauthPlugin.kt no longer checks COMPANION_PACKAGE through AddonLaunchCheck before sending it the request"
+		);
 	}
 
 	#[test]
@@ -949,10 +945,7 @@ mod pins {
 			verdicts.contains(&"Launch") && verdicts.len() > 1,
 			"AddonGate.Verdict was not parsed: {verdicts:?}"
 		);
-		for (file, plugin) in [
-			("GoogleOauthPlugin.kt", SIGN_IN_PLUGIN),
-			("RecaptchaPlugin.kt", RECAPTCHA_PLUGIN),
-		] {
+		for (file, plugin) in [("GoogleOauthPlugin.kt", SIGN_IN_PLUGIN)] {
 			let plugin = squashed(plugin);
 			assert!(
 				plugin.contains("importorg.opengrind.addon.AddonGate"),
@@ -971,115 +964,44 @@ mod pins {
 	fn every_recaptcha_plugin_refusal_classifies_to_its_reason() {
 		use crate::api::recaptcha::RecaptchaError;
 
-		let file = "RecaptchaPlugin.kt";
-		let plugin = squashed(RECAPTCHA_PLUGIN);
-		let refusals = addon_gate_verdicts()
-			.into_iter()
-			.filter(|verdict| *verdict != "Launch");
-		for verdict in refusals {
-			let (constant, expected) = match verdict {
-				"Unavailable" => {
-					("ERROR_UNAVAILABLE", RecaptchaError::AddonUnavailable)
-				}
-				"Disabled" => ("ERROR_DISABLED", RecaptchaError::AddonDisabled),
-				"Untrusted" => {
-					("ERROR_UNTRUSTED", RecaptchaError::AddonUntrusted)
-				}
-				"Hidden" | "TurnedOff" | "Outdated" => {
-					("ERROR_UNAVAILABLE", RecaptchaError::AddonUnavailable)
-				}
-				unknown => panic!(
-					"AddonGate.Verdict.{unknown} has no reCAPTCHA reason"
-				),
-			};
-			assert!(
-				plugin.contains(&format!(
-					"AddonGate.Verdict.{verdict}->invoke.reject({constant})"
-				)),
-				"{file} no longer rejects {verdict} with {constant}"
-			);
-			let marker = kotlin_constant(RECAPTCHA_PLUGIN, file, constant);
-			assert_eq!(
-				RecaptchaError::from_rejection(Some(marker), None),
-				expected,
-				"{file} {constant} = {marker} is not classified as {expected:?}"
-			);
-		}
-		for (constant, expected) in [
-			("ERROR_CANCELLED", RecaptchaError::Cancelled),
-			("ERROR_NO_TOKEN", RecaptchaError::NoToken),
-		] {
-			assert!(
-				plugin.contains(&format!("invoke.reject({constant})")),
-				"{file} never rejects with {constant}"
-			);
-			let marker = kotlin_constant(RECAPTCHA_PLUGIN, file, constant);
-			assert_eq!(
-				RecaptchaError::from_rejection(Some(marker), None),
-				expected,
-				"{file} {constant} = {marker} is not classified as {expected:?}"
-			);
-		}
-		assert!(
-			plugin.contains(
-				"invoke.reject(refusal,data.getStringExtra(EXTRA_ERROR_DETAIL))"
+		for (file, source, constant, expected) in [
+			(
+				"RecaptchaPlugin.kt",
+				RECAPTCHA_PLUGIN,
+				"ERROR_NO_TOKEN",
+				RecaptchaError::NoToken,
 			),
-			"{file} no longer passes the add-on's error and its detail through"
-		);
+			(
+				"MintTokenActivity.kt",
+				RECAPTCHA_MINT,
+				"ERROR_MINT_FAILED",
+				RecaptchaError::MintFailed(None),
+			),
+			(
+				"MintTokenActivity.kt",
+				RECAPTCHA_MINT,
+				"ERROR_GRINDR_MISSING",
+				RecaptchaError::GrindrMissing,
+			),
+		] {
+			let marker = kotlin_constant(source, file, constant);
+			assert_eq!(
+				RecaptchaError::from_rejection(Some(marker), None),
+				expected,
+				"{file} {constant} = {marker} is not classified as {expected:?}"
+			);
+		}
 		assert_rejections_classify_as(
 			"recaptcha/android.rs",
 			RECAPTCHA_BRIDGE,
 			"RecaptchaError",
 		);
-	}
-
-	#[test]
-	fn the_recaptcha_mint_matches_the_addon_contract() {
-		use super::super::component;
-
-		let file = "RecaptchaPlugin.kt";
-		let addon = component::RECAPTCHA.install_target();
-		assert_eq!(
-			kotlin_constant(RECAPTCHA_PLUGIN, file, "ADDON_PACKAGE"),
-			addon,
-			"{file} ADDON_PACKAGE drifted from the component table"
-		);
+		let package = kotlin_package(RECAPTCHA_PLUGIN, "RecaptchaPlugin.kt");
 		assert!(
-			MANIFEST.contains(&format!(
-				"<uses-permission android:name=\"{MINT_TOKEN_PERMISSION}\" />"
-			)),
-			"the manifest no longer asks for {MINT_TOKEN_PERMISSION}, so the add-on refuses to mint"
-		);
-		assert!(
-			MINT_TOKEN_PERMISSION.starts_with(&format!("{addon}.")),
-			"the component table package {addon} no longer owns {MINT_TOKEN_PERMISSION}"
-		);
-		for (constant, published) in [
-			(
-				"MINT_TOKEN_ACTION",
-				"org.opengrind.recaptcha.action.MINT_TOKEN",
-			),
-			("EXTRA_ACTION", "org.opengrind.recaptcha.extra.ACTION"),
-			("EXTRA_TOKEN", "org.opengrind.recaptcha.extra.TOKEN"),
-			("EXTRA_ERROR", "org.opengrind.recaptcha.extra.ERROR"),
-			(
-				"EXTRA_ERROR_DETAIL",
-				"org.opengrind.recaptcha.extra.ERROR_DETAIL",
-			),
-		] {
-			assert_eq!(
-				kotlin_constant(RECAPTCHA_PLUGIN, file, constant),
-				published,
-				"{file} {constant} drifted from the add-on's published contract"
-			);
-		}
-		let registered = squashed(RECAPTCHA_BRIDGE);
-		let package = kotlin_package(RECAPTCHA_PLUGIN, file);
-		assert!(
-			registered.contains(&format!(
+			squashed(RECAPTCHA_BRIDGE).contains(&format!(
 				"register_android_plugin(\"{package}\",\"RecaptchaPlugin\",)"
 			)) && spaced_match(RECAPTCHA_PLUGIN, "class RecaptchaPlugin(").is_some(),
-			"recaptcha/android.rs registers a plugin class that {file} does not declare"
+			"recaptcha/android.rs registers a plugin class that RecaptchaPlugin.kt does not declare"
 		);
 	}
 

@@ -72,7 +72,7 @@ export type ScreenshotScene = {
 	methodAnswers: Record<string, unknown>;
 };
 
-export type UpdateComponent = "app" | "google-oauth" | "recaptcha" | "fcm";
+export type UpdateComponent = "app" | "google-oauth" | "fcm";
 
 export type InstallKind = "install" | "update";
 

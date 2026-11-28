@@ -3,9 +3,10 @@ import { currentPlatform } from "#lib/platform/os.ts";
 export type GoogleSignInMode = "companion" | "paste";
 
 export function googleSignInMode(): GoogleSignInMode {
+	// Open Grind's Google OAuth app only hands tokens to Open Grind, so
+	// Android signs in with a pasted token.
 	switch (currentPlatform()) {
 		case "android":
-			return "companion";
 		case "ios":
 		case "linux":
 		case "macos":

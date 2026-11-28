@@ -4,13 +4,7 @@ import { expect, vi } from "vitest";
 export const callMethodMock = vi.fn();
 export const fetchRestMock = vi.fn();
 export const gotoMock = vi.fn();
-export const openExternalLinkMock = vi.fn();
 export const toastMock = { success: vi.fn(), error: vi.fn(), dismiss: vi.fn() };
-export const addonMock = {
-	addonInstallerAvailable: vi.fn(),
-	addonPublishedHere: vi.fn(),
-	installNow: vi.fn(),
-};
 
 export const invalidCredentials = {
 	kind: "Api",
@@ -24,10 +18,6 @@ export function resetSignInMocks() {
 	fetchRestMock.mockReset();
 	gotoMock.mockReset();
 	toastMock.error.mockReset();
-	openExternalLinkMock.mockReset();
-	addonMock.addonInstallerAvailable.mockReset().mockReturnValue(true);
-	addonMock.addonPublishedHere.mockReset().mockResolvedValue(true);
-	addonMock.installNow.mockReset().mockResolvedValue(undefined);
 	vi.spyOn(console, "error").mockImplementation(() => {});
 }
 
